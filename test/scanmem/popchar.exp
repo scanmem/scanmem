@@ -1,0 +1,58 @@
+# name the tests
+set test "populate with characters"
+set subtest "default"
+
+# check searching for a character at various offsets
+expect_after {
+    -re "\[^\n\r\]*$prompt$" { fail "$test (bad match)" }
+    timeout { fail "$test ($subtest) (timeout)" }
+}
+
+scanmem_start
+    # start and attach to test process
+    smtest_start "--mode=populate --value=0xff --count=$smiter"
+
+    # delete all other regions
+    set subtest "delete irrelevant regions"
+    send "dregion !$smregionid\n"
+    send "lregions\n"
+    expect {
+        -re "\\\[\[ 0-9\]+\\\]\[^\n\]*$smtestdat\[^\n\]*\n$prompt$" {
+            pass "$test ($subtest)"
+        }
+    }
+
+    # search for 0x0, there should be $smregionsize matches
+    set subtest "match everything"
+    send "0x00\n"
+    expect {
+        -re "info: we currently have $smregionsize matches.*$prompt$" {
+            pass "$test ($subtest)"
+        }
+    }
+
+    # now run all tests, signalling smtest when ready
+    set subtest "test $smiter variations"
+    for {set i 0} {$i < $smiter} {incr i} {
+        # tell the test program to place another 0xff
+        smtest_sigusr
+        send "reset\n"
+        send "dregion !$smregionid\n"
+        send "0xff\n"
+        expect {
+            -re "info: we currently have (\[0-9\]+) matches.*$prompt$" {
+                if {$expect_out(1,string) != $i + 1} { 
+                    fail "$test ($subtest)"
+                    break
+                }
+            }
+        }
+    }
+
+    # check that worked
+    if {$i == $smiter} { pass "$test ($subtest)" }
+
+    # all done, terminate the test process.
+    smtest_exit
+
+scanmem_exit
