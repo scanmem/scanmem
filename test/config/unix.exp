@@ -1,0 +1,150 @@
+
+# set the default test timeout
+set timeout 3
+
+# set target binaries
+set program "../scanmem"
+set smtest "./smtest"
+set smtestdat "./smtest.dat"
+set smpid -1
+set smregionid -1
+set smregionsize -1
+
+# iterations for iterative tests
+set smiter 64
+
+# set the default scanmem prompt
+set prompt "\[0-9\]+> "
+
+# default test name
+set test "unknown"
+set subtest "unknown"
+
+proc scanmem_exit {} { 
+    send "exit\n" 
+}
+
+proc scanmem_version {} {
+    global program
+    global prompt
+    global version
+    set tmp [exec $program --version]
+    regexp "^scanmem version (.*), Copyright.*$" $tmp tmp version
+}
+
+proc scanmem_start {} {
+    global prompt
+    global program
+    global spawn_id
+    global test
+    global subtest
+
+    #spawn valgrind --error-exitcode=2 --quiet $program
+    spawn $program
+    expect {
+        -re "$prompt$" { }
+        timeout { perror "timeout waiting for prompt"; exit 1 }
+    }
+}
+
+proc smtest_start {smtestargs} {
+    global smregionsize
+    global smregionid
+    global smtestdat
+    global smpid
+    global smtest
+    global prompt
+    global test
+
+    # start the smtest process
+    send "shell $smtest $smtestargs\n"
+    expect {
+        # wait for the process to report its pid and fork()
+        -re "smtest pid (\[0-9\]*).*$prompt$" {
+            set smpid "$expect_out(1,string)"
+            pass "$test (start test process)"
+        }
+        # process prints error
+        -re "error:.*$prompt$" {
+            perror "$test (start test process failed)"
+            exit 1
+        }
+    }
+    
+    # attach to smtest
+    scanmem_attach $smpid
+
+    # find the regionid and size of the test region
+    send "lregions\n"
+    expect {
+        -re "\\\[\[ \]*(\[0-9\]+)\\\]\[^\n\]+,\[ \]*(\[0-9\]+) bytes,\[^\n\]+$smtestdat.*$prompt$" {
+            set smregionid "$expect_out(1,string)"
+            set smregionsize "$expect_out(2,string)"
+            pass "$test (find test region)"
+        }
+    }
+
+}
+
+proc smtest_sigusr {} {
+    global smpid
+    global test
+    global subtest
+
+    # check this is valid
+    if {$smpid == -1} {
+        perror "$test (signal test process)"
+        exit 1
+    }
+
+    # okay, send the sig
+    send "shell kill -USR1 $smpid\n"
+    send "shell sleep 0.1\n"
+}
+
+proc smtest_exit {} {
+    global prompt
+    global smpid
+    global test
+    global subtest
+
+    # check theres a valid pid
+    if {$smpid == -1} {
+        perror "$test (terminate test process)"
+        exit 1
+    }
+
+    # terminate it
+    send "shell kill $smpid\n"
+    expect {
+        -re "kill:.*No such process.*$prompt$" {
+            perror "$test (terminate test process)"
+            exit 1
+        }
+        -re "$prompt$" {
+            pass "$test (terminate test process)"
+        }
+    }
+}
+
+proc scanmem_attach {pid} {
+    global test
+    global prompt
+
+    send "pid $pid\n"
+    send "pid\n"
+    expect {
+        -re "info: target pid is $pid.*$prompt$" {
+            pass "$test (attach to process)"
+        }
+        # process prints error
+        -re "error:.*$prompt$" {
+            perror "$test (attach to process failed)"
+            exit 1
+        }
+    }
+}
+
+
+# set the version
+scanmem_version

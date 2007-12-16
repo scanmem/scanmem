@@ -1,0 +1,72 @@
+xxxx-xx-xx Tavis Ormandy <taviso@sdf.lonestar.org>
+    * fixed infinite loop if a command was just leading whitespace.
+    * add message to configure script about `libreadline-dev` package.
+
+2007-06-07 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * make license clearer, added gpl notice to all source files, and added a show command.
+        - eg, show copying, show warranty, etc.
+    * handle unspecified value in set properly, eg set /4
+    * autotooled the build process.
+    * fixed bug where unaligned variables might be missed at end of region.
+    * begin testsuite using dejagnu, to help prevent any regressions in future.
+    * use /proc/pid/mem if available.
+
+2007-04-08 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * corrected lots of lint errors.
+    * include copy of GPL in COPYING file.
+    * use more EXPECT().
+    * fixed two memory leaks (very small).
+    * much more scalable commandline parsing, simple switch/case was getting too unwieldy.
+    * deprecated cont command, and re-wrote set to make it much more powerful.
+        - use set x/y instead of cont, cont will print a warning if you try to use it.
+    * preliminary support for float type (WARNING: experimental)
+    * implemented simple custom completer for readline, so tab completion now works for commands.
+        - arguments will work with completion in next version.
+    * massive improvements to online help, each command can register its own documentation.
+        - example : `help set` will now print detailed usage information.
+    * added quick shell escape support (shell command).
+    * added interrupt support to commands that continue until stopped.
+    * changed the format of list output, which now has a set of flags that represent
+      the possible formats that this variable could be, eg 'CSi' means could be a char
+       or a short, but cant be an int.
+    * new command `watch` that monitors how a variable changes.
+    * updated manual
+    
+2007-03-04 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * buffered overlapping peeks to improve scan performance.
+    * automatically support chars, shorts and ints.
+        - removed width command
+    * pid command can change target.
+    * = command, to accompany < and > to indicate variable has not changed.
+    * snapshot command to enhance <, > and =. WARNING: experimental, very inefficient.
+        - snapshot will use a more efficient format next version, right now it
+          should not be used on large programs, or will eat all your free memory.
+
+2007-01-11 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * cleaned up some lintian errors
+    * used __builtin_expect() to try to improve performance in some areas
+    * minor UI tweaks, give region counts during scan.
+    * start using readline(), should implement completion at some point.
+    * fixed memory leak.
+
+2006-11-16 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * Made buffer management more intelligent.
+    * Add commands to list and delete regions (lregions, dregion).
+    * Add commands to indicate variable has increased or decreased (<, >).
+    * Improved usability of set, cont, list, etc.
+    * Add progress meter, large programs can take a long time for initial scan.
+    * Testing support for variable width targets, signedness not currenlty handled.
+    * delete command to eliminate matches.
+    * list command now shows where a variable is located.
+    * General code cleanup.
+    * Eliminate useless command line options, use interactive versions instead.
+    * Improved documentation.
+
+2006-11-14 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * Applied patch from Brian Lewis <bsl04 (at) uark.edu>
+    * Install signal handler to detach from target on sigint/sighup/sigquit.
+    * Improved Makefile
+    * Added initial man page
+
+2006-11-13 Tavis Ormandy <taviso@sdf.lonestar.org>
+    * Initial version

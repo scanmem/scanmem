@@ -1,0 +1,31 @@
+# check the shell command functions
+
+expect_after {
+    -re "\[^\n\r\]*$prompt$" { fail "$test (bad match)" }
+    timeout { fail "$test (timeout)" }
+}
+
+set test "shell command"
+scanmem_start
+
+    set subtest "simple command"
+    send "shell echo xyzzy\n"
+    expect {
+        -re "xyzzy.*$prompt$" { pass "$test ($subtest)" }
+    }
+
+    set subtest "no arguments"
+    send "shell\n"
+    expect { 
+        -re "error:.*$prompt$" { pass "$test ($subtest)" } 
+    }
+
+    set subtest "unknown command"
+    send "shell __no_such_command__\n"
+    expect {
+        -re ".*: __no_such_command__: command not found.*$prompt$" { 
+            pass "$test ($subtest)" 
+        } 
+    }
+
+scanmem_exit
