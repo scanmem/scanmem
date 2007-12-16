@@ -1,0 +1,23 @@
+# check the version command functions
+
+expect_after {
+    -re "\[^\n\r\]*$prompt$" { fail "$test (bad match)" }
+    timeout { fail "$test (timeout)" }
+}
+
+set test "version command"
+scanmem_start
+
+    set subtest "correct version"
+    send "version\n"
+    expect { 
+        -re "scanmem version $version, .*$prompt$" { pass "$test ($subtest)" } 
+    }
+
+    set subtest "unexpected arguments"
+    send "version xyzzy\n"
+    expect {
+        -re "scanmem version $version, .*$prompt$" { pass "$test ($subtest)" } 
+    }
+
+scanmem_exit
