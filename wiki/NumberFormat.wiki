@@ -1,0 +1,21 @@
+#summary Number encodings that scanmem should support
+#labels Phase-Design
+
+= Introduction =
+
+Most applications store numbers in whatever the native integer or floating point format is, but there are various other encoding schemes in use. The actual encoding of the numbers should be abstracted out so that scanmem can support an arbitrary number of schemes.
+
+This is a list of schemes that scanmem should eventually support.
+
+= Details =
+
+  * Native Twos Complement Integers
+  * IEEE 754 Single and Double precision floating point numbers
+  * [http://en.wikipedia.org/wiki/Binary-coded_decimal Binary Coded Decimal] (Native on Intel), Various packed encodings exist.
+  * [http://www.half-serious.com/swf/format/basic-types/ Macromedia Flash SWF Encodings]
+  * Strings, ASCII/UTF8/etc Encodings.
+  * LEB128
+
+= See Also =
+
+NumberAlignment, NumberWidth, NumberByteOrder, ZeroOneBasedCounting, SignedVsUnsigned
