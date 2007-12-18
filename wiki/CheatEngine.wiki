@@ -1,0 +1,11 @@
+#summary Analysis of Cheat Engine, a popular pokefinder for Windows.
+#labels Phase-Design
+
+= Introduction =
+
+Cheat Engine is an impressive and powerful pokefinder available for Microsoft Windows, while some of it's features are beyond the scope of scanmem, many others could make great additions. This page will list the features offered by Cheat Engine and how they could apply to scanmem.
+
+
+= Details =
+
+  * blah, blah, blah.
