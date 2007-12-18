@@ -1,0 +1,61 @@
+#summary Introduction to using scanmem
+#labels Featured
+
+You can use scanmem to cheat at nethack (on systems where nethack is not installed sgid), here is an example session finding and setting my gold to an arbitrary value.
+
+{{{
+$ scanmem --pid `pidof nethack`
+info: attaching to pid 17907.
+info: maps file located at /proc/17907/maps opened.
+info: 17 suitable regions found.
+Please enter current value, or "help" for other commands.
+0> 
+}}}
+
+The 0 in the scanmem prompt indicates there are no known matches, so I enter my current gold level (12 pieces) and ask it to search for possible matches.
+
+{{{
+0> 12
+info: searching 0xbfff9000 - 0xc0000000...........ok
+info: searching 0x401c2000 - 0x401e3000...........ok
+info: searching 0x401c1000 - 0x401c2000...........ok
+info: searching 0x401b6000 - 0x401b8000...........ok
+info: searching 0x401b5000 - 0x401b6000...........ok
+info: searching 0x40189000 - 0x4018a000...........ok
+info: searching 0x40188000 - 0x40189000...........ok
+info: searching 0x40181000 - 0x40183000...........ok
+info: searching 0x4017f000 - 0x40181000...........ok
+info: searching 0x40070000 - 0x40071000...........ok
+info: searching 0x40068000 - 0x40070000...........ok
+info: searching 0x40030000 - 0x40031000...........ok
+info: searching 0x40029000 - 0x4002a000...........ok
+info: searching 0x4001f000 - 0x40020000...........ok
+info: searching 0x40016000 - 0x40017000...........ok
+info: searching 0x081d4000 - 0x0820a000...........ok
+info: searching 0x081b7000 - 0x081d4000...........ok
+info: we currently have 38 matches.
+38> 
+}}}
+
+There are 38 possible matches, I wait until my gold level changes and enter the new value (15 pieces)
+
+{{{
+38> 15
+info: we currently have 1 matches.
+info: match identified, use "set" to modify value.
+info: enter "help" for other commands.
+1> list
+[00] 0x081d6d88 {        15} (unassociated, typically .bss)
+1> set 10000
+info: setting *0x081d6d88 to 10000...
+1>
+}}}
+
+Excellent, only one possible match. I use the set command to set it to 10,000. The resulting nethack screen is below.
+
+{{{
+Taviso the Digger          St:17 Dx:9 Co:15 In:14 Wi:13 Ch:9  Lawful
+Dlvl:1  $:10000 HP:7(15) Pw:1(1) AC:9  Exp:1 Burdened
+}}}
+
+scanmem is distributed with a man page that describes all of the commands.
