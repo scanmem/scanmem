@@ -394,7 +394,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
         fprintf(stderr,
                 "error: sorry, there was a problem getting a list of regions to search.\n");
         fprintf(stderr,
-                "warn: the pid may be invalid, or you dont have permission.\n");
+                "warn: the pid may be invalid, or you don't have permission.\n");
         vars->target = 0;
         return false;
     }
