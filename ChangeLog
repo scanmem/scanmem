@@ -1,6 +1,7 @@
 xxxx-xx-xx Tavis Ormandy <taviso@sdf.lonestar.org>
     * fixed infinite loop if a command was just leading whitespace.
     * add message to configure script about `libreadline-dev` package.
+    * correct some typos reported by debian.
 
 2007-06-07 Tavis Ormandy <taviso@sdf.lonestar.org>
     * make license clearer, added gpl notice to all source files, and added a show command.

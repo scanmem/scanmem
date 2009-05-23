@@ -91,7 +91,7 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc);
 #define SNAPSHOT_SHRTDOC "take a snapshot of the current process state"
 #define SNAPSHOT_LONGDOC "usage: snapshot\n" \
                 "Take a snapshot of the entire process in its current state, this is useful\n" \
-                "If you dont know the exact value of the variable you are searching for, but\n" \
+                "If you don't know the exact value of the variable you are searching for, but\n" \
                 "can describe it in terms of higher, lower or equal (see commands `>`,`<` and\n" \
                 "`=`).\n\n" \
                 "NOTE: this can use a lot of memory with large processes."
