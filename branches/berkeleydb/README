@@ -1,0 +1,28 @@
+$Id: README,v 1.5 2007-06-05 19:58:02+01 taviso Exp $
+
+Scanmem
+============
+
+scanmem is a debugging utility designed to isolate the address of an arbitrary
+variable in an executing process. scanmem simply needs to be told the pid of
+the process, and the value of the variable at several different times.
+
+After several scans of the process, scanmem isolates the position of the
+variable and allows you to modify it's value.
+
+Requirements
+============
+
+scanmem requires libreadline to read commands interactively, and /proc must be
+mounted.
+
+Known Issues
+============
+
+* some hardened systems have unusable maps files, where all entries are zeroed.
+* the snapshot command uses too much memory on large processes.
+* performance is currently very poor.
+
+
+Author: Tavis Ormandy <taviso@sdf.lonestar.org>
+License: GPL
