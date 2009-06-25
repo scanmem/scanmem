@@ -3,8 +3,6 @@ Next Version
 * some sort of regression testing, probably using dejagnu.
     - test target that mmaps testfile, then dregions the rest using dejagnu
     - then can test searching using tests.
-* design a more efficient format for snapshot.
-* inefficient use of memory, lots of matches uses way too much memory, fix this.
 * automatically support zero and one based values.
 * add inverted matches for set and delete, eg
     - delete !13  - delete all matches except 13

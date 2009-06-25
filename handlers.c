@@ -87,8 +87,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* check if there are any matches */
-    if (vars->matches->size == 0) {
-        fprintf(stderr, "error: no matches are known yet.\n");
+    if (vars->num_matches == 0) {
+        fprintf(stderr, "error: no matches are known.\n");
         return false;
     }
 
@@ -170,16 +170,11 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     /* --- execute the parsed setting structs --- */
 
     while (true) {
-        unsigned i;
         value_t val;
         char *end = NULL;
-        element_t *np = vars->matches->head;
 
         /* for every settings struct */
         for (block = 0; block < argc - 1; block++) {
-
-            /* reset linked list ptr */
-            np = vars->matches->head;
 
             /* check if this block has anything to do this iteration */
             if (seconds != 1) {
@@ -215,7 +210,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
                 /* now seperate each match, spearated by commas */
                 while ((id = strtok(lmatches, ",")) != NULL) {
-                    match_t *match;
+                    match_location loc;
 
                     /* set to NULL for strtok() */
                     lmatches = NULL;
@@ -231,26 +226,24 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     }
 
                     /* check this is a valid match-id */
-                    if (num < vars->matches->size) {
+                    loc = nth_match(vars->matches, num);
+                    if (loc.swath) {
                         value_t v;
+                        value_t old;
+                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
 
-                        /*lint -e722 semi-colon intended, skip to correct node */
-                        for (i = 0, np = vars->matches->head; i < num;
-                             i++, np = np->next);
-
-                        match = np->data;
-
-                        fprintf(stderr, "info: setting *%p to %#x...\n",
-                                match->address, val.value.tuint);
+                        fprintf(stderr, "info: setting *%p to %#lx...\n",
+                                address, val.value.tulongsize);
 
                         /* copy val onto v */
                         valcpy(&v, &val);
 
                         /* XXX: valcmp? make sure the sizes match */
-                        truncval(&v, &match->lvalue);
+                        old = data_to_val((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+                        truncval(&v, &old);
 
                         /* set the value specified */
-                        if (setaddr(vars->target, match->address, &v) == false) {
+                        if (setaddr(vars->target, address, &v) == false) {
                             fprintf(stderr, "error: failed to set a value.\n");
                             goto fail;
                         }
@@ -263,24 +256,39 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     }
                 }
             } else {
+                
+                matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+                int reading_iterator = 0;
 
                 /* user wants to set all matches */
-                while (np) {
-                    match_t *match = np->data;
+                while (reading_swath_index->first_byte_in_child) {
 
-                    /* XXX: as above : make sure the sizes match */
-                    truncval(&val, &match->lvalue);
+                    /* Only actual matches are considered */
+                    if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
+                    {
+                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
 
-                    fprintf(stderr, "info: setting *%p to %#x...\n",
-                            match->address, val.value.tuint);
+                        /* XXX: as above : make sure the sizes match */
+                        value_t old = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
+                        truncval(&val, &old);
+
+                        fprintf(stderr, "info: setting *%p to %#lx...\n",
+                                address, val.value.tulongsize);
 
 
-                    if (setaddr(vars->target, match->address, &val) == false) {
-                        fprintf(stderr, "error: failed to set a value.\n");
-                        goto fail;
+                        if (setaddr(vars->target, address, &val) == false) {
+                            fprintf(stderr, "error: failed to set a value.\n");
+                            goto fail;
+                        }
                     }
-
-                    np = np->next;
+                     
+                     /* Go on to the next one... */
+                    ++reading_iterator;
+                    if (reading_iterator >= reading_swath_index->number_of_bytes)
+                    {
+                        reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES);
+                        reading_iterator = 0;
+                    }
                 }
             }                   /* if (matchid != NULL) else ... */
         }                       /* for(block) */
@@ -312,32 +320,47 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     USEPARAMS();
 
-    element_t *np = vars->matches->head;
+    matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    int reading_iterator = 0;
 
     /* list all known matches */
-    while (np) {
-        char v[32];
-        match_t *match = np->data;
+    while (reading_swath_index->first_byte_in_child) {
+        char v[80];
+        match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
-        if (valtostr(&match->lvalue, v, sizeof(v)) != true) {
-            strncpy(v, "unknown", sizeof(v));
+        /* Only actual matches are considered */
+        if (flags_to_max_width_in_bytes(flags) > 0)
+        {
+            value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
+            truncval_to_flags(&val, flags);
+            
+            if (valtostr(&val, v, sizeof(v)) != true) {
+                strncpy(v, "unknown", sizeof(v));
+            }
+
+            fprintf(stdout, "[%2u] %10p, %s, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v,
+                "(a region would be given here)");
         }
-
-        fprintf(stdout, "[%2u] %10p, %s, %s\n", i++, match->address, v,
-                match->region->filename[0] ? match->region->filename : "unassociated, typically .bss");
-        np = np->next;
+	
+        /* Go on to the next one... */
+        ++reading_iterator;
+        if (reading_iterator >= reading_swath_index->number_of_bytes)
+        {
+            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES)))->number_of_bytes >= 0);
+            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES);
+            reading_iterator = 0;
+        }
     }
 
     return true;
 }
 
-/* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6
-   rememvber to check the id-s work correctly, and deleteing one doesnt fux it up.
-*/
+/* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned id;
     char *end = NULL;
+    match_location loc;
 
     if (argc != 2) {
         fprintf(stderr,
@@ -354,17 +377,23 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
                 argv[1]);
         return false;
     }
+    
+    loc = nth_match(vars->matches, id);
+    
+    if (loc.swath)
+    {
+        /* It is not convenient to check whether anything else relies on this, so just mark it as not a REAL match */
+        loc.swath->data[loc.index].match_info = (match_flags){0};
+        return true;
+    }
+    else
+    {
 
-    /* check this is a valid match-id */
-    if (id >= vars->matches->size) {
+        /* I guess this is not a valid match-id */
         fprintf(stderr, "warn: you specified a non-existant match `%u`.\n", id);
         fprintf(stderr, "info: use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }
-
-    l_remove_nth(vars->matches, id - 1, NULL);
-
-    return true;
 }
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
@@ -372,12 +401,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 
     USEPARAMS();
 
-    l_destroy(vars->matches);
-
-    if ((vars->matches = l_init()) == NULL) {
-        fprintf(stderr, "error: sorry, there was a memory allocation error.\n");
-        return false;
-    }
+    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
     /* refresh list of regions */
     l_destroy(vars->regions);
@@ -433,7 +457,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     value_t v;
     
     /* unused */
-    v.value.tslong = -1;
+    memset(&v, 0x00, sizeof(v));
 
     /* check that a pid has been specified */
     if (vars->target == 0) {
@@ -442,15 +466,9 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* remove any existing matches */
-    l_destroy(vars->matches);
+    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
-    /* allocate new matches list */
-    if ((vars->matches = l_init()) == NULL) {
-        fprintf(stderr, "error: sorry, there was a memory allocation error.\n");
-        return false;
-    }
-
-    if (searchregions(vars->matches, vars->regions, vars->target, v, true) != true) {
+    if (searchregions(vars, v, true) != true) {
         fprintf(stderr, "error: failed to save target address space.\n");
         return false;
     }
@@ -464,7 +482,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
     unsigned id;
     bool invert = false;
     char *end = NULL, *idstr = NULL, *block = NULL;
-    element_t *np, *t, *p, *pp;
+    element_t *np, *p, *pp;
     list_t *keep = NULL;
     region_t *save;
 
@@ -530,7 +548,6 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         
         /* initialise list pointers */
         np = vars->regions->head;
-        t = vars->matches->head;
         p = pp = NULL;
         
         /* find the correct region node */
@@ -578,8 +595,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         }
         
         /* check for any affected matches before removing it */
-        while (t) {
-            match_t *match = t->data;
+        {
             region_t *s;
 
             /* determine the correct pointer we're supposed to be checking */
@@ -590,17 +606,10 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
                 /* head of list */
                 s = vars->regions->head->data;
             }
-
-            /* check if this one should go */
-            if (match->region == s) {
-                /* remove this match */
-                l_remove(vars->matches, p, NULL);
-
-                /* move to next element */
-                t = p ? p->next : vars->matches->head;
-            } else {
-                p = t;
-                t = t->next;
+            
+            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, false)))
+            {
+                fprintf(stderr, "error: memory allocation error while deleting matches\n");
             }
         }
 
@@ -608,30 +617,11 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
     }
 
     if (invert) {
-        element_t *nrp = vars->regions->head, *pmp, *nmp;
-
-        while(nrp) {
-            region_t *region = nrp->data;
-            
-            nmp = vars->matches->head;
-            pmp = NULL;
-            
-            while (nmp) {
-                match_t *match = nmp->data;
-
-             	 /* check if this one should go */
-                if (match->region->id == region->id) {
-					     /* remove this match */
-                    l_remove(vars->matches, pmp, NULL); 
-                   
-                    nmp = pmp ? pmp->next : vars->matches->head;
-                } else {
-                    pmp = nmp;
-                    nmp = nmp->next;
-                }
-            }
-            
-            nrp = nrp->next;
+        region_t *s = keep->head->data;
+        
+        if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
+        {
+            fprintf(stderr, "error: memory allocation error while deleting matches\n");
         }
         
         /* okay, done with the regions list */
@@ -663,8 +653,8 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#10x, %7u bytes, %c%c%c, %s\n",
-                region->id, region->start, region->size,
+        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %c%c%c, %s\n",
+                region->id, (unsigned long)region->start, region->size,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',
@@ -701,8 +691,8 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* the last seen value is still there */
-    if (vars->matches->size) {
-        if (checkmatches(vars->matches, vars->target, val, m) == false) {
+    if (vars->matches) {
+        if (checkmatches(vars, val, m) == false) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
@@ -711,7 +701,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    if (vars->matches->size == 1) {
+    if (vars->num_matches == 1) {
         fprintf(stderr,
                 "info: match identified, use \"set\" to modify value.\n");
         fprintf(stderr, "info: enter \"help\" for other commands.\n");
@@ -752,25 +742,44 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* user has specified an exact value of the variable to find */
-    if (vars->matches->size) {
+    if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars->matches, vars->target, val, MATCHEXACT) != true) {
+        if (checkmatches(vars, val, MATCHEXACT) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
     } else {
         /* initial search */
-        if (searchregions(vars->matches, vars->regions, vars->target, val, false) != true) {
+        if (searchregions(vars, val, false) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
     }
 
     /* check if we now know the only possible candidate */
-    if (vars->matches->size == 1) {
+    if (vars->num_matches == 1) {
         fprintf(stderr,
                 "info: match identified, use \"set\" to modify value.\n");
         fprintf(stderr, "info: enter \"help\" for other commands.\n");
+    }
+
+    return true;
+}
+
+bool handler__update(globals_t * vars, char **argv, unsigned argc)
+{
+    value_t val;
+
+    USEPARAMS();
+    memset(&val, 0x00, sizeof(val));
+    if (vars->matches) {
+        if (checkmatches(vars, val, MATCHANY) == false) {
+            fprintf(stderr, "error: failed to scan target address space.\n");
+            return false;
+        }
+    } else {
+        fprintf(stderr, "error: cannot use that command without matches\n");
+        return false;
     }
 
     return true;
@@ -900,11 +909,12 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 {
     value_t o, n;
-    unsigned i, id;
-    element_t *np = vars->matches->head;
-    match_t *match;
+    unsigned id;
     char *end = NULL, buf[64], timestamp[64];
     time_t t;
+    match_location loc;
+    value_t old_val;
+    void *address;
 
     if (argc != 2) {
         fprintf(stderr,
@@ -921,27 +931,22 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
                 argv[1]);
         return false;
     }
+    
+    loc = nth_match(vars->matches, id);
 
     /* check this is a valid match-id */
-    if (id >= vars->matches->size) {
+    if (!loc.swath) {
         fprintf(stderr, "error: you specified a non-existant match `%u`.\n",
                 id);
         fprintf(stderr,
                 "info: use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }
-
-    /*lint -e722 skip to the correct node, semi-colon intended */
-    for (i = 0; np && i < id; i++, np = np->next);
-
-    if (np == NULL) {
-        fprintf(stderr, "error: couldnt locate match `%u`.\n", id);
-        return false;
-    }
-
-    match = np->data;
-
-    valcpy(&o, &match->lvalue);
+    
+    address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+    
+    old_val = data_to_val((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+    valcpy(&o, &old_val);
     valcpy(&n, &o);
 
     if (valtostr(&o, buf, sizeof(buf)) == false) {
@@ -960,25 +965,25 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     fprintf(stdout,
             "info: %s monitoring %10p for changes until interrupted...\n",
-            timestamp, match->address);
+            timestamp, address);
 
     while (true) {
 
         if (attach(vars->target) == false)
             return false;
 
-        if (peekdata(vars->target, match->address, &n) == false)
+        if (peekdata(vars->target, address, &n) == false)
             return false;
 
         detach(vars->target);
 
-        truncval(&n, &match->lvalue);
+        truncval(&n, &old_val);
 
         /* check if the new value is different */
         if (valuecmp(&o, MATCHNOTEQUAL, &n, NULL)) {
 
             valcpy(&o, &n);
-            truncval(&o, &match->lvalue);
+            truncval(&o, &old_val);
 
             if (valtostr(&o, buf, sizeof(buf)) == false) {
                 strncpy(buf, "unknown", sizeof(buf));
@@ -988,7 +993,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
             t = time(NULL);
             strftime(timestamp, sizeof(timestamp), "[%T]", localtime(&t));
 
-            fprintf(stdout, "info: %s %10p -> %s\n", timestamp, match->address,
+            fprintf(stdout, "info: %s %10p -> %s\n", timestamp, address,
                     buf);
         }
 

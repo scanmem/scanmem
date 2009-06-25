@@ -21,10 +21,12 @@
 #ifndef _MAPS_INC
 #define _MAPS_INC            /* include guard */
 
+#include "list.h"
+
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {
-    unsigned start;             /* start address */
-    unsigned size;              /* size */
+    void *start;             /* start address. Hack: If HAVE_PROCMEM, this is actually an (unsigned long) offset into /proc/{pid}/mem */
+    unsigned long size;              /* size */
     struct __attribute__((packed)) {
         unsigned read:1;
         unsigned write:1;

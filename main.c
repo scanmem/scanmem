@@ -41,6 +41,7 @@ globals_t globals = {
     0,                          /* exit flag */
     0,                          /* pid target */
     NULL,                       /* matches */
+    0,                          /* match count */
     NULL,                       /* regions */
     NULL,                       /* commands */
     /* options */
@@ -144,6 +145,8 @@ int main(int argc, char **argv)
                     DEC_LONGDOC);
     registercommand(">", handler__decinc, vars->commands, INC_SHRTDOC,
                     INC_LONGDOC);
+    registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
+                    UPDATE_LONGDOC);
     registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,
                     EXIT_LONGDOC);
     registercommand("quit", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
@@ -209,7 +212,6 @@ int main(int argc, char **argv)
 
     /* now free any allocated memory used */
     l_destroy(vars->regions);
-    l_destroy(vars->matches);
     l_destroy(vars->commands);
 
     /* attempt to detach just in case */
