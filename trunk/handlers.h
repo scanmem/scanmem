@@ -161,6 +161,15 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__default(globals_t * vars, char **argv, unsigned argc);
 
+#define UPDATE_SHRTDOC "update match values without culling list"
+#define UPDATE_LONGDOC "usage: update\n" \
+                "Scans the current process, getting the current values of all matches.\n" \
+                "These values can be viewed with `list`, and are also the old values that\n" \
+                "scanmem compares to when using `>`, `<`, or `=`. This command is equivalent\n" \
+                "to a search command that all current results match.\n"
+
+bool handler__update(globals_t * vars, char **argv, unsigned argc);
+
 bool handler__eof(globals_t * vars, char **argv, unsigned argc);
 
 #define SHELL_SHRTDOC "execute a shell command without leaving scanmem"

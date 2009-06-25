@@ -13,6 +13,7 @@
 #include "list.h"
 #include "value.h"
 #include "maps.h"
+#include "target_memory_info_array.h"
 
 /*lint +libh(config.h) */
 
@@ -60,7 +61,8 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset);
 typedef struct {
     unsigned exit:1;
     pid_t target;
-    list_t *matches;
+    matches_and_old_values_array *matches;
+    long num_matches;
     list_t *regions;
     list_t *commands;
     struct {
@@ -70,22 +72,23 @@ typedef struct {
 } globals_t;
 
 /* this structure represents one known match, its address and type. */
+#if 0
 typedef struct {
     void *address;              /* address of variable */
     region_t *region;           /* region it belongs to */
     value_t lvalue;             /* last seen value */
     unsigned matchid;           /* unique identifier */
 } match_t;
-
+#endif
 
 /* global settings */
 extern globals_t globals;
 
 bool detach(pid_t target);
 bool setaddr(pid_t target, void *addr, const value_t * to);
-bool checkmatches(list_t * matches, pid_t target, value_t value,
-                  matchtype_t type);
-bool searchregions(list_t * matches, const list_t * regions, pid_t target,
+bool checkmatches(globals_t * vars, value_t value,
+		  matchtype_t type);
+bool searchregions(globals_t * vars,
                 value_t value, bool snapshot);
 bool peekdata(pid_t pid, void *addr, value_t * result);
 bool attach(pid_t target);
