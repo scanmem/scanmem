@@ -20,34 +20,6 @@ typedef enum {
     MATCHANY
 } matchtype_t;
 
-/* This union trick only works on little-endian systems. It no longer needs to be size-efficient, so it could be made into a struct, but it is not the only thing that would need to be worked out to make scanmem work without on a different-endianness system. */
-typedef union {
-    uint8_t  tu8b ;
-    int8_t   ts8b ;
-    uint16_t tu16b;
-    int16_t  ts16b;
-    uint32_t tu32b;
-    int32_t  ts32b;
-    uint64_t tu64b;
-    int64_t  ts64b;
-                                /* const */ float tf32b;
-                                /* READ ONLY */
-                                /* const */ double tf64b;
-                                /* READ ONLY */
-
-    /* A few places in the code need to rely on the implementation type specifics. These are for those places. */
-    unsigned char  tucharsize;
-      signed char  tscharsize;
-    unsigned short tushortsize;
-      signed short tsshortsize;
-    unsigned int   tuintsize;
-      signed int   tsintsize;
-    unsigned long  tulongsize;
-      signed long  tslongsize;
-    unsigned long long tulonglongsize;
-      signed long long tslonglongsize;
-} __attribute__ ((deprecated)) types_t;
-
 typedef struct __attribute__ ((packed)) {
 	unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
 	unsigned u16b:1;        /* could be an unsigned 16-bit variable (e.g. unsigned short)     */
