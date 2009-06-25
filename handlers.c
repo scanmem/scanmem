@@ -196,7 +196,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         settings[block].value);
                 goto fail;
             } else if (*settings[block].value == '\0') {
-                fprintf(stderr, "error: you didnt specify a value.\n");
+                fprintf(stderr, "error: you didn't specify a value.\n");
                 goto fail;
             }
 
@@ -232,8 +232,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t old;
                         void *address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
 
-                        fprintf(stderr, "info: setting *%p to %#lx...\n",
-                                address, val.value.tulongsize);
+                        fprintf(stderr, "info: setting *%p to %#llx...\n",
+                                address, (long long)val.int_value);
 
                         /* copy val onto v */
                         valcpy(&v, &val);
@@ -272,8 +272,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t old = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
                         truncval(&val, &old);
 
-                        fprintf(stderr, "info: setting *%p to %#lx...\n",
-                                address, val.value.tulongsize);
+                        fprintf(stderr, "info: setting *%p to %#llx...\n",
+				address, (long long)val.int_value);
 
 
                         if (setaddr(vars->target, address, &val) == false) {
@@ -338,8 +338,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 strncpy(v, "unknown", sizeof(v));
             }
 
-            fprintf(stdout, "[%2u] %10p, %s, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v,
-                "(a region would be given here)");
+            fprintf(stdout, "[%2u] %10p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v);
         }
 	
         /* Go on to the next one... */

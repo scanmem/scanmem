@@ -46,7 +46,7 @@ typedef union {
       signed long  tslongsize;
     unsigned long long tulonglongsize;
       signed long long tslonglongsize;
-} types_t;
+} __attribute__ ((deprecated)) types_t;
 
 typedef struct __attribute__ ((packed)) {
 	unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
@@ -65,7 +65,16 @@ typedef struct __attribute__ ((packed)) {
 } match_flags;
 
 typedef struct {
-    types_t value;
+    int64_t int_value;
+    double double_value;
+    float float_value;
+    
+    enum { UNDEFINED, BY_POINTER_SHIFTING, BY_BIT_MATH } how_to_calculate_values;  /* This is the most confusing field in the value_t struct.
+      You see, some value_t structs represent data gathered from the target process's memory, so their values
+      for different variables sizes are calculated by pointer shifting, but others are given as strings
+      by the user, so their different values must be calculated by bit math, to keep them consistent. This is the same thing on
+      little-endian systems, but not on big-endian systems. XXX XXX - provide an example of the difference */
+    
     match_flags flags;
 } value_t;
 
@@ -79,6 +88,26 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
 void valnowidth(value_t * val);
 int flags_to_max_width_in_bytes(match_flags flags);
 int val_max_width_in_bytes(value_t *val);
-unsigned char val_byte(value_t *val, int which);
+
+#define DECLARE_GET_SET_FUNCTIONS(bits) \
+    int##bits##_t get_s##bits##b(value_t const* val); \
+    void set_s##bits##b(value_t *val, int##bits##_t data); \
+    uint##bits##_t get_u##bits##b(value_t const* val); \
+    void set_u##bits##b(value_t *val, uint##bits##_t data)
+
+DECLARE_GET_SET_FUNCTIONS(8);
+DECLARE_GET_SET_FUNCTIONS(16);
+DECLARE_GET_SET_FUNCTIONS(32);
+DECLARE_GET_SET_FUNCTIONS(64);
+
+#define DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(type, typename) \
+unsigned type get_u##typename (value_t const* val); \
+  signed type get_s##typename (value_t const* val)
+
+DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(char, char);
+DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
+DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
+DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
+DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
 
 #endif
