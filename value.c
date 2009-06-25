@@ -42,10 +42,10 @@ bool valtostr(const value_t * val, char *str, size_t n)
     
     /* set the flags */
     snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s- ",
-             FLAG_MACRO(64, "64"),
-             FLAG_MACRO(32, "32"),
-             FLAG_MACRO(16, "16"),
-             FLAG_MACRO(8,  "8"),
+             FLAG_MACRO(64, "64b"),
+             FLAG_MACRO(32, "32b"),
+             FLAG_MACRO(16, "16b"),
+             FLAG_MACRO(8,  "8b"),
              val->flags.f64b ? "D " : "",
              val->flags.f32b ? "F " : "",
              (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
@@ -60,15 +60,15 @@ bool valtostr(const value_t * val, char *str, size_t n)
     else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
     
     /* find the right format, considering different integer size implementations */
-         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%s%llu" : "%s%lld", buf, print_as_unsigned ? val->value.tulonglongsize : val->value.tslonglongsize);
-    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%s%lu"  : "%s%ld" , buf, print_as_unsigned ? val->value.tulongsize : val->value.tslongsize);
-    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%s%u"   : "%s%d"  , buf, print_as_unsigned ? val->value.tuintsize : val->value.tsintsize);
-    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%s%hu"  : "%s%hd" , buf, print_as_unsigned ? val->value.tushortsize : val->value.tsshortsize);
-    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%s%hhu" : "%s%hhd", buf, print_as_unsigned ? val->value.tucharsize : val->value.tscharsize);
-    else if (val->flags.f64b) snprintf(str, n, "%s%ld", buf, (signed long int) val->value.tf64b);
-    else if (val->flags.f32b) snprintf(str, n, "%s%ld", buf, (signed long int) val->value.tf32b);
+         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%s%llu" : "%s%lld", buf, print_as_unsigned ? get_ulonglong(val) : get_slonglong(val));
+    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%s%lu"  : "%s%ld" , buf, print_as_unsigned ? get_ulong(val) : get_slong(val));
+    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%s%u"   : "%s%d"  , buf, print_as_unsigned ? get_uint(val) : get_sint(val));
+    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%s%hu"  : "%s%hd" , buf, print_as_unsigned ? get_ushort(val) : get_sshort(val));
+    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%s%hhu" : "%s%hhd", buf, print_as_unsigned ? get_uchar(val) : get_schar(val));
+    else if (val->flags.f64b) snprintf(str, n, "%s%ld", buf, (signed long int) val->double_value);
+    else if (val->flags.f32b) snprintf(str, n, "%s%ld", buf, (signed long int) val->float_value);
     else {
-        snprintf(str, n, "%s%#lx?", buf, val->value.tulongsize);
+        snprintf(str, n, "%s%#llx?", buf, get_slonglong(val));
         return false;
     }
 
@@ -157,16 +157,21 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
     if (          (true) &&          (true)) val->flags.s64b = 1;
 
     /* finally insert the number */
-    val->value.ts64b = num;
+    val->int_value = num;
+    
+    /* values from strings are always done by bit math */
+    val->how_to_calculate_values = BY_BIT_MATH;
+    
+    /* XXX - user cannot specify float values */
 
     return;
 
 }
 
-#define valuegt(a,b,x,y) (((a)->flags.x && (b)->flags.x) && ((a)->value.y > (b)->value.y))
-#define valuelt(a,b,x,y) (((a)->flags.x && (b)->flags.x) && ((a)->value.y < (b)->value.y))
-#define valueequal(a,b,x,y) (((a)->flags.x && (b)->flags.x) && ((a)->value.y == (b)->value.y))
-#define valuecopy(a,b,x,y) (((a)->value.y = (b)->value.y), ((a)->flags.x = 1))
+#define valuegt(a,b,x)    (((a)->flags.x && (b)->flags.x) && (get_##x(a)  > get_##x(b)))
+#define valuelt(a,b,x)    (((a)->flags.x && (b)->flags.x) && (get_##x(a)  < get_##x(b)))
+#define valueequal(a,b,x) (((a)->flags.x && (b)->flags.x) && (get_##x(a) == get_##x(b)))
+#define valuecopy(a,b,x) ((set_##x(a, get_##x(b))), ((a)->flags.x = 1))
 
 /* eg: valuecmp(v1, (is) GREATERTHAN, v2), best match is put into save */
 bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
@@ -179,6 +184,7 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
     assert(v2 != NULL);
 
     memset(v, 0x00, sizeof(value_t));
+    v->how_to_calculate_values = v1->how_to_calculate_values;
 
     switch (operator) {
     case MATCHANY:
@@ -187,8 +193,8 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
     case MATCHEQUAL:
     case MATCHEXACT:
 #define MATCH_MACRO_3(comp, signedness, bytes) \
-        if (value##comp(v1, v2, signedness##bytes##b, t##signedness##bytes##b)) { \
-            valuecopy(v, v1, signedness##bytes##b, t##signedness##bytes##b); \
+        if (value##comp(v1, v2, signedness##bytes##b)) { \
+            valuecopy(v, v1, signedness##bytes##b); \
             ret = true; \
         }
 #define MATCH_MACRO_2(comp, bytes) MATCH_MACRO_3(comp, u, bytes) MATCH_MACRO_3(comp, s, bytes)
@@ -204,25 +210,24 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
         MATCH_MACRO(lt);
 
         /* could be a float */
-        /*if (v1->flags.f32b & v2->flags.f32b) {
-            if (v1->value.tfloat - v2->value.tfloat < 0) {
-                v->flags.f32b = 1;
-                ret = true;
-            }
-        }*/
+#define MATCH_FLOAT_MACRO_2(which_way, type_flag, type_value) \
+        if (v1->flags.type_flag & v2->flags.type_flag) { \
+            if (v1->type_value - v2->type_value which_way 0) { \
+                v->flags.type_flag = 1; \
+                v->type_value = v1->type_value; \
+                ret = true; \
+            } \
+        }
+#define MATCH_FLOAT_MACRO(which_way) MATCH_FLOAT_MACRO_2(which_way, f64b, double_value) MATCH_FLOAT_MACRO_2(which_way, f32b, float_value)
+        
+        MATCH_FLOAT_MACRO(<);
 
         if (operator == MATCHLESSTHAN) break;
     case MATCHGREATERTHAN:
     
         MATCH_MACRO(gt);
 
-        /* could be a float */
-        /*if (v1->flags.f32b & v2->flags.f32b) {
-            if (v1->value.tfloat - v2->value.tfloat > 0) {
-                v->flags.f32b = 1;
-                ret = true;
-            }
-        }*/
+        MATCH_FLOAT_MACRO(>);
 
         break;
     }
@@ -296,7 +301,83 @@ int val_max_width_in_bytes(value_t *val)
 	return flags_to_max_width_in_bytes(val->flags);
 }
 
-unsigned char val_byte(value_t *val, int which)
-{
-	return *(((unsigned char *)(&val->value)) + which);
+#define DEFINE_GET_SET_FUNCTIONS(inttype, signedness_letter, bits) \
+inttype get_##signedness_letter##bits##b(value_t const* val) \
+{ \
+	switch (val->how_to_calculate_values) \
+	{ \
+		case BY_POINTER_SHIFTING: return *((inttype *)&val->int_value); \
+		case BY_BIT_MATH:         return (val->int_value & ((1LL << bits) - 1)); \
+		default: assert(false); \
+	} \
+} \
+ \
+void set_##signedness_letter##bits##b(value_t *val, inttype data) \
+{ \
+	switch (val->how_to_calculate_values) \
+	{ \
+		case BY_POINTER_SHIFTING: \
+			*((inttype *)&val->int_value) = data; \
+			break; \
+		case BY_BIT_MATH: \
+			val->int_value = (val->int_value & ~((1LL << bits) - 1)) + data; \
+			break; \
+		default: assert(false); \
+	} \
 }
+
+DEFINE_GET_SET_FUNCTIONS(uint8_t, u, 8)
+DEFINE_GET_SET_FUNCTIONS(int8_t, s, 8)
+DEFINE_GET_SET_FUNCTIONS(uint16_t, u, 16)
+DEFINE_GET_SET_FUNCTIONS(int16_t, s, 16)
+DEFINE_GET_SET_FUNCTIONS(uint32_t, u, 32)
+DEFINE_GET_SET_FUNCTIONS(int32_t, s, 32)
+
+int64_t get_s64b(value_t const* val) { return val->int_value; }
+void set_s64b(value_t *val, int64_t data) { val->int_value = data; }
+
+uint64_t get_u64b(value_t const* val)
+{
+	switch (val->how_to_calculate_values)
+	{
+		case BY_POINTER_SHIFTING:
+			return *((uint64_t *)&val->int_value);
+			break;
+		case BY_BIT_MATH:
+			return (uint64_t)val->int_value;
+			break;
+		default: assert(false);
+	}
+}
+void set_u64b(value_t *val, uint64_t data)
+{
+	switch (val->how_to_calculate_values)
+	{
+		case BY_POINTER_SHIFTING:
+			val->int_value = *((uint64_t *)&data);
+			break;
+		case BY_BIT_MATH:
+			val->int_value = (uint64_t)data;
+			break;
+		default: assert(false);
+	}
+}
+
+#define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(type, typename, signedness_letter) \
+type get_##signedness_letter##typename (value_t const* val) \
+{ \
+	     if (sizeof(type) <= 1) return (type)get_##signedness_letter##8b(val); \
+	else if (sizeof(type) <= 2) return (type)get_##signedness_letter##16b(val); \
+	else if (sizeof(type) <= 4) return (type)get_##signedness_letter##32b(val); \
+	else if (sizeof(type) <= 8) return (type)get_##signedness_letter##64b(val); \
+	else assert(false); \
+}
+#define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(type, typename) \
+	DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(unsigned type, typename, u) \
+	DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(signed type, typename, s)
+
+DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(char, char)
+DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short)
+DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int)
+DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long)
+DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong)

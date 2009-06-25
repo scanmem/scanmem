@@ -3,6 +3,8 @@
 #ifndef _SEOIGROIYIOOBKOB_INC
 #define _SEOIGROIYIOOBKOB_INC            /* include guard */
 
+#include <inttypes.h>
+
 #include "value.h"
 #include "maps.h"
 
@@ -12,7 +14,7 @@
  (The first_byte_in_child pointers refer to locations in the child - they cannot be followed except using ptrace())*/
 
 typedef struct {
-	unsigned char old_value;
+	uint8_t old_value;
 	match_flags match_info;
 } old_value_and_match_info;
 
@@ -23,7 +25,7 @@ typedef struct {
 typedef struct {
 	void *first_byte_in_child;
 	long number_of_bytes;
-	unsigned char copied_bytes[0];
+	uint8_t copied_bytes[0];
 } copied_data_swath;
 typedef struct {
 	void *first_byte_in_child;
