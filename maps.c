@@ -57,13 +57,13 @@ bool readmaps(pid_t target, list_t * regions)
 
     /* read every line of the maps file */
     while (getline(&line, &len, maps) != -1) {
-        unsigned start, end;
+        unsigned long start, end;
         region_t *map = NULL;
         char read, write, exec, cow, *filename;
 
         /* slight overallocation */
         if ((filename = alloca(len)) == NULL) {
-            fprintf(stderr, "error: failed to allocate %u bytes for filename.\n", len);
+            fprintf(stderr, "error: failed to allocate %lu bytes for filename.\n", (unsigned long)len);
             goto error;
         }
         
@@ -71,7 +71,7 @@ bool readmaps(pid_t target, list_t * regions)
         memset(filename, '\0', len);
 
         /* parse each line */
-        if (sscanf(line, "%x-%x %c%c%c%c %*x %*s %*u %s", &start, &end, &read,
+        if (sscanf(line, "%lx-%lx %c%c%c%c %*x %*s %*u %s", &start, &end, &read,
                 &write, &exec, &cow, filename) >= 6) {
 
             /* must have permissions to read and write, and be non-zero size */
@@ -86,8 +86,8 @@ bool readmaps(pid_t target, list_t * regions)
                 /* initialise this region */
                 map->flags.read = true;
                 map->flags.write = true;
-                map->start = start;
-                map->size = (unsigned) (end - start);
+                map->start = (void *) start;
+                map->size = (unsigned long) (end - start);
 
                 /* setup other permissions */
                 map->flags.exec = (exec == 'x');

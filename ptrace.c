@@ -127,7 +127,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         && (unsigned) (reqaddr + sizeof(long) - peekbuf.base) <=
         sizeof(long) * peekbuf.size) {
 
-        result->value.tslong = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];  /*lint !e826 */
+        result->value.tslongsize = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];  /*lint !e826 */
         return true;
     } else if (pid == peekbuf.pid && reqaddr >= peekbuf.base
                && (unsigned) (reqaddr - peekbuf.base) <
@@ -170,20 +170,18 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
                     (errno == EIO || errno == EFAULT))
                         continue;
                 /* wow, that worked */
-                result->value.tslong = l;
-                result->value.tulong >>= i * CHAR_BIT;
+                result->value.tslongsize = l;
+                result->value.tulongsize >>= i * CHAR_BIT;
                 
                 /* note: some of these are impossible */
-                if (sizeof(float) > sizeof(long) - i)
-                    result->flags.tfloat = 0;
-                if (sizeof(long) > sizeof(long) - i)
-                    result->flags.wlong = 0;
-                if (sizeof(int) > sizeof(long) - i)
-                    result->flags.wint = 0;
-                if (sizeof(short) > sizeof(long) - i)
-                    result->flags.wshort = 0;
-                if (sizeof(char) > sizeof(long) - i)
-                    result->flags.wchar = 0;
+                if (8 > sizeof(long) - i)
+                    result->flags.u64b = result->flags.s64b = result->flags.f64b = 0;
+                if (4 > sizeof(long) - i)
+                    result->flags.u32b = result->flags.s32b = result->flags.f32b = 0;
+                if (2 > sizeof(long) - i)
+                    result->flags.u16b = result->flags.s16b = 0;
+                if (1 > sizeof(long) - i)
+                    result->flags.u8b  = result->flags.s8b  = 0;
                 return true;
             }
         }
@@ -195,73 +193,130 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     peekbuf.size++;
 
     /* return result to caller */
-    result->value.tslong = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];      /*lint !e826 */
+    result->value.tslongsize = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];      /*lint !e826 */
 
     /* success */
     return true;
 }
 
-bool checkmatches(list_t * matches, pid_t target, value_t value,
+/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detatch, or reallocate memory, otherwise true.
+"value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
+bool checkmatches(globals_t * vars, value_t value,
                   matchtype_t type)
 {
-    element_t *n, *p;
-
-    assert(matches != NULL);
-    assert(matches->size);
-
-    p = NULL;
-    n = matches->head;
-
+    matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    matches_and_old_values_swath reading_swath = *reading_swath_index;
+    int reading_iterator = 0;
+    matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    writing_swath_index->first_byte_in_child = NULL;
+    writing_swath_index->number_of_bytes = 0;
+    
+    int required_extra_bytes_to_record = 0;
+    vars->num_matches = 0;
+    
     /* stop and attach to the target */
-    if (attach(target) == false)
+    if (attach(vars->target) == false)
         return false;
 
-    /* shouldnt happen */
-    if (matches->size == 0) {
-        fprintf(stderr, "warn: cant check non-existant matches.\n");
-        return false;
-    }
-
-    while (n) {
-        match_t *match = n->data;
+    while (reading_swath.first_byte_in_child) {
+        bool is_match = false;
         value_t check;
+        value_t data_value;
+        void *address = reading_swath.first_byte_in_child + reading_iterator;
 
-        /* read value from this address */
-        if (EXPECT(peekdata(target, match->address, &check) == false, false)) {
-
-            /* assume this was in unmapped region, so remove */
-            l_remove(matches, p, NULL);
-
-            /* confirm this isnt the head element */
-            n = p ? p->next : matches->head;
-            continue;
+        /* Read value from this address */
+        if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
+            /* Uhh, what? We couldn't look at the data there? I guess this doesn't count as a match then */
         }
+        else
+        {
+            value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes, MATCHES_AND_VALUES);
+            match_flags flags = reading_swath_index->data[reading_iterator].match_info;
+            truncval_to_flags(&old_val, flags);
+            check = data_value;
+            truncval(&check, &old_val);
 
-        truncval(&check, &match->lvalue);
-
-        /* XXX: this sucks. */
-        if (type != MATCHEXACT) {
-            valcpy(&value, &match->lvalue);
+            /* XXX: this sucks. */
+            if (type != MATCHEXACT) {
+                value = old_val;
+            }
+            
+            /* Special setting - just update values */
+            if (type == MATCHANY)
+            {
+                is_match = flags_to_max_width_in_bytes(flags);
+                check.flags.ineq_forwards = flags.ineq_forwards;
+                check.flags.ineq_reverse = flags.ineq_reverse;
+            }
+            /* Inequalities get special handling */
+            else if (type == MATCHGREATERTHAN || type == MATCHLESSTHAN)
+            {
+                matchtype_t reverse_type = (type == MATCHGREATERTHAN) ? MATCHLESSTHAN : MATCHGREATERTHAN;
+                bool works_forwards = false, works_reverse = false;
+                value_t saved1, saved2;
+                if (flags.ineq_forwards && valuecmp(&check, type, &value, &saved1)) works_forwards = true;
+                if (flags.ineq_reverse && valuecmp(&check, reverse_type, &value, &saved2)) works_reverse = true;
+                
+                if (works_forwards || works_reverse)
+                {
+                    is_match = true;
+                    if (works_forwards && works_reverse) { valuecmp(&check, MATCHNOTEQUAL, &value, &check); check.flags.ineq_forwards = check.flags.ineq_reverse = 1; }
+                    else if (works_forwards) { check = saved1; check.flags.ineq_forwards = 1; check.flags.ineq_reverse = 0; }
+                    else if (works_reverse) { check = saved2; check.flags.ineq_reverse = 1; check.flags.ineq_forwards = 0; }
+                    else { check.flags.ineq_forwards = check.flags.ineq_reverse = 0; }
+                }
+            }
+            /* For normal comparisons */
+            else if (EXPECT(valuecmp(&check, type, &value, &check), false)) {
+                is_match = true;
+                check.flags.ineq_forwards = flags.ineq_forwards;
+                check.flags.ineq_reverse = flags.ineq_reverse;
+            } else {
+                /* Not a match */
+            }
         }
-
-        if (EXPECT(valuecmp(&check, type, &value, &check), false)) {
-            /* still a candidate */
-            match->lvalue = check;
-            p = n;
-            n = n->next;
-        } else {
-            /* no match */
-            l_remove(matches, p, NULL);
-
-            /* confirm this isnt the head element */
-            n = p ? p->next : matches->head;
+        
+        if (is_match)
+        {
+            /* Still a candidate. Write data. 
+                (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
+                (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
+            old_value_and_match_info new_value = { val_byte(&data_value, 0), check.flags };
+            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
+            
+            ++vars->num_matches;
+            
+            required_extra_bytes_to_record = val_max_width_in_bytes(&check) - 1;
+        }
+        else if (required_extra_bytes_to_record)
+        {
+            old_value_and_match_info new_value = { val_byte(&data_value, 0), (match_flags){0} };
+            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
+            --required_extra_bytes_to_record;
+        }
+        
+        /* Go on to the next one... */
+        ++reading_iterator;
+        if (reading_iterator >= reading_swath.number_of_bytes)
+        {
+            assert(((matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]))->number_of_bytes >= 0);
+            reading_swath_index = (matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]);
+            reading_swath = *reading_swath_index;
+            reading_iterator = 0;
+            required_extra_bytes_to_record = 0; /* just in case */
         }
     }
+    
+    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index, MATCHES_AND_VALUES)))
+    {
+        fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
+        return false;
+    }
 
-    eprintf("info: we currently have %d matches.\n", matches->size);
+    eprintf("info: we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
-    return detach(target);
+    return detach(vars->target);
 }
 
 ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offset, size_t max)
@@ -286,7 +341,7 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
     }
     
     /* try to honour the request */
-    len = pread(fd, buf, MIN(region->size - offset, max), region->start + offset);
+    len = pread(fd, buf, MIN(region->size - offset, max), (unsigned long)region->start + offset);
     
     /* clean up */
     close(fd);
@@ -295,27 +350,50 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
 }
     
 
-/* searchregion() performs an initial search of the process for values matching value */
-bool searchregions(list_t * matches, const list_t * regions, pid_t target,
+/* searchregions() performs an initial search of the process for values matching value */
+bool searchregions(globals_t * vars,
                 value_t value, bool snapshot)
 {
+    matches_and_old_values_swath *writing_swath_index;
+    int required_extra_bytes_to_record = 0;
+    long total_size = 0;
     unsigned regnum = 0;
     unsigned char *data = NULL;
-    element_t *n = regions->head;
+    element_t *n = vars->regions->head;
     region_t *r;
 
     /* stop and attach to the target */
-    if (attach(target) == false)
+    if (attach(vars->target) == false)
         return false;
 
     /* make sure we have some regions to search */
-    if (regions->size == 0) {
+    if (vars->regions->size == 0) {
         fprintf(stderr,
                 "warn: no regions defined, perhaps you deleted them all?\n");
         fprintf(stderr,
                 "info: use the \"reset\" command to refresh regions.\n");
-        return detach(target);
+        return detach(vars->target);
     }
+    
+    while (n) {
+        total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
+        n = n->next;
+    }
+    
+    total_size += sizeof(matches_and_old_values_swath);
+    
+    if (!(vars->matches = allocate_array((unknown_type_of_array *)vars->matches, total_size)))
+    {
+        fprintf(stderr, "error: could not allocate match array\n");
+        return false;
+    }
+    
+    writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    
+    writing_swath_index->first_byte_in_child = NULL;
+    writing_swath_index->number_of_bytes = 0;
+    
+    n = vars->regions->head;
 
     /* check every memory region */
     while (n) {
@@ -334,7 +412,7 @@ bool searchregions(list_t * matches, const list_t * regions, pid_t target,
     
         /* keep reading until completed */
         while (nread < r->size) {
-            if ((len = readregion(data + nread, target, r, nread, r->size)) == -1) {
+            if ((len = readregion(data + nread, vars->target, r, nread, r->size)) == -1) {
                 /* no, continue with whatever data was read */
                 break;
             } else {
@@ -347,48 +425,45 @@ bool searchregions(list_t * matches, const list_t * regions, pid_t target,
         nread = r->size;
 #endif
         /* print a progress meter so user knows we havnt crashed */
-        fprintf(stderr, "info: %02u/%02u searching %#10x - %#10x.", ++regnum,
-                regions->size, r->start, r->start + r->size);
+        fprintf(stderr, "info: %02u/%02u searching %#10lx - %#10lx.", ++regnum,
+                vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
         /* for every offset, check if we have a match */
         for (offset = 0; offset < nread; offset++) {
             value_t check;
+            value_t data_value;
            
             /* initialise check */
-            memset(&check, 0x00, sizeof(check));
+            memset(&data_value, 0x00, sizeof(data_value));
             
-            valnowidth(&check);
+            valnowidth(&data_value);
 
 #if HAVE_PROCMEM           
-            check.value.tulong = *(unsigned long *)(&data[offset]);
-#else            
-            if (EXPECT(peekdata(target, r->start + offset, &check) == false, false)) {
+            data_value.value.tulongsize = *(unsigned long *)(&data[offset]);
+#else
+            if (EXPECT(peekdata(vars->target, r->start + offset, &data_value) == false, false)) {
                 break;
             }
 #endif
+
+            check = data_value;
             
             /* check if we have a match */
             if (snapshot || EXPECT(valuecmp(&value, MATCHEQUAL, &check, &check), false)) {
-                match_t *match;
-               
-                /* save this new location */
-                if ((match = calloc(1, sizeof(match_t))) == NULL) {
-                    fprintf(stderr, "error: memory allocation failed.\n");
-                    (void) detach(target);
-                    return false;
-                }
-
-                match->address = r->start + offset;
-                match->region = r;
-                match->lvalue = check;
-
-                if (EXPECT(l_append(matches, NULL, match) == -1, false)) {
-                    fprintf(stderr, "error: unable to add match to list.\n");
-                    (void) detach(target);
-                    free(match);
-                    return false;
-                }
+                check.flags.ineq_forwards = check.flags.ineq_reverse = 1;
+                old_value_and_match_info new_value = { val_byte(&data_value, 0), check.flags };
+                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
+                
+                ++vars->num_matches;
+                
+                required_extra_bytes_to_record = val_max_width_in_bytes(&check) - 1;
+            }
+            else if (required_extra_bytes_to_record)
+            {
+                old_value_and_match_info new_value = { val_byte(&data_value, 0), (match_flags){0} };
+                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
+                --required_extra_bytes_to_record;
             }
 
             /* print a simple progress meter. */
@@ -402,13 +477,19 @@ bool searchregions(list_t * matches, const list_t * regions, pid_t target,
         fprintf(stderr, "ok\n");
 #if HAVE_PROCMEM
         free(data);
-#endif        
+#endif
+    }
+    
+    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index, MATCHES_AND_VALUES)))
+    {
+        fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
+        return false;
     }
 
-    eprintf("info: we currently have %d matches.\n", matches->size);
+    eprintf("info: we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
-    return detach(target);
+    return detach(vars->target);
 }
 
 bool setaddr(pid_t target, void *addr, const value_t * to)
@@ -425,23 +506,17 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
         return false;
     }
 
-    /* XXX: oh god */
-    if (to->flags.wlong)
-        saved.value.tulong = to->value.tulong;
-    else if (to->flags.wint)
-        saved.value.tuint = to->value.tuint;
-    else if (to->flags.wshort)
-        saved.value.tushort = to->value.tushort;
-    else if (to->flags.wchar)
-        saved.value.tuchar = to->value.tuchar;
-    else if (to->flags.tfloat)
-        saved.value.tfloat = to->value.tslong;
+    /* Basically, overwrite as much of the data as makes sense, and no more. */
+         if (saved.flags.u64b || saved.flags.s64b || saved.flags.f64b) saved.value.tu64b = to->value.tu64b;
+    else if (saved.flags.u32b || saved.flags.s32b || saved.flags.f64b) saved.value.tu32b = to->value.tu32b;
+    else if (saved.flags.u16b || saved.flags.s16b                    ) saved.value.tu16b = to->value.tu16b;
+    else if (saved.flags.u8b  || saved.flags.s8b                     ) saved.value.tu8b  = to->value.tu8b ;
     else {
         fprintf(stderr, "error: could not determine type to poke.\n");
         return false;
     }
 
-    if (ptrace(PTRACE_POKEDATA, target, addr, saved.value.tulong) == -1L) {
+    if (ptrace(PTRACE_POKEDATA, target, addr, saved.value.tulongsize) == -1L) {
         return false;
     }
 

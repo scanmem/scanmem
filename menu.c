@@ -49,9 +49,8 @@ bool getcommand(globals_t * vars, char **line)
     char prompt[64];
 
     assert(vars != NULL);
-    assert(vars->matches != NULL);
 
-    snprintf(prompt, sizeof(prompt), "%u> ", vars->matches->size);
+    snprintf(prompt, sizeof(prompt), "%ld> ", vars->num_matches);
 
     rl_readline_name = "scanmem";
     rl_attempted_completion_function = commandcompletion;
