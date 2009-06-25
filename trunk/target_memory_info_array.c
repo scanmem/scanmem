@@ -135,8 +135,11 @@ long index_of_last_element(unknown_type_of_swath *swath, data_array_type_t type)
 value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length, data_array_type_t type)
 {
     int i;
-    value_t val = {};
+    value_t val;
     int max_bytes = swath_length - index;
+    
+    memset(&val, 0x00, sizeof(val));
+    val.how_to_calculate_values = BY_POINTER_SHIFTING;
     
     if (max_bytes > 8) max_bytes = 8;
     
@@ -147,12 +150,18 @@ value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_len
     
     for (i = 0; i < max_bytes; ++i)
     {
+        uint8_t byte;
         switch(type)
         {
-            case MATCHES: assert(false);
-            case MATCHES_AND_VALUES: *((unsigned char *)(&val.value) + i) = ((matches_and_old_values_swath *)swath)->data[index + i].old_value; break;
-            case VALUES:             *((unsigned char *)(&val.value) + i) = ((copied_data_swath *)swath)->copied_bytes[index + i]; break;
+            case MATCHES_AND_VALUES: byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value; break;
+            case VALUES:             byte = ((copied_data_swath *)swath)->copied_bytes[index + i]; break;
+            default: assert(false);
         }
+        
+            *((uint8_t *)(&val.   int_value) + i) = byte;
+            *((uint8_t *)(&val.double_value) + i) = byte;
+        if (i < sizeof(float))
+            *((uint8_t *)(&val. float_value) + i) = byte;
     }
     
     return val;

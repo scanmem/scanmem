@@ -61,11 +61,8 @@
 
 /* ptrace peek buffer, used by peekdata() */
 static struct {
-    union {
-        signed long peeks[2];   /* read from ptrace() */
-        unsigned char bytes[sizeof(long) * 2];  /* used to retrieve unaligned hits */
-    } cache;
-    unsigned size;              /* number of entries (in longs) */
+    uint8_t cache[2 * sizeof(int64_t)];  /* read from ptrace()  */
+    unsigned size;              /* number of entries (in bytes) */
     char *base;                 /* base address of cached region */
     pid_t pid;                  /* what pid this applies to */
 } peekbuf;
@@ -114,37 +111,48 @@ bool detach(pid_t target)
 bool peekdata(pid_t pid, void *addr, value_t * result)
 {
     char *reqaddr = addr;
+    int i, j;
+    int shift_size = 0;
+    char *last_address_gathered;
 
-    assert(peekbuf.size < 3);
+    assert(peekbuf.size < 2 * sizeof(int64_t));
     assert(result != NULL);
 
     memset(result, 0x00, sizeof(value_t));
 
     valnowidth(result);
+    result->how_to_calculate_values = BY_POINTER_SHIFTING;
 
     /* check if we have a cache hit */
-    if (pid == peekbuf.pid && reqaddr >= peekbuf.base
-        && (unsigned) (reqaddr + sizeof(long) - peekbuf.base) <=
-        sizeof(long) * peekbuf.size) {
+    if (pid == peekbuf.pid &&
+            reqaddr >= peekbuf.base &&
+            (unsigned) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
 
-        result->value.tslongsize = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];  /*lint !e826 */
+        result->int_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->double_value = *( (double *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->float_value =  *(  (float *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
         return true;
-    } else if (pid == peekbuf.pid && reqaddr >= peekbuf.base
-               && (unsigned) (reqaddr - peekbuf.base) <
-               sizeof(long) * peekbuf.size) {
+    } else if (pid == peekbuf.pid &&
+            reqaddr >= peekbuf.base &&
+            (unsigned) (reqaddr - peekbuf.base) < peekbuf.size) {
 
         assert(peekbuf.size != 0);
 
-        /* partial hit, we have some of the data but not all, so remove old entry */
-
-        if (EXPECT(peekbuf.size == 2, true)) {
-            peekbuf.cache.peeks[0] = peekbuf.cache.peeks[1];
-            peekbuf.size = 1;
-            peekbuf.base += sizeof(long);
+        /* partial hit, we have some of the data but not all, so remove old entries - shift the frame by as far as is necessary */
+        shift_size = (reqaddr + sizeof(int64_t)) - (peekbuf.base + peekbuf.size);
+        /* Round up to nearest long size, for ptrace efficiency */
+        shift_size = sizeof(long) * (1 + ((shift_size - 1) / sizeof(long)));
+        
+        for (i = shift_size; i < peekbuf.size; ++i)
+        {
+            peekbuf.cache[i - shift_size] = peekbuf.cache[i];
         }
+        peekbuf.size -= shift_size;
+        peekbuf.base += shift_size;
     } else {
 
         /* cache miss, invalidate cache */
+        shift_size = sizeof(int64_t);
         peekbuf.pid = pid;
         peekbuf.size = 0;
         peekbuf.base = addr;
@@ -152,48 +160,82 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
 
     /* we need a ptrace() to complete request */
     errno = 0;
+    
+    assert (shift_size > 0);
 
-    peekbuf.cache.peeks[peekbuf.size] =
-        ptrace(PTRACE_PEEKDATA, pid,
-               peekbuf.base + sizeof(long) * peekbuf.size, NULL);
+    for (i = 0; i < shift_size; i += sizeof(long))
+    {
+        char *ptrace_address = peekbuf.base + peekbuf.size + i;
+        long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
 
-    /* check if ptrace() succeeded */
-    if (EXPECT(peekbuf.cache.peeks[peekbuf.size] == -1L && errno != 0, false)) {
-        /* its possible i'm trying to read partially oob */
-        if (errno == EIO || errno == EFAULT) {
-            unsigned i;
-            long l;
-            
-            /* read backwards until we get a good read, then shift out the right value */
-            for (i = 1, errno = 0; i < sizeof(long); i++, errno = 0) {
-                if ((l = ptrace(PTRACE_PEEKDATA, pid, reqaddr - i, NULL)) == -1L && 
-                    (errno == EIO || errno == EFAULT))
-                        continue;
-                /* wow, that worked */
-                result->value.tslongsize = l;
-                result->value.tulongsize >>= i * CHAR_BIT;
+        /* check if ptrace() succeeded */
+        if (EXPECT(ptraced_long == -1L && errno != 0, false)) {
+            /* its possible i'm trying to read partially oob */
+            if (errno == EIO || errno == EFAULT) {
                 
-                /* note: some of these are impossible */
-                if (8 > sizeof(long) - i)
-                    result->flags.u64b = result->flags.s64b = result->flags.f64b = 0;
-                if (4 > sizeof(long) - i)
-                    result->flags.u32b = result->flags.s32b = result->flags.f32b = 0;
-                if (2 > sizeof(long) - i)
-                    result->flags.u16b = result->flags.s16b = 0;
-                if (1 > sizeof(long) - i)
-                    result->flags.u8b  = result->flags.s8b  = 0;
-                return true;
+                /* read backwards until we get a good read, then shift out the right value */
+                for (j = 1, errno = 0; j < sizeof(long); j++, errno = 0) {
+                
+                    /* Try for a shifted ptrace - 'continue' (i.e. try an increased shift) if it fails */
+                    if ((ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address - j, NULL)) == -1L && 
+                        (errno == EIO || errno == EFAULT))
+                            continue;
+                    
+                    /* Cache it with the appropriate offset */
+                    *((long *)&peekbuf.cache[peekbuf.size - j]) = ptraced_long;
+                    peekbuf.size += sizeof(long) - j;
+                    last_address_gathered = ptrace_address + sizeof(long) - j;
+                    
+                    /* Interrupt the gathering process */
+                    goto doublebreak;
+                }
             }
+            
+            /* i wont print a message here, would be very noisy if a region is unmapped */
+            return false;
         }
-        /* i wont print a message here, would be very noisy if a region is unmapped */
-        return false;
+        
+        /* Otherwise, ptrace() worked - cache the data, increase the size */
+        *((long *)&peekbuf.cache[peekbuf.size]) = ptraced_long;
+        peekbuf.size += sizeof(long);
+        last_address_gathered = ptrace_address + sizeof(long);
     }
-
-    /* record new entry in cache */
-    peekbuf.size++;
-
-    /* return result to caller */
-    result->value.tslongsize = *(long *) &peekbuf.cache.bytes[reqaddr - peekbuf.base];      /*lint !e826 */
+    
+    doublebreak:
+    
+    /* Return result to caller */
+    if (reqaddr + sizeof(int64_t) <= last_address_gathered)
+    {
+        /* The values are fine - read away */
+        result->int_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->double_value = *( (double *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->float_value =  *(  (float *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+    }
+    else
+    {
+        int successful_gathering = last_address_gathered - reqaddr;
+        
+        /* We didn't get enough - add zeroes at the end */
+        for (i = 0; i < sizeof(int64_t); ++i)
+        {
+            uint8_t val = (i < successful_gathering) ? peekbuf.cache[reqaddr - peekbuf.base + i] : 0;
+            
+                *(((uint8_t *)&result->int_value)    + i) = val;
+                *(((uint8_t *)&result->double_value) + i) = val;
+            if (i < sizeof(float))
+                *(((uint8_t *)&result->float_value)  + i) = val;
+        }
+        
+        /* Mark which values this can't be */
+        if (successful_gathering < sizeof(int64_t))
+            result->flags.u64b = result->flags.s64b = result->flags.f64b = 0;
+        if (successful_gathering < sizeof(int32_t))
+            result->flags.u32b = result->flags.s32b = result->flags.f32b = 0;
+        if (successful_gathering < sizeof(int16_t))
+            result->flags.u16b = result->flags.s16b = 0;
+        if (successful_gathering < sizeof(int8_t))
+            result->flags.u8b  = result->flags.s8b  = 0;
+    }
 
     /* success */
     return true;
@@ -281,7 +323,7 @@ bool checkmatches(globals_t * vars, value_t value,
             /* Still a candidate. Write data. 
                 (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
-            old_value_and_match_info new_value = { val_byte(&data_value, 0), check.flags };
+            old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
             writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
             
             ++vars->num_matches;
@@ -290,7 +332,7 @@ bool checkmatches(globals_t * vars, value_t value,
         }
         else if (required_extra_bytes_to_record)
         {
-            old_value_and_match_info new_value = { val_byte(&data_value, 0), (match_flags){0} };
+            old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
             writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
             --required_extra_bytes_to_record;
         }
@@ -404,8 +446,8 @@ bool searchregions(globals_t * vars,
         r = n->data;
 
 #if HAVE_PROCMEM        
-        /* over allocate by 3 bytes, which are set to zero so the last bytes can be read as longs */
-        if ((data = calloc(r->size + sizeof(long) - 1, 1)) == NULL) {
+        /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
+        if ((data = calloc(r->size + sizeof(int64_t) - 1, 1)) == NULL) {
             fprintf(stderr, "error: sorry, there was a memory allocation error.\n");
             return false;
         }
@@ -440,7 +482,20 @@ bool searchregions(globals_t * vars,
             valnowidth(&data_value);
 
 #if HAVE_PROCMEM           
-            data_value.value.tulongsize = *(unsigned long *)(&data[offset]);
+            data_value.int_value    = *((int64_t *)(&data[offset]));
+            data_value.double_value = *( (double *)(&data[offset]));
+            data_value.float_value  = *(  (float *)(&data[offset]));
+            data_value.how_to_calculate_values = BY_POINTER_SHIFTING;
+            
+            /* Mark which values this can't be */
+            if (nread - offset < sizeof(int64_t))
+                data_value.flags.u64b = data_value.flags.s64b = data_value.flags.f64b = 0;
+            if (nread - offset < sizeof(int32_t))
+                data_value.flags.u32b = data_value.flags.s32b = data_value.flags.f32b = 0;
+            if (nread - offset < sizeof(int16_t))
+                data_value.flags.u16b = data_value.flags.s16b = 0;
+            if (nread - offset < sizeof(int8_t))
+                data_value.flags.u8b  = data_value.flags.s8b  = 0;
 #else
             if (EXPECT(peekdata(vars->target, r->start + offset, &data_value) == false, false)) {
                 break;
@@ -452,7 +507,7 @@ bool searchregions(globals_t * vars,
             /* check if we have a match */
             if (snapshot || EXPECT(valuecmp(&value, MATCHEQUAL, &check, &check), false)) {
                 check.flags.ineq_forwards = check.flags.ineq_reverse = 1;
-                old_value_and_match_info new_value = { val_byte(&data_value, 0), check.flags };
+                old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
                 
                 ++vars->num_matches;
@@ -461,7 +516,7 @@ bool searchregions(globals_t * vars,
             }
             else if (required_extra_bytes_to_record)
             {
-                old_value_and_match_info new_value = { val_byte(&data_value, 0), (match_flags){0} };
+                old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
                 --required_extra_bytes_to_record;
             }
@@ -494,7 +549,10 @@ bool searchregions(globals_t * vars,
 
 bool setaddr(pid_t target, void *addr, const value_t * to)
 {
+    int poke_bytes;
+    int64_t poke_data;
     value_t saved;
+    int i;
 
     if (attach(target) == false) {
         return false;
@@ -505,19 +563,30 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
                 addr);
         return false;
     }
+    
+    poke_data = saved.int_value;
 
     /* Basically, overwrite as much of the data as makes sense, and no more. */
-         if (saved.flags.u64b || saved.flags.s64b || saved.flags.f64b) saved.value.tu64b = to->value.tu64b;
-    else if (saved.flags.u32b || saved.flags.s32b || saved.flags.f64b) saved.value.tu32b = to->value.tu32b;
-    else if (saved.flags.u16b || saved.flags.s16b                    ) saved.value.tu16b = to->value.tu16b;
-    else if (saved.flags.u8b  || saved.flags.s8b                     ) saved.value.tu8b  = to->value.tu8b ;
+         if (saved.flags.u64b && to->flags.u64b) { poke_bytes = 8; poke_data = get_u64b(to); }
+    else if (saved.flags.s64b && to->flags.s64b) { poke_bytes = 8; poke_data = get_s64b(to); }
+    else if (saved.flags.f64b && to->flags.f64b) { poke_bytes = 8; poke_data = *((int64_t *)&to->double_value); }
+    else if (saved.flags.u32b && to->flags.u32b) { poke_bytes = 4; poke_data = get_u32b(to); }
+    else if (saved.flags.s32b && to->flags.s32b) { poke_bytes = 4; poke_data = get_s32b(to); }
+    else if (saved.flags.f32b && to->flags.f32b) { poke_bytes = 4; poke_data = *((int64_t *)&to->float_value); }
+    else if (saved.flags.u16b && to->flags.u16b) { poke_bytes = 2; poke_data = get_u16b(to); }
+    else if (saved.flags.s16b && to->flags.s16b) { poke_bytes = 2; poke_data = get_s16b(to); }
+    else if (saved.flags.u8b  && to->flags.u8b ) { poke_bytes = 1; poke_data = get_u8b(to); }
+    else if (saved.flags.s8b  && to->flags.s8b ) { poke_bytes = 1; poke_data = get_s8b(to); }
     else {
         fprintf(stderr, "error: could not determine type to poke.\n");
         return false;
     }
 
-    if (ptrace(PTRACE_POKEDATA, target, addr, saved.value.tulongsize) == -1L) {
-        return false;
+    for (i = 0; i < poke_bytes; i += sizeof(long))
+    {
+        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&poke_data) + i)) == -1L) {
+            return false;
+        }
     }
 
     return detach(target);
