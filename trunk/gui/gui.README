@@ -1,0 +1,30 @@
+Game Conqueror
+==============
+
+Game Conqueror is a graphical game cheating tool under Linux.
+
+Interface and user-feeling are expected to be similar and hopefully better than CheatEngine (a powerful cheating tool under Windows).
+The backend of Game Conqueror is scanmem, a CLI cheating tool.
+
+
+
+Requirement
+===========
+
+scanmem
+Python
+PyGTK
+
+
+
+Author
+======
+Wang Lu <coolwanglu(a)gmail.com>
+
+
+
+License
+=======
+GPL v3
+
+
