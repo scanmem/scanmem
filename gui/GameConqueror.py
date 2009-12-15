@@ -25,29 +25,30 @@ import subprocess
 
 import pygtk
 import gtk
+import gobject
 
 WORK_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 BACKEND = 'scanmem'
+DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 
 # init data types
-# we may need another class/file handling this, like check, convert...
-LOCK_FLAG_TYPES = gtk.ListStore(str)
-for lock_flag_type in [['=']
-                      ,['>']
-                      ,['<']
-                      ]:
-    LOCK_FLAG_TYPES.append(lock_flag_type)
+# convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
+def build_simple_str_liststore(l):
+    r = gtk.ListStore(str)
+    for e in l:
+        r.append([e])
+    return r
 
-LOCK_VALUE_TYPES = gtk.ListStore(str)
-for lock_value_type in  [['int']
-                        ,['int:1'] # TODO: what about unsigned integers?
-                        ,['int:2']
-                        ,['int:4']
-                       #,['int:8'] # TODO: what about 64 bit?
-                        ,['float']
-                        ,['double']
-                        ]:
-    LOCK_VALUE_TYPES.append(lock_value_type)
+LOCK_FLAG_TYPES = build_simple_str_liststore(['=', '+', '-'])
+
+LOCK_VALUE_TYPES = build_simple_str_liststore(['int'
+                                            ,'int:1' # TODO: what about unsigned integers?
+                                            ,'int:2'
+                                            ,'int:4'
+                                           #,'int:8' # TODO: what about 64 bit?
+                                            ,'float'
+                                            ,'double'
+                                            ])
 
 class GameConquerorBackend():
     def __init__(self):
@@ -224,12 +225,15 @@ class GameConqueror():
         self.scanresult_popup.show_all()
 
         self.builder.connect_signals(self)
+        self.main_window.connect('destroy', self.exit)
 
         ###########################
         # init others (backend, flag...)
 
         self.backend = GameConquerorBackend()
         self.search_count = 0
+        self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
+        gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
 
     ###########################
     # GUI callbacks
@@ -240,7 +244,7 @@ class GameConqueror():
                                  ,0
                                  ,gtk.MESSAGE_INFO
                                  ,gtk.BUTTONS_OK
-                                 ,'I\'m considering using some syntax here (like 255:4, 5-7, >, <=, etc.)\nTherefore the parsing could be done in the frontend, while backend can still use standard forms')
+                                 ,'Currently use any scanmem (scan) command here.\nI\'m considering using some more complicated but convenient syntax later (like 255:4, 5-7, >, <=, etc.)\nTherefore the parsing could be done in the frontend, while backend can still use standard forms')
         dialog.run()
         dialog.destroy()
 
@@ -449,8 +453,21 @@ class GameConqueror():
                 self.scanresult_liststore.append([a[:-1], b[:-1]])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
+    # read/write data periodly
+    def data_worker(self):
+        # TODO may need to update some part of scanresult
+        # TODO read unlocked values in cheat list
+        # TODO write locked values in cheat list
+        print 'data worker'
+        return not self.exit_flag
+
+    def exit(self, object, data=None):
+        self.exit_flag = True
+        gtk.main_quit()
+
     def main(self):
         gtk.main()
+
     
 
 if __name__ == '__main__':
