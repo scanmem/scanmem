@@ -29,6 +29,26 @@ import gtk
 WORK_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
 BACKEND = 'scanmem'
 
+# init data types
+# we may need another class/file handling this, like check, convert...
+LOCK_FLAG_TYPES = gtk.ListStore(str)
+for lock_flag_type in [['=']
+                      ,['>']
+                      ,['<']
+                      ]:
+    LOCK_FLAG_TYPES.append(lock_flag_type)
+
+LOCK_VALUE_TYPES = gtk.ListStore(str)
+for lock_value_type in  [['int']
+                        ,['int:1'] # TODO: what about unsigned integers?
+                        ,['int:2']
+                        ,['int:4']
+                       #,['int:8'] # TODO: what about 64 bit?
+                        ,['float']
+                        ,['double']
+                        ]:
+    LOCK_VALUE_TYPES.append(lock_value_type)
+
 class GameConquerorBackend():
     def __init__(self):
         self.match_count = 0
@@ -120,9 +140,14 @@ class GameConqueror():
         # zeroth column - Lock Flag
         self.cheatlist_tv_col0 = gtk.TreeViewColumn('')
         self.cheatlist_tv.append_column(self.cheatlist_tv_col0)
-        self.cheatlist_tv_col0_renderer = gtk.CellRendererText()
+        self.cheatlist_tv_col0_renderer = gtk.CellRendererCombo()
         self.cheatlist_tv_col0.pack_start(self.cheatlist_tv_col0_renderer, True)
         self.cheatlist_tv_col0.set_attributes(self.cheatlist_tv_col0_renderer, text=0)
+        self.cheatlist_tv_col0_renderer.set_property('editable', True)
+        self.cheatlist_tv_col0_renderer.set_property('has-entry', False)
+        self.cheatlist_tv_col0_renderer.set_property('model', LOCK_FLAG_TYPES)
+        self.cheatlist_tv_col0_renderer.set_property('text-column', 0)
+        self.cheatlist_tv_col0_renderer.connect('edited', self.cheatlist_toggle_lock_flag_cb)
         # first column - Lock
         self.cheatlist_tv_col1 = gtk.TreeViewColumn('Lock')
         self.cheatlist_tv.append_column(self.cheatlist_tv_col1)
@@ -151,18 +176,25 @@ class GameConqueror():
         # fourth column - Type
         self.cheatlist_tv_col4 = gtk.TreeViewColumn('Type')
         self.cheatlist_tv.append_column(self.cheatlist_tv_col4)
-        self.cheatlist_tv_col4_renderer = gtk.CellRendererText()
+        self.cheatlist_tv_col4_renderer = gtk.CellRendererCombo()
         self.cheatlist_tv_col4.pack_start(self.cheatlist_tv_col4_renderer, True)
         self.cheatlist_tv_col4.set_attributes(self.cheatlist_tv_col4_renderer, text=4)
+        self.cheatlist_tv_col4_renderer.set_property('editable', True)
+        self.cheatlist_tv_col4_renderer.set_property('has-entry', False)
+        self.cheatlist_tv_col4_renderer.set_property('model', LOCK_VALUE_TYPES)
+        self.cheatlist_tv_col4_renderer.set_property('text-column', 0)
+        self.cheatlist_tv_col4_renderer.connect('edited', self.cheatlist_edit_type_cb)
         # fifth column - Value 
         self.cheatlist_tv_col5 = gtk.TreeViewColumn('Value')
         self.cheatlist_tv.append_column(self.cheatlist_tv_col5)
         self.cheatlist_tv_col5_renderer = gtk.CellRendererText()
         self.cheatlist_tv_col5.pack_start(self.cheatlist_tv_col5_renderer, True)
+        self.cheatlist_tv_col5_renderer.set_property('editable', True)
+        self.cheatlist_tv_col5_renderer.connect('edited', self.cheatlist_edit_value_cb)
         self.cheatlist_tv_col5.set_attributes(self.cheatlist_tv_col5_renderer, text=5)
         # for debug
-#        self.cheatlist_liststore.append(['+', True, '2', '3', '4', '5'])
-#        self.cheatlist_liststore.append([' ', False, 'desc', 'addr', 'type', 'value'])
+        self.cheatlist_liststore.append(['+', True, '2', '3', '4', '5'])
+        self.cheatlist_liststore.append([' ', False, 'desc', 'addr', 'type', 'value'])
 
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
@@ -323,7 +355,16 @@ class GameConqueror():
             # TODO tell backend unlock it
             pass
         else:
+            # TODO check value
             # TODO tell backend lock it
+            pass
+        return True
+
+    def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
+        row = int(path)
+        self.cheatlist_liststore[row][0] = new_text
+        if self.cheatlist_liststore[row][1]: # locked
+            # TODO tell backend relock it
             pass
         return True
 
@@ -332,12 +373,32 @@ class GameConqueror():
         self.cheatlist_liststore[row][2] = new_text
         return True
 
+    def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
+        row = int(path)
+        self.cheatlist_liststore[row][5] = new_text
+        if self.cheatlist_liststore[row][1]: # locked
+            # TODO tell backend re-lock it
+            pass
+        else:
+            # TODO tell backend write it (for once)
+            pass
+        return True
+
+    def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
+        row = int(path)
+        self.cheatlist_liststore[row][4] = new_text
+        if self.cheatlist_liststore[row][1]: # locked
+            # TODO tell backend unlock it
+            pass
+        # TODO may need read & update the value
+        return True
 
     ############################
     # core functions
 
     def add_to_cheat_list(self, addr, value):
-        self.cheatlist_liststore.prepend([' ', False, 'No Description', addr, 'No Type', value])
+        # TODO: retrieve current value type
+        self.cheatlist_liststore.prepend(['=', False, 'No Description', addr, 'int', value])
         # TODO: tell backend ?
         # TODO: watch this item
 
