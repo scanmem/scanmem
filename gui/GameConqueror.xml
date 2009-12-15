@@ -151,6 +151,7 @@
                     <property name="width_request">77</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="label" translatable="yes">Scan type:</property>
                     <property name="single_line_mode">True</property>
                   </object>
@@ -164,6 +165,7 @@
                     <property name="width_request">77</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
+                    <property name="sensitive">False</property>
                     <property name="label" translatable="yes">Value type:</property>
                   </object>
                   <packing>
