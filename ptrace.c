@@ -549,8 +549,6 @@ bool searchregions(globals_t * vars,
 
 bool setaddr(pid_t target, void *addr, const value_t * to)
 {
-    int poke_bytes;
-    int64_t poke_data;
     value_t saved;
     int i;
 
@@ -564,27 +562,27 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
         return false;
     }
     
-    poke_data = saved.int_value;
-
     /* Basically, overwrite as much of the data as makes sense, and no more. */
-         if (saved.flags.u64b && to->flags.u64b) { poke_bytes = 8; poke_data = get_u64b(to); }
-    else if (saved.flags.s64b && to->flags.s64b) { poke_bytes = 8; poke_data = get_s64b(to); }
-    else if (saved.flags.f64b && to->flags.f64b) { poke_bytes = 8; poke_data = *((int64_t *)&to->double_value); }
-    else if (saved.flags.u32b && to->flags.u32b) { poke_bytes = 4; poke_data = get_u32b(to); }
-    else if (saved.flags.s32b && to->flags.s32b) { poke_bytes = 4; poke_data = get_s32b(to); }
-    else if (saved.flags.f32b && to->flags.f32b) { poke_bytes = 4; poke_data = *((int64_t *)&to->float_value); }
-    else if (saved.flags.u16b && to->flags.u16b) { poke_bytes = 2; poke_data = get_u16b(to); }
-    else if (saved.flags.s16b && to->flags.s16b) { poke_bytes = 2; poke_data = get_s16b(to); }
-    else if (saved.flags.u8b  && to->flags.u8b ) { poke_bytes = 1; poke_data = get_u8b(to); }
-    else if (saved.flags.s8b  && to->flags.s8b ) { poke_bytes = 1; poke_data = get_s8b(to); }
+         if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
+    else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&to->double_value)); } // WangLu: not sure about this
+    else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
+    else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
+    else if (saved.flags.f32b && to->flags.f32b) { set_s64b(&saved, *((int64_t *)&to->float_value)); } // WangLu: not sure about this
+    else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
+    else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
+    else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }
+    else if (saved.flags.s8b  && to->flags.s8b ) { set_s8b(&saved, get_s8b(to)); }
     else {
         fprintf(stderr, "error: could not determine type to poke.\n");
         return false;
     }
 
-    for (i = 0; i < poke_bytes; i += sizeof(long))
+
+
+    for (i = 0; i < sizeof(saved.int_value); i += sizeof(long))
     {
-        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&poke_data) + i)) == -1L) {
+        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&saved.int_value) + i)) == -1L) {
             return false;
         }
     }

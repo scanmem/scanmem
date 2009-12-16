@@ -453,12 +453,29 @@ class GameConqueror():
                 self.scanresult_liststore.append([a[:-1], b[:-1]])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
+    # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
+    # return None if no row visible
+    def get_visible_rows(self, treeview):
+        rect = treeview.get_visible_rect()
+        (x1,y1) = treeview.tree_to_widget_coords(rect.x,rect.y)
+        (x2,y2) = treeview.tree_to_widget_coords(rect.x+rect.width,rect.y+rect.height)
+        tup = treeview.get_path_at_pos(x1, y1)
+        if tup is None:
+            return None
+        r1 = tup[0][0]
+        tup = treeview.get_path_at_pos(x2, y2)
+        if tup is None:
+            r2 = len(treeview.get_model()) - 1    
+        else:
+            r2 = tup[0][0]
+        return (r1, r2)
+ 
     # read/write data periodly
     def data_worker(self):
         # TODO may need to update some part of scanresult
         # TODO read unlocked values in cheat list
         # TODO write locked values in cheat list
-        print 'data worker'
+        print self.get_visible_rows(self.scanresult_tv)
         return not self.exit_flag
 
     def exit(self, object, data=None):
