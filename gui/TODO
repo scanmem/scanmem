@@ -1,0 +1,14 @@
+TODOs
+=====
+
+- different types of locking ('>' & '<')
+- data check (if a valid number & if may cause overflow)
+- error detection and alert
+- syntax check 
+- syntax support 
+  * 4:4 -- (4 byte integer of value 4)
+  * 1:F -- (float number of value 1)
+  * 4,5 -- (values between 4 and 5)
+        -- might be difficult if signedness involved
+- memory view/edit
+- UI improvement will be done only when needed!
