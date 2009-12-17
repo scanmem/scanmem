@@ -46,16 +46,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc);
                "match, such as its type, location, and last known value. The number in\n" \
                "the left column is the `match-id`, this can be passed to other commands\n" \
                "such as `set`, `delete`, etc.\n" \
-               "The flags displayed indicate what is currently known about the variable\n" \
-               "at that location, a capital letter indicates the property is set, lowercase\n" \
-               "indicates the property is not set.\n\n" \
-               "\tC,c\tThe value could be a char.\n" \
-               "\tS,s\tThe value could be a short.\n" \
-               "\tI,i\tThe value could be an int.\n" \
-               "\tL,l\tThe value could be a long.\n" \
-               "\tF,f\tThe value could be a float.\n" \
-               "\tN,n\tThe value is known to be signed.\n" \
-               "\tZ,z\tThis flag is not currently used.\n"
+               "The flags displayed indicate the possible types of the variable\n" 
 
 bool handler__list(globals_t * vars, char **argv, unsigned argc);
 
@@ -199,5 +190,14 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc);
                 "Display information relating to `n`.\n"
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc);
+
+#define WRITE_SHRTDOC "change the value of a specific memory location"
+#define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
+                "Write <value> into <address>\n" \
+                "<value_type> should be one of i8,i16,i32,i64\n" \
+                "Example:\n" \
+                "write i16 601038 0\n"
+
+bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
 #endif
