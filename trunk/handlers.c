@@ -36,6 +36,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <sys/time.h>
+#include <limits.h>            /* to determine the word width */
 
 #include <readline/readline.h>
 
@@ -338,7 +339,16 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 strncpy(v, "unknown", sizeof(v));
             }
 
-            fprintf(stdout, "[%2u] %10p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v);
+/* try to determine the size of a pointer */
+#if ULONGMAX == 4294967295UL
+#define POINTER_FMT "10"
+#elif ULONGMAX == 18446744073709551615UL
+#define POINTER_FMT "20"
+#else
+#define POINTER_FMT "20"
+#endif
+
+            fprintf(stdout, "[%2u] %"POINTER_FMT"p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v);
         }
 	
         /* Go on to the next one... */
@@ -1027,5 +1037,70 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__options(globals_t * vars, char **argv, unsigned argc)
 {
-    
+    return true;    
+}
+
+bool handler__write(globals_t * vars, char **argv, unsigned argc)
+{
+    int int_width = 0;
+    const char *fmt;
+    void *addr;
+    char buf[10];
+    int buf_length = 0;
+
+    if (argc != 4)
+    {
+        fprintf(stderr, "error: bad arguments, see `help write`.\n");
+        return false;
+    }
+
+    /* try int first */
+    if (strcasecmp(argv[1], "i8") == 0)
+    {
+        int_width = 1;
+        fmt = "%hhd";
+    }
+    else if (strcasecmp(argv[1], "i16") == 0)
+    {
+        int_width = 2;
+        fmt = "%hd";
+    }
+    else if (strcasecmp(argv[1], "i32") == 0)
+    {
+        int_width = 4;
+        fmt = "%d";
+    }
+    else if (strcasecmp(argv[1], "i64") == 0)
+    {
+        int_width = 8;
+        fmt = "%lld";
+    }
+    /* may support more types here */
+
+    if (!int_width) 
+    {
+        fprintf(stderr, "error: bad data_type, see `help write`.\n");
+        return false;
+    }
+
+    /* check address */
+    if (sscanf(argv[2], "%p", &addr) < 1)
+    {
+        fprintf(stderr, "error: bad address, see `help write`.\n");
+        return false;
+    }
+
+    /* load value into buffer */
+    if(int_width)
+    {
+        if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
+        {
+            fprintf(stderr, "error: bad value, see `help write`.\n");
+            return false;
+        }
+        buf_length = int_width; 
+    }
+
+    /* write into memory */
+    return write_array(vars->target, addr, buf, buf_length);
 }

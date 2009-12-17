@@ -38,14 +38,14 @@ bool valtostr(const value_t * val, char *str, size_t n)
     int max_bytes = 0;
     bool print_as_unsigned = false;
 
-#define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? ("u" string " ") : (val->flags.s##bytes##b) ? ("s" string " ") : ""
+#define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? (string "u ") : (val->flags.s##bytes##b) ? (string "s ") : ""
     
     /* set the flags */
-    snprintf(buf, sizeof(buf), "%s%s%s%s%s%s%s- ",
-             FLAG_MACRO(64, "64b"),
-             FLAG_MACRO(32, "32b"),
-             FLAG_MACRO(16, "16b"),
-             FLAG_MACRO(8,  "8b"),
+    snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
+             FLAG_MACRO(64, "I64"),
+             FLAG_MACRO(32, "I32"),
+             FLAG_MACRO(16, "I16"),
+             FLAG_MACRO(8,  "I8"),
              val->flags.f64b ? "D " : "",
              val->flags.f32b ? "F " : "",
              (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
@@ -60,18 +60,17 @@ bool valtostr(const value_t * val, char *str, size_t n)
     else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
     
     /* find the right format, considering different integer size implementations */
-         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%s%llu" : "%s%lld", buf, print_as_unsigned ? get_ulonglong(val) : get_slonglong(val));
-    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%s%lu"  : "%s%ld" , buf, print_as_unsigned ? get_ulong(val) : get_slong(val));
-    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%s%u"   : "%s%d"  , buf, print_as_unsigned ? get_uint(val) : get_sint(val));
-    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%s%hu"  : "%s%hd" , buf, print_as_unsigned ? get_ushort(val) : get_sshort(val));
-    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%s%hhu" : "%s%hhd", buf, print_as_unsigned ? get_uchar(val) : get_schar(val));
-    else if (val->flags.f64b) snprintf(str, n, "%s%ld", buf, (signed long int) val->double_value);
-    else if (val->flags.f32b) snprintf(str, n, "%s%ld", buf, (signed long int) val->float_value);
+         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
+    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
+    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
+    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
+    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
+    else if (val->flags.f64b) snprintf(str, n, "%lf, %s", (signed long int) val->double_value, buf);
+    else if (val->flags.f32b) snprintf(str, n, "%f, %s", (signed long int) val->float_value, buf);
     else {
-        snprintf(str, n, "%s%#llx?", buf, get_slonglong(val));
+        snprintf(str, n, "%#llx?, %s", get_slonglong(val), buf);
         return false;
     }
-
     return true;
 }
 

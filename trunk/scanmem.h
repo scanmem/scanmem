@@ -68,6 +68,7 @@ typedef struct {
     struct {
         unsigned short alignment;
         unsigned short debug;
+        unsigned short backend; /* if 1, scanmem will work as a backend, and output would be more machine-readable */
     } options;
 } globals_t;
 
@@ -94,4 +95,6 @@ bool peekdata(pid_t pid, void *addr, value_t * result);
 bool attach(pid_t target);
 bool getcommand(globals_t * vars, char **line);
 int printversion(FILE * fp);
+
+bool write_array(pid_t target, void *addr, const void *data, int len);
 #endif

@@ -28,11 +28,13 @@
 #  undef _LARGEFILE64_SOURCE
 # endif
 # define _LARGEFILE64_SOURCE
+#endif
+
+/* for pread */
 # ifdef _XOPEN_SOURCE
 #  undef _XOPEN_SOURCE
 # endif
 # define _XOPEN_SOURCE 500
-#endif
 
 #include <time.h>
 #include <sys/types.h>
@@ -565,10 +567,10 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     /* Basically, overwrite as much of the data as makes sense, and no more. */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&to->double_value)); } // WangLu: not sure about this
+    else if (saved.flags.f64b && to->flags.f64b) { set_s32b(&saved, *((int32_t *)&to->double_value)); } /* WangLu: not sure about this */
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
-    else if (saved.flags.f32b && to->flags.f32b) { set_s64b(&saved, *((int64_t *)&to->float_value)); } // WangLu: not sure about this
+    else if (saved.flags.f32b && to->flags.f32b) { set_s64b(&saved, *((int64_t *)&to->float_value)); } /* WangLu: not sure about this */
     else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
     else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
     else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }
@@ -578,12 +580,73 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
         return false;
     }
 
-
-
-    for (i = 0; i < sizeof(saved.int_value); i += sizeof(long))
+    /* TODO: may use /proc/<pid>/mem here */
+    /* assume that sizeof(save.int_value) (int64_t) is multiple of sizeof(long) */
+    for (i = 0; i < sizeof(saved.int_value); i += sizeof(long)) 
     {
         if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&saved.int_value) + i)) == -1L) {
             return false;
+        }
+    }
+
+    return detach(target);
+}
+
+/* TODO: may use /proc/<pid>/mem here */
+bool write_array(pid_t target, void *addr, const void *data, int len)
+{
+    int i,j;
+    long peek_value;
+
+    if (attach(target) == false) {
+        return false;
+    }
+
+    for (i = 0; i + sizeof(long) < len; i += sizeof(long))
+    {
+        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(data + i)) == -1L) {
+            return false;
+        }
+    }
+
+    if (len - i > 0) /* something left (shorter than a long) */
+    {
+        if (len > sizeof(long)) /* rewrite last sizeof(long) bytes of the buffer */
+        {
+            if (ptrace(PTRACE_POKEDATA, target, addr + len - sizeof(long), *(long *)(data + len - sizeof(long))) == -1L) {
+                return false;
+            }
+        }
+        else /* we have to play with bits... */
+        {
+            /* try all possible shifting read & write */
+            for(j = 0; j <= sizeof(long) - (len - i); ++j)
+            {
+                errno = 0;
+                if(((peek_value = ptrace(PTRACE_PEEKDATA, target, addr - j, NULL)) == -1L) && (errno != 0))
+                {
+                    if (errno == EIO || errno == EFAULT) /* may try next shift */
+                        continue;
+                    else
+                    {
+                        fprintf(stderr, "error: write_array failed.\n"); 
+                        return false;
+                    }
+                }
+                else /* peek success */
+                {
+                    /* write back */
+                    memcpy(((int8_t*)&peek_value)+j, data+i, len-i);        
+
+                    if (ptrace(PTRACE_POKEDATA, target, addr - j, peek_value) == -1L)
+                    {
+                        fprintf(stderr, "error: write_array failed.\n");
+                        return false;
+                    }
+
+                    break;
+                }
+            }
         }
     }
 
