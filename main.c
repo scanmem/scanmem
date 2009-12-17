@@ -48,6 +48,7 @@ globals_t globals = {
     {
         1,                      /* alignment */
         1,                      /* debug */
+        1,                      /* backend */
     }
 };
 
@@ -60,6 +61,7 @@ int main(int argc, char **argv)
         {"pid", 1, NULL, 'p'},  /* target pid */
         {"version", 0, NULL, 'v'},      /* print version */
         {"help", 0, NULL, 'h'}, /* print help summary */
+        {"backend", 0, NULL, 'b'}, /* run as backend */
         {NULL, 0, NULL, 0},
     };
 
@@ -81,6 +83,9 @@ int main(int argc, char **argv)
         case 'h':
             printhelp();
             return EXIT_SUCCESS;
+        case 'b':
+            vars->options.backend = 1;
+            break;
         case -1:
             goto done;
         default:
@@ -157,6 +162,7 @@ int main(int argc, char **argv)
     registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                     WATCH_LONGDOC);
     registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
+    registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
 
     /* commands beginning with __ have special meaning */
     registercommand("__eof", handler__eof, vars->commands, NULL, NULL);
@@ -240,6 +246,7 @@ void printhelp(void)
             "Interactively locate and modify variables in an executing process.\n"
             "\n"
             "-p, --pid=pid\t\tset the target process pid\n"
+            "-b, --backend\t\trun as backend, used by frontend\n"
             "-h, --help\t\tprint this message\n"
             "-v, --version\t\tprint version information\n"
             "\n"
