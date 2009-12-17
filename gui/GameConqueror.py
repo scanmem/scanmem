@@ -22,14 +22,17 @@
 import sys
 import os
 import subprocess
+import re
 
 import pygtk
 import gtk
 import gobject
 
 WORK_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
-BACKEND = 'scanmem'
+BACKEND = WORK_DIR+'/../scanmem'
+BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
+SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 
 # init data types
 # convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
@@ -45,10 +48,36 @@ LOCK_VALUE_TYPES = build_simple_str_liststore(['int'
                                             ,'int:1' # TODO: what about unsigned integers?
                                             ,'int:2'
                                             ,'int:4'
-                                           #,'int:8' # TODO: what about 64 bit?
+                                            ,'int:8' 
                                             ,'float'
                                             ,'double'
                                             ])
+
+# convert type names used by scanmem into ours
+TYPENAMES_S2G = {'I64':'int:8'
+                ,'I64s':'int:8'
+                ,'I64u':'int:8'
+                ,'I32':'int:4'
+                ,'I32s':'int:4'
+                ,'I16':'int:2'
+                ,'I16s':'int:2'
+                ,'I16u':'int:2'
+                ,'I8':'int:1'
+                ,'I8s':'int:1'
+                ,'I8u':'int:1'
+                ,'F':'float'
+                ,'D':'double'
+                }   
+
+# typenams: gameconqueror-> scanmem
+# signedness are lost!
+TYPENAMES_G2S = {'int:8':'I64'
+                ,'int:4':'I32'
+                ,'int:2':'I16'
+                ,'int:1':'I8'
+                ,'float':'F'
+                ,'double':'D'
+                }
 
 class GameConquerorBackend():
     def __init__(self):
@@ -59,22 +88,14 @@ class GameConquerorBackend():
 
     def get_output_lines(self):
         lines = []
-        line = []
         while True:
-            c = self.backend.stdout.read(1)
-            if c == '\n':
-                lines.append(''.join(line))
-                line = []
+            line = self.backend.stdout.readline()
+            match = BACKEND_END_OF_OUTPUT_PATTERN.match(line)
+            if match is None:
+                lines.append(line)
             else:
-                if c == '>':
-                    # ugly way of determine if scanmem is asking for input
-                    try:
-                        self.match_count = int(''.join(line))
-                        self.backend.stdout.read(1) # read the trailing space
-                        break
-                    except:
-                        pass
-                line.append(c)
+                self.match_count = int(match.groups()[0])
+                break
         return lines
 
     def send_command(self, cmd):
@@ -116,7 +137,7 @@ class GameConqueror():
         # we may need a cell data func here
         # create model
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
-        self.scanresult_liststore = gtk.ListStore(str, str) 
+        self.scanresult_liststore = gtk.ListStore(str, str, str) 
         self.scanresult_tv.set_model(self.scanresult_liststore)
         # first column
         self.scanresult_tv_col1 = gtk.TreeViewColumn('Address')
@@ -194,8 +215,8 @@ class GameConqueror():
         self.cheatlist_tv_col5_renderer.connect('edited', self.cheatlist_edit_value_cb)
         self.cheatlist_tv_col5.set_attributes(self.cheatlist_tv_col5_renderer, text=5)
         # for debug
-        self.cheatlist_liststore.append(['+', True, '2', '3', '4', '5'])
-        self.cheatlist_liststore.append([' ', False, 'desc', 'addr', 'type', 'value'])
+#        self.cheatlist_liststore.append(['+', True, '2', '3', '4', '5'])
+#        self.cheatlist_liststore.append([' ', False, 'desc', 'addr', 'type', 'value'])
 
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
@@ -273,8 +294,8 @@ class GameConqueror():
         # add to cheat list
         (model, iter) = self.scanresult_tv.get_selection().get_selected()
         if iter is not None:
-            (addr, value) = model.get(iter, 0, 1)
-            self.add_to_cheat_list(addr, value)
+            (addr, value, typestr) = model.get(iter, 0, 1, 2)
+            self.add_to_cheat_list(addr, value, typestr)
             return True
         return False
 
@@ -345,8 +366,8 @@ class GameConqueror():
         if data == 'add_to_cheat_list':
             (model, iter) = self.scanresult_tv.get_selection().get_selected()
             if iter is not None:
-                (addr, value) = model.get(iter, 0, 1)
-                self.add_to_cheat_list(addr, value)
+                (addr, value, typestr) = model.get(iter, 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
                 return True
             return False
         return False
@@ -354,22 +375,20 @@ class GameConqueror():
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
         row = int(path)
         locked = self.cheatlist_liststore[row][1]
-        self.cheatlist_liststore[row][1] = not locked
+        locked = not locked
+        self.cheatlist_liststore[row][1] = locked
         if locked:
-            # TODO tell backend unlock it
+            #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
             pass
         else:
-            # TODO check value
-            # TODO tell backend lock it
+            #TODO: update its value?
             pass
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
         row = int(path)
         self.cheatlist_liststore[row][0] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # TODO tell backend relock it
-            pass
+        # data_worker will handle this later
         return True
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
@@ -381,29 +400,35 @@ class GameConqueror():
         row = int(path)
         self.cheatlist_liststore[row][5] = new_text
         if self.cheatlist_liststore[row][1]: # locked
-            # TODO tell backend re-lock it
+            # data_worker will handle this
             pass
         else:
-            # TODO tell backend write it (for once)
-            pass
+            # write it for once
+            (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[row]
+            self.write_value(addr, typestr, value)
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         row = int(path)
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
-            # TODO tell backend unlock it
+            # false unlock it
+            self.cheatlist_liststore[row][1] = False
             pass
-        # TODO may need read & update the value
+        # TODO may need read & update (reinterpret) the value
         return True
 
     ############################
     # core functions
 
-    def add_to_cheat_list(self, addr, value):
-        # TODO: retrieve current value type
-        self.cheatlist_liststore.prepend(['=', False, 'No Description', addr, 'int', value])
-        # TODO: tell backend ?
+    def add_to_cheat_list(self, addr, value, typestr):
+        # determine longest possible type
+        types = typestr.split()
+        for t in types:
+            if TYPENAMES_S2G.has_key(t):
+                vt = TYPENAMES_S2G[t]
+                break
+        self.cheatlist_liststore.prepend(['=', False, 'No Description', addr, vt, value])
         # TODO: watch this item
 
     def get_process_list(self):
@@ -429,9 +454,13 @@ class GameConqueror():
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
+        (s1,s2,s3) = map(lambda x:x.get_property('sensitive'), (self.first_scan_button, self.next_scan_button, self.value_input))
         # TODO: syntax check
         self.backend.send_command(self.value_input.get_text())
         self.update_scan_result()
+
+        map(lambda x,y:x.set_sensitive(y), (self.first_scan_button, self.next_scan_button, self.value_input), (s1, s2, s3))
+
         self.search_count +=1 
         if self.search_count == 1:
             self.first_scan_button.set_label('New Scan')
@@ -439,7 +468,7 @@ class GameConqueror():
  
     def update_scan_result(self):
         self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))
-        if (self.backend.match_count > 1000):
+        if (self.backend.match_count > SCAN_RESULT_LIST_LIMIT):
             self.scanresult_liststore.clear()
         else:
             lines = self.backend.send_command('list')
@@ -447,10 +476,10 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                # TODO: ugly parser...
-                line = line[line.find(']'):]
-                (a,dummy, b) = line.split()[1:4]
-                self.scanresult_liststore.append([a[:-1], b[:-1]])
+                line = line[line.find(']')+1:]
+                (a, v, t) = map(str.strip, line.split(',')[:3])
+                t = t[1:-1]
+                self.scanresult_liststore.append([a, v, t])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
@@ -472,11 +501,21 @@ class GameConqueror():
  
     # read/write data periodly
     def data_worker(self):
-        # TODO may need to update some part of scanresult
+        rows = self.get_visible_rows(self.scanresult_tv)
+        if rows is not None:
+            (r1, r2) = rows # [r1, r2] rows are visible
+            # TODO: update some part of scanresult
         # TODO read unlocked values in cheat list
-        # TODO write locked values in cheat list
-        print self.get_visible_rows(self.scanresult_tv)
+        # write locked values in cheat list
+        for i in xrange(len(self.cheatlist_liststore)):
+            (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[i]
+            if locked:
+                self.write_value(addr, typestr, value)
         return not self.exit_flag
+
+    # typestr: use our typenames
+    def write_value(self, addr, typestr, value):
+        self.backend.send_command('write %s %s %s'%(TYPENAMES_G2S[typestr], addr, value))
 
     def exit(self, object, data=None):
         self.exit_flag = True
