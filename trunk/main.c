@@ -48,7 +48,7 @@ globals_t globals = {
     {
         1,                      /* alignment */
         1,                      /* debug */
-        1,                      /* backend */
+        0,                      /* backend */
     }
 };
 
@@ -67,7 +67,7 @@ int main(int argc, char **argv)
 
     /* process command line */
     while (true) {
-        switch (getopt_long(argc, argv, "vhp:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhbp:", longopts, &optindex)) {
         case 'p':
             vars->target = (pid_t) strtoul(optarg, &end, 0);
 
