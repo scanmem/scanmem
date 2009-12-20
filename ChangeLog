@@ -1,3 +1,10 @@
+2009-12-20 WANG Lu <coolwanglu(a)gmail.com>
+	* basic float/double support
+	* fixed a peek buffer bug, that the buffer is not shifted correctly
+    * change format of some commands for the front-end
+	* added a new 'write' command
+	* fixed a data overwritten issue (Issue 1)
+
 xxxx-xx-xx Tavis Ormandy <taviso@sdf.lonestar.org>
     * fixed infinite loop if a command was just leading whitespace.
     * add message to configure script about `libreadline-dev` package.

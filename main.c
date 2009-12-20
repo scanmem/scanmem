@@ -49,6 +49,8 @@ globals_t globals = {
         1,                      /* alignment */
         1,                      /* debug */
         0,                      /* backend */
+        1,                      /* search_integer */ /* for debug */
+        0,                      /* search_float */   /* for debug */
     }
 };
 
@@ -163,6 +165,7 @@ int main(int argc, char **argv)
                     WATCH_LONGDOC);
     registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
     registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
+    registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
 
     /* commands beginning with __ have special meaning */
     registercommand("__eof", handler__eof, vars->commands, NULL, NULL);

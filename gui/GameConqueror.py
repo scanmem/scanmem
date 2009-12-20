@@ -45,12 +45,12 @@ def build_simple_str_liststore(l):
 LOCK_FLAG_TYPES = build_simple_str_liststore(['=', '+', '-'])
 
 LOCK_VALUE_TYPES = build_simple_str_liststore(['int'
-                                            ,'int:1' # TODO: what about unsigned integers?
+                                            ,'int:1' 
                                             ,'int:2'
                                             ,'int:4'
                                             ,'int:8' 
-                                            ,'float'
-                                            ,'double'
+                                            ,'float:4'
+                                            ,'float:8'
                                             ])
 
 # convert type names used by scanmem into ours
@@ -65,8 +65,8 @@ TYPENAMES_S2G = {'I64':'int:8'
                 ,'I8':'int:1'
                 ,'I8s':'int:1'
                 ,'I8u':'int:1'
-                ,'F':'float'
-                ,'D':'double'
+                ,'F32':'float:4'
+                ,'F64':'float:8'
                 }   
 
 # typenams: gameconqueror-> scanmem
@@ -75,8 +75,8 @@ TYPENAMES_G2S = {'int:8':'I64'
                 ,'int:4':'I32'
                 ,'int:2':'I16'
                 ,'int:1':'I8'
-                ,'float':'F'
-                ,'double':'D'
+                ,'float:4':'F32'
+                ,'float:8':'F64'
                 }
 
 class GameConquerorBackend():
@@ -130,8 +130,11 @@ class GameConqueror():
         self.process_label = self.builder.get_object('Process_Label')
         self.value_input = self.builder.get_object('Value_Input')
 
-        self.first_scan_button = self.builder.get_object('FirstScan_Button')
-        self.next_scan_button = self.builder.get_object('NextScan_Button')
+        self.scan_button = self.builder.get_object('Scan_Button')
+        self.reset_button = self.builder.get_object('Reset_Button')
+
+        self.search_integer_checkbutton = self.builder.get_object('SearchInteger_CheckButton')
+        self.search_float_checkbutton = self.builder.get_object('SearchFloat_CheckButton')
 
         # init scanresult treeview
         # we may need a cell data func here
@@ -336,15 +339,12 @@ class GameConqueror():
         self.process_list_dialog.hide()
         return True
 
-    def FirstScan_Button_clicked_cb(self, button, data=None):
-        if self.search_count == 0: # first scan
-            self.do_scan()
-        else: # new scan
-            self.reset_scan()
+    def Scan_Button_clicked_cb(self, button, data=None):
+        self.do_scan()
         return True
 
-    def NextScan_Button_clicked_cb(self, button, data=None):
-        self.do_scan()
+    def Reset_Button_clicked_cb(self, button, data=None):
+        self.reset_scan()
         return True
 
     def ScanType_ComboBox_changed_cb(self, combobox, data=None):
@@ -442,11 +442,12 @@ class GameConqueror():
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.backend.send_command('pid %d' % (pid,))
         self.reset_scan()
+        # unlock all entries in cheat list
+        for i in xrange(len(self.cheatlist_liststore)):
+            self.cheatlist_liststore[i][1] = False
 
     def reset_scan(self):
         self.search_count = 0
-        self.first_scan_button.set_label('First Scan')
-        self.next_scan_button.set_sensitive(False)
         # reset search type and value type
         self.scanresult_liststore.clear()
         self.backend.send_command('reset')
@@ -454,17 +455,13 @@ class GameConqueror():
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
-        (s1,s2,s3) = map(lambda x:x.get_property('sensitive'), (self.first_scan_button, self.next_scan_button, self.value_input))
+        # set scan options
+        self.backend.send_command('option search_integer %s' % ((self.search_integer_checkbutton.get_property('active') and '1' or '0'),))
+        self.backend.send_command('option search_float %s' % ((self.search_float_checkbutton.get_property('active') and '1' or '0'),))
         # TODO: syntax check
         self.backend.send_command(self.value_input.get_text())
         self.update_scan_result()
-
-        map(lambda x,y:x.set_sensitive(y), (self.first_scan_button, self.next_scan_button, self.value_input), (s1, s2, s3))
-
         self.search_count +=1 
-        if self.search_count == 1:
-            self.first_scan_button.set_label('New Scan')
-            self.next_scan_button.set_sensitive(True)
  
     def update_scan_result(self):
         self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))
