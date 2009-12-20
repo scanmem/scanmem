@@ -46,8 +46,8 @@ bool valtostr(const value_t * val, char *str, size_t n)
              FLAG_MACRO(32, "I32"),
              FLAG_MACRO(16, "I16"),
              FLAG_MACRO(8,  "I8"),
-             val->flags.f64b ? "D " : "",
-             val->flags.f32b ? "F " : "",
+             val->flags.f64b ? "F64 " : "",
+             val->flags.f32b ? "F32 " : "",
              (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
 
          if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
@@ -65,8 +65,8 @@ bool valtostr(const value_t * val, char *str, size_t n)
     else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
     else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
     else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
-    else if (val->flags.f64b) snprintf(str, n, "%lf, %s", (signed long int) val->double_value, buf);
-    else if (val->flags.f32b) snprintf(str, n, "%f, %s", (signed long int) val->float_value, buf);
+    else if (val->flags.f64b) snprintf(str, n, "%lf, %s", val->double_value, buf);
+    else if (val->flags.f32b) snprintf(str, n, "%f, %s", val->float_value, buf);
     else {
         snprintf(str, n, "%#llx?, %s", get_slonglong(val), buf);
         return false;
@@ -112,20 +112,25 @@ void valnowidth(value_t * val)
 {
     assert(val);
 
-    val->flags.u64b = 1;
-    val->flags.s64b = 1;
-    val->flags.f64b = 1;
-    val->flags.u32b = 1;
-    val->flags.s32b = 1;
-    val->flags.f32b = 1;
-    val->flags.u16b = 1;
-    val->flags.s16b = 1;
-    val->flags.u8b  = 1;
-    val->flags.s8b  = 1;
-    
+    if (globals.options.search_integer)
+    {
+        val->flags.u64b = 1;
+        val->flags.s64b = 1;
+        val->flags.u32b = 1;
+        val->flags.s32b = 1;
+        val->flags.u16b = 1;
+        val->flags.s16b = 1;
+        val->flags.u8b  = 1;
+        val->flags.s8b  = 1;
+    }
+    if (globals.options.search_float)
+    {
+        val->flags.f64b = 1;
+        val->flags.f32b = 1;
+    }
+
     val->flags.ineq_forwards = 1;
     val->flags.ineq_reverse = 1;
-
     return;
 }
 
@@ -152,16 +157,19 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
     if (num > -(1LL<<15) && num < (1LL<<15)) val->flags.s16b = 1;
     if (num >=       (0) && num < (1LL<<32)) val->flags.u32b = 1;
     if (num > -(1LL<<31) && num < (1LL<<31)) val->flags.s32b = 1;
-    if (num >=       (0) &&          (true)) val->flags.u64b = 1;
+    if (num >=       (0) &&          (true)) val->flags.u64b = 1; // what if num >= 1<<32 ?
     if (          (true) &&          (true)) val->flags.s64b = 1;
 
     /* finally insert the number */
     val->int_value = num;
-    
+
+    /* TODO: (UGLY) currently, assume users always provide an integer value */
+    val->flags.f32b = val->flags.f64b = 1;
+    val->float_value = (float) num;
+    val->double_value = (double) num;   
+
     /* values from strings are always done by bit math */
     val->how_to_calculate_values = BY_BIT_MATH;
-    
-    /* XXX - user cannot specify float values */
 
     return;
 
@@ -172,12 +180,46 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
 #define valueequal(a,b,x) (((a)->flags.x && (b)->flags.x) && (get_##x(a) == get_##x(b)))
 #define valuecopy(a,b,x) ((set_##x(a, get_##x(b))), ((a)->flags.x = 1))
 
+/* for integers */
+#define MATCH_MACRO_3(comp, signedness, bytes) \
+        if (value##comp(v1, v2, signedness##bytes##b)) { \
+            valuecopy(v, v1, signedness##bytes##b); \
+            ret = true; \
+        }
+#define MATCH_MACRO_2(comp, bytes) MATCH_MACRO_3(comp, u, bytes) MATCH_MACRO_3(comp, s, bytes)
+#define MATCH_MACRO(comp) MATCH_MACRO_2(comp, 8) MATCH_MACRO_2(comp, 16) MATCH_MACRO_2(comp, 32) MATCH_MACRO_2(comp, 64)
+
+/* for float/double */
+#define MATCH_FLOAT_MACRO_2(which_way, type_flag, type_value) \
+        if (v1->flags.type_flag & v2->flags.type_flag) { \
+            if (v1->type_value - v2->type_value which_way 0) { \
+                v->flags.type_flag = 1; \
+                v->type_value = v1->type_value; \
+                ret = true; \
+            } \
+        }
+#define MATCH_FLOAT_MACRO(which_way) MATCH_FLOAT_MACRO_2(which_way, f64b, double_value) MATCH_FLOAT_MACRO_2(which_way, f32b, float_value)
+
+/* MATCHEXACT on float/double values should be handled specially */
+/* v2 should be given by the user */
+/* current only one type of rounding is used */
+#define MATCH_FLOAT_EXACT_TYPE(type_flag, type_value) \
+        if (v1->flags.type_flag & v2->flags.type_flag) { \
+            if ((int64_t)(v1->type_value) == (int64_t)(v2->type_value)) { \
+                v->flags.type_flag = 1; \
+                v->type_value = v1->type_value; \
+                ret = true; \
+            } \
+        }
+
+#define MATCH_FLOAT_EXACT() MATCH_FLOAT_EXACT_TYPE(f64b, double_value) MATCH_FLOAT_EXACT_TYPE(f32b, float_value)
+ 
 /* eg: valuecmp(v1, (is) GREATERTHAN, v2), best match is put into save */
 bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
               value_t * save)
 {
     value_t s, *v = &s;
-    bool ret = false, invert = false;
+    bool ret = false;
 
     assert(v1 != NULL);
     assert(v2 != NULL);
@@ -189,18 +231,15 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
     case MATCHANY:
         *save = *v1;
         return true;
-    case MATCHEQUAL:
     case MATCHEXACT:
-#define MATCH_MACRO_3(comp, signedness, bytes) \
-        if (value##comp(v1, v2, signedness##bytes##b)) { \
-            valuecopy(v, v1, signedness##bytes##b); \
-            ret = true; \
-        }
-#define MATCH_MACRO_2(comp, bytes) MATCH_MACRO_3(comp, u, bytes) MATCH_MACRO_3(comp, s, bytes)
-#define MATCH_MACRO(comp) MATCH_MACRO_2(comp, 8) MATCH_MACRO_2(comp, 16) MATCH_MACRO_2(comp, 32) MATCH_MACRO_2(comp, 64)
-
         MATCH_MACRO(equal);
+        MATCH_FLOAT_EXACT()
+        break;
 
+    case MATCHEQUAL:
+        MATCH_MACRO(equal);
+        MATCH_FLOAT_MACRO(==); /* FIXME: this is bad, very bad */
+        
         break;
     case MATCHNOTEQUAL:
         /* Fall through twice - either greater than or less than can apply */
@@ -208,17 +247,6 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
     
         MATCH_MACRO(lt);
 
-        /* could be a float */
-#define MATCH_FLOAT_MACRO_2(which_way, type_flag, type_value) \
-        if (v1->flags.type_flag & v2->flags.type_flag) { \
-            if (v1->type_value - v2->type_value which_way 0) { \
-                v->flags.type_flag = 1; \
-                v->type_value = v1->type_value; \
-                ret = true; \
-            } \
-        }
-#define MATCH_FLOAT_MACRO(which_way) MATCH_FLOAT_MACRO_2(which_way, f64b, double_value) MATCH_FLOAT_MACRO_2(which_way, f32b, float_value)
-        
         MATCH_FLOAT_MACRO(<);
 
         if (operator == MATCHLESSTHAN) break;
@@ -271,9 +299,6 @@ bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
 
     if (save != NULL)
         memcpy(save, v, sizeof(value_t));
-
-    if (invert)
-        ret = !ret;
 
     return ret;
 }

@@ -102,34 +102,18 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="FirstScan_Button">
-                    <property name="label" translatable="yes">First Scan</property>
-                    <property name="width_request">77</property>
+                  <object class="GtkButton" id="Scan_Button">
+                    <property name="label" translatable="yes">Scan</property>
+                    <property name="width_request">49</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <signal name="clicked" handler="FirstScan_Button_clicked_cb"/>
-                  </object>
-                  <packing>
-                    <property name="x">14</property>
-                    <property name="y">63</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="NextScan_Button">
-                    <property name="label" translatable="yes">Next Scan</property>
-                    <property name="width_request">77</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <signal name="clicked" handler="NextScan_Button_clicked_cb"/>
+                    <signal name="clicked" handler="Scan_Button_clicked_cb"/>
                   </object>
                   <packing>
                     <property name="x">105</property>
-                    <property name="y">63</property>
+                    <property name="y">133</property>
                   </packing>
                 </child>
                 <child>
@@ -144,58 +128,6 @@
                   <packing>
                     <property name="x">14</property>
                     <property name="y">98</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="label2">
-                    <property name="width_request">77</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="label" translatable="yes">Scan type:</property>
-                    <property name="single_line_mode">True</property>
-                  </object>
-                  <packing>
-                    <property name="x">14</property>
-                    <property name="y">133</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="label3">
-                    <property name="width_request">77</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="sensitive">False</property>
-                    <property name="label" translatable="yes">Value type:</property>
-                  </object>
-                  <packing>
-                    <property name="x">14</property>
-                    <property name="y">168</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBox" id="ScanType_ComboBox">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <signal name="changed" handler="ScanType_ComboBox_changed_cb"/>
-                  </object>
-                  <packing>
-                    <property name="x">105</property>
-                    <property name="y">133</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBox" id="ValueType_ComboBox">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <signal name="changed" handler="ValueType_ComboBox_changed_cb"/>
-                  </object>
-                  <packing>
-                    <property name="x">105</property>
-                    <property name="y">168</property>
                   </packing>
                 </child>
                 <child>
@@ -257,6 +189,83 @@
                   <packing>
                     <property name="x">410</property>
                     <property name="y">94</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="Reset_Button">
+                    <property name="label" translatable="yes">Reset
+</property>
+                    <property name="width_request">49</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <signal name="clicked" handler="Reset_Button_clicked_cb"/>
+                  </object>
+                  <packing>
+                    <property name="x">182</property>
+                    <property name="y">133</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkFrame" id="frame1">
+                    <property name="width_request">150</property>
+                    <property name="height_request">80</property>
+                    <property name="visible">True</property>
+                    <property name="label_xalign">0</property>
+                    <property name="shadow_type">out</property>
+                    <child>
+                      <object class="GtkAlignment" id="alignment1">
+                        <property name="visible">True</property>
+                        <property name="left_padding">12</property>
+                        <child>
+                          <object class="GtkFixed" id="fixed1">
+                            <property name="visible">True</property>
+                            <child>
+                              <object class="GtkCheckButton" id="SearchInteger_CheckButton">
+                                <property name="label" translatable="yes">Integer</property>
+                                <property name="width_request">105</property>
+                                <property name="height_request">28</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="active">True</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="x">14</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkCheckButton" id="SearchFloat_CheckButton">
+                                <property name="label" translatable="yes">Float</property>
+                                <property name="width_request">105</property>
+                                <property name="height_request">28</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="receives_default">False</property>
+                                <property name="draw_indicator">True</property>
+                              </object>
+                              <packing>
+                                <property name="x">14</property>
+                                <property name="y">28</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label">
+                      <object class="GtkLabel" id="label2">
+                        <property name="visible">True</property>
+                        <property name="label" translatable="yes">&lt;b&gt;Scan Options&lt;/b&gt;</property>
+                        <property name="use_markup">True</property>
+                      </object>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">280</property>
+                    <property name="y">140</property>
                   </packing>
                 </child>
               </object>
