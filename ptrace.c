@@ -61,9 +61,12 @@
 #include "value.h"
 #include "scanmem.h"
 
+#define min(a,b) (((a)<(b))?(a):(b))
+
 /* ptrace peek buffer, used by peekdata() */
+#define MAX_PEEKBUF_SIZE (4*sizeof(int64_t))
 static struct {
-    uint8_t cache[2 * sizeof(int64_t)];  /* read from ptrace()  */
+    uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from ptrace()  */
     unsigned size;              /* number of entries (in bytes) */
     char *base;                 /* base address of cached region */
     pid_t pid;                  /* what pid this applies to */
@@ -114,10 +117,10 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
 {
     char *reqaddr = addr;
     int i, j;
-    int shift_size = 0;
-    char *last_address_gathered;
+    int shift_size1 = 0, shift_size2 = 0;
+    char *last_address_gathered = 0;
 
-    assert(peekbuf.size < 2 * sizeof(int64_t));
+    assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
     assert(result != NULL);
 
     memset(result, 0x00, sizeof(value_t));
@@ -141,20 +144,24 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         assert(peekbuf.size != 0);
 
         /* partial hit, we have some of the data but not all, so remove old entries - shift the frame by as far as is necessary */
-        shift_size = (reqaddr + sizeof(int64_t)) - (peekbuf.base + peekbuf.size);
-        /* Round up to nearest long size, for ptrace efficiency */
-        shift_size = sizeof(long) * (1 + ((shift_size - 1) / sizeof(long)));
-        
-        for (i = shift_size; i < peekbuf.size; ++i)
+        /* tail shift, round up to nearest long size, for ptrace efficiency */
+        shift_size1 = (reqaddr + sizeof(int64_t)) - (peekbuf.base + peekbuf.size);
+        shift_size1 = sizeof(long) * (1 + (shift_size1-1) / sizeof(long));
+
+        /* head shift */
+        shift_size2 = reqaddr-peekbuf.base;
+        shift_size2 = sizeof(long) * (shift_size2 / sizeof(long));
+
+        for (i = shift_size2; i < peekbuf.size; ++i)
         {
-            peekbuf.cache[i - shift_size] = peekbuf.cache[i];
+            peekbuf.cache[i - shift_size2] = peekbuf.cache[i];
         }
-        peekbuf.size -= shift_size;
-        peekbuf.base += shift_size;
+        peekbuf.size -= shift_size2;
+        peekbuf.base += shift_size2;
     } else {
 
         /* cache miss, invalidate cache */
-        shift_size = sizeof(int64_t);
+        shift_size1 = shift_size2 = sizeof(int64_t);
         peekbuf.pid = pid;
         peekbuf.size = 0;
         peekbuf.base = addr;
@@ -163,9 +170,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     /* we need a ptrace() to complete request */
     errno = 0;
     
-    assert (shift_size > 0);
-
-    for (i = 0; i < shift_size; i += sizeof(long))
+    for (i = 0; i < shift_size1; i += sizeof(long))
     {
         char *ptrace_address = peekbuf.base + peekbuf.size + i;
         long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
@@ -243,7 +248,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     return true;
 }
 
-/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detatch, or reallocate memory, otherwise true.
+/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
 bool checkmatches(globals_t * vars, value_t value,
                   matchtype_t type)
@@ -267,7 +272,7 @@ bool checkmatches(globals_t * vars, value_t value,
         value_t check;
         value_t data_value;
         void *address = reading_swath.first_byte_in_child + reading_iterator;
-
+        
         /* Read value from this address */
         if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
             /* Uhh, what? We couldn't look at the data there? I guess this doesn't count as a match then */
@@ -275,6 +280,7 @@ bool checkmatches(globals_t * vars, value_t value,
         else
         {
             value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes, MATCHES_AND_VALUES);
+
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             truncval_to_flags(&old_val, flags);
             check = data_value;
@@ -325,6 +331,7 @@ bool checkmatches(globals_t * vars, value_t value,
             /* Still a candidate. Write data. 
                 (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
+          
             old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
             writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
             
@@ -567,10 +574,10 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     /* Basically, overwrite as much of the data as makes sense, and no more. */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s32b(&saved, *((int32_t *)&to->double_value)); } /* WangLu: not sure about this */
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&to->double_value)); } 
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
-    else if (saved.flags.f32b && to->flags.f32b) { set_s64b(&saved, *((int64_t *)&to->float_value)); } /* WangLu: not sure about this */
+    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&to->float_value)); } 
     else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
     else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
     else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }

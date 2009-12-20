@@ -20,12 +20,15 @@ You are supposed to be able to use cheating tools like CheatEngine
 
 - Search for a value in the Value entry, then press Enter or the scan buttons
   * Use syntax supported by scanmem
+    1. <an integer>: search for the number -- so far you should provide an integer even when search for a float number, 
+                    and rounding will be used
+    2. <, =, >: search for values that decreased, not changed, and increased, respectively
+  * You scan enable/disable searching for integer/float using the checkboxes.
   * Pay attention to 'Found: XX' at topleft 
   * Results will be displayed in the left list if there are not too many 
 - Add a candidate address to the list below by double-click on it or use the context-menu
 - There you can edit description, value, and lock it.
 
-!! Currently only integer scanning are supported, the width is auto-detected (and can only be auto-detected)
 !! Currently only '=' locking is supported, which means the '>' and '<' flags are useless
 !! Pay attention to the output of GameConqueror, you'll see error messages from scanmem -- so GameConqueror is recommended to be executed in a shell
 
@@ -35,16 +38,16 @@ Comparing with CheatEngine
 You may have a feeling of deja vu, because the UI is almost a clone of CheatEngine, yep, that's right
 And here's the differences:
 
-Adv. of GameConqueror
+Adv. of GameConqueror/scanmem
 ---------------------
-* flexible syntax & command line -- powered by scanmem
-  - you can type the commands supported by scanmem directly in the Value entry (Note: this might not be true in the future releases)
+* data type/width auto detected -- you won't need to struggle among them anymore!
+* flexible syntax -- to be implemented
 
-Disadv.of GameConqueror
+
+Disadv.of GameConqueror/scanmem
 -----------------------
-* Lots of things not implemented -- still under working
-* memory editing might be supported, but not ASM things
-
+* memory editing might be supported
+* currently, assemble/disassemble/pointers are not taken into consideration
 
 
 

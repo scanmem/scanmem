@@ -334,7 +334,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         {
             value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
             truncval_to_flags(&val, flags);
-            
+
             if (valtostr(&val, v, sizeof(v)) != true) {
                 strncpy(v, "unknown", sizeof(v));
             }
@@ -936,7 +936,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     /* check that strtoul() worked */
     if (argv[1][0] == '\0' || *end != '\0') {
-        fprintf(stderr, "error: sorry, couldnt parse `%s`, try `help watch`\n",
+        fprintf(stderr, "error: sorry, couldn't parse `%s`, try `help watch`\n",
                 argv[1]);
         return false;
     }
@@ -945,7 +945,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     /* check this is a valid match-id */
     if (!loc.swath) {
-        fprintf(stderr, "error: you specified a non-existant match `%u`.\n",
+        fprintf(stderr, "error: you specified a non-existent match `%u`.\n",
                 id);
         fprintf(stderr,
                 "info: use \"list\" to list matches, or \"help\" for other commands.\n");
@@ -1028,7 +1028,7 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     else if (strcmp(argv[1], "version") == 0)
         printversion(stdout);
     else {
-        fprintf(stderr, "error: unrecognised show command `%s`\n", argv[1]);
+        fprintf(stderr, "error: unrecognized show command `%s`\n", argv[1]);
         return false;
     }
     
@@ -1042,7 +1042,7 @@ bool handler__options(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
 {
-    int int_width = 0;
+    int data_width = 0;
     const char *fmt;
     void *addr;
     char buf[10];
@@ -1057,27 +1057,36 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     /* try int first */
     if (strcasecmp(argv[1], "i8") == 0)
     {
-        int_width = 1;
+        data_width = 1;
         fmt = "%hhd";
     }
     else if (strcasecmp(argv[1], "i16") == 0)
     {
-        int_width = 2;
+        data_width = 2;
         fmt = "%hd";
     }
     else if (strcasecmp(argv[1], "i32") == 0)
     {
-        int_width = 4;
+        data_width = 4;
         fmt = "%d";
     }
     else if (strcasecmp(argv[1], "i64") == 0)
     {
-        int_width = 8;
+        data_width = 8;
         fmt = "%lld";
     }
+    else if (strcasecmp(argv[1], "f32") == 0)
+    {
+        data_width = 4;
+        fmt = "%f";
+    }
+    else if (strcasecmp(argv[1], "f64") == 0)
+    {
+        data_width = 8;
+        fmt = "%lf";
+    }
     /* may support more types here */
-
-    if (!int_width) 
+    else
     {
         fprintf(stderr, "error: bad data_type, see `help write`.\n");
         return false;
@@ -1091,16 +1100,62 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* load value into buffer */
-    if(int_width)
+    if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
     {
-        if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
-        {
-            fprintf(stderr, "error: bad value, see `help write`.\n");
-            return false;
-        }
-        buf_length = int_width; 
+        fprintf(stderr, "error: bad value, see `help write`.\n");
+        return false;
     }
+    buf_length = data_width; 
 
     /* write into memory */
     return write_array(vars->target, addr, buf, buf_length);
+}
+
+bool handler__option(globals_t * vars, char **argv, unsigned argc)
+{
+    if (argc != 3)
+    {
+        fprintf(stderr, "error: bad arguments, see `help option`.\n");
+        return false;
+    }
+
+    if (strcasecmp(argv[1], "search_integer") == 0)
+    {
+        if (strcmp(argv[2], "0") == 0)
+        {
+            vars->options.search_integer = 0;
+        }
+        else if (strcmp(argv[2], "1") == 0)
+        {
+            vars->options.search_integer = 1;
+        }
+        else
+        {
+            fprintf(stderr, "error: bad value provided, see `help option`.\n");
+            return false;
+        }
+    }
+    else if (strcasecmp(argv[1], "search_float") == 0)
+    {
+        if (strcmp(argv[2], "0") == 0)
+        {
+            vars->options.search_float = 0;
+        }
+        else if (strcmp(argv[2], "1") == 0)
+        {
+            vars->options.search_float = 1;
+        }
+        else
+        {
+            fprintf(stderr, "error: bad value provided, see `help option`.\n");
+            return false;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "error: unknown option specified, see `help option`.\n");
+        return false;
+    }
+
+    return true;
 }

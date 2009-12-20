@@ -31,6 +31,7 @@
                "To set a value continually, for example to prevent a counter from decreasing,\n" \
                "suffix the command with '/', followed by the number of seconds to wait between\n" \
                "sets. Interrupt scanmem with ^C to stop the setting.\n\n" \
+               "Note that you can only specify integer values even for float/double matches.\n\n" \
                "Examples:\n" \
                "\tset 10 - set all known matches to 10\n" \
                "\tset 0=0x03 - set match 0 to 0x03.\n" \
@@ -194,10 +195,19 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc);
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
                 "Write <value> into <address>\n" \
-                "<value_type> should be one of i8,i16,i32,i64\n" \
+                "<value_type> should be one of i8,i16,i32,i64,f32,f64\n" \
                 "Example:\n" \
-                "write i16 601038 0\n"
+                "\twrite i16 601038 0\n"
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
+#define OPTION_SHRTDOC "set runtime options of scanmem"
+#define OPTION_LONGDOC " usage: option <option_name> <option_value>\n" \
+                 "<option_name> should be one of:\n" \
+                 "\tsearch_integer\t(1/0)\twhether search for integers (default: 1)\n" \
+                 "\tsearch_float\t(1/0)\twhether search for float/double numbers (default: 0)\n" \
+                 "Example:\n" \
+                 "\toption search_float 1\n"
+
+bool handler__option(globals_t * vars, char **argv, unsigned argc);
 #endif
