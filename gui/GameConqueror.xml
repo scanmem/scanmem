@@ -301,7 +301,7 @@
     <property name="program_name">GameConqueror</property>
     <property name="version">v2.0b</property>
     <property name="copyright" translatable="yes">by Wang Lu</property>
-    <property name="comments" translatable="yes">A graphical game cheating tool with scanmem as backend</property>
+    <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
     <property name="website">https://sourceforge.net/projects/gameconqueror</property>
     <property name="license">                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

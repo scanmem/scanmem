@@ -73,6 +73,7 @@ typedef struct {
         /* options that can be changed during runtime */
         unsigned short search_integer;
         unsigned short search_float;
+        map_detail_level_t map_detail_level;
     } options;
 } globals_t;
 
