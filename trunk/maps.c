@@ -37,45 +37,92 @@
 bool readmaps(pid_t target, list_t * regions)
 {
     FILE *maps;
-    char name[32], *line = NULL;
+    char name[128], *line = NULL;
+    char exename[128];
     size_t len = 0;
+
+#define MAX_LINKBUF_SIZE 256
+    char linkbuf[MAX_LINKBUF_SIZE];
+    int linkbuf_size;
 
     /* check if target is valid */
     if (target == 0)
         return false;
 
     /* construct the maps filename */
-    snprintf(name, sizeof(name), "/proc/%u/maps", target);
+        snprintf(name, sizeof(name), "/proc/%u/maps", target);
 
-    /* attempt to open the maps file */
-    if ((maps = fopen(name, "r")) == NULL) {
-        fprintf(stderr, "error: failed to open maps file %s.\n", name);
-        return false;
-    }
-
-    eprintf("info: maps file located at %s opened.\n", name);
-
-    /* read every line of the maps file */
-    while (getline(&line, &len, maps) != -1) {
-        unsigned long start, end;
-        region_t *map = NULL;
-        char read, write, exec, cow, *filename;
-
-        /* slight overallocation */
-        if ((filename = alloca(len)) == NULL) {
-            fprintf(stderr, "error: failed to allocate %lu bytes for filename.\n", (unsigned long)len);
-            goto error;
+        /* attempt to open the maps file */
+        if ((maps = fopen(name, "r")) == NULL) {
+            fprintf(stderr, "error: failed to open maps file %s.\n", name);
+            return false;
         }
-        
-        /* initialise to zero */
-        memset(filename, '\0', len);
 
-        /* parse each line */
-        if (sscanf(line, "%lx-%lx %c%c%c%c %*x %*s %*u %s", &start, &end, &read,
-                &write, &exec, &cow, filename) >= 6) {
+        eprintf("info: maps file located at %s opened.\n", name);
 
-            /* must have permissions to read and write, and be non-zero size */
-            if (write == 'w' && read == 'r' && (end - start) > 0) {
+        /* read every line of the maps file */
+        while (getline(&line, &len, maps) != -1) {
+            unsigned long start, end;
+            region_t *map = NULL;
+            char read, write, exec, cow, *filename;
+            int offset, dev_major, dev_minor, inode;
+
+            /* slight overallocation */
+            if ((filename = alloca(len)) == NULL) {
+                fprintf(stderr, "error: failed to allocate %lu bytes for filename.\n", (unsigned long)len);
+                goto error;
+            }
+            
+            /* initialise to zero */
+            memset(filename, '\0', len);
+
+            /* parse each line */
+            if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
+                    &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
+
+                /* must have permissions to read and write, and be non-zero size */
+                if ((write == 'w') && (read == 'r') && ((end - start) > 0)) {
+                    
+                    /* determine if this region is useful */
+                    bool useful = false;
+                    switch (globals.options.map_detail_level)
+                    {
+                        case MAP_ALL:
+                            useful = true;
+                            break;
+                        case MAP_HEAP_STACK_EXECUTABLE_BSS:
+                            if (inode == 0)
+                            {
+                                useful = true;
+                                break;
+                            } 
+                            /* fall through */
+                        case MAP_HEAP_STACK_EXECUTABLE:
+                            if ((!strcmp(filename, "[heap]")) || (!strcmp(filename, "[stack]")))
+                            {
+                                useful = true;
+                                break;
+                            }
+                            /* test if the region is mapped to the executable */
+                            snprintf(exename, sizeof(exename), "/proc/%u/exe", target);
+                            if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) == -1)
+                            {
+                                fprintf(stderr, "error: failed to read executable link.\n");
+                                goto error;
+                            }
+                            if (linkbuf_size >= MAX_LINKBUF_SIZE)
+                            {
+                                fprintf(stderr, "error: path to the executable is too long.\n");
+                                goto error;
+                            }
+                            linkbuf[linkbuf_size] = 0;
+                            if (strcmp(filename, linkbuf) == 0)
+                                useful = true;
+                        break;
+                }
+                   
+                if (!useful)
+                    continue;
 
                 /* allocate a new region structure */
                 if ((map = calloc(1, sizeof(region_t) + strlen(filename))) == NULL) {

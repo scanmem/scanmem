@@ -370,6 +370,7 @@ bool checkmatches(globals_t * vars, value_t value,
     return detach(vars->target);
 }
 
+/* read region using /proc/pid/mem */
 ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offset, size_t max)
 {
     char mem[32];
@@ -475,7 +476,7 @@ bool searchregions(globals_t * vars,
         /* cannot use /proc/pid/mem */
         nread = r->size;
 #endif
-        /* print a progress meter so user knows we havnt crashed */
+        /* print a progress meter so user knows we havent crashed */
         fprintf(stderr, "info: %02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
