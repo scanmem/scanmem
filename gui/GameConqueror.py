@@ -172,7 +172,8 @@ class GameConqueror():
         self.cheatlist_tv_col0_renderer.set_property('has-entry', False)
         self.cheatlist_tv_col0_renderer.set_property('model', LOCK_FLAG_TYPES)
         self.cheatlist_tv_col0_renderer.set_property('text-column', 0)
-        self.cheatlist_tv_col0_renderer.connect('edited', self.cheatlist_toggle_lock_flag_cb)
+        # so far only one lock flag is supported
+#        self.cheatlist_tv_col0_renderer.connect('edited', self.cheatlist_toggle_lock_flag_cb)
         # first column - Lock
         self.cheatlist_tv_col1 = gtk.TreeViewColumn('Lock')
         self.cheatlist_tv.append_column(self.cheatlist_tv_col1)
