@@ -321,12 +321,16 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     USEPARAMS();
 
+    if(!(vars->matches))
+        return true;
+
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     int reading_iterator = 0;
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
         char v[80];
+
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
         /* Only actual matches are considered */

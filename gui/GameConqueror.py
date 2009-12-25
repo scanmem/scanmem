@@ -99,6 +99,8 @@ class GameConquerorBackend():
         return lines
 
     def send_command(self, cmd):
+        # for debug
+#        print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
         output_lines = self.get_output_lines()
         # for debug
@@ -441,6 +443,7 @@ class GameConqueror():
         # reset flags
         print 'Select process: %d - %s' % (pid, process_name)
         self.process_label.set_text('%d - %s' % (pid, process_name))
+        self.process_label.set_property('tooltip-text', process_name)
         self.backend.send_command('pid %d' % (pid,))
         self.reset_scan()
         # unlock all entries in cheat list
@@ -452,6 +455,7 @@ class GameConqueror():
         # reset search type and value type
         self.scanresult_liststore.clear()
         self.backend.send_command('reset')
+        self.update_scan_result()
 
     # perform scanning through backend
     # set GUI if needed
