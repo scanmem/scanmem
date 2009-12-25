@@ -68,8 +68,8 @@
             </child>
             <child>
               <object class="GtkLayout" id="layout2">
-                <property name="width_request">450</property>
-                <property name="height_request">450</property>
+                <property name="width_request">420</property>
+                <property name="height_request">250</property>
                 <property name="visible">True</property>
                 <property name="width">105</property>
                 <child>
@@ -97,7 +97,7 @@
                     <signal name="activate" handler="Value_Input_activate_cb"/>
                   </object>
                   <packing>
-                    <property name="x">105</property>
+                    <property name="x">63</property>
                     <property name="y">98</property>
                   </packing>
                 </child>
@@ -112,13 +112,13 @@
                     <signal name="clicked" handler="Scan_Button_clicked_cb"/>
                   </object>
                   <packing>
-                    <property name="x">105</property>
+                    <property name="x">63</property>
                     <property name="y">133</property>
                   </packing>
                 </child>
                 <child>
                   <object class="GtkLabel" id="label1">
-                    <property name="width_request">77</property>
+                    <property name="width_request">42</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="xalign">1</property>
@@ -138,15 +138,16 @@
                     <property name="label" translatable="yes">v2.0b</property>
                   </object>
                   <packing>
-                    <property name="x">401</property>
-                    <property name="y">62</property>
+                    <property name="x">344</property>
+                    <property name="y">56</property>
                   </packing>
                 </child>
                 <child>
                   <object class="GtkLabel" id="Process_Label">
-                    <property name="width_request">210</property>
+                    <property name="width_request">182</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
+                    <property name="tooltip_text" translatable="yes">Select a Process</property>
                     <property name="xalign">0</property>
                     <property name="label" translatable="yes">No process selected</property>
                   </object>
@@ -172,7 +173,7 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="x">329</property>
+                    <property name="x">280</property>
                     <property name="y">9</property>
                   </packing>
                 </child>
@@ -187,7 +188,7 @@
                     <signal name="clicked" handler="ValueHelp_Button_clicked_cb"/>
                   </object>
                   <packing>
-                    <property name="x">410</property>
+                    <property name="x">378</property>
                     <property name="y">94</property>
                   </packing>
                 </child>
@@ -203,7 +204,7 @@
                     <signal name="clicked" handler="Reset_Button_clicked_cb"/>
                   </object>
                   <packing>
-                    <property name="x">182</property>
+                    <property name="x">140</property>
                     <property name="y">133</property>
                   </packing>
                 </child>
@@ -264,7 +265,7 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="x">280</property>
+                    <property name="x">210</property>
                     <property name="y">140</property>
                   </packing>
                 </child>
@@ -282,6 +283,7 @@
         </child>
         <child>
           <object class="GtkTreeView" id="CheatList_TreeView">
+            <property name="height_request">100</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
           </object>
