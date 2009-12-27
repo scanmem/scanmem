@@ -271,7 +271,7 @@ class GameConqueror():
                                  ,0
                                  ,gtk.MESSAGE_INFO
                                  ,gtk.BUTTONS_OK
-                                 ,'Currently use any scanmem (scan) command here.\nI\'m considering using some more complicated but convenient syntax later (like 255:4, 5-7, >, <=, etc.)\nTherefore the parsing could be done in the frontend, while backend can still use standard forms')
+                                 ,'Currently use any scanmem (scan) command here.\nTo search for a number, you may type an integer or \'<\' or \'>\'\n\n(I\'m considering using some more complicated but convenient syntax later (like 255:4, 5-7, >, <=, etc.)\nTherefore the parsing could be done in the frontend, while backend can still use standard forms)')
         dialog.run()
         dialog.destroy()
 
