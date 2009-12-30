@@ -28,7 +28,6 @@ Next Version
 Future
 ======
 * macro support
-* support double and long long.
 * read symbol table, and print its name if we have a match.
 * support more esoteric number formats, such as bcd, ascii, etc.
 * pagination
