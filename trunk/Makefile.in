@@ -36,8 +36,8 @@ bin_PROGRAMS = scanmem$(EXEEXT)
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(dist_man_MANS) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure ChangeLog NEWS \
-	TODO depcomp install-sh missing
+	$(srcdir)/config.h.in $(top_srcdir)/configure COPYING \
+	ChangeLog NEWS TODO depcomp install-sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -200,7 +200,9 @@ scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 	maps.h target_memory_info_array.h
 scanmem_CFLAGS = -O1 -g -Wall
 dist_man_MANS = scanmem.1
-EXTRA_DIST = test
+EXTRA_DIST = test gui/GameConqueror_128x128.png \
+	gui/GameConqueror_72x72.png gui/GameConqueror.py \
+	gui/GameConqueror.xml gui/README gui/TODO
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
