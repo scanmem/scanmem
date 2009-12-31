@@ -14,6 +14,19 @@ PyGTK
 
 
 
+Install
+=======
+First make sure you have installed the latest version of scanmem. 
+If it's not been placed into the default position, you need to change the GameConqueror.py file.
+
+For GameConqueror, just copy all the files to whereever you want.
+And you may want to create some wrapper script in /usr/bin like:
+
+#!/bin/bash
+exec /usr/bin/python /path-to-gameconqueror/GameConqueror.py
+
+
+
 Usage
 =====
 You are supposed to be familiar with cheating tools like CheatEngine
@@ -53,7 +66,7 @@ Disadv.of GameConqueror/scanmem
 
 Author
 ======
-Wang Lu <coolwanglu(a)gmail.com>
+WANG Lu  <coolwanglu(a)gmail.com>
 
 
 
