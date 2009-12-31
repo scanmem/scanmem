@@ -134,7 +134,7 @@ static char *commandgenerator(const char *text, int state)
 
 int printversion(FILE * fp)
 {
-    return fprintf(fp, "scanmem version %s, Copyright (C) 2006-2007 Tavis Ormandy\n"
+    return fprintf(fp, "scanmem version %s, Copyright (C) 2006-2009 Tavis Ormandy\n"
                        "scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"
                        "This is free software, and you are welcome to redistribute it\n"
                        "under certain conditions; type `show copying' for details.\n\n", PACKAGE_VERSION);
