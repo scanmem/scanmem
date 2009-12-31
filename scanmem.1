@@ -1,4 +1,4 @@
-.TH scanmem 1 "June 05, 2007" "version 0.07"
+.TH scanmem 1 "January 01, 2010" "version 0.08"
 .SH NAME
 scanmem - locate and modify a variable in an executing process.
 
@@ -6,6 +6,7 @@ scanmem - locate and modify a variable in an executing process.
 .B scanmem
 .RB [\-\-version]
 .RB [\-\-help] 
+.RB [\-\-backend] 
 .IR target-program-pid
 
 
@@ -63,6 +64,10 @@ Print version and exit.
 
 Print a short description of command line options then exit.
 
+.B "\-\-backend"
+
+Work as backend, normal users should not use this paratmeter.
+
 .SH COMMANDS
 
 While in interactive mode,
@@ -114,6 +119,13 @@ prevent some property from ever changing.
 This command is used to change the value of the variable(s) once found by elimination.
 Please note, some applications will store values in multiple locations.
 
+.B write
+.I <value_type> <address> <value>
+
+Manually set the value of the variable at the speicified address.
+
+Names of value_type are subject to change in different versions of scanmem, see more info using the `help write' command.
+
 .B >
 
 Tells
@@ -149,33 +161,9 @@ and
 .B list
 
 List all the possible candidates currently known, including their address, last known value and
-pathname. The value in the first column is the match id, and can be used in conjunction with the
+possible types. The value in the first column is the match id, and can be used in conjunction with the
 .B delete
-command to eliminate matches. The flags displayed indicate what is currently known about the
-variable at that location, a capital letter indicates the property is set, lowercase indicates
-the property is not set.
-
-.IP
-.TS
-allbox tab(#);
-cb l
-cb l
-cb l
-cb l
-cb l
-cb l
-cb l
-cb l.
-C#The value could be a char.
-S#The value could be a short.
-I#The value could be an int.
-L#The value could be a long.
-F#The value could be a float.
-N#The value is known to be signed.
-Z#This flag is not currently used.
-.TE
-.LP
-.LP 
+command to eliminate matches. 
 
 .B delete
 .I [match-id]
@@ -372,10 +360,17 @@ The
 command uses memory inefficiently, and should probably not be used on large programs.
 In future this will use a more intelligent format.
 
-.SH AUTHOR
-Tavis Ormandy <taviso@sdf.lonestar.org>
+.SH HOMEPAGE
 
-http://taviso.decsystem.org/
+http://code.google.com/p/scanmem/
+
+.SH AUTHORS
+
+Tavis Ormandy <taviso(a)sdf.lonestar.org> http://taviso.decsystem.org/
+.br
+Eli   Dupree  <elidupree(a)charter.net> 
+.br 
+WANG  Lu      <coolwanglu(a)gmail.com>
 
 All bug reports, suggestions or feedback welcome.
 

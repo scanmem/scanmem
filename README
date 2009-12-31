@@ -16,6 +16,13 @@ Requirements
 scanmem requires libreadline to read commands interactively, and /proc must be
 mounted.
 
+
+GUI
+===
+
+Now scanmem has a GUI front-end called GameConqueror, see gui/README for more detailed info.
+
+
 Known Issues
 ============
 
@@ -27,4 +34,5 @@ Known Issues
 Author: Tavis Ormandy <taviso(a)sdf.lonestar.org>
         Eli   Dupree  <elidupree(a)charter.net>
         WANG  Lu      <coolwanglu(a)gmail.com>
-License: GPL
+
+License: GPLv3

@@ -29,7 +29,7 @@ import gtk
 import gobject
 
 WORK_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
-BACKEND = [WORK_DIR+'/../scanmem', '-b']
+BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
