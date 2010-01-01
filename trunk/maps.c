@@ -85,19 +85,19 @@ bool readmaps(pid_t target, list_t * regions)
                     
                     /* determine if this region is useful */
                     bool useful = false;
-                    switch (globals.options.map_detail_level)
+                    switch (globals.options.region_scan_level)
                     {
-                        case MAP_ALL:
+                        case REGION_ALL:
                             useful = true;
                             break;
-                        case MAP_HEAP_STACK_EXECUTABLE_BSS:
+                        case REGION_HEAP_STACK_EXECUTABLE_BSS:
                             if (inode == 0)
                             {
                                 useful = true;
                                 break;
                             } 
                             /* fall through */
-                        case MAP_HEAP_STACK_EXECUTABLE:
+                        case REGION_HEAP_STACK_EXECUTABLE:
                             if ((!strcmp(filename, "[heap]")) || (!strcmp(filename, "[stack]")))
                             {
                                 useful = true;

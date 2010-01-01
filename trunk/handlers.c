@@ -681,7 +681,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
     value_t val;
-    matchtype_t m;
+    scan_match_type_t m;
 
     USEPARAMS();
 
@@ -689,13 +689,13 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 
     switch (argv[0][0]) {
     case '=':
-        m = MATCHEQUAL;
+        m = MATCHNOTCHANGED;
         break;
     case '<':
-        m = MATCHLESSTHAN;
+        m = MATCHDECREASED;
         break;
     case '>':
-        m = MATCHGREATERTHAN;
+        m = MATCHINCREASED;
         break;
     default:
         fprintf(stderr,
@@ -757,7 +757,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars, val, MATCHEXACT) != true) {
+        if (checkmatches(vars, val, MATCHEQUALTO) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
@@ -993,7 +993,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         truncval(&n, &old_val);
 
         /* check if the new value is different */
-        if (valuecmp(&o, MATCHNOTEQUAL, &n, NULL)) {
+        if (valuecmp(&o, MATCHNOTEQUALTO, &n, NULL)) {
 
             valcpy(&o, &n);
             truncval(&o, &old_val);
@@ -1123,35 +1123,31 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    if (strcasecmp(argv[1], "search_integer") == 0)
+    if (strcasecmp(argv[1], "scan_data_type") == 0)
     {
-        if (strcmp(argv[2], "0") == 0)
-        {
-            vars->options.search_integer = 0;
-        }
-        else if (strcmp(argv[2], "1") == 0)
-        {
-            vars->options.search_integer = 1;
-        }
+        if (strcasecmp(argv[2], "anynumber") == 0) { vars->options.scan_data_type = ANYNUMBER; }
+        else if (strcasecmp(argv[2], "anyinteger") == 0) { vars->options.scan_data_type = ANYINTEGER; }
+        else if (strcasecmp(argv[2], "integer8") == 0) { vars->options.scan_data_type = INTEGER8; }
+        else if (strcasecmp(argv[2], "integer16") == 0) { vars->options.scan_data_type = INTEGER16; }
+        else if (strcasecmp(argv[2], "integer32") == 0) { vars->options.scan_data_type = INTEGER32; }
+        else if (strcasecmp(argv[2], "integer64") == 0) { vars->options.scan_data_type = INTEGER64; }
+        else if (strcasecmp(argv[2], "anyfloat") == 0) { vars->options.scan_data_type = ANYFLOAT; }
+        else if (strcasecmp(argv[2], "float32") == 0) { vars->options.scan_data_type = FLOAT32; }
+        else if (strcasecmp(argv[2], "float64") == 0) { vars->options.scan_data_type = FLOAT64; }
         else
         {
-            fprintf(stderr, "error: bad value provided, see `help option`.\n");
+            fprintf(stderr, "error: bad value for scan_data_type, see `help option`.\n");
             return false;
         }
     }
-    else if (strcasecmp(argv[1], "search_float") == 0)
+    else if (strcasecmp(argv[1], "region_scan_level") == 0)
     {
-        if (strcmp(argv[2], "0") == 0)
-        {
-            vars->options.search_float = 0;
-        }
-        else if (strcmp(argv[2], "1") == 0)
-        {
-            vars->options.search_float = 1;
-        }
+        if (strcmp(argv[2], "1") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE; }
+        else if (strcmp(argv[2], "2") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE_BSS; }
+        else if (strcmp(argv[2], "3") == 0) {vars->options.region_scan_level = REGION_ALL; }
         else
         {
-            fprintf(stderr, "error: bad value provided, see `help option`.\n");
+            fprintf(stderr, "error: bad value for region_scan_level, see `help option`.\n");
             return false;
         }
     }
@@ -1160,6 +1156,5 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         fprintf(stderr, "error: unknown option specified, see `help option`.\n");
         return false;
     }
-
     return true;
 }

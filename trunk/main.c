@@ -49,9 +49,8 @@ globals_t globals = {
         1,                      /* alignment */
         1,                      /* debug */
         0,                      /* backend */
-        1,                      /* search_integer */ 
-        0,                      /* search_float */  
-        MAP_HEAP_STACK_EXECUTABLE_BSS, /* map detail level */ /* TODO: add a command for this option */
+        ANYINTEGER,             /* scan_data_type */
+        REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */ 
     }
 };
 
