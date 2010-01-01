@@ -59,6 +59,7 @@
 #endif
 
 #include "value.h"
+#include "scanroutines.h"
 #include "scanmem.h"
 
 #define min(a,b) (((a)<(b))?(a):(b))
@@ -250,8 +251,9 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
 
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
-bool checkmatches(globals_t * vars, value_t value,
-                  matchtype_t type)
+bool checkmatches(globals_t * vars, 
+                  value_t value, 
+                  scan_match_type_t match_type)
 {
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
@@ -263,14 +265,37 @@ bool checkmatches(globals_t * vars, value_t value,
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
     
+    if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    {
+        fprintf(stderr, "error: unsupported scan for current data type.\n"); 
+        return false;
+    }
+
+    assert(g_scan_routine);
+    
     /* stop and attach to the target */
     if (attach(vars->target) == false)
         return false;
 
+
+    bool use_old_value;
+    if (  (match_type == MATCHNOTCHANGED)
+        ||(match_type == MATCHCHANGED)
+        ||(match_type == MATCHINCREASED)
+        ||(match_type == MATCHDECREASED))
+    {
+        use_old_value = true;
+    }
+    else
+    {
+        use_old_value = false;
+    }
+
+
     while (reading_swath.first_byte_in_child) {
         bool is_match = false;
-        value_t check;
         value_t data_value;
+        value_t check;
         void *address = reading_swath.first_byte_in_child + reading_iterator;
         
         /* Read value from this address */
@@ -283,25 +308,18 @@ bool checkmatches(globals_t * vars, value_t value,
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             truncval_to_flags(&old_val, flags);
-            check = data_value;
-            truncval(&check, &old_val);
 
-            /* XXX: this sucks. */
-            if (type != MATCHEXACT) {
+            if (use_old_value) {
                 value = old_val;
             }
+
+            is_match = (*g_scan_routine)(&data_value, &value, &check);
             
-            /* Special setting - just update values */
-            if (type == MATCHANY)
-            {
-                is_match = flags_to_max_width_in_bytes(flags);
-                check.flags.ineq_forwards = flags.ineq_forwards;
-                check.flags.ineq_reverse = flags.ineq_reverse;
-            }
-            /* Inequalities get special handling */
+            /*
+            / * Inequalities get special handling * /
             else if (type == MATCHGREATERTHAN || type == MATCHLESSTHAN)
             {
-                matchtype_t reverse_type = (type == MATCHGREATERTHAN) ? MATCHLESSTHAN : MATCHGREATERTHAN;
+                scan_match_type_t reverse_type = (type == MATCHGREATERTHAN) ? MATCHLESSTHAN : MATCHGREATERTHAN;
                 bool works_forwards = false, works_reverse = false;
                 value_t saved1, saved2;
                 if (flags.ineq_forwards && valuecmp(&check, type, &value, &saved1)) works_forwards = true;
@@ -316,14 +334,7 @@ bool checkmatches(globals_t * vars, value_t value,
                     else { check.flags.ineq_forwards = check.flags.ineq_reverse = 0; }
                 }
             }
-            /* For normal comparisons */
-            else if (EXPECT(valuecmp(&check, type, &value, &check), false)) {
-                is_match = true;
-                check.flags.ineq_forwards = flags.ineq_forwards;
-                check.flags.ineq_reverse = flags.ineq_reverse;
-            } else {
-                /* Not a match */
-            }
+            */
         }
         
         if (is_match)
@@ -414,10 +425,19 @@ bool searchregions(globals_t * vars,
     element_t *n = vars->regions->head;
     region_t *r;
 
+    if (choose_scanroutine(vars->options.scan_data_type, MATCHEQUALTO) == false)
+    {
+        fprintf(stderr, "error: unsupported scan for current data type.\n"); 
+        return false;
+    }
+
+    assert(g_scan_routine);
+
     /* stop and attach to the target */
     if (attach(vars->target) == false)
         return false;
 
+   
     /* make sure we have some regions to search */
     if (vars->regions->size == 0) {
         fprintf(stderr,
@@ -515,7 +535,7 @@ bool searchregions(globals_t * vars,
             check = data_value;
             
             /* check if we have a match */
-            if (snapshot || EXPECT(valuecmp(&value, MATCHEQUAL, &check, &check), false)) {
+            if (snapshot || EXPECT((*g_scan_routine)(&value, &check, &check), false)) {
                 check.flags.ineq_forwards = check.flags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
@@ -575,10 +595,10 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     /* Basically, overwrite as much of the data as makes sense, and no more. */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&to->double_value)); } 
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&(to->double_value))); } 
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
-    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&to->float_value)); } 
+    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&(to->float_value))); } 
     else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
     else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
     else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }

@@ -23,12 +23,12 @@
 
 #include "list.h"
 
-/* determine how much maps we need */
+/* determine what regions we need */
 typedef enum {
-    MAP_ALL,                            /* each of them */
-    MAP_HEAP_STACK_EXECUTABLE,          /* heap, stack, executable */
-    MAP_HEAP_STACK_EXECUTABLE_BSS       /* heap, stack, executable, bss */
-} map_detail_level_t;
+    REGION_ALL,                            /* each of them */
+    REGION_HEAP_STACK_EXECUTABLE,          /* heap, stack, executable */
+    REGION_HEAP_STACK_EXECUTABLE_BSS       /* heap, stack, executable, bss */
+} region_scan_level_t;
 
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {

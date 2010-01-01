@@ -203,11 +203,15 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
 #define OPTION_SHRTDOC "set runtime options of scanmem"
 #define OPTION_LONGDOC " usage: option <option_name> <option_value>\n" \
-                 "<option_name> should be one of:\n" \
-                 "\tsearch_integer\t(1/0)\twhether search for integers (default: 1)\n" \
-                 "\tsearch_float\t(1/0)\twhether search for float/double numbers (default: 0)\n" \
+                 "Here are all options and their possible values\n" \
+                 "\tscan_data_type\tspecify what type of data should be considered, default:anyinteger\n" \
+                 "\t\t[anynumber,anyinteger,anyfloat,integer8,integer16,integer32,integer64,float32,float64]\n"\
+                 "\tregion_scan_level\tspecify which regions should be scanned, default 2\n" \
+                 "\t\t1:\theap, stack and executable only\n" \
+                 "\t\t2:\theap, stack executable and bss only\n" \
+                 "\t\t3:\teverything(e.g. other libs)\n" \
                  "Example:\n" \
-                 "\toption search_float 1\n"
+                 "\toption scan_data_type integer32\n"
 
 bool handler__option(globals_t * vars, char **argv, unsigned argc);
 #endif
