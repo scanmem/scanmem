@@ -8,17 +8,9 @@
 #define _VALUE_INC
 
 #include <stdint.h>
+#include <stddef.h>
 
 /* some routines for working with value_t structures */
-
-typedef enum {
-    MATCHEXACT,
-    MATCHNOTEQUAL,
-    MATCHEQUAL,
-    MATCHGREATERTHAN,
-    MATCHLESSTHAN,
-    MATCHANY
-} matchtype_t;
 
 typedef struct __attribute__ ((packed)) {
 	unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
@@ -37,7 +29,7 @@ typedef struct __attribute__ ((packed)) {
 } match_flags;
 
 typedef struct {
-    int64_t int_value;
+    int64_t int_value;   /* this field should always be kept, even for non-integer scans, this field will be used to retrieve data */
     double double_value;
     float float_value;
     
@@ -50,13 +42,12 @@ typedef struct {
     match_flags flags;
 } value_t;
 
-bool valtostr(const value_t * val, char *str, size_t n);
+bool valtostr(const value_t * val, char *str, size_t n); 
 void strtoval(const char *nptr, char **endptr, int base, value_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void truncval_to_flags(value_t * dst, match_flags flags);
 void truncval(value_t * dst, const value_t * src);
-bool valuecmp(const value_t * v1, matchtype_t operator, const value_t * v2,
-              value_t * save);
+/* bool valuecmp(const value_t * v1, scan_match_type_t operator, const value_t * v2, value_t * save); */
 void valnowidth(value_t * val);
 int flags_to_max_width_in_bytes(match_flags flags);
 int val_max_width_in_bytes(value_t *val);
@@ -81,5 +72,10 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
+
+float get_f32b(value_t const* val);
+void set_f32b(value_t *val, float data);
+double get_f64b(value_t const* val);
+void set_f64b(value_t *val, double data);
 
 #endif

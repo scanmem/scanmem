@@ -12,6 +12,7 @@
 
 #include "list.h"
 #include "value.h"
+#include "scanroutines.h"
 #include "maps.h"
 #include "target_memory_info_array.h"
 
@@ -71,9 +72,8 @@ typedef struct {
         unsigned short backend; /* if 1, scanmem will work as a backend, and output would be more machine-readable */
 
         /* options that can be changed during runtime */
-        unsigned short search_integer;
-        unsigned short search_float;
-        map_detail_level_t map_detail_level;
+        scan_data_type_t scan_data_type;
+        region_scan_level_t region_scan_level;
     } options;
 } globals_t;
 
@@ -93,7 +93,7 @@ extern globals_t globals;
 bool detach(pid_t target);
 bool setaddr(pid_t target, void *addr, const value_t * to);
 bool checkmatches(globals_t * vars, value_t value,
-		  matchtype_t type);
+		  scan_match_type_t type);
 bool searchregions(globals_t * vars,
                 value_t value, bool snapshot);
 bool peekdata(pid_t pid, void *addr, value_t * result);

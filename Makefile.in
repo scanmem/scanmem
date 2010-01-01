@@ -55,7 +55,7 @@ am_scanmem_OBJECTS = scanmem-main.$(OBJEXT) scanmem-maps.$(OBJEXT) \
 	scanmem-target_memory_info_array.$(OBJEXT) \
 	scanmem-list.$(OBJEXT) scanmem-menu.$(OBJEXT) \
 	scanmem-commands.$(OBJEXT) scanmem-handlers.$(OBJEXT) \
-	scanmem-value.$(OBJEXT)
+	scanmem-value.$(OBJEXT) scanmem-scanroutines.$(OBJEXT)
 scanmem_OBJECTS = $(am_scanmem_OBJECTS)
 scanmem_LDADD = $(LDADD)
 scanmem_LINK = $(CCLD) $(scanmem_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -197,7 +197,8 @@ top_srcdir = @top_srcdir@
 scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 	list.c menu.c commands.c handlers.c value.c commands.h \
 	handlers.h interrupt.h list.h scanmem.h value.h licence.h \
-	maps.h target_memory_info_array.h
+	maps.h target_memory_info_array.h scanroutines.h \
+	scanroutines.c
 scanmem_CFLAGS = -O1 -g -Wall
 dist_man_MANS = scanmem.1
 EXTRA_DIST = gui/GameConqueror_128x128.png gui/GameConqueror_72x72.png \
@@ -317,6 +318,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-maps.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-menu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-ptrace.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-scanroutines.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-target_memory_info_array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-value.Po@am__quote@
 
@@ -459,6 +461,20 @@ scanmem-value.obj: value.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='value.c' object='scanmem-value.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-value.obj `if test -f 'value.c'; then $(CYGPATH_W) 'value.c'; else $(CYGPATH_W) '$(srcdir)/value.c'; fi`
+
+scanmem-scanroutines.o: scanroutines.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -MT scanmem-scanroutines.o -MD -MP -MF $(DEPDIR)/scanmem-scanroutines.Tpo -c -o scanmem-scanroutines.o `test -f 'scanroutines.c' || echo '$(srcdir)/'`scanroutines.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/scanmem-scanroutines.Tpo $(DEPDIR)/scanmem-scanroutines.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='scanroutines.c' object='scanmem-scanroutines.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-scanroutines.o `test -f 'scanroutines.c' || echo '$(srcdir)/'`scanroutines.c
+
+scanmem-scanroutines.obj: scanroutines.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -MT scanmem-scanroutines.obj -MD -MP -MF $(DEPDIR)/scanmem-scanroutines.Tpo -c -o scanmem-scanroutines.obj `if test -f 'scanroutines.c'; then $(CYGPATH_W) 'scanroutines.c'; else $(CYGPATH_W) '$(srcdir)/scanroutines.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/scanmem-scanroutines.Tpo $(DEPDIR)/scanmem-scanroutines.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='scanroutines.c' object='scanmem-scanroutines.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-scanroutines.obj `if test -f 'scanroutines.c'; then $(CYGPATH_W) 'scanroutines.c'; else $(CYGPATH_W) '$(srcdir)/scanroutines.c'; fi`
 install-man1: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	test -z "$(man1dir)" || $(MKDIR_P) "$(DESTDIR)$(man1dir)"
