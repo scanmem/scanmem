@@ -1,0 +1,9 @@
+GameConqueror aims to provide a CheatEngline-alike interface for scanmem, it's user-friendly and easy to use.
+
+GameConqueror is written in PyGTK.
+
+
+= Features =
+
+  * Locking on multiple variables
+  * ... many to be done
