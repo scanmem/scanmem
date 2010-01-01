@@ -188,7 +188,7 @@ bool valuecmp(const value_t * v1, scan_match_type_t operator, const value_t * v2
             
     assert(routine);
     
-    ret = (*routine)(v1, v2, save);
+    ret = (*routine)(v1, v2, v);
 
     if (save != NULL)
         memcpy(save, v, sizeof(value_t));
