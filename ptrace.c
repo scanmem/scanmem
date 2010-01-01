@@ -296,7 +296,12 @@ bool checkmatches(globals_t * vars,
         bool is_match = false;
         value_t data_value;
         value_t check;
+        
+        memset(&check, 0, sizeof(check));
+        check.how_to_calculate_values = BY_POINTER_SHIFTING;
+
         void *address = reading_swath.first_byte_in_child + reading_iterator;
+
         
         /* Read value from this address */
         if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
