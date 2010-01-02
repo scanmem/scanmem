@@ -104,7 +104,7 @@ class GameConquerorBackend():
         self.backend.stdin.write(cmd+'\n')
         output_lines = self.get_output_lines()
         # for debug
-#        print '\n'.join(output_lines)
+        print '\n'.join(output_lines)
         return output_lines
 
     # for test only
@@ -457,12 +457,25 @@ class GameConqueror():
         self.backend.send_command('reset')
         self.update_scan_result()
 
+    def set_scan_data_type (self):
+        v1 = self.search_integer_checkbutton.get_property('active')
+        v2 = self.search_float_checkbutton.get_property('active')
+        if v1 and v2:
+            dt = 'anynumber'
+        elif v1:
+            dt = 'anyinteger'
+        elif v2:
+            dt = 'anyfloat'
+        else:
+            # bad
+            dt = 'anynumber'
+        self.backend.send_command('option scan_data_type %s' % (dt,))
+
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
         # set scan options
-        self.backend.send_command('option search_integer %s' % ((self.search_integer_checkbutton.get_property('active') and '1' or '0'),))
-        self.backend.send_command('option search_float %s' % ((self.search_float_checkbutton.get_property('active') and '1' or '0'),))
+        self.set_scan_data_type()
         # TODO: syntax check
         self.backend.send_command(self.value_input.get_text())
         self.update_scan_result()

@@ -296,12 +296,8 @@ bool checkmatches(globals_t * vars,
         bool is_match = false;
         value_t data_value;
         value_t check;
-        
-        memset(&check, 0, sizeof(check));
-        check.how_to_calculate_values = BY_POINTER_SHIFTING;
 
         void *address = reading_swath.first_byte_in_child + reading_iterator;
-
         
         /* Read value from this address */
         if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
@@ -313,6 +309,11 @@ bool checkmatches(globals_t * vars,
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             truncval_to_flags(&old_val, flags);
+
+            truncval_to_flags(&data_value, flags);
+
+            memset(&check, 0, sizeof(check));
+            check.how_to_calculate_values = BY_POINTER_SHIFTING;
 
             if (use_old_value) {
                 value = old_val;
@@ -524,13 +525,21 @@ bool searchregions(globals_t * vars,
             
             /* Mark which values this can't be */
             if (nread - offset < sizeof(int64_t))
+            {
                 data_value.flags.u64b = data_value.flags.s64b = data_value.flags.f64b = 0;
-            if (nread - offset < sizeof(int32_t))
-                data_value.flags.u32b = data_value.flags.s32b = data_value.flags.f32b = 0;
-            if (nread - offset < sizeof(int16_t))
-                data_value.flags.u16b = data_value.flags.s16b = 0;
-            if (nread - offset < sizeof(int8_t))
-                data_value.flags.u8b  = data_value.flags.s8b  = 0;
+                if (nread - offset < sizeof(int32_t))
+                {
+                    data_value.flags.u32b = data_value.flags.s32b = data_value.flags.f32b = 0;
+                    if (nread - offset < sizeof(int16_t))
+                    {
+                        data_value.flags.u16b = data_value.flags.s16b = 0;
+                        if (nread - offset < sizeof(int8_t))
+                        {
+                            data_value.flags.u8b  = data_value.flags.s8b  = 0;
+                        }
+                    }
+                }
+            }
 #else
             if (EXPECT(peekdata(vars->target, r->start + offset, &data_value) == false, false)) {
                 break;
@@ -538,9 +547,10 @@ bool searchregions(globals_t * vars,
 #endif
 
             check = data_value;
+            memset(&check.flags, 0, sizeof(check.flags));
             
             /* check if we have a match */
-            if (snapshot || EXPECT((*g_scan_routine)(&value, &check, &check), false)) {
+            if (snapshot || EXPECT((*g_scan_routine)(&value, &data_value, &check), false)) {
                 check.flags.ineq_forwards = check.flags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
