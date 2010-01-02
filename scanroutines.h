@@ -49,6 +49,7 @@ typedef enum {
 
 
 /* compare v1 and v2, and store the result (if any) into save */
+/* NOTE: flags of save must be set to 0, since only useful bits are set, but extra bits are not cleared! */
 typedef bool (*scan_routine_t)(const value_t *v1, const value_t *v2, value_t *save);
 extern scan_routine_t g_scan_routine;
 
