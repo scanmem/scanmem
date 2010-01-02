@@ -100,6 +100,7 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(DECREASED, <)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 
+/* this is for anynumber, anyinteger, anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
     bool scan_routine_ANYINTEGER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
     { \
@@ -121,7 +122,7 @@ DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
     { \
         bool ret = false; \
         if (scan_routine_ANYINTEGER_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_ANYINTEGER_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
+        if (scan_routine_ANYFLOAT_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
         return ret; \
     } \
 
@@ -162,6 +163,7 @@ scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
     if (mt == MATCHANY) { return &scan_routine_ANY_ANY; }
 
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHEQUALTO, EQUALTO)
+    CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHNOTEQUALTO, NOTEQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHCHANGED, CHANGED)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHNOTCHANGED, NOTCHANGED)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASED, INCREASED)
