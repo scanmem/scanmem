@@ -4752,7 +4752,7 @@ fi
 
 
   EXP_VAR=PKGDATADIR
-  FROM_VAR=$datadir/$PACKAGE
+  FROM_VAR=$datadir/gameconqueror
 
     prefix_save=$prefix
   exec_prefix_save=$exec_prefix

@@ -1,5 +1,5 @@
 #!/bin/bash
 
-DATADIR=/usr/local/share/scanmem
+DATADIR=/usr/local/share/gameconqueror
 
 exec python -OO $DATADIR/GameConqueror.py

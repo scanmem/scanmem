@@ -117,7 +117,7 @@ PACKAGE_TARNAME = scanmem
 PACKAGE_URL = 
 PACKAGE_VERSION = 0.09
 PATH_SEPARATOR = :
-PKGDATADIR = /usr/local/share/scanmem
+PKGDATADIR = /usr/local/share/gameconqueror
 SET_MAKE = 
 SHELL = /bin/sh
 STRIP = 
@@ -170,7 +170,7 @@ dist_icons_DATA = GameConqueror_128x128.png GameConqueror_72x72.png
 dist_desktop_DATA = GameConqueror.desktop
 dist_doc_DATA = README TODO COPYING
 EXTRA_DIST = gameconqueror.in consts.py.in
-gameconquerordir = $(pkgdatadir)
+gameconquerordir = $(datadir)/gameconqueror
 iconsdir = $(datadir)/pixmaps
 desktopdir = $(datadir)/applications
 all: all-am
