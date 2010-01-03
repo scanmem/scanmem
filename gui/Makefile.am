@@ -5,6 +5,6 @@ dist_desktop_DATA = GameConqueror.desktop
 dist_doc_DATA = README TODO COPYING
 EXTRA_DIST = gameconqueror.in consts.py.in
 
-gameconquerordir=$(pkgdatadir)
+gameconquerordir=$(datadir)/gameconqueror
 iconsdir=$(datadir)/pixmaps
 desktopdir=$(datadir)/applications

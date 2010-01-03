@@ -79,7 +79,7 @@ AC_DEFUN([AS_AC_EXPAND],
 ])
 # end copy
 
-AS_AC_EXPAND(PKGDATADIR, $datadir/$PACKAGE)
+AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
 
 AC_CONFIG_FILES([ Makefile ])
 
