@@ -1,6 +1,8 @@
 TODOs
 =====
 
+- search for pointer
+- byte array / text
 - different types of locking ('>' & '<')
 - data check (if a valid number & if may cause overflow)
 - error detection and alert

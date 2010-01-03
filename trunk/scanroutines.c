@@ -15,10 +15,10 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
+#include <config.h>
 
 #include "scanroutines.h"
 #include "value.h"
-
 
 bool (*g_scan_routine)(const value_t *v1, const value_t *v2, value_t *save);
 
