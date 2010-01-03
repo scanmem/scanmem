@@ -249,11 +249,12 @@ scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 scanmem_CFLAGS = -O1 -g -Wall
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
-EXTRA_DIST = test/smtest.c test/smtest.dat test/config/unix.exp \
-	test/scanmem/dregion.exp test/scanmem/iterchar.exp \
-	test/scanmem/lregions.exp test/scanmem/popchar.exp \
-	test/scanmem/shell.exp test/scanmem/testrun.log \
-	test/scanmem/testrun.sum test/scanmem/version.exp
+EXTRA_DIST = gpl-2.0.txt gpl-3.0.txt test/smtest.c test/smtest.dat \
+	test/config/unix.exp test/scanmem/dregion.exp \
+	test/scanmem/iterchar.exp test/scanmem/lregions.exp \
+	test/scanmem/popchar.exp test/scanmem/shell.exp \
+	test/scanmem/testrun.log test/scanmem/testrun.sum \
+	test/scanmem/version.exp
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
