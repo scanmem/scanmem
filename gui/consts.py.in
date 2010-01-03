@@ -1,0 +1,5 @@
+# constants 
+# should be defined by autotools
+
+VERSION = '@VERSION@'
+DATA_DIR = '@PKGDATADIR@'

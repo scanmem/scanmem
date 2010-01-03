@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DATADIR=@PKGDATADIR@
+
+exec python -OO $DATADIR/GameConqueror.py
