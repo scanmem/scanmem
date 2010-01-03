@@ -17,10 +17,24 @@ scanmem requires libreadline to read commands interactively, and /proc must be
 mounted.
 
 
+Install
+=======
+To build with gui:
+
+  ./configure --enable-gui && make    
+  sudo make install
+
+To build without gui:
+
+  ./configure && make
+  sudo make install
+
+
 GUI
 ===
 
-Now scanmem has a GUI front-end called GameConqueror, see gui/README for more detail.
+Now scanmem has a GUI front-end called GameConqueror, to use it, add --enable-gui when configure
+See gui/README for more detail.
 
 
 Known Issues
