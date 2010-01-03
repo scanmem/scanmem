@@ -1,3 +1,9 @@
+2010-01-03 WANG Lu <coolwanglu(a)gmail.com>
+    * better GUI
+	* support scanning for a speicific type of data
+	* autotools-ized gui
+	* added an option to determine which regions to be searched
+
 2009-12-20 WANG Lu <coolwanglu(a)gmail.com>
 	* basic float/double support
 	* fixed a peek buffer bug, that the buffer is not shifted correctly
