@@ -1,7 +1,9 @@
 /*
  $Id: ptrace.c,v 1.22 2007-06-07 15:16:46+01 taviso Exp taviso $
  
- Copyright (C) 2006,2007 Tavis Ormandy <taviso@sdf.lonestar.org>
+ Copyright (C) 2009           WANG  Lu      <coolwanglu(a)gmail.com>
+ Copyright (C) 2009           Eli   Dupree  <elidupree(a)charter.net>
+ Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
  
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
