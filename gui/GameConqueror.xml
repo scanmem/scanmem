@@ -358,7 +358,7 @@
     <property name="has_separator">False</property>
     <property name="program_name">GameConqueror</property>
     <property name="copyright" translatable="yes">
-Copyright (c) 2009,2010 WANG Lu  &lt;coolwanglu@gmail.com&gt;</property>
+Copyright (C) 2009,2010 WANG Lu  &lt;coolwanglu@gmail.com&gt;</property>
     <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
     <property name="website">https://sourceforge.net/projects/gameconqueror</property>
     <property name="license">                    GNU GENERAL PUBLIC LICENSE
