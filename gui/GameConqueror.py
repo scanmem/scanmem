@@ -28,7 +28,8 @@ import pygtk
 import gtk
 import gobject
 
-WORK_DIR = os.path.dirname(os.path.realpath(sys.argv[0]))
+from consts import *
+
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
@@ -104,7 +105,7 @@ class GameConquerorBackend():
         self.backend.stdin.write(cmd+'\n')
         output_lines = self.get_output_lines()
         # for debug
-        print '\n'.join(output_lines)
+#        print '\n'.join(output_lines)
         return output_lines
 
     # for test only
@@ -122,10 +123,14 @@ class GameConqueror():
         ##################################
         # init GUI
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(WORK_DIR, 'GameConqueror.xml'))
+        self.builder.add_from_file(os.path.join(DATA_DIR, 'GameConqueror.xml'))
 
         self.main_window = self.builder.get_object('MainWindow')
         self.about_dialog = self.builder.get_object('AboutDialog')
+        # fix version
+        self.about_dialog.set_version(VERSION)
+        self.builder.get_object('Version_Label').set_label(VERSION)
+
         self.process_list_dialog = self.builder.get_object('ProcessListDialog')
 
         self.found_count_label = self.builder.get_object('FoundCount_Label')

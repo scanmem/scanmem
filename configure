@@ -595,6 +595,9 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+ENABLE_GUI_FALSE
+ENABLE_GUI_TRUE
+PKGDATADIR
 ALLOCA
 EGREP
 GREP
@@ -681,6 +684,7 @@ ac_user_opts='
 enable_option_checking
 enable_dependency_tracking
 enable_largefile
+enable_gui
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1309,6 +1313,7 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --disable-largefile     omit support for large files
+  --enable-gui            enable gameconqueror, the gui front-end of scanmem
 
 Some influential environment variables:
   CC          C compiler command
@@ -4739,7 +4744,62 @@ $as_echo "#define HAVE_PROCMEM 0" >>confdefs.h
 fi
 
 
+# copied from ubuntu-tweak
+
+
+
+# end copy
+
+
+  EXP_VAR=PKGDATADIR
+  FROM_VAR=$datadir/$PACKAGE
+
+    prefix_save=$prefix
+  exec_prefix_save=$exec_prefix
+
+    if test "x$prefix" = "xNONE"; then
+    prefix=$ac_default_prefix
+  fi
+    if test "x$exec_prefix" = "xNONE"; then
+    exec_prefix=$prefix
+  fi
+
+  full_var="$FROM_VAR"
+    while true; do
+    new_full_var="`eval echo $full_var`"
+    if test "x$new_full_var" = "x$full_var"; then break; fi
+    full_var=$new_full_var
+  done
+
+    full_var=$new_full_var
+  PKGDATADIR="$full_var"
+
+
+    prefix=$prefix_save
+  exec_prefix=$exec_prefix_save
+
+
 ac_config_files="$ac_config_files Makefile"
+
+
+# Check whether --enable-gui was given.
+if test "${enable_gui+set}" = set; then :
+  enableval=$enable_gui; enable_gui=true
+                  ac_config_files="$ac_config_files gui/Makefile gui/consts.py gui/gameconqueror"
+
+else
+  enable_gui=false
+
+fi
+
+
+ if test x$enable_gui = xtrue; then
+  ENABLE_GUI_TRUE=
+  ENABLE_GUI_FALSE='#'
+else
+  ENABLE_GUI_TRUE='#'
+  ENABLE_GUI_FALSE=
+fi
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4852,6 +4912,10 @@ Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${am__fastdepCC_TRUE}" && test -z "${am__fastdepCC_FALSE}"; then
   as_fn_error "conditional \"am__fastdepCC\" was never defined.
+Usually this means the macro was only invoked conditionally." "$LINENO" 5
+fi
+if test -z "${ENABLE_GUI_TRUE}" && test -z "${ENABLE_GUI_FALSE}"; then
+  as_fn_error "conditional \"ENABLE_GUI\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 
@@ -5450,6 +5514,9 @@ do
     "config.h") CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+    "gui/Makefile") CONFIG_FILES="$CONFIG_FILES gui/Makefile" ;;
+    "gui/consts.py") CONFIG_FILES="$CONFIG_FILES gui/consts.py" ;;
+    "gui/gameconqueror") CONFIG_FILES="$CONFIG_FILES gui/gameconqueror" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac
