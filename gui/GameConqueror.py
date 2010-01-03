@@ -43,42 +43,45 @@ def build_simple_str_liststore(l):
         r.append([e])
     return r
 
+SCAN_VALUE_TYPES = build_simple_str_liststore(['int'
+                                              ,'int8'
+                                              ,'int16'
+                                              ,'int32'
+                                              ,'int64'
+                                              ,'float'
+                                              ,'float32'
+                                              ,'float64'
+                                              ,'number'
+                                              ])
+
 LOCK_FLAG_TYPES = build_simple_str_liststore(['=', '+', '-'])
 
-LOCK_VALUE_TYPES = build_simple_str_liststore(['int'
-                                            ,'int:1' 
-                                            ,'int:2'
-                                            ,'int:4'
-                                            ,'int:8' 
-                                            ,'float:4'
-                                            ,'float:8'
+LOCK_VALUE_TYPES = build_simple_str_liststore(['int8' 
+                                            ,'int16'
+                                            ,'int32'
+                                            ,'int64' 
+                                            ,'float32'
+                                            ,'float64'
                                             ])
 
+SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
+
 # convert type names used by scanmem into ours
-TYPENAMES_S2G = {'I64':'int:8'
-                ,'I64s':'int:8'
-                ,'I64u':'int:8'
-                ,'I32':'int:4'
-                ,'I32s':'int:4'
-                ,'I16':'int:2'
-                ,'I16s':'int:2'
-                ,'I16u':'int:2'
-                ,'I8':'int:1'
-                ,'I8s':'int:1'
-                ,'I8u':'int:1'
-                ,'F32':'float:4'
-                ,'F64':'float:8'
+TYPENAMES_S2G = {'I64':'int64'
+                ,'I64s':'int64'
+                ,'I64u':'int64'
+                ,'I32':'int32'
+                ,'I32s':'int32'
+                ,'I16':'int16'
+                ,'I16s':'int16'
+                ,'I16u':'int16'
+                ,'I8':'int8'
+                ,'I8s':'int8'
+                ,'I8u':'int8'
+                ,'F32':'float32'
+                ,'F64':'float64'
                 }   
 
-# typenams: gameconqueror-> scanmem
-# signedness are lost!
-TYPENAMES_G2S = {'int:8':'I64'
-                ,'int:4':'I32'
-                ,'int:2':'I16'
-                ,'int:1':'I8'
-                ,'float:4':'F32'
-                ,'float:8':'F64'
-                }
 
 class GameConquerorBackend():
     def __init__(self):
@@ -127,7 +130,7 @@ class GameConqueror():
 
         self.main_window = self.builder.get_object('MainWindow')
         self.about_dialog = self.builder.get_object('AboutDialog')
-        # fix version
+        # set version
         self.about_dialog.set_version(VERSION)
         self.builder.get_object('Version_Label').set_label(VERSION)
 
@@ -140,8 +143,32 @@ class GameConqueror():
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
 
-        self.search_integer_checkbutton = self.builder.get_object('SearchInteger_CheckButton')
-        self.search_float_checkbutton = self.builder.get_object('SearchFloat_CheckButton')
+        ###
+        # Set scan data type
+        self.scan_data_type_combobox = self.builder.get_object('ScanDataType_ComboBox')
+        self.scan_data_type_combobox.set_model(SCAN_VALUE_TYPES)
+        self.scan_data_type_combobox_renderer = gtk.CellRendererText()
+        self.scan_data_type_combobox.pack_start(self.scan_data_type_combobox_renderer, True)
+        self.scan_data_type_combobox.add_attribute(self.scan_data_type_combobox_renderer, 'text', 0)
+        # apply setting
+        tmp_setting_dt = SETTINGS['scan_data_type']
+        tmp_model = self.scan_data_type_combobox.get_model()
+        tmp_iter = tmp_model.get_iter_first()
+        while tmp_iter is not None:
+            if tmp_model.get_value(tmp_iter,0) == tmp_setting_dt:
+                break
+            tmp_iter = tmp_model.iter_next(tmp_iter)
+        self.scan_data_type_combobox.set_active_iter(tmp_iter)
+
+        ###
+        # set search scope
+        self.search_scope_scale = self.builder.get_object('SearchScope_Scale')
+        self.search_scope_scale_adjustment = gtk.Adjustment(lower=0, upper=2, step_incr=1, page_incr=1, page_size=0)
+        self.search_scope_scale.set_adjustment(self.search_scope_scale_adjustment)
+        # apply setting
+        self.search_scope_scale.set_value(SETTINGS['search_scope'])
+
+
 
         # init scanresult treeview
         # we may need a cell data func here
@@ -269,6 +296,9 @@ class GameConqueror():
 
     ###########################
     # GUI callbacks
+    def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
+        return SEARCH_SCOPE_NAMES[int(value)]
+
 
     def ValueHelp_Button_clicked_cb(self, button, Data=None):
         # show value help dialog
@@ -354,12 +384,6 @@ class GameConqueror():
     def Reset_Button_clicked_cb(self, button, data=None):
         self.reset_scan()
         return True
-
-    def ScanType_ComboBox_changed_cb(self, combobox, data=None):
-        return True 
-
-    def ValueType_ComboBox_changed_cb(self, combobox, data=None):
-        return True 
 
     def Logo_EventBox_button_release_event_cb(self, widget, data=None):
         self.about_dialog.run()
@@ -462,25 +486,21 @@ class GameConqueror():
         self.backend.send_command('reset')
         self.update_scan_result()
 
-    def set_scan_data_type (self):
-        v1 = self.search_integer_checkbutton.get_property('active')
-        v2 = self.search_float_checkbutton.get_property('active')
-        if v1 and v2:
-            dt = 'anynumber'
-        elif v1:
-            dt = 'anyinteger'
-        elif v2:
-            dt = 'anyfloat'
-        else:
-            # bad
-            dt = 'anynumber'
+    def apply_scan_settings (self):
+        # scan data type
+        active = self.scan_data_type_combobox.get_active()
+        assert(active >= 0)
+        dt = self.scan_data_type_combobox.get_model()[active]
         self.backend.send_command('option scan_data_type %s' % (dt,))
+        # search scope
+        self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
+
 
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
         # set scan options
-        self.set_scan_data_type()
+        self.apply_scan_settings()
         # TODO: syntax check
         self.backend.send_command(self.value_input.get_text())
         self.update_scan_result()
@@ -535,7 +555,7 @@ class GameConqueror():
 
     # typestr: use our typenames
     def write_value(self, addr, typestr, value):
-        self.backend.send_command('write %s %s %s'%(TYPENAMES_G2S[typestr], addr, value))
+        self.backend.send_command('write %s %s %s'%(typestr, addr, value))
 
     def exit(self, object, data=None):
         self.exit_flag = True

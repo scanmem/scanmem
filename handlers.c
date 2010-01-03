@@ -1059,32 +1059,38 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* try int first */
-    if (strcasecmp(argv[1], "i8") == 0)
+    if ((strcasecmp(argv[1], "i8") == 0)
+      ||(strcasecmp(argv[1], "int8") == 0))
     {
         data_width = 1;
         fmt = "%hhd";
     }
-    else if (strcasecmp(argv[1], "i16") == 0)
+    else if ((strcasecmp(argv[1], "i16") == 0)
+           ||(strcasecmp(argv[1], "int16") == 0))
     {
         data_width = 2;
         fmt = "%hd";
     }
-    else if (strcasecmp(argv[1], "i32") == 0)
+    else if ((strcasecmp(argv[1], "i32") == 0)
+           ||(strcasecmp(argv[1], "int32") == 0))
     {
         data_width = 4;
         fmt = "%d";
     }
-    else if (strcasecmp(argv[1], "i64") == 0)
+    else if ((strcasecmp(argv[1], "i64") == 0)
+           ||(strcasecmp(argv[1], "int64") == 0))
     {
         data_width = 8;
         fmt = "%lld";
     }
-    else if (strcasecmp(argv[1], "f32") == 0)
+    else if ((strcasecmp(argv[1], "f32") == 0)
+           ||(strcasecmp(argv[1], "float32") == 0))  
     {
         data_width = 4;
         fmt = "%f";
     }
-    else if (strcasecmp(argv[1], "f64") == 0)
+    else if ((strcasecmp(argv[1], "f64") == 0)
+           ||(strcasecmp(argv[1], "float64") == 0))
     {
         data_width = 8;
         fmt = "%lf";
@@ -1125,13 +1131,13 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
 
     if (strcasecmp(argv[1], "scan_data_type") == 0)
     {
-        if (strcasecmp(argv[2], "anynumber") == 0) { vars->options.scan_data_type = ANYNUMBER; }
-        else if (strcasecmp(argv[2], "anyinteger") == 0) { vars->options.scan_data_type = ANYINTEGER; }
-        else if (strcasecmp(argv[2], "integer8") == 0) { vars->options.scan_data_type = INTEGER8; }
-        else if (strcasecmp(argv[2], "integer16") == 0) { vars->options.scan_data_type = INTEGER16; }
-        else if (strcasecmp(argv[2], "integer32") == 0) { vars->options.scan_data_type = INTEGER32; }
-        else if (strcasecmp(argv[2], "integer64") == 0) { vars->options.scan_data_type = INTEGER64; }
-        else if (strcasecmp(argv[2], "anyfloat") == 0) { vars->options.scan_data_type = ANYFLOAT; }
+        if (strcasecmp(argv[2], "number") == 0) { vars->options.scan_data_type = ANYNUMBER; }
+        else if (strcasecmp(argv[2], "int") == 0) { vars->options.scan_data_type = ANYINTEGER; }
+        else if (strcasecmp(argv[2], "int8") == 0) { vars->options.scan_data_type = INTEGER8; }
+        else if (strcasecmp(argv[2], "int16") == 0) { vars->options.scan_data_type = INTEGER16; }
+        else if (strcasecmp(argv[2], "int32") == 0) { vars->options.scan_data_type = INTEGER32; }
+        else if (strcasecmp(argv[2], "int64") == 0) { vars->options.scan_data_type = INTEGER64; }
+        else if (strcasecmp(argv[2], "float") == 0) { vars->options.scan_data_type = ANYFLOAT; }
         else if (strcasecmp(argv[2], "float32") == 0) { vars->options.scan_data_type = FLOAT32; }
         else if (strcasecmp(argv[2], "float64") == 0) { vars->options.scan_data_type = FLOAT64; }
         else

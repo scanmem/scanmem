@@ -3,3 +3,7 @@
 
 VERSION = '@VERSION@'
 DATA_DIR = '@PKGDATADIR@'
+
+SETTINGS = {'scan_data_type':'int32'
+           ,'search_scope'  : 1      # normal
+           }
