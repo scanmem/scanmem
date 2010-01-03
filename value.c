@@ -3,7 +3,7 @@
 
  simple routines for working with the value_t data structure.
 
- Copyright (C) 2009           WANG  Lu      <coolwanglu(a)gmail.com>
+ Copyright (C) 2009,2010      WANG  Lu      <coolwanglu(a)gmail.com>
  Copyright (C) 2009           Eli   Dupree  <elidupree(a)charter.net>
  Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
 

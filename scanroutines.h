@@ -1,6 +1,6 @@
 /*
     scanroutines.h  Definition of routines of scanning for different data types
-    Copyright (C) 2009 WANG Lu  <coolwanglu(a)gmail.com>
+    Copyright (C) 2009,2010 WANG Lu  <coolwanglu(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
