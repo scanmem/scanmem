@@ -194,26 +194,39 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc);
 
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
+                "\n" \
                 "Write <value> into <address>\n" \
-                "<value_type> should be one of i8,i16,i32,i64,f32,f64\n" \
+                "<value_type> should be one of:\n" \
+                "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tfloat{32|64} (or f{32|64} for short)\n" \
+                "\n" \
                 "Example:\n" \
-                "\twrite i16 601038 0\n"
+                "\twrite i16 601038 0\n" \
+                "\twrite float32 601038 0\n"
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
 #define OPTION_SHRTDOC "set runtime options of scanmem"
-#define OPTION_LONGDOC " usage: option <option_name> <option_value>\n" \
+#define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
+                 "\n" \
                  "Here are all options and their possible values\n" \
-                 "\tscan_data_type\t\tspecify what type of data should be considered, default:anyinteger\n" \
-                 "\t\tpossible values: [anynumber,anyinteger,anyfloat,integer8,integer16,integer32,integer64,float32,float64]\n" \
-                 "\t\tmost of time you should reset immediately after changing this value\n" \
+                 "\tscan_data_type\t\tspecify what type of data should be considered\n" \
+                 "\t\t\t\tdefault:int\n" \
+                 "\t\tpossible values:\n" \
+                 "\t\tnumber:\tinteger or float\n" \
+                 "\t\tint:\tinteger of any width\n" \
+                 "\t\tfloat:\tfloat of any width\n" \
+                 "\t\tint{8|16|32|64}:\tinteger of given width\n" \
+                 "\t\tfloat{32|64}:\tfloat of given width\n" \
+                 "\tMOST OF TIME YOU MUST EXECUTE `reset' IMMEDIATELY AFTER CHANGING scan_data_type\n" \
+                 "\n" \
                  "\tregion_scan_level\tspecify which regions should be scanned, default 2\n" \
                  "\t\tpossible values:\n" \
                  "\t\t1:\theap, stack and executable only\n" \
                  "\t\t2:\theap, stack executable and bss only\n" \
                  "\t\t3:\teverything(e.g. other libs)\n" \
                  "Example:\n" \
-                 "\toption scan_data_type integer32\n"
+                 "\toption scan_data_type int32\n"
 
 bool handler__option(globals_t * vars, char **argv, unsigned argc);
 #endif
