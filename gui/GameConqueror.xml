@@ -14,7 +14,7 @@
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="orientation">vertical</property>
-        <property name="position">350</property>
+        <property name="position">320</property>
         <property name="position_set">True</property>
         <child>
           <object class="GtkHPaned" id="hpaned1">
@@ -69,7 +69,7 @@
             <child>
               <object class="GtkLayout" id="layout2">
                 <property name="width_request">420</property>
-                <property name="height_request">250</property>
+                <property name="height_request">300</property>
                 <property name="visible">True</property>
                 <property name="width">105</property>
                 <child>
@@ -80,7 +80,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">Select a progress</property>
-                    <property name="image">image4</property>
+                    <property name="image">system_image</property>
                     <signal name="clicked" handler="SelectProcess_Button_clicked_cb"/>
                   </object>
                   <packing>
@@ -110,7 +110,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">Scan</property>
-                    <property name="image">image3</property>
+                    <property name="image">find_image</property>
                     <signal name="clicked" handler="Scan_Button_clicked_cb"/>
                   </object>
                   <packing>
@@ -186,7 +186,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="image">image1</property>
+                    <property name="image">dialog_quesion_image</property>
                     <signal name="clicked" handler="ValueHelp_Button_clicked_cb"/>
                   </object>
                   <packing>
@@ -202,7 +202,7 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="tooltip_text" translatable="yes">Reset</property>
-                    <property name="image">image2</property>
+                    <property name="image">refresh_image</property>
                     <signal name="clicked" handler="Reset_Button_clicked_cb"/>
                   </object>
                   <packing>
@@ -300,6 +300,21 @@
                   <packing>
                     <property name="x">14</property>
                     <property name="y">71</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="ManuallyAddCheat_Button">
+                    <property name="width_request">28</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="image">add_image</property>
+                  </object>
+                  <packing>
+                    <property name="x">381</property>
+                    <property name="y">288</property>
                   </packing>
                 </child>
               </object>
@@ -1120,21 +1135,25 @@ Public License instead of this License.  But first, please read
       <action-widget response="-6">ProcessListDialog_Cancel_Button</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkImage" id="image1">
+  <object class="GtkImage" id="dialog_quesion_image">
     <property name="visible">True</property>
     <property name="tooltip_text" translatable="yes">Format for scanning</property>
     <property name="stock">gtk-dialog-question</property>
   </object>
-  <object class="GtkImage" id="image2">
+  <object class="GtkImage" id="refresh_image">
     <property name="visible">True</property>
     <property name="stock">gtk-refresh</property>
   </object>
-  <object class="GtkImage" id="image3">
+  <object class="GtkImage" id="find_image">
     <property name="visible">True</property>
     <property name="stock">gtk-find</property>
   </object>
-  <object class="GtkImage" id="image4">
+  <object class="GtkImage" id="system_image">
     <property name="visible">True</property>
     <property name="icon_name">system</property>
+  </object>
+  <object class="GtkImage" id="add_image">
+    <property name="visible">True</property>
+    <property name="stock">gtk-add</property>
   </object>
 </interface>
