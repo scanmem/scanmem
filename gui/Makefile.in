@@ -37,7 +37,7 @@ subdir = gui
 DIST_COMMON = README $(dist_bin_SCRIPTS) $(dist_desktop_DATA) \
 	$(dist_doc_DATA) $(dist_gameconqueror_DATA) $(dist_icons_DATA) \
 	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/consts.py.in $(srcdir)/gameconqueror.in TODO
+	$(srcdir)/consts.py.in $(srcdir)/gameconqueror.in COPYING TODO
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
@@ -168,7 +168,7 @@ dist_bin_SCRIPTS = gameconqueror
 dist_gameconqueror_DATA = consts.py GameConqueror.py GameConqueror.xml GameConqueror_128x128.png GameConqueror_72x72.png
 dist_icons_DATA = GameConqueror_128x128.png GameConqueror_72x72.png 
 dist_desktop_DATA = GameConqueror.desktop
-dist_doc_DATA = README TODO
+dist_doc_DATA = README TODO COPYING
 EXTRA_DIST = gameconqueror.in consts.py.in
 gameconquerordir = $(pkgdatadir)
 iconsdir = $(datadir)/pixmaps
