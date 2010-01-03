@@ -3,7 +3,7 @@
 
  A simple linked list implementation.
 
- Copyright (C) 2006,2007 Tavis Ormandy <taviso@sdf.lonestar.org>
+ Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
