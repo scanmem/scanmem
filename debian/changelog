@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100104r54-0ubuntu1) karmic; urgency=low
+
+  * Add cdbs in Build-Depends
+
+ -- WangLu <wl@WangLu-Laptop>  Mon, 04 Jan 2010 22:58:54 +0800
+
 scanmem (0.09~svn20100104r54) karmic; urgency=low
 
   * Initial release for PPA
