@@ -1,0 +1,63 @@
+scanmem (0.07-7) unstable; urgency=low
+
+  * debian/control:
+    + Updated my maintainer email address
+    + Removed Torsten from Uploader as package is not part of bollin
+    + Removed VCS-* fields
+    + Updated Standards-Version to 3.8.1 (no changes needed)
+  * debian/copyright:
+    + [Lintian] Updated to use correct copyright symbol ©
+    + Updated Debian copyright information
+
+ -- Kartik Mistry <kartik@debian.org>  Mon, 15 Jun 2009 11:35:08 +0530
+
+scanmem (0.07-6) unstable; urgency=low
+
+  * upload to unstable
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 15 Feb 2009 22:56:55 +0100
+
+scanmem (0.07-5) experimental; urgency=low
+
+  [ Kartik Mistry ]
+  * debian/control:
+    + Much better short description, Thanks to adn
+
+  [ Torsten Werner ]
+  * Bump up Standards-Version: 3.8.0 (no changes).
+
+ -- Torsten Werner <twerner@debian.org>  Sun, 28 Dec 2008 18:09:32 +0100
+
+scanmem (0.07-4) unstable; urgency=low
+
+  * debian/control:
+    + Updated short and long descriptions
+    + Fixed typo of Linux
+  * debian/copyright:
+    + Added license of install-sh
+
+ -- Kartik Mistry <kartik.mistry@gmail.com>  Mon, 25 Feb 2008 22:22:05 +0530
+
+scanmem (0.07-3) unstable; urgency=low
+
+  * debian/control:
+    + Updated Standards-Version to 3.7.3
+    + Fixed Homepage entry
+  * debian/copyright:
+    + Fixed copyright year
+    + Updated link of GPL
+
+ -- Kartik Mistry <kartik.mistry@gmail.com>  Fri, 28 Dec 2007 10:15:08 +0530
+
+scanmem (0.07-2) unstable; urgency=low
+
+  * debian/control: updated homepage as real control field
+  * debian/copyright: moved copyright out of license section
+
+ -- Kartik Mistry <kartik.mistry@gmail.com>  Sat, 17 Nov 2007 23:10:44 +0530
+
+scanmem (0.07-1) unstable; urgency=low
+
+  * Initial release (Closes: #423424)
+
+ -- Kartik Mistry <kartik.mistry@gmail.com>  Sat,  4 Aug 2007 19:42:34 +0530
