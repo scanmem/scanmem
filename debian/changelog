@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100104r54) karmic; urgency=low
+
+  * Initial release for PPA
+
+ -- WANG Lu <coolwanglu@gmail.com>  Mon, 04 Jan 2010 19:49:56 +0800
+
 scanmem (0.07-7) unstable; urgency=low
 
   * debian/control:
