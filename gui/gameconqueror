@@ -1,5 +1,0 @@
-#!/bin/bash
-
-DATADIR=/usr/local/share/gameconqueror
-
-exec python -OO $DATADIR/GameConqueror.py
