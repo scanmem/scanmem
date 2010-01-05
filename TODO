@@ -1,27 +1,9 @@
 Next Version
 ============
-* some sort of regression testing, probably using dejagnu.
-    - test target that mmaps testfile, then dregions the rest using dejagnu
-    - then can test searching using tests.
-* automatically support zero and one based values.
-* add inverted matches for set and delete, eg
-    - delete !13  - delete all matches except 13
-    - set !13,12,10=3 - set all matches except 13,12 and 10 to 3.
-* prompt on strange operations (eg, listing 10 million matches)
-    - add options command to disable prompts.
+* find strings, or pointers to strings as well?
 * optional float rounding techniques, eg floor(), ceil(), round(), rint(), etc?
-* add similar syntax as set to dregion, delete and watch.
-    - watch 12,23,5 - watch these three matches
-* improve show command.
-* known type: 0x324/I <- ints with value 0x324
-* > 4 ; value is now greater than 4
-* show log
-    -> ring buffer of 512 debug messages, that may help on debug
-    -> eg push("a region was removed as it appears to have been umapped");
-    -> show log
-        - [xx:yy] a region.."
-* dont read the whole region at a time, read max 8M or something.
 * search for values in files? (eg saved state)
+* save state to a file, so you can apply it to a different pid.
 
 Future
 ======
@@ -29,5 +11,14 @@ Future
 * read symbol table, and print its name if we have a match.
 * support more esoteric number formats, such as bcd, ascii, etc.
 * pagination
-* save state to a file, so you can apply it to a different pid.
-* find strings, or pointers to strings as well?
+* some sort of regression testing, probably using dejagnu.
+    - test target that mmaps testfile, then dregions the rest using dejagnu
+    - then can test searching using tests.
+* automatically support zero and one based values.
+* > 4 ; value is now greater than 4
+* show log
+    -> ring buffer of 512 debug messages, that may help on debug
+    -> eg push("a region was removed as it appears to have been umapped");
+    -> show log
+        - [xx:yy] a region.."
+* dont read the whole region at a time, read max 8M or something.
