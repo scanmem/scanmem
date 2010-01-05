@@ -212,19 +212,26 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "Here are all options and their possible values\n" \
                  "\tscan_data_type\t\tspecify what type of data should be considered\n" \
                  "\t\t\t\tdefault:int\n" \
+                 "\t\t\t\tMOST OF TIME YOU MUST EXECUTE `reset' IMMEDIATELY AFTER CHANGING scan_data_type\n" \
                  "\t\tpossible values:\n" \
                  "\t\tnumber:\tinteger or float\n" \
                  "\t\tint:\tinteger of any width\n" \
                  "\t\tfloat:\tfloat of any width\n" \
                  "\t\tint{8|16|32|64}:\tinteger of given width\n" \
                  "\t\tfloat{32|64}:\tfloat of given width\n" \
-                 "\tMOST OF TIME YOU MUST EXECUTE `reset' IMMEDIATELY AFTER CHANGING scan_data_type\n" \
                  "\n" \
-                 "\tregion_scan_level\tspecify which regions should be scanned, default 2\n" \
+                 "\tregion_scan_level\tspecify which regions should be scanned\n" \
+                 "\t\t\t\tdefault:2\n" \
                  "\t\tpossible values:\n" \
                  "\t\t1:\theap, stack and executable only\n" \
                  "\t\t2:\theap, stack executable and bss only\n" \
                  "\t\t3:\teverything(e.g. other libs)\n" \
+                 "\tdetect_reverse_change\twhether to (also) search for values that changes oppositely as given order\n" \
+                 "\t\t\t\tdefault:0\n" \
+                 "\t\t\t\tIf you want to use this feature, you can only search for INCREASED or DECREASED after initial search\n" \
+                 "\t\tpossible values:\n" \
+                 "\t\t0:\tdisabled\n" \
+                 "\t\t1:\tenabled\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
 

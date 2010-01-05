@@ -30,6 +30,7 @@ import gobject
 
 from consts import *
 
+WORK_DIR = os.path.dirname(sys.argv[0])
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
@@ -126,7 +127,7 @@ class GameConqueror():
         ##################################
         # init GUI
         self.builder = gtk.Builder()
-        self.builder.add_from_file(os.path.join(DATA_DIR, 'GameConqueror.xml'))
+        self.builder.add_from_file(os.path.join(WORK_DIR, 'GameConqueror.xml'))
 
         self.main_window = self.builder.get_object('MainWindow')
         self.about_dialog = self.builder.get_object('AboutDialog')
@@ -298,17 +299,6 @@ class GameConqueror():
     # GUI callbacks
     def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
         return SEARCH_SCOPE_NAMES[int(value)]
-
-
-    def ValueHelp_Button_clicked_cb(self, button, Data=None):
-        # show value help dialog
-        dialog = gtk.MessageDialog(None
-                                 ,0
-                                 ,gtk.MESSAGE_INFO
-                                 ,gtk.BUTTONS_OK
-                                 ,'Currently use any scanmem (scan) command here.\nTo search for a number, you may type an integer or \'<\' or \'>\'\n\n(I\'m considering using some more complicated but convenient syntax later (like 255:4, 5-7, >, <=, etc.)\nTherefore the parsing could be done in the frontend, while backend can still use standard forms)')
-        dialog.run()
-        dialog.destroy()
 
     def Value_Input_activate_cb(self, entry, data=None):
         self.do_scan()

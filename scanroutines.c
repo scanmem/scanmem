@@ -19,29 +19,31 @@
 
 #include "scanroutines.h"
 #include "value.h"
+#include "scanmem.h"
 
-bool (*g_scan_routine)(const value_t *v1, const value_t *v2, value_t *save);
+bool (*g_scan_routine)(const value_t *v1, const value_t *v2, match_flags *saveflags);
 
 /* for MATCHANY */
-bool scan_routine_ANY_ANY (const value_t *v1, const value_t *v2, value_t *save)
+bool scan_routine_ANY_ANY (const value_t *v1, const value_t *v2, match_flags *saveflags)
 {
-    *save = *v1;
+    *saveflags = v1->flags;
     return (flags_to_max_width_in_bytes(v1->flags) > 0);
 }
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
 #define VALUE_COPY(a,b,field)       ((set_##field(a, get_##field(b))), ((a)->flags.field = 1))
+#define SET_FLAG(f, field)          ((f)->field = 1)
 
 #define DEFINE_INTEGER_ROUTINE(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, MATCHTYPE) \
-    bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
         if(VALUE_COMP(v1, v2, s##DATAWIDTH##b, MATCHTYPE)) { \
-            VALUE_COPY(save, v1, s##DATAWIDTH##b); \
+            SET_FLAG(saveflags, s##DATAWIDTH##b); \
             ret = true; \
         } \
         if(VALUE_COMP(v1, v2, u##DATAWIDTH##b, MATCHTYPE)) { \
-            VALUE_COPY(save, v1, u##DATAWIDTH##b); \
+            SET_FLAG(saveflags, u##DATAWIDTH##b); \
             ret = true; \
         } \
         return ret; \
@@ -61,11 +63,11 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(INCREASED, >)
 DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(DECREASED, <)
 
 #define DEFINE_FLOAT_ROUTINE(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, MATCHTYPE) \
-    bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
         if(VALUE_COMP(v1, v2, f##DATAWIDTH##b, MATCHTYPE)) { \
-            VALUE_COPY(save, v1, f##DATAWIDTH##b); \
+            SET_FLAG(saveflags, f##DATAWIDTH##b); \
             ret = true; \
         } \
         return ret; \
@@ -86,12 +88,12 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(DECREASED, <)
 /* currently we round both of them to integers and compare them */
 /* TODO: let user specify a float number */
 #define DEFINE_FLOAT_EQUALTO_ROUTINE(FLOATTYPENAME, WIDTH) \
-    bool scan_routine_##FLOATTYPENAME##_EQUALTO (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_##FLOATTYPENAME##_EQUALTO (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
         if((v1->flags.f##WIDTH##b) && (v2->flags.f##WIDTH##b) && ((int##WIDTH##_t)get_f##WIDTH##b(v1) == (int##WIDTH##_t)get_f##WIDTH##b(v2))) \
         { \
-            VALUE_COPY(save, v1, f##WIDTH##b); \
+            SET_FLAG(saveflags, f##WIDTH##b); \
             ret = true; \
         } \
         return ret; \
@@ -100,29 +102,51 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(DECREASED, <)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 
+/* for reverse changing detect */
+#define DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, REVERSEMATCHTYPENAME) \
+    bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE (const value_t *v1, const value_t *v2, match_flags *saveflags) \
+    { \
+        bool ret = false; \
+        if ((v1->flags.ineq_forwards) && scan_routine_##DATATYPENAME##_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; saveflags->ineq_forwards = 1; } \
+        if ((v1->flags.ineq_reverse) && scan_routine_##DATATYPENAME##_##REVERSEMATCHTYPENAME (v1, v2, saveflags)) { ret = true; saveflags->ineq_reverse = 1; } \
+        return ret; \
+    }
+
+#define DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(DATATYPENAME, DATAWIDTH) \
+    DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, INCREASED, DECREASED) \
+    DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, DECREASED, INCREASED)
+
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER8, 8)
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER16, 16)
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER32, 32)
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER64, 64)
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT32, 32)
+DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
+
+
 /* this is for anynumber, anyinteger, anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
-    bool scan_routine_ANYINTEGER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_ANYINTEGER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
-        if (scan_routine_INTEGER8_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_INTEGER16_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_INTEGER32_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_INTEGER64_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
+        if (scan_routine_INTEGER8_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
+        if (scan_routine_INTEGER16_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
+        if (scan_routine_INTEGER32_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
+        if (scan_routine_INTEGER64_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
         return ret; \
     } \
-    bool scan_routine_ANYFLOAT_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_ANYFLOAT_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
-        if (scan_routine_FLOAT32_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_FLOAT64_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
+        if (scan_routine_FLOAT32_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
+        if (scan_routine_FLOAT64_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
         return ret; \
     } \
-    bool scan_routine_ANYNUMBER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, value_t *save) \
+    bool scan_routine_ANYNUMBER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
         bool ret = false; \
-        if (scan_routine_ANYINTEGER_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
-        if (scan_routine_ANYFLOAT_##MATCHTYPENAME (v1, v2, save)) { ret = true; } \
+        if (scan_routine_ANYINTEGER_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
+        if (scan_routine_ANYFLOAT_##MATCHTYPENAME (v1, v2, saveflags)) { ret = true; } \
         return ret; \
     } \
 
@@ -132,6 +156,8 @@ DEFINE_ANYTYPE_ROUTINE(CHANGED)
 DEFINE_ANYTYPE_ROUTINE(NOTCHANGED)
 DEFINE_ANYTYPE_ROUTINE(INCREASED)
 DEFINE_ANYTYPE_ROUTINE(DECREASED)
+DEFINE_ANYTYPE_ROUTINE(INCREASED_WITH_REVERSE)
+DEFINE_ANYTYPE_ROUTINE(DECREASED_WITH_REVERSE)
 
 #define CHOOSE_ROUTINE(SCANDATATYPE, ROUTINEDATATYPENAME, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     if ((dt == SCANDATATYPE) && (mt == SCANMATCHTYPE)) \
@@ -161,6 +187,12 @@ bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
     if (mt == MATCHANY) { return &scan_routine_ANY_ANY; }
+
+    if (globals.options.detect_reverse_change)
+    {
+        CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASED, INCREASED_WITH_REVERSE)
+        CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED_WITH_REVERSE)
+    }
 
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHEQUALTO, EQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHNOTEQUALTO, NOTEQUALTO)
