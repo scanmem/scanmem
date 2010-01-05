@@ -994,7 +994,10 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         truncval(&n, &old_val);
 
         /* check if the new value is different */
-        if (valuecmp(&o, MATCHNOTEQUALTO, &n, NULL)) {
+        match_flags tmpflags;
+        memset(&tmpflags, 0x00, sizeof(tmpflags));
+        scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHNOTEQUALTO));
+        if (valuecmp_routine(&o, &n, &tmpflags)) {
 
             valcpy(&o, &n);
             truncval(&o, &old_val);
@@ -1038,11 +1041,6 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     }
     
     return true;
-}
-
-bool handler__options(globals_t * vars, char **argv, unsigned argc)
-{
-    return true;    
 }
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
@@ -1124,6 +1122,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
+    /* this might need to change */
     if (argc != 3)
     {
         fprintf(stderr, "error: bad arguments, see `help option`.\n");
@@ -1155,6 +1154,16 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else
         {
             fprintf(stderr, "error: bad value for region_scan_level, see `help option`.\n");
+            return false;
+        }
+    }
+    else if (strcasecmp(argv[1], "detect_reverse_change") == 0)
+    {
+        if (strcmp(argv[2], "0") == 0) {vars->options.detect_reverse_change = 0; }
+        else if (strcmp(argv[2], "1") == 0) {vars->options.detect_reverse_change = 1; }
+        else
+        {
+            fprintf(stderr, "error: bad value for detect_reverse_change, see `help option`.\n");
             return false;
         }
     }

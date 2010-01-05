@@ -30,6 +30,7 @@
 #include <string.h>
 #include <alloca.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 #include "list.h"
 #include "maps.h"

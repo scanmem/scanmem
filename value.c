@@ -171,32 +171,6 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
 
 }
 
-/* eg: valuecmp(v1, (is) GREATERTHAN, v2), best match is put into save */
-bool valuecmp(const value_t * v1, scan_match_type_t operator, const value_t * v2,
-              value_t * save)
-{
-    value_t s, *v = &s;
-    bool ret = false;
-
-    assert(v1 != NULL);
-    assert(v2 != NULL);
-
-    memset(v, 0x00, sizeof(value_t));
-    v->how_to_calculate_values = v1->how_to_calculate_values;
-    
-    /* should we use ANYNUMBER here ? */
-    scan_routine_t routine = (get_scanroutine(ANYNUMBER, operator));
-            
-    assert(routine);
-    
-    ret = (*routine)(v1, v2, v);
-
-    if (save != NULL)
-        memcpy(save, v, sizeof(value_t));
-
-    return ret;
-}
-
 int flags_to_max_width_in_bytes(match_flags flags)
 {
 	     if (flags.u64b || flags.s64b || flags.f64b) return 8;

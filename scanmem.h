@@ -7,12 +7,12 @@
 #ifndef _SCANMEM_INC
 #define _SCANMEM_INC            /* include guard */
 
+#include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>          /*lint !e537 */
-
+#include "scanroutines.h"
 #include "list.h"
 #include "value.h"
-#include "scanroutines.h"
 #include "maps.h"
 #include "target_memory_info_array.h"
 
@@ -74,6 +74,7 @@ typedef struct {
         /* options that can be changed during runtime */
         scan_data_type_t scan_data_type;
         region_scan_level_t region_scan_level;
+        unsigned short detect_reverse_change;
     } options;
 } globals_t;
 
