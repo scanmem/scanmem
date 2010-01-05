@@ -40,6 +40,8 @@ typedef enum {
     /* following: compare with a given value */
     MATCHEQUALTO,
     MATCHNOTEQUALTO,          
+    MATCHGREATERTHAN,
+    MATCHLESSTHAN,
     /* following: compare with the old value */
     MATCHNOTCHANGED,
     MATCHCHANGED,
@@ -50,6 +52,7 @@ typedef enum {
 
 /* compare v1 and v2, and store the result (if any) into save */
 /* NOTE: saveflag must be set to 0, since only useful bits are set, but extra bits are not cleared! */
+/*       v1 should be value retrieved from memory, v2 should be user-provided or old value */
 /* return if something matched */
 typedef bool (*scan_routine_t)(const value_t *v1, const value_t *v2, match_flags *saveflag);
 extern scan_routine_t g_scan_routine;

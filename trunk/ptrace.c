@@ -400,6 +400,7 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
 
 /* searchregions() performs an initial search of the process for values matching value */
 bool searchregions(globals_t * vars,
+                scan_match_type_t match_type,
                 value_t value, bool snapshot)
 {
     matches_and_old_values_swath *writing_swath_index;
@@ -410,7 +411,7 @@ bool searchregions(globals_t * vars,
     element_t *n = vars->regions->head;
     region_t *r;
 
-    if (choose_scanroutine(vars->options.scan_data_type, MATCHEQUALTO) == false)
+    if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
         fprintf(stderr, "error: unsupported scan for current data type.\n"); 
         return false;
@@ -535,7 +536,7 @@ bool searchregions(globals_t * vars,
             }
             
             /* check if we have a match */
-            if (snapshot || EXPECT((*g_scan_routine)(&value, &data_value, &checkflags), false)) {
+            if (snapshot || EXPECT((*g_scan_routine)(&data_value, &value, &checkflags), false)) {
                 checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
