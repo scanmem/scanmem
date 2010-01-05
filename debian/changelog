@@ -1,3 +1,10 @@
+scanmem (0.09~svn20100106r67-0ubuntu1) karmic; urgency=low
+
+  * Improvement in GUI
+  * Reverse change detection is now working partially
+
+ -- WANG Lu <coolwanglu@gmail.com>  Wed, 06 Jan 2010 00:46:15 +0800
+
 scanmem (0.09~svn20100104r54-0ubuntu2) karmic; urgency=low
 
   * Merged changelog in scanmem 0.07-8 from Debian 
