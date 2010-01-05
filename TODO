@@ -15,7 +15,6 @@ Future
     - test target that mmaps testfile, then dregions the rest using dejagnu
     - then can test searching using tests.
 * automatically support zero and one based values.
-* > 4 ; value is now greater than 4
 * show log
     -> ring buffer of 512 debug messages, that may help on debug
     -> eg push("a region was removed as it appears to have been umapped");

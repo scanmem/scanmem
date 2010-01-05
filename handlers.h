@@ -107,18 +107,24 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__lregions(globals_t * vars, char **argv, unsigned argc);
 
-#define INC_SHRTDOC "match all variables that have increased since last scan"
-#define DEC_SHRTDOC "match all variables that have decreased since last scan"
-#define EQU_SHRTDOC "match all variables that have not changed since last scan"
+#define INCREASED_SHRTDOC "match values that have increased or greater than some number"
+#define DECREASED_SHRTDOC "match values that have decreased or less than some number"
+#define NOTCHANGED_SHRTDOC "match all variables that have not changed since last scan"
+#define CHANGED_SHRTDOC "match all variables that have not changed since last scan"
 
-#define INC_LONGDOC "usage: >\n" \
-                "All current matches that have not increased since the last scan are discarded.\n" \
+#define INCREASED_LONGDOC "usage: > [n]\n" \
+                "If n is given, match values that are greater than n.\n" \
+                "Otherwise all current matches that have not increased since the last scan are discarded.\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
-#define DEC_LONGDOC "usage: <\n" \
-                "All current matches that have not decreased since the last scan are discarded.\n" \
+#define DECREASED_LONGDOC "usage: < [n]\n" \
+                "If n is given, match values that are less than n.\n" \
+                "Otherwise all current matches that have not decreased since the last scan are discarded.\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
-#define EQU_LONGDOC "usage: =\n" \
+#define NOTCHANGED_LONGDOC "usage: =\n" \
                 "All current matches that have changed since the last scan are discarded.\n" \
+                "You can use this in conjunction with `snapshot` if you never know its value."
+#define CHANGED_LONGDOC "usage: !=\n" \
+                "All current matches that have not changed since the last scan are discarded.\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc);

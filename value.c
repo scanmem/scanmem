@@ -153,7 +153,7 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
     if (num > -(1LL<<15) && num < (1LL<<15)) val->flags.s16b = 1;
     if (num >=       (0) && num < (1LL<<32)) val->flags.u32b = 1;
     if (num > -(1LL<<31) && num < (1LL<<31)) val->flags.s32b = 1;
-    if (num >=       (0) &&          (true)) val->flags.u64b = 1; // what if num >= 1<<32 ?
+    if (          (true) &&          (true)) val->flags.u64b = 1;
     if (          (true) &&          (true)) val->flags.s64b = 1;
 
     /* finally insert the number */
