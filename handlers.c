@@ -482,7 +482,8 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     /* remove any existing matches */
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
-    if (searchregions(vars, v, true) != true) {
+    /* here MATCHANY has no use */
+    if (searchregions(vars, MATCHANY, v, true) != true) {
         fprintf(stderr, "error: failed to save target address space.\n");
         return false;
     }
@@ -679,40 +680,75 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+/* the name of the function is for history reason, now GREATERTHAN & LESSTHAN are also handled by this function */
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
+    char *end = NULL;
     value_t val;
     scan_match_type_t m;
 
     USEPARAMS();
 
-    memset(&val, 0x00, sizeof(val));
+    if(argc == 1)
+    {
+        memset(&val, 0x00, sizeof(val));
+    }
+    else if (argc > 2)
+    {
+        fprintf(stderr, "error: too many values specified, see `help %s`", argv[0]);
+        return false;
+    }
+    else
+    {
+        strtoval(argv[1], &end, 0x00, &val);
+        if (*end != '\0') {
+            fprintf(stderr, "error: bad value specified, see `help %s`", argv[0]);
+            return false;
+        }
+    }
 
-    switch (argv[0][0]) {
-    case '=':
+
+    if (strcmp(argv[0], "=") == 0)
+    {
         m = MATCHNOTCHANGED;
-        break;
-    case '<':
-        m = MATCHDECREASED;
-        break;
-    case '>':
-        m = MATCHINCREASED;
-        break;
-    default:
-        fprintf(stderr,
-                "error: unrecogised match type seen at decinc handler.\n");
+    }
+    else if (strcmp(argv[0], "!=") == 0)
+    {
+        m = MATCHCHANGED;
+    }
+    else if (strcmp(argv[0], "<") == 0)
+    {
+        m = (argc == 1) ? MATCHDECREASED : MATCHLESSTHAN;
+    }
+    else if (strcmp(argv[0], ">") == 0)
+    {
+        m = (argc == 1) ? MATCHINCREASED : MATCHGREATERTHAN;
+    }
+    else
+    {
+        fprintf(stderr, "error: unrecogised match type seen at decinc handler.\n");
         return false;
     }
 
-    /* the last seen value is still there */
     if (vars->matches) {
         if (checkmatches(vars, val, m) == false) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
     } else {
-        fprintf(stderr, "error: cannot use that search without matches\n");
-        return false;
+        /* < > = != cannot be the initial scan */
+        if (argc == 1)
+        {
+            fprintf(stderr, "error: cannot use that search without matches\n");
+            return false;
+        }
+        else
+        {
+            if (searchregions(vars, m, val, false) != true) {
+                fprintf(stderr, "error: failed to search target address space.\n");
+                return false;
+            }
+        }
     }
 
     if (vars->num_matches == 1) {
@@ -764,7 +800,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         }
     } else {
         /* initial search */
-        if (searchregions(vars, val, false) != true) {
+        if (searchregions(vars, MATCHEQUALTO, val, false) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }

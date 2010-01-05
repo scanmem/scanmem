@@ -2,6 +2,7 @@
     * Fixed detection of reverse change, but it's now working partially, see
 	  comments in `help option`
 	* MATCHANY can be used to filter out types now
+	* GREATERTHAN & LESSTHAN supported
 
 2010-01-03 WANG Lu <coolwanglu(a)gmail.com>
     * better GUI
