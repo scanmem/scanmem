@@ -7,8 +7,6 @@ Next Version
 * add inverted matches for set and delete, eg
     - delete !13  - delete all matches except 13
     - set !13,12,10=3 - set all matches except 13,12 and 10 to 3.
-* allow delete to match flags
-  - delete ~I - delete all matches that could not be integers.
 * prompt on strange operations (eg, listing 10 million matches)
     - add options command to disable prompts.
 * optional float rounding techniques, eg floor(), ceil(), round(), rint(), etc?
