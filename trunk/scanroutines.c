@@ -23,12 +23,24 @@
 
 bool (*g_scan_routine)(const value_t *v1, const value_t *v2, match_flags *saveflags);
 
+
+/********************/
+/* Integer specific */
+
 /* for MATCHANY */
-bool scan_routine_ANY_ANY (const value_t *v1, const value_t *v2, match_flags *saveflags)
-{
-    *saveflags = v1->flags;
-    return (flags_to_max_width_in_bytes(v1->flags) > 0);
-}
+#define DEFINE_INTEGER_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
+    bool scan_routine_##DATATYPENAME##_ANY (const value_t *v1, const value_t *v2, match_flags *saveflags) \
+    { \
+        bool ret = false; \
+        if ((v1)->flags.s##DATAWIDTH##b) { ret = true; saveflags->s##DATAWIDTH##b = 1; } \
+        if ((v1)->flags.u##DATAWIDTH##b) { ret = true; saveflags->u##DATAWIDTH##b = 1; } \
+        return ret; \
+    }
+
+DEFINE_INTEGER_MATCHANY_ROUTINE(INTEGER8, 8)
+DEFINE_INTEGER_MATCHANY_ROUTINE(INTEGER16, 16)
+DEFINE_INTEGER_MATCHANY_ROUTINE(INTEGER32, 32)
+DEFINE_INTEGER_MATCHANY_ROUTINE(INTEGER64, 64)
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
 #define VALUE_COPY(a,b,field)       ((set_##field(a, get_##field(b))), ((a)->flags.field = 1))
@@ -62,6 +74,21 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(NOTEQUALTO, !=)
 DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(INCREASED, >)
 DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(DECREASED, <)
 
+/******************/
+/* Float specific */
+
+/* for MATCHANY */
+#define DEFINE_FLOAT_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
+    bool scan_routine_##DATATYPENAME##_ANY (const value_t *v1, const value_t *v2, match_flags *saveflags) \
+    { \
+        bool ret = false; \
+        if ((v1)->flags.f##DATAWIDTH##b) { ret = true; saveflags->f##DATAWIDTH##b = 1; } \
+        return ret; \
+    }
+
+DEFINE_FLOAT_MATCHANY_ROUTINE(FLOAT32, 32)
+DEFINE_FLOAT_MATCHANY_ROUTINE(FLOAT64, 64)
+
 #define DEFINE_FLOAT_ROUTINE(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, MATCHTYPE) \
     bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
     { \
@@ -73,7 +100,6 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(DECREASED, <)
         return ret; \
     } \
 
-
 #define DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(MATCHTYPENAME, MATCHTYPE) \
     DEFINE_FLOAT_ROUTINE(FLOAT32, 32, MATCHTYPENAME, MATCHTYPE) \
     DEFINE_FLOAT_ROUTINE(FLOAT64, 64, MATCHTYPENAME, MATCHTYPE) 
@@ -84,6 +110,10 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(CHANGED, !=)      /* this is bad, but be
 DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(INCREASED, >)
 DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(DECREASED, <)
 
+/********************/
+/* Special routines */
+
+/*************************************/
 /* special EQUALTO for float numbers */
 /* currently we round both of them to integers and compare them */
 /* TODO: let user specify a float number */
@@ -102,6 +132,7 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(DECREASED, <)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 
+/*******************************/
 /* for reverse changing detect */
 #define DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, REVERSEMATCHTYPENAME) \
     bool scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE (const value_t *v1, const value_t *v2, match_flags *saveflags) \
@@ -124,6 +155,8 @@ DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT32, 32)
 DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
 
 
+/***************************/
+/* Any-xxx types specifiec */
 /* this is for anynumber, anyinteger, anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
     bool scan_routine_ANYINTEGER_##MATCHTYPENAME (const value_t *v1, const value_t *v2, match_flags *saveflags) \
@@ -150,6 +183,7 @@ DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
         return ret; \
     } \
 
+DEFINE_ANYTYPE_ROUTINE(ANY)
 DEFINE_ANYTYPE_ROUTINE(EQUALTO)
 DEFINE_ANYTYPE_ROUTINE(NOTEQUALTO)
 DEFINE_ANYTYPE_ROUTINE(CHANGED)
@@ -186,14 +220,13 @@ bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 
 scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
-    if (mt == MATCHANY) { return &scan_routine_ANY_ANY; }
-
     if (globals.options.detect_reverse_change)
     {
         CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASED, INCREASED_WITH_REVERSE)
         CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED_WITH_REVERSE)
     }
 
+    CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHEQUALTO, EQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHNOTEQUALTO, NOTEQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHCHANGED, CHANGED)
