@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100104r54-0ubuntu2) karmic; urgency=low
+
+  * Merged changelog in scanmem 0.07-8 from Debian 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 05 Jan 2010 21:51:09 +0800
+
 scanmem (0.09~svn20100104r54-0ubuntu1) karmic; urgency=low
 
   * Added cdbs in Build-Depends
@@ -9,6 +15,21 @@ scanmem (0.09~svn20100104r54) karmic; urgency=low
   * Initial release for PPA
 
  -- WANG Lu <coolwanglu@gmail.com>  Mon, 04 Jan 2010 19:49:56 +0800
+
+scanmem (0.07-8) unstable; urgency=low
+
+  * debian/control:
+    + Build-Depends on libreadline-dev instead of libreadline5-dev
+    + Updated Standards-Version to 3.8.3
+    + Wrapped up Build-Depends
+    + Updated debhelper dependency to 7.0.50~
+    + Removed dependency on cdbs, no longer needed as we use dh now
+  * debian/rules:
+    + dh usage instead of cdbs
+  * debian/copyright:
+    + Don't point to versionless symlink in /usr/share/common-licenses
+
+ -- Kartik Mistry <kartik@debian.org>  Sun, 13 Sep 2009 23:13:09 +0530
 
 scanmem (0.07-7) unstable; urgency=low
 

@@ -79,7 +79,7 @@
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Select a progress</property>
+                    <property name="tooltip_text" translatable="yes">Select a process</property>
                     <property name="image">system_image</property>
                     <signal name="clicked" handler="SelectProcess_Button_clicked_cb"/>
                   </object>
@@ -123,6 +123,14 @@
                     <property name="width_request">42</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
+                    <property name="tooltip_markup">Syntax:
+
+(N is any number, like 12 or 0x34)
+
+&lt;b&gt;N&lt;/b&gt;     Exactly this number
+&lt;b&gt;&amp;lt;&lt;/b&gt;     Decreased values
+&lt;b&gt;&amp;gt;&lt;/b&gt;     Increased values
+</property>
                     <property name="xalign">1</property>
                     <property name="label" translatable="yes">Value:</property>
                     <property name="single_line_mode">True</property>
@@ -177,21 +185,6 @@
                   <packing>
                     <property name="x">280</property>
                     <property name="y">9</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkButton" id="ValueHelp_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="image">dialog_quesion_image</property>
-                    <signal name="clicked" handler="ValueHelp_Button_clicked_cb"/>
-                  </object>
-                  <packing>
-                    <property name="x">378</property>
-                    <property name="y">96</property>
                   </packing>
                 </child>
                 <child>
@@ -254,9 +247,9 @@
                                 <property name="width_request">100</property>
                                 <property name="height_request">28</property>
                                 <property name="visible">True</property>
-                                <property name="tooltip_markup">&lt;b&gt;Basic:&lt;/b&gt;  Fastest but may miss values
+                                <property name="tooltip_markup">&lt;b&gt;Basic:&lt;/b&gt;      Fastest but may miss values
 &lt;b&gt;Normal:&lt;/b&gt;  Works for most cases
-&lt;b&gt;Full:&lt;/b&gt;  Never miss values but slowest</property>
+&lt;b&gt;Full:&lt;/b&gt;         Never miss values but slowest</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Search Scope:</property>
                               </object>
@@ -272,6 +265,17 @@
                               </object>
                               <packing>
                                 <property name="x">98</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkVSeparator" id="vseparator1">
+                                <property name="width_request">3</property>
+                                <property name="height_request">133</property>
+                                <property name="visible">True</property>
+                                <property name="orientation">vertical</property>
+                              </object>
+                              <packing>
+                                <property name="x">210</property>
                               </packing>
                             </child>
                           </object>
@@ -1136,11 +1140,6 @@ Public License instead of this License.  But first, please read
       <action-widget response="-6">ProcessListDialog_Cancel_Button</action-widget>
     </action-widgets>
   </object>
-  <object class="GtkImage" id="dialog_quesion_image">
-    <property name="visible">True</property>
-    <property name="tooltip_text" translatable="yes">Format for scanning</property>
-    <property name="stock">gtk-dialog-question</property>
-  </object>
   <object class="GtkImage" id="refresh_image">
     <property name="visible">True</property>
     <property name="stock">gtk-refresh</property>
@@ -1155,6 +1154,7 @@ Public License instead of this License.  But first, please read
   </object>
   <object class="GtkImage" id="add_image">
     <property name="visible">True</property>
+    <property name="tooltip_text" translatable="yes">Manually add an entry</property>
     <property name="stock">gtk-add</property>
   </object>
 </interface>

@@ -296,7 +296,7 @@ bool checkmatches(globals_t * vars,
     while (reading_swath.first_byte_in_child) {
         bool is_match = false;
         value_t data_value;
-        value_t check;
+        match_flags checkflags;
 
         void *address = reading_swath.first_byte_in_child + reading_iterator;
         
@@ -313,35 +313,13 @@ bool checkmatches(globals_t * vars,
 
             truncval_to_flags(&data_value, flags);
 
-            memset(&check, 0, sizeof(check));
-            check.how_to_calculate_values = BY_POINTER_SHIFTING;
+            memset(&checkflags, 0, sizeof(checkflags));
 
             if (use_old_value) {
                 value = old_val;
             }
 
-            is_match = (*g_scan_routine)(&data_value, &value, &check);
-            
-            /*
-            / * Inequalities get special handling * /
-            else if (type == MATCHGREATERTHAN || type == MATCHLESSTHAN)
-            {
-                scan_match_type_t reverse_type = (type == MATCHGREATERTHAN) ? MATCHLESSTHAN : MATCHGREATERTHAN;
-                bool works_forwards = false, works_reverse = false;
-                value_t saved1, saved2;
-                if (flags.ineq_forwards && valuecmp(&check, type, &value, &saved1)) works_forwards = true;
-                if (flags.ineq_reverse && valuecmp(&check, reverse_type, &value, &saved2)) works_reverse = true;
-                
-                if (works_forwards || works_reverse)
-                {
-                    is_match = true;
-                    if (works_forwards && works_reverse) { valuecmp(&check, MATCHNOTEQUAL, &value, &check); check.flags.ineq_forwards = check.flags.ineq_reverse = 1; }
-                    else if (works_forwards) { check = saved1; check.flags.ineq_forwards = 1; check.flags.ineq_reverse = 0; }
-                    else if (works_reverse) { check = saved2; check.flags.ineq_reverse = 1; check.flags.ineq_forwards = 0; }
-                    else { check.flags.ineq_forwards = check.flags.ineq_reverse = 0; }
-                }
-            }
-            */
+            is_match = (*g_scan_routine)(&data_value, &value, &checkflags);
         }
         
         if (is_match)
@@ -350,12 +328,12 @@ bool checkmatches(globals_t * vars,
                 (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
           
-            old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
+            old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
             writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
             
             ++vars->num_matches;
             
-            required_extra_bytes_to_record = val_max_width_in_bytes(&check) - 1;
+            required_extra_bytes_to_record = flags_to_max_width_in_bytes(checkflags) - 1;
         }
         else if (required_extra_bytes_to_record)
         {
@@ -510,7 +488,7 @@ bool searchregions(globals_t * vars,
 
         /* for every offset, check if we have a match */
         for (offset = 0; offset < nread; offset++) {
-            value_t check;
+            match_flags checkflags;
             value_t data_value;
            
             /* initialise check */
@@ -547,18 +525,24 @@ bool searchregions(globals_t * vars,
             }
 #endif
 
-            check = data_value;
-            memset(&check.flags, 0, sizeof(check.flags));
+            if (!snapshot) /* if not to take snapshot, clear the flags for scan_routine */
+            {
+                memset(&checkflags, 0, sizeof(checkflags));
+            }
+            else /* else set it as of data_value */
+            {
+                checkflags = data_value.flags;
+            }
             
             /* check if we have a match */
-            if (snapshot || EXPECT((*g_scan_routine)(&value, &data_value, &check), false)) {
-                check.flags.ineq_forwards = check.flags.ineq_reverse = 1;
-                old_value_and_match_info new_value = { get_u8b(&data_value), check.flags };
+            if (snapshot || EXPECT((*g_scan_routine)(&value, &data_value, &checkflags), false)) {
+                checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
+                old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
                 
                 ++vars->num_matches;
                 
-                required_extra_bytes_to_record = val_max_width_in_bytes(&check) - 1;
+                required_extra_bytes_to_record = flags_to_max_width_in_bytes(checkflags) - 1;
             }
             else if (required_extra_bytes_to_record)
             {

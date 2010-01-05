@@ -47,7 +47,6 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void truncval_to_flags(value_t * dst, match_flags flags);
 void truncval(value_t * dst, const value_t * src);
-/* bool valuecmp(const value_t * v1, scan_match_type_t operator, const value_t * v2, value_t * save); */
 void valnowidth(value_t * val);
 int flags_to_max_width_in_bytes(match_flags flags);
 int val_max_width_in_bytes(value_t *val);
