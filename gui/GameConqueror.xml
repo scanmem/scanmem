@@ -219,7 +219,7 @@
                             <property name="visible">True</property>
                             <child>
                               <object class="GtkLabel" id="label3">
-                                <property name="width_request">70</property>
+                                <property name="width_request">100</property>
                                 <property name="height_request">28</property>
                                 <property name="visible">True</property>
                                 <property name="xalign">0</property>
@@ -239,7 +239,7 @@
                               </object>
                               <packing>
                                 <property name="x">98</property>
-                                <property name="y">35</property>
+                                <property name="y">63</property>
                               </packing>
                             </child>
                             <child>
@@ -254,7 +254,7 @@
                                 <property name="label" translatable="yes">Search Scope:</property>
                               </object>
                               <packing>
-                                <property name="y">28</property>
+                                <property name="y">56</property>
                               </packing>
                             </child>
                             <child>
@@ -268,14 +268,28 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkVSeparator" id="vseparator1">
-                                <property name="width_request">3</property>
-                                <property name="height_request">133</property>
+                              <object class="GtkLabel" id="label5">
+                                <property name="width_request">100</property>
+                                <property name="height_request">28</property>
                                 <property name="visible">True</property>
-                                <property name="orientation">vertical</property>
+                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Avaiable in the next version</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Round Type:</property>
                               </object>
                               <packing>
-                                <property name="x">210</property>
+                                <property name="y">28</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBox" id="RoundType_ComboBox">
+                                <property name="width_request">100</property>
+                                <property name="height_request">28</property>
+                                <property name="visible">True</property>
+                                <property name="sensitive">False</property>
+                              </object>
+                              <packing>
+                                <property name="x">98</property>
+                                <property name="y">28</property>
                               </packing>
                             </child>
                           </object>
