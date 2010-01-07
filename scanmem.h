@@ -94,7 +94,7 @@ extern globals_t globals;
 bool detach(pid_t target);
 bool setaddr(pid_t target, void *addr, const value_t * to);
 bool checkmatches(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
-bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue, bool snapshot);
+bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
 bool peekdata(pid_t pid, void *addr, value_t * result);
 bool attach(pid_t target);
 bool getcommand(globals_t * vars, char **line);
