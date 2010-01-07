@@ -1,5 +1,5 @@
 # $Id: Makefile.am,v 1.5 2007-04-14 18:47:39+01 taviso Exp $
-SUBDIRS = 
+SUBDIRS = test
 if ENABLE_GUI
   SUBDIRS += gui
 else
@@ -15,6 +15,3 @@ dist_man_MANS = scanmem.1
 dist_doc_DATA = README
 
 EXTRA_DIST = gpl-2.0.txt gpl-3.0.txt
-EXTRA_DIST += test/smtest.c test/smtest.dat
-EXTRA_DIST += test/config/unix.exp
-EXTRA_DIST += test/scanmem/dregion.exp test/scanmem/iterchar.exp test/scanmem/lregions.exp test/scanmem/popchar.exp test/scanmem/shell.exp test/scanmem/testrun.log test/scanmem/testrun.sum test/scanmem/version.exp

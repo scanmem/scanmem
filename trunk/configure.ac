@@ -4,8 +4,30 @@ AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADER([config.h])
 AC_GNU_SOURCE
-AC_FUNC_ALLOCA
 AC_HEADER_STDBOOL
+
+AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
+
+AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
+
+AC_FUNC_ALLOCA
+AC_FUNC_MALLOC
+AC_FUNC_REALLOC
+AC_FUNC_STRTOD
+
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_OFF_T
+AC_TYPE_PID_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+
 
 # check if termcap is present, sometimes required by readline
 AC_CHECK_LIB([termcap], [tgetent], [], [])
@@ -81,7 +103,10 @@ AC_DEFUN([AS_AC_EXPAND],
 
 AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
 
-AC_CONFIG_FILES([ Makefile ])
+AC_CONFIG_FILES([ 
+                Makefile 
+                test/Makefile
+                ])
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
                             [enable gameconqueror, the gui front-end of scanmem])],

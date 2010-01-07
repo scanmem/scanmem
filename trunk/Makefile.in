@@ -113,7 +113,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = gui
+DIST_SUBDIRS = test gui
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -192,6 +192,7 @@ PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PKGDATADIR = @PKGDATADIR@
+POW_LIB = @POW_LIB@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
@@ -240,7 +241,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 
 # $Id: Makefile.am,v 1.5 2007-04-14 18:47:39+01 taviso Exp $
-SUBDIRS = $(am__append_1) $(am__append_2)
+SUBDIRS = test $(am__append_1) $(am__append_2)
 scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 	list.c menu.c commands.c handlers.c value.c commands.h \
 	handlers.h interrupt.h list.h scanmem.h value.h licence.h \
@@ -249,12 +250,7 @@ scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 scanmem_CFLAGS = -O1 -g -Wall
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
-EXTRA_DIST = gpl-2.0.txt gpl-3.0.txt test/smtest.c test/smtest.dat \
-	test/config/unix.exp test/scanmem/dregion.exp \
-	test/scanmem/iterchar.exp test/scanmem/lregions.exp \
-	test/scanmem/popchar.exp test/scanmem/shell.exp \
-	test/scanmem/testrun.log test/scanmem/testrun.sum \
-	test/scanmem/version.exp
+EXTRA_DIST = gpl-2.0.txt gpl-3.0.txt
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
