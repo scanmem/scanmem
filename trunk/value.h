@@ -83,7 +83,9 @@ typedef struct {
 } uservalue_t;
 
 bool valtostr(const value_t * val, char *str, size_t n); 
-void parse_uservalue(const char *nptr, char **endptr, int base, uservalue_t * val);
+bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */
+bool parse_uservalue_int(const char *nptr, uservalue_t * val);
+bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
 void truncval_to_flags(value_t * dst, match_flags flags);
