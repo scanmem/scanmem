@@ -1,3 +1,13 @@
+2010-01-07 WANG Lu <coolwanglu(a)gmail.com>
+	* Added uservalue_t and clean up some value_t, this make it more flexible,
+	  and make it possible to support more data types and even user-specific
+	  scan routine
+	* in scan routines old_value and user_value are both provided
+	* clean up MATCHES_AND_VALUES stuff, since currently we don't use MATCHES
+	  or VALUES
+	* removed snapshot and use MATCHANY instead, such that this can be used to
+      filter out data types
+    
 2010-01-06 WANG Lu <coolwanglu(a)gmail.com>
     * Fixed detection of reverse change, but it's now working partially, see
 	  comments in `help option`
