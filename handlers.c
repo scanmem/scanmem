@@ -172,7 +172,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     /* --- execute the parsed setting structs --- */
 
     while (true) {
-        value_t val;
+        uservalue_t userval;
         char *end = NULL;
 
         /* for every settings struct */
@@ -190,7 +190,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             }
 
             /* convert value */
-            strtoval(settings[block].value, &end, 0x00, &val);
+            parse_uservalue(settings[block].value, &end, 0x00, &userval);
 
             /* check that converted successfully */
             if (*end != '\0') {
@@ -232,17 +232,17 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (loc.swath) {
                         value_t v;
                         value_t old;
-                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
 
                         fprintf(stderr, "info: setting *%p to %#llx...\n",
-                                address, (long long)val.int_value);
+                                address, (long long)userval.int64_value);
 
                         /* copy val onto v */
-                        valcpy(&v, &val);
-
                         /* XXX: valcmp? make sure the sizes match */
-                        old = data_to_val((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
-                        truncval(&v, &old);
+                        old = data_to_val((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        v.flags = old.flags;
+                        uservalue2value(&v, &userval);
+                        
 
                         /* set the value specified */
                         if (setaddr(vars->target, address, &v) == false) {
@@ -268,17 +268,20 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     /* Only actual matches are considered */
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
-                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
+                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
 
                         /* XXX: as above : make sure the sizes match */
-                        value_t old = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
-                        truncval(&val, &old);
+                                    
+                        value_t old = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        value_t v;
+                        v.flags = old.flags;
+                        uservalue2value(&v, &userval);
 
                         fprintf(stderr, "info: setting *%p to %#llx...\n",
-				address, (long long)val.int_value);
+                            address, (long long)v.int64_value);
 
 
-                        if (setaddr(vars->target, address, &val) == false) {
+                        if (setaddr(vars->target, address, &v) == false) {
                             fprintf(stderr, "error: failed to set a value.\n");
                             goto fail;
                         }
@@ -288,7 +291,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     ++reading_iterator;
                     if (reading_iterator >= reading_swath_index->number_of_bytes)
                     {
-                        reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES);
+                        reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */);
                         reading_iterator = 0;
                     }
                 }
@@ -337,7 +340,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         /* Only actual matches are considered */
         if (flags_to_max_width_in_bytes(flags) > 0)
         {
-            value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES);
+            value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
             truncval_to_flags(&val, flags);
 
             if (valtostr(&val, v, sizeof(v)) != true) {
@@ -353,15 +356,15 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 #define POINTER_FMT "20"
 #endif
 
-            fprintf(stdout, "[%2u] %"POINTER_FMT"p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator, MATCHES_AND_VALUES), v);
+            fprintf(stdout, "[%2u] %"POINTER_FMT"p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
         }
 	
         /* Go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
-            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES)))->number_of_bytes >= 0);
-            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES);
+            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */)))->number_of_bytes >= 0);
+            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */);
             reading_iterator = 0;
         }
     }
@@ -468,10 +471,7 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc)
 bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
-    value_t v;
     
-    /* unused */
-    memset(&v, 0x00, sizeof(v));
 
     /* check that a pid has been specified */
     if (vars->target == 0) {
@@ -483,7 +483,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
     /* here MATCHANY has no use */
-    if (searchregions(vars, MATCHANY, v, true) != true) {
+    if (searchregions(vars, MATCHANY, NULL, true) != true) {
         fprintf(stderr, "error: failed to save target address space.\n");
         return false;
     }
@@ -684,7 +684,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
     char *end = NULL;
-    value_t val;
+    uservalue_t val;
     scan_match_type_t m;
 
     USEPARAMS();
@@ -700,7 +700,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        strtoval(argv[1], &end, 0x00, &val);
+        parse_uservalue(argv[1], &end, 0x00, &val);
         if (*end != '\0') {
             fprintf(stderr, "error: bad value specified, see `help %s`", argv[0]);
             return false;
@@ -731,7 +731,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
 
     if (vars->matches) {
-        if (checkmatches(vars, val, m) == false) {
+        if (checkmatches(vars, m, &val) == false) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
@@ -744,7 +744,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
         }
         else
         {
-            if (searchregions(vars, m, val, false) != true) {
+            if (searchregions(vars, m, &val, false) != true) {
                 fprintf(stderr, "error: failed to search target address space.\n");
                 return false;
             }
@@ -771,19 +771,37 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
     char *end = NULL;
-    value_t val;
+    uservalue_t val;
 
     USEPARAMS();
 
-    /* attempt to parse command as a number */
-    strtoval(argv[0], &end, 0x00, &val);
+    switch(vars->options.scan_data_type)
+    {
+    case ANYNUMBER:
+    case ANYINTEGER:
+    case ANYFLOAT:
+    case INTEGER8:
+    case INTEGER16:
+    case INTEGER32:
+    case INTEGER64:
+    case FLOAT32:
+    case FLOAT64:
+        /* attempt to parse command as a number */
+        parse_uservalue(argv[0], &end, 0x00, &val);
 
-    /* check if that worked */
-    if (*end != '\0') {
-        fprintf(stderr,
-                "error: unable to parse command `%s`, gave up at `%s`\n",
-                argv[0], end);
-        return false;
+        /* check if that worked */
+        if (*end != '\0') {
+            fprintf(stderr,
+                    "error: unable to parse command `%s`, gave up at `%s`\n",
+                    argv[0], end);
+            return false;
+        }
+        break;
+    case BYTE_ARRAY:
+        break;
+    default:
+        assert(false);
+        break;
     }
 
     /* need a pid for the rest of this to work */
@@ -794,13 +812,13 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars, val, MATCHEQUALTO) != true) {
+        if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
     } else {
         /* initial search */
-        if (searchregions(vars, MATCHEQUALTO, val, false) != true) {
+        if (searchregions(vars, MATCHEQUALTO, &val, false) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
@@ -818,12 +836,10 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__update(globals_t * vars, char **argv, unsigned argc)
 {
-    value_t val;
 
     USEPARAMS();
-    memset(&val, 0x00, sizeof(val));
     if (vars->matches) {
-        if (checkmatches(vars, val, MATCHANY) == false) {
+        if (checkmatches(vars, MATCHANY, NULL) == false) {
             fprintf(stderr, "error: failed to scan target address space.\n");
             return false;
         }
@@ -993,9 +1009,9 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
     
-    address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+    address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
     
-    old_val = data_to_val((unknown_type_of_swath *)loc.swath, loc.index, MATCHES_AND_VALUES);
+    old_val = data_to_val((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
     valcpy(&o, &old_val);
     valcpy(&n, &o);
 
@@ -1032,8 +1048,8 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         /* check if the new value is different */
         match_flags tmpflags;
         memset(&tmpflags, 0x00, sizeof(tmpflags));
-        scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHNOTEQUALTO));
-        if (valuecmp_routine(&o, &n, &tmpflags)) {
+        scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHCHANGED));
+        if (valuecmp_routine(&o, &n, NULL, &tmpflags)) {
 
             valcpy(&o, &n);
             truncval(&o, &old_val);
