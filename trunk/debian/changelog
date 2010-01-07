@@ -1,3 +1,12 @@
+scanmem (0.09~svn20100107r74) karmic; urgency=low
+
+  * Performance improved
+  * Now user may provide float numbers
+  * INCREASEDBY and DECREASEDBY support
+  * GREATERTHAN and LESSTHAN support
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 07 Jan 2010 19:36:28 +0800
+
 scanmem (0.09~svn20100106r67-0ubuntu1) karmic; urgency=low
 
   * Improvement in GUI
