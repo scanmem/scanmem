@@ -82,6 +82,22 @@ void valcpy(value_t * dst, const value_t * src)
     return;
 }
 
+/* dst.falgs must be set beforehand */
+void uservalue2value(value_t *dst, const uservalue_t *src)
+{
+    if(dst->flags.u8b) set_u8b(dst, get_u8b(src));
+    if(dst->flags.s8b) set_s8b(dst, get_s8b(src));
+    if(dst->flags.u16b) set_u16b(dst, get_u16b(src));
+    if(dst->flags.s16b) set_s16b(dst, get_s16b(src));
+    if(dst->flags.u32b) set_u32b(dst, get_u32b(src));
+    if(dst->flags.s32b) set_s32b(dst, get_s32b(src));
+    if(dst->flags.u64b) set_u64b(dst, get_u64b(src));
+    if(dst->flags.s64b) set_s64b(dst, get_s64b(src));
+    /* I guess integer and float cannot be matched together */
+    if(dst->flags.f32b) set_f32b(dst, get_f32b(src));
+    if(dst->flags.f64b) set_f64b(dst, get_f64b(src));
+}
+
 void truncval_to_flags(value_t * dst, match_flags flags)
 {
     assert(dst != NULL);
@@ -125,12 +141,14 @@ void valnowidth(value_t * val)
     val->flags.f64b = 1;
     val->flags.f32b = 1;
 
+    val->flags.byte_array = 1; /* is this necessary? */
+
     val->flags.ineq_forwards = 1;
     val->flags.ineq_reverse = 1;
     return;
 }
 
-void strtoval(const char *nptr, char **endptr, int base, value_t * val)
+void parse_uservalue(const char *nptr, char **endptr, int base, uservalue_t * val)
 {
     int64_t num;
 
@@ -147,25 +165,19 @@ void strtoval(const char *nptr, char **endptr, int base, value_t * val)
     num = strtoll(nptr, endptr, base);
 
     /* determine correct flags */
-    if (num >=       (0) && num < (1LL<< 8)) val->flags.u8b  = 1;
-    if (num > -(1LL<< 7) && num < (1LL<< 7)) val->flags.s8b  = 1;
-    if (num >=       (0) && num < (1LL<<16)) val->flags.u16b = 1;
-    if (num > -(1LL<<15) && num < (1LL<<15)) val->flags.s16b = 1;
-    if (num >=       (0) && num < (1LL<<32)) val->flags.u32b = 1;
-    if (num > -(1LL<<31) && num < (1LL<<31)) val->flags.s32b = 1;
-    if (          (true) &&          (true)) val->flags.u64b = 1;
-    if (          (true) &&          (true)) val->flags.s64b = 1;
-
-    /* finally insert the number */
-    val->int_value = num;
+    if (num >=        (0) && num < (1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)(num & ((1LL<<8)-1))); }
+    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)(num & ((1LL<<8)-1))); }
+    if (num >=        (0) && num < (1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)(num & ((1LL<<16)-1))); }
+    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)(num & ((1LL<<16)-1))); }
+    if (num >=        (0) && num < (1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)(num & ((1LL<<32)-1))); }
+    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)(num & ((1LL<<32)-1))); }
+    if (           (true) &&          (true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)(num /*& ((1LL<<64)-1)*/)); }
+    if (           (true) &&          (true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)(num /*& ((1LL<<64)-1)*/)); }
 
     /* TODO: (UGLY) currently, assume users always provide an integer value */
     val->flags.f32b = val->flags.f64b = 1;
-    val->float_value = (float) num;
-    val->double_value = (double) num;   
-
-    /* values from strings are always done by bit math */
-    val->how_to_calculate_values = BY_BIT_MATH;
+    val->float32_value = (float) num;
+    val->float64_value = (double) num;   
 
     return;
 
@@ -185,76 +197,8 @@ int val_max_width_in_bytes(value_t *val)
 	return flags_to_max_width_in_bytes(val->flags);
 }
 
-#define DEFINE_GET_SET_FUNCTIONS(inttype, signedness_letter, bits) \
-inttype get_##signedness_letter##bits##b(value_t const* val) \
-{ \
-	switch (val->how_to_calculate_values) \
-	{ \
-		case BY_POINTER_SHIFTING: return *((inttype *)&val->int_value); \
-		case BY_BIT_MATH:         return (val->int_value & ((1LL << bits) - 1)); \
-		default: assert(false); \
-	} \
-} \
- \
-void set_##signedness_letter##bits##b(value_t *val, inttype data) \
-{ \
-	switch (val->how_to_calculate_values) \
-	{ \
-		case BY_POINTER_SHIFTING: \
-			*((inttype *)&val->int_value) = data; \
-			break; \
-		case BY_BIT_MATH: \
-			val->int_value = (val->int_value & ~((1LL << bits) - 1)) + data; \
-			break; \
-		default: assert(false); \
-	} \
-}
-
-DEFINE_GET_SET_FUNCTIONS(uint8_t, u, 8)
-DEFINE_GET_SET_FUNCTIONS(int8_t, s, 8)
-DEFINE_GET_SET_FUNCTIONS(uint16_t, u, 16)
-DEFINE_GET_SET_FUNCTIONS(int16_t, s, 16)
-DEFINE_GET_SET_FUNCTIONS(uint32_t, u, 32)
-DEFINE_GET_SET_FUNCTIONS(int32_t, s, 32)
-
-int64_t get_s64b(value_t const* val) { return val->int_value; }
-void set_s64b(value_t *val, int64_t data) { val->int_value = data; }
-
-uint64_t get_u64b(value_t const* val)
-{
-	switch (val->how_to_calculate_values)
-	{
-		case BY_POINTER_SHIFTING:
-			return *((uint64_t *)&val->int_value);
-			break;
-		case BY_BIT_MATH:
-			return (uint64_t)val->int_value;
-			break;
-		default: assert(false);
-	}
-}
-void set_u64b(value_t *val, uint64_t data)
-{
-	switch (val->how_to_calculate_values)
-	{
-		case BY_POINTER_SHIFTING:
-			val->int_value = *((uint64_t *)&data);
-			break;
-		case BY_BIT_MATH:
-			val->int_value = (uint64_t)data;
-			break;
-		default: assert(false);
-	}
-}
-
-float get_f32b(value_t const* val) { return val->float_value; }
-void set_f32b(value_t *val, float data) { val->float_value = data; }
-
-double get_f64b(value_t const* val) { return val->double_value; }
-void set_f64b(value_t *val, double data) { val->double_value = data; }
-
 #define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(type, typename, signedness_letter) \
-type get_##signedness_letter##typename (value_t const* val) \
+type get_##signedness_letter##typename (const value_t const* val) \
 { \
 	     if (sizeof(type) <= 1) return (type)get_##signedness_letter##8b(val); \
 	else if (sizeof(type) <= 2) return (type)get_##signedness_letter##16b(val); \

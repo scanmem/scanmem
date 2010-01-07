@@ -1,6 +1,7 @@
 /*
  target_memory_info_array.c
 
+ Copyright (C) 2010 Eli Dupree, WANG Lu  <elidupree(a)charter.net, coolwanglu(a)gmail.com>
  Copyright (C) 2009 Eli Dupree  <elidupree(a)charter.net>
 
  This program is free software; you can redistribute it and/or modify
@@ -27,7 +28,10 @@
 
 #include "target_memory_info_array.h"
 
-#define SIZE_OF_ELEMENT_TYPE(typ) (type == MATCHES ? sizeof(match_flags) : type == MATCHES_AND_VALUES ? sizeof(old_value_and_match_info) : sizeof(unsigned char))
+#define SIZE_OF_ELEMENT_TYPE(type) sizeof(old_value_and_match_info)
+/*
+#define SIZE_OF_ELEMENT_TYPE(type) (type == MATCHES ? sizeof(match_flags) : type == MATCHES_AND_VALUES ? sizeof(old_value_and_match_info) : sizeof(unsigned char))
+*/
 
 unknown_type_of_array * allocate_array (unknown_type_of_array *array, long max_bytes)
 {
@@ -73,7 +77,7 @@ unknown_type_of_array * allocate_enough_to_reach(unknown_type_of_array *array, v
 }
 
 /* Returns a pointer to the swath to which the element was added - i.e. the last swath in the array after the operation */
-unknown_type_of_swath * add_element (unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element, data_array_type_t type)
+unknown_type_of_swath * add_element (unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element /*,data_array_type_t type*/)
 {
     if (swath->number_of_bytes == 0)
     {
@@ -86,41 +90,45 @@ unknown_type_of_swath * add_element (unknown_type_of_array **array, unknown_type
     }
     else
     {
-        long local_index_excess = remote_address - 1 - remote_address_of_last_element(swath, MATCHES_AND_VALUES);
+        long local_index_excess = remote_address - 1 - remote_address_of_last_element(swath /* ,MATCHES_AND_VALUES */);
         long local_address_excess = local_index_excess * SIZE_OF_ELEMENT_TYPE(type);
          
         if (local_address_excess >= sizeof(unknown_type_of_swath))
         {
             /* It is most memory-efficient to start a new swath */
-            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath, type) + sizeof(unknown_type_of_swath) + SIZE_OF_ELEMENT_TYPE(type), &swath);
-            
-            swath = local_address_beyond_last_element(swath, type);
+            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath /* ,type */) + sizeof(unknown_type_of_swath) + SIZE_OF_ELEMENT_TYPE(type), &swath);
+
+            swath = local_address_beyond_last_element(swath /* ,type */);
             swath->first_byte_in_child = remote_address;
             swath->number_of_bytes = 0;
         }
         else
         {
             /* It is most memory-efficient to write over the intervening space with null values */
-            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath, type) + local_address_excess + SIZE_OF_ELEMENT_TYPE(type), &swath);
+            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath /* ,type */) + local_address_excess + SIZE_OF_ELEMENT_TYPE(type), &swath);
             
-            memset(local_address_beyond_last_element(swath, type), 0, local_address_excess);
+            memset(local_address_beyond_last_element(swath /* ,type */), 0, local_address_excess);
             swath->number_of_bytes += local_index_excess;
         }
     }
     
     /* Add me */
+    /* now we use MATCHES_AND_VALUES only */
+    *(old_value_and_match_info *)(local_address_beyond_last_element(swath /* ,type */)) = *(old_value_and_match_info *)new_element;
+    /*
     switch(type)
     {
         case MATCHES: *(match_flags *)(local_address_beyond_last_element(swath, type)) = *(match_flags *)new_element; break;
         case MATCHES_AND_VALUES: *(old_value_and_match_info *)(local_address_beyond_last_element(swath, type)) = *(old_value_and_match_info *)new_element; break;
         case VALUES: *(unsigned char *)(local_address_beyond_last_element(swath, type)) = *(unsigned char *)new_element; break;
     }
+    */
     ++swath->number_of_bytes;
     
     return swath;
 }
 
-unknown_type_of_array * null_terminate (unknown_type_of_array *array, unknown_type_of_swath *swath, data_array_type_t type)
+unknown_type_of_array * null_terminate (unknown_type_of_array *array, unknown_type_of_swath *swath /* ,data_array_type_t type */)
 {
     long bytes_needed;
     
@@ -130,7 +138,7 @@ unknown_type_of_array * null_terminate (unknown_type_of_array *array, unknown_ty
     }
     else
     {
-        swath = local_address_beyond_last_element(swath, type);
+        swath = local_address_beyond_last_element(swath /* ,type */);
         swath->first_byte_in_child = NULL;
         swath->number_of_bytes = 0;
     }
@@ -147,19 +155,18 @@ unknown_type_of_array * null_terminate (unknown_type_of_array *array, unknown_ty
     return array;
 }
 
-long index_of_last_element(unknown_type_of_swath *swath, data_array_type_t type)
+long index_of_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */)
 {
     return swath->number_of_bytes - 1;
 }
 
-value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length, data_array_type_t type)
+value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length /* ,data_array_type_t type */)
 {
     int i;
     value_t val;
     int max_bytes = swath_length - index;
     
     memset(&val, 0x00, sizeof(val));
-    val.how_to_calculate_values = BY_POINTER_SHIFTING;
     
     if (max_bytes > 8) max_bytes = 8;
     
@@ -171,39 +178,43 @@ value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_len
     for (i = 0; i < max_bytes; ++i)
     {
         uint8_t byte;
+        /* now we use MATCHES_AND_VALUES only */
+        byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value;
+        /*
         switch(type)
         {
             case MATCHES_AND_VALUES: byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value; break;
             case VALUES:             byte = ((copied_data_swath *)swath)->copied_bytes[index + i]; break;
             default: assert(false);
         }
+        */
         
-            *((uint8_t *)(&val.   int_value) + i) = byte;
-            *((uint8_t *)(&val.double_value) + i) = byte;
-        if (i < sizeof(float))
-            *((uint8_t *)(&val. float_value) + i) = byte;
+            *((uint8_t *)(&val.int64_value) + i) = byte;
     }
     
     return val;
 }
 
-value_t data_to_val(unknown_type_of_swath *swath, long index, data_array_type_t type)
+value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type_t type */)
 {
-	return data_to_val_aux(swath, index, swath->number_of_bytes, type);
+	return data_to_val_aux(swath, index, swath->number_of_bytes /* ,type */);
 }
 
-void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n, data_array_type_t type)
+void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */)
 {
     return swath->first_byte_in_child + n;
 }
 
-void * remote_address_of_last_element(unknown_type_of_swath *swath, data_array_type_t type)
+void * remote_address_of_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */)
 {
-    return (remote_address_of_nth_element(swath, index_of_last_element(swath, type), type));
+    return (remote_address_of_nth_element(swath, index_of_last_element(swath /* ,type */) /* ,type */));
 }
 
-void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n, data_array_type_t type)
+void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */)
 {
+    /* now we use MATCHES_AND_VALUES only */
+    return &((matches_and_old_values_swath *)swath)->data[n + 1];
+    /*
     switch(type)
     {
         case MATCHES: return &((matches_swath *)swath)->match_info[n + 1];
@@ -211,11 +222,12 @@ void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n, da
         case VALUES: return &((copied_data_swath *)swath)->copied_bytes[n + 1];
         default: assert(false);
     }
+    */
 }
 
-void * local_address_beyond_last_element(unknown_type_of_swath *swath, data_array_type_t type)
+void * local_address_beyond_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */)
 {
-    return (local_address_beyond_nth_element(swath, index_of_last_element(swath, type), type));
+    return (local_address_beyond_nth_element(swath, index_of_last_element(swath /* ,type */) /* ,type */));
 }
 
 match_location nth_match(matches_and_old_values_array *matches, unsigned n)
@@ -243,7 +255,7 @@ match_location nth_match(matches_and_old_values_array *matches, unsigned n)
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
-            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index, MATCHES_AND_VALUES);
+            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */);
             reading_iterator = 0;
         }
     }
@@ -274,7 +286,7 @@ matches_and_old_values_array * delete_by_region(matches_and_old_values_array *ma
             /* Still a candidate. Write data. 
                 (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
-            writing_swath_index = add_element((unknown_type_of_array **)(&matches), (unknown_type_of_swath *)writing_swath_index, address, &reading_swath_index->data[reading_iterator], MATCHES_AND_VALUES);
+            writing_swath_index = add_element((unknown_type_of_array **)(&matches), (unknown_type_of_swath *)writing_swath_index, address, &reading_swath_index->data[reading_iterator] /* ,MATCHES_AND_VALUES */);
 
             /* Actual matches are recorded */
             if (flags_to_max_width_in_bytes(flags) > 0) ++(*num_matches);
@@ -291,7 +303,7 @@ matches_and_old_values_array * delete_by_region(matches_and_old_values_array *ma
         }
     }
     
-    if (!(matches = null_terminate((unknown_type_of_array *)matches, (unknown_type_of_swath *)writing_swath_index, MATCHES_AND_VALUES)))
+    if (!(matches = null_terminate((unknown_type_of_array *)matches, (unknown_type_of_swath *)writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
         return NULL;
     }

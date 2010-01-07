@@ -128,16 +128,13 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     memset(result, 0x00, sizeof(value_t));
 
     valnowidth(result);
-    result->how_to_calculate_values = BY_POINTER_SHIFTING;
 
     /* check if we have a cache hit */
     if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
             (unsigned) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
 
-        result->int_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
-        result->double_value = *( (double *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
-        result->float_value =  *(  (float *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
         return true;
     } else if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
@@ -216,9 +213,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     if (reqaddr + sizeof(int64_t) <= last_address_gathered)
     {
         /* The values are fine - read away */
-        result->int_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
-        result->double_value = *( (double *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
-        result->float_value =  *(  (float *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
     }
     else
     {
@@ -228,11 +223,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         for (i = 0; i < sizeof(int64_t); ++i)
         {
             uint8_t val = (i < successful_gathering) ? peekbuf.cache[reqaddr - peekbuf.base + i] : 0;
-            
-                *(((uint8_t *)&result->int_value)    + i) = val;
-                *(((uint8_t *)&result->double_value) + i) = val;
-            if (i < sizeof(float))
-                *(((uint8_t *)&result->float_value)  + i) = val;
+            *(((uint8_t *)&result->int64_value)    + i) = val;
         }
         
         /* Mark which values this can't be */
@@ -253,8 +244,8 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
 bool checkmatches(globals_t * vars, 
-                  value_t value, 
-                  scan_match_type_t match_type)
+                  scan_match_type_t match_type,
+                  const uservalue_t *uservalue) 
 {
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
@@ -279,20 +270,6 @@ bool checkmatches(globals_t * vars,
         return false;
 
 
-    bool use_old_value;
-    if (  (match_type == MATCHNOTCHANGED)
-        ||(match_type == MATCHCHANGED)
-        ||(match_type == MATCHINCREASED)
-        ||(match_type == MATCHDECREASED))
-    {
-        use_old_value = true;
-    }
-    else
-    {
-        use_old_value = false;
-    }
-
-
     while (reading_swath.first_byte_in_child) {
         bool is_match = false;
         value_t data_value;
@@ -306,7 +283,7 @@ bool checkmatches(globals_t * vars,
         }
         else
         {
-            value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes, MATCHES_AND_VALUES);
+            value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             truncval_to_flags(&old_val, flags);
@@ -315,11 +292,7 @@ bool checkmatches(globals_t * vars,
 
             memset(&checkflags, 0, sizeof(checkflags));
 
-            if (use_old_value) {
-                value = old_val;
-            }
-
-            is_match = (*g_scan_routine)(&data_value, &value, &checkflags);
+            is_match = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags);
         }
         
         if (is_match)
@@ -329,7 +302,7 @@ bool checkmatches(globals_t * vars,
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
           
             old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
+            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             
             ++vars->num_matches;
             
@@ -338,7 +311,7 @@ bool checkmatches(globals_t * vars,
         else if (required_extra_bytes_to_record)
         {
             old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
-            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value, MATCHES_AND_VALUES);
+            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             --required_extra_bytes_to_record;
         }
         
@@ -354,7 +327,7 @@ bool checkmatches(globals_t * vars,
         }
     }
     
-    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index, MATCHES_AND_VALUES)))
+    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
         fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
         return false;
@@ -399,9 +372,7 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
     
 
 /* searchregions() performs an initial search of the process for values matching value */
-bool searchregions(globals_t * vars,
-                scan_match_type_t match_type,
-                value_t value, bool snapshot)
+bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue, bool snapshot)
 {
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
@@ -498,10 +469,7 @@ bool searchregions(globals_t * vars,
             valnowidth(&data_value);
 
 #if HAVE_PROCMEM           
-            data_value.int_value    = *((int64_t *)(&data[offset]));
-            data_value.double_value = *( (double *)(&data[offset]));
-            data_value.float_value  = *(  (float *)(&data[offset]));
-            data_value.how_to_calculate_values = BY_POINTER_SHIFTING;
+            data_value.int64_value    = *((int64_t *)(&data[offset]));
             
             /* Mark which values this can't be */
             if (nread - offset < sizeof(int64_t))
@@ -536,10 +504,10 @@ bool searchregions(globals_t * vars,
             }
             
             /* check if we have a match */
-            if (snapshot || EXPECT((*g_scan_routine)(&data_value, &value, &checkflags), false)) {
+            if (snapshot || EXPECT((*g_scan_routine)(&data_value, NULL, uservalue, &checkflags), false)) {
                 checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
+                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 
                 ++vars->num_matches;
                 
@@ -548,7 +516,7 @@ bool searchregions(globals_t * vars,
             else if (required_extra_bytes_to_record)
             {
                 old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
-                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value, MATCHES_AND_VALUES);
+                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 --required_extra_bytes_to_record;
             }
 
@@ -566,7 +534,7 @@ bool searchregions(globals_t * vars,
 #endif
     }
     
-    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index, MATCHES_AND_VALUES)))
+    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
         fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
         return false;
@@ -596,10 +564,10 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     /* Basically, overwrite as much of the data as makes sense, and no more. */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&(to->double_value))); } 
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&(to->float64_value))); } 
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
-    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&(to->float_value))); } 
+    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&(to->float32_value))); } 
     else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
     else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
     else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }
@@ -610,10 +578,10 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     }
 
     /* TODO: may use /proc/<pid>/mem here */
-    /* assume that sizeof(save.int_value) (int64_t) is multiple of sizeof(long) */
-    for (i = 0; i < sizeof(saved.int_value); i += sizeof(long)) 
+    /* assume that sizeof(save.int64_value) (int64_t) is multiple of sizeof(long) */
+    for (i = 0; i < sizeof(saved.int64_value); i += sizeof(long)) 
     {
-        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&saved.int_value) + i)) == -1L) {
+        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long *)(((int8_t *)&saved.int64_value) + i)) == -1L) {
             return false;
         }
     }
