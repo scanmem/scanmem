@@ -32,7 +32,8 @@ typedef enum {
     INTEGER32,
     INTEGER64,
     FLOAT32,
-    FLOAT64 
+    FLOAT64,
+    BYTE_ARRAY
 } scan_data_type_t;
 
 typedef enum {
@@ -50,11 +51,10 @@ typedef enum {
 } scan_match_type_t;
 
 
-/* compare v1 and v2, and store the result (if any) into save */
+/* match old_value against new_value or user_value (or both, depending on the matching type, store the result into save */
 /* NOTE: saveflag must be set to 0, since only useful bits are set, but extra bits are not cleared! */
-/*       v1 should be value retrieved from memory, v2 should be user-provided or old value */
-/* return if something matched */
-typedef bool (*scan_routine_t)(const value_t *v1, const value_t *v2, match_flags *saveflag);
+/* return the number of bytes needed to store old_value, 0 for not matched */
+typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag);
 extern scan_routine_t g_scan_routine;
 
 /* 

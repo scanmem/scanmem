@@ -1,6 +1,7 @@
 /*
  target_memory_info_array.h
 
+ Copyright (C) 2010 Eli Dupree, WANG Lu  <elidupree(a)charter.net, coolwanglu(a)gmail.com>
  Copyright (C) 2009 Eli Dupree  <elidupree(a)charter.net>
 
  This program is free software; you can redistribute it and/or modify
@@ -76,11 +77,15 @@ typedef struct {
 	matches_and_old_values_swath swaths[0];
 } matches_and_old_values_array;
 
+/*
+ * now we use MATCHES_AND_VALUES only
+ *
 typedef enum {
 	MATCHES,
 	MATCHES_AND_VALUES,
 	VALUES
 } data_array_type_t;
+*/
 
 typedef struct {
 	matches_and_old_values_swath *swath;
@@ -89,14 +94,14 @@ typedef struct {
 
 unknown_type_of_array * allocate_array(unknown_type_of_array *array, long max_bytes);
 unknown_type_of_array * allocate_enough_to_reach(unknown_type_of_array *array, void *last_byte_to_reach_plus_one, unknown_type_of_swath **swath_pointer_to_correct);
-unknown_type_of_swath * add_element(unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element, data_array_type_t type);
-unknown_type_of_array * null_terminate(unknown_type_of_array *array, unknown_type_of_swath *swath, data_array_type_t type);
-value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length, data_array_type_t type);
-value_t data_to_val(unknown_type_of_swath *swath, long index, data_array_type_t type);
-void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n, data_array_type_t type);
-void * remote_address_of_last_element(unknown_type_of_swath *swath, data_array_type_t type);
-void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n, data_array_type_t type);
-void * local_address_beyond_last_element(unknown_type_of_swath *swath, data_array_type_t type);
+unknown_type_of_swath * add_element(unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element /* ,data_array_type_t type */);
+unknown_type_of_array * null_terminate(unknown_type_of_array *array, unknown_type_of_swath *swath /* ,data_array_type_t type*/);
+value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length /* ,data_array_type_t type */);
+value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type_t type */);
+void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
+void * remote_address_of_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */);
+void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
+void * local_address_beyond_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */);
 match_location nth_match(matches_and_old_values_array *matches, unsigned n);
 matches_and_old_values_array * delete_by_region(matches_and_old_values_array *array, long *num_matches, region_t *which, bool invert);
 
