@@ -495,7 +495,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 #endif
 
             memset(&checkflags, 0, sizeof(checkflags));
-            checkflags = data_value.flags;
             
             /* check if we have a match */
             if (EXPECT((*g_scan_routine)(&data_value, NULL, uservalue, &checkflags), false)) {
