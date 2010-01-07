@@ -125,15 +125,19 @@
                     <property name="visible">True</property>
                     <property name="tooltip_markup">Syntax:
 
- (N is any number, like 12 or 0x34)
-
- &lt;b&gt;N&lt;/b&gt;     Exactly this number
- &lt;b&gt;?&lt;/b&gt;     Unknown initial value
- &lt;b&gt;&amp;lt;&lt;/b&gt;     Decreased values
- &lt;b&gt;&amp;gt;&lt;/b&gt;     Increased values
- &lt;b&gt;=&lt;/b&gt;     Unchanged values
- &lt;b&gt;&amp;lt; N&lt;/b&gt;   Greater than N
- &lt;b&gt;&amp;gt; N&lt;/b&gt;   Less than N
+ (N is any number, like 12, 0x34 or 5.67) 
+&lt;span font_family="monospace"&gt;
+ &lt;b&gt;N&lt;/b&gt;         Exactly this number
+ &lt;b&gt;?&lt;/b&gt;         Unknown initial value
+ &lt;b&gt;&amp;gt; or +&lt;/b&gt;    Increased values
+ &lt;b&gt;&amp;lt; or -&lt;/b&gt;    Decreased values
+ &lt;b&gt;=&lt;/b&gt;         Unchanged values
+ &lt;b&gt;!=&lt;/b&gt;        Changed values
+ &lt;b&gt;&amp;gt; N&lt;/b&gt;       Greater than N
+ &lt;b&gt;&amp;lt; N&lt;/b&gt;       Less than N
+ &lt;b&gt;+ N&lt;/b&gt;       Increased by N
+ &lt;b&gt;- N&lt;/b&gt;       Decreased by N
+&lt;/span&gt;
 </property>
                     <property name="xalign">1</property>
                     <property name="label" translatable="yes">Value:</property>

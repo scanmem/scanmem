@@ -22,6 +22,7 @@
 
 */
 
+#include <config.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -29,6 +30,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <errno.h>
 
 #include "value.h"
 #include "scanroutines.h"
@@ -148,39 +150,86 @@ void valnowidth(value_t * val)
     return;
 }
 
-void parse_uservalue(const char *nptr, char **endptr, int base, uservalue_t * val)
+bool parse_uservalue_number(const char *nptr, uservalue_t * val)
+{
+    /* TODO multiple rounding method */
+    if(parse_uservalue_float(nptr, val))
+    {
+        double num = val->float64_value;
+        if (num >=        (double)(0) && num < (double)(1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)num); }
+        if (num >= (double)-(1LL<< 7) && num < (double)(1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)num); }
+        if (num >=        (double)(0) && num < (double)(1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)num); }
+        if (num >= (double)-(1LL<<15) && num < (double)(1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)num); }
+        if (num >=        (double)(0) && num < (double)(1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)num); }
+        if (num >= (double)-(1LL<<31) && num < (double)(1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)num); }
+        if (           (double)(true) &&          (double)(true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)num); }
+        if (           (double)(true) &&          (double)(true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)num); }
+        return true;
+    }
+    else if (parse_uservalue_int(nptr, val))
+    {
+        val->flags.f32b = val->flags.f64b = 1;
+        val->float32_value = (float) val->int64_value;
+        val->float64_value = (double) val->int64_value;   
+        return true;
+    }
+    return false;
+}
+
+bool parse_uservalue_int(const char *nptr, uservalue_t * val)
 {
     int64_t num;
+    char *endptr;
 
     assert(nptr != NULL);
     assert(val != NULL);
 
-    memset(val, 0x00, sizeof(value_t));
+    memset(val, 0x00, sizeof(uservalue_t));
 
     /* skip past any whitespace */
     while (isspace(*nptr))
-        nptr++;
+        ++nptr;
 
     /* now parse it using strtoul */
-    num = strtoll(nptr, endptr, base);
+    errno = 0;
+    num = strtoll(nptr, &endptr, 0);
+    if ((errno != 0) || (*endptr != '\0'))
+        return false;
 
     /* determine correct flags */
-    if (num >=        (0) && num < (1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)(num & ((1LL<<8)-1))); }
-    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)(num & ((1LL<<8)-1))); }
-    if (num >=        (0) && num < (1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)(num & ((1LL<<16)-1))); }
-    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)(num & ((1LL<<16)-1))); }
-    if (num >=        (0) && num < (1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)(num & ((1LL<<32)-1))); }
-    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)(num & ((1LL<<32)-1))); }
-    if (           (true) &&          (true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)(num /*& ((1LL<<64)-1)*/)); }
-    if (           (true) &&          (true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)(num /*& ((1LL<<64)-1)*/)); }
+    if (num >=        (0) && num < (1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)num); }
+    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)num); }
+    if (num >=        (0) && num < (1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)num); }
+    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)num); }
+    if (num >=        (0) && num < (1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)num); }
+    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)num); }
+    if (           (true) &&          (true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)num); }
+    if (           (true) &&          (true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)num); }
 
-    /* TODO: (UGLY) currently, assume users always provide an integer value */
+    return true;
+}
+
+bool parse_uservalue_float(const char *nptr, uservalue_t * val)
+{
+    double num;
+    char *endptr;
+    assert(nptr);
+    assert(val);
+
+    memset(val, 0x00, sizeof(uservalue_t));
+    while (isspace(*nptr))
+        ++nptr;
+
+    errno = 0;
+    num = strtod(nptr, &endptr);
+    if ((errno != 0) || (*endptr != '\0'))
+        return false;
+    
+    /* I'm not sure how to distuiguish float & double, but I guess it's not necessary here */
     val->flags.f32b = val->flags.f64b = 1;
     val->float32_value = (float) num;
-    val->float64_value = (double) num;   
-
-    return;
-
+    val->float64_value =  num;   
+    return true;
 }
 
 int flags_to_max_width_in_bytes(match_flags flags)

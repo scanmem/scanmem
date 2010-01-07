@@ -47,7 +47,10 @@ typedef enum {
     MATCHNOTCHANGED,
     MATCHCHANGED,
     MATCHINCREASED,
-    MATCHDECREASED
+    MATCHDECREASED,
+    /* folowing: compare with both given value and old value */
+    MATCHINCREASEDBY,
+    MATCHDECREASEDBY
 } scan_match_type_t;
 
 

@@ -71,6 +71,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
     char *delay = NULL;
+    char *end;
     bool cont = false;
     struct setting {
         char *matchids;
@@ -173,7 +174,6 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
     while (true) {
         uservalue_t userval;
-        char *end = NULL;
 
         /* for every settings struct */
         for (block = 0; block < argc - 1; block++) {
@@ -190,15 +190,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             }
 
             /* convert value */
-            parse_uservalue(settings[block].value, &end, 0x00, &userval);
-
-            /* check that converted successfully */
-            if (*end != '\0') {
-                fprintf(stderr, "error: could not parse value `%s`\n",
-                        settings[block].value);
-                goto fail;
-            } else if (*settings[block].value == '\0') {
-                fprintf(stderr, "error: you didn't specify a value.\n");
+            if (!parse_uservalue_number(settings[block].value, &userval)) {
+                fprintf(stderr, "error: bad number `%s` provided\n", settings[block].value);
                 goto fail;
             }
 
@@ -682,7 +675,6 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 /* the name of the function is for history reason, now GREATERTHAN & LESSTHAN are also handled by this function */
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
-    char *end = NULL;
     uservalue_t val;
     scan_match_type_t m;
 
@@ -699,8 +691,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        parse_uservalue(argv[1], &end, 0x00, &val);
-        if (*end != '\0') {
+        if (!parse_uservalue_number(argv[1], &val)) {
             fprintf(stderr, "error: bad value specified, see `help %s`", argv[0]);
             return false;
         }
@@ -722,6 +713,14 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     else if (strcmp(argv[0], ">") == 0)
     {
         m = (argc == 1) ? MATCHINCREASED : MATCHGREATERTHAN;
+    }
+    else if (strcmp(argv[0], "+") == 0)
+    {
+        m = (argc == 1) ? MATCHINCREASED : MATCHINCREASEDBY;
+    }
+    else if (strcmp(argv[0], "-") == 0)
+    {
+        m = (argc == 1) ? MATCHDECREASED : MATCHDECREASEDBY;
     }
     else
     {
@@ -769,7 +768,6 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
-    char *end = NULL;
     uservalue_t val;
 
     USEPARAMS();
@@ -786,13 +784,8 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     case FLOAT32:
     case FLOAT64:
         /* attempt to parse command as a number */
-        parse_uservalue(argv[0], &end, 0x00, &val);
-
-        /* check if that worked */
-        if (*end != '\0') {
-            fprintf(stderr,
-                    "error: unable to parse command `%s`, gave up at `%s`\n",
-                    argv[0], end);
+        if (!parse_uservalue_number(argv[0], &val)) {
+            fprintf(stderr, "error: unable to parse command `%s`", argv[0]);
             return false;
         }
         break;
