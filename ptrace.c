@@ -372,7 +372,7 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
     
 
 /* searchregions() performs an initial search of the process for values matching value */
-bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue, bool snapshot)
+bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
@@ -494,17 +494,11 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 #endif
 
-            if (!snapshot) /* if not to take snapshot, clear the flags for scan_routine */
-            {
-                memset(&checkflags, 0, sizeof(checkflags));
-            }
-            else /* else set it as of data_value */
-            {
-                checkflags = data_value.flags;
-            }
+            memset(&checkflags, 0, sizeof(checkflags));
+            checkflags = data_value.flags;
             
             /* check if we have a match */
-            if (snapshot || EXPECT((*g_scan_routine)(&data_value, NULL, uservalue, &checkflags), false)) {
+            if (EXPECT((*g_scan_routine)(&data_value, NULL, uservalue, &checkflags), false)) {
                 checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);

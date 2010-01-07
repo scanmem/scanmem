@@ -482,8 +482,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     /* remove any existing matches */
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
-    /* here MATCHANY has no use */
-    if (searchregions(vars, MATCHANY, NULL, true) != true) {
+    if (searchregions(vars, MATCHANY, NULL) != true) {
         fprintf(stderr, "error: failed to save target address space.\n");
         return false;
     }
@@ -744,7 +743,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
         }
         else
         {
-            if (searchregions(vars, m, &val, false) != true) {
+            if (searchregions(vars, m, &val) != true) {
                 fprintf(stderr, "error: failed to search target address space.\n");
                 return false;
             }
@@ -818,7 +817,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         }
     } else {
         /* initial search */
-        if (searchregions(vars, MATCHEQUALTO, &val, false) != true) {
+        if (searchregions(vars, MATCHEQUALTO, &val) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
             return false;
         }
