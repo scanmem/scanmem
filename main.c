@@ -152,10 +152,14 @@ int main(int argc, char **argv)
                     NOTCHANGED_LONGDOC);
     registercommand("!=", handler__decinc, vars->commands, CHANGED_SHRTDOC,
                     CHANGED_LONGDOC);
-    registercommand("<", handler__decinc, vars->commands, DECREASED_SHRTDOC,
-                    DECREASED_LONGDOC);
-    registercommand(">", handler__decinc, vars->commands, INCREASED_SHRTDOC,
+    registercommand("<", handler__decinc, vars->commands, LESSTHAN_SHRTDOC,
+                    LESSTHAN_LONGDOC);
+    registercommand(">", handler__decinc, vars->commands, GREATERTHAN_SHRTDOC,
+                    GREATERTHAN_LONGDOC);
+    registercommand("+", handler__decinc, vars->commands, INCREASED_SHRTDOC,
                     INCREASED_LONGDOC);
+    registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
+                    DECREASED_LONGDOC);
     registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
                     UPDATE_LONGDOC);
     registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,

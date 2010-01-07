@@ -7,6 +7,8 @@
 	  or VALUES
 	* removed snapshot and use MATCHANY instead, such that this can be used to
       filter out data types
+	* now user can provide float numbers
+	* INCREASEDBY and DECREASEDBY support
     
 2010-01-06 WANG Lu <coolwanglu(a)gmail.com>
     * Fixed detection of reverse change, but it's now working partially, see
