@@ -33,7 +33,7 @@ typedef enum {
     INTEGER64,
     FLOAT32,
     FLOAT64,
-    BYTE_ARRAY
+    BYTEARRAY
 } scan_data_type_t;
 
 typedef enum {
@@ -56,8 +56,9 @@ typedef enum {
 
 /* match old_value against new_value or user_value (or both, depending on the matching type, store the result into save */
 /* NOTE: saveflag must be set to 0, since only useful bits are set, but extra bits are not cleared! */
+/*       address is pointing to new_value in TARGET PROCESS MEMORY SPACE, used when searching for a byte array */
 /* return the number of bytes needed to store old_value, 0 for not matched */
-typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag);
+typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag, void *address);
 extern scan_routine_t g_scan_routine;
 
 /* 

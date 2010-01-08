@@ -53,6 +53,7 @@ SCAN_VALUE_TYPES = build_simple_str_liststore(['int'
                                               ,'float32'
                                               ,'float64'
                                               ,'number'
+                                              ,'bytearray'
                                               ])
 
 LOCK_FLAG_TYPES = build_simple_str_liststore(['=', '+', '-'])
@@ -63,6 +64,7 @@ LOCK_VALUE_TYPES = build_simple_str_liststore(['int8'
                                             ,'int64' 
                                             ,'float32'
                                             ,'float64'
+                                            ,'bytearray'
                                             ])
 
 SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
@@ -81,6 +83,7 @@ TYPENAMES_S2G = {'I64':'int64'
                 ,'I8u':'int8'
                 ,'F32':'float32'
                 ,'F64':'float64'
+                ,'bytearray':'bytearray'
                 }   
 
 

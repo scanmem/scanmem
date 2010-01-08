@@ -38,42 +38,63 @@
 
 bool valtostr(const value_t * val, char *str, size_t n)
 {
-    char buf[50];
+    char buf[128];
     int max_bytes = 0;
     bool print_as_unsigned = false;
 
 #define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? (string "u ") : (val->flags.s##bytes##b) ? (string "s ") : ""
     
     /* set the flags */
-    snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
-             FLAG_MACRO(64, "I64"),
-             FLAG_MACRO(32, "I32"),
-             FLAG_MACRO(16, "I16"),
-             FLAG_MACRO(8,  "I8"),
-             val->flags.f64b ? "F64 " : "",
-             val->flags.f32b ? "F32 " : "",
-             (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
+    switch(globals.options.scan_data_type)
+    {
+        case ANYNUMBER:
+        case ANYINTEGER:
+        case ANYFLOAT:
+        case INTEGER8:
+        case INTEGER16:
+        case INTEGER32:
+        case INTEGER64:
+        case FLOAT32:
+        case FLOAT64:
+            snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
+                 FLAG_MACRO(64, "I64"),
+                 FLAG_MACRO(32, "I32"),
+                 FLAG_MACRO(16, "I16"),
+                 FLAG_MACRO(8,  "I8"),
+                 val->flags.f64b ? "F64 " : "",
+                 val->flags.f32b ? "F32 " : "",
+                 (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
 
-         if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
-    else if (val->flags.s64b) { max_bytes = 8; print_as_unsigned = false; }
-    else if (val->flags.u32b) { max_bytes = 4; print_as_unsigned =  true; }
-    else if (val->flags.s32b) { max_bytes = 4; print_as_unsigned = false; }
-    else if (val->flags.u16b) { max_bytes = 2; print_as_unsigned =  true; }
-    else if (val->flags.s16b) { max_bytes = 2; print_as_unsigned = false; }
-    else if (val->flags.u8b ) { max_bytes = 1; print_as_unsigned =  true; }
-    else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
-    
-    /* find the right format, considering different integer size implementations */
-         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
-    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
-    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
-    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
-    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
-    else if (val->flags.f64b) snprintf(str, n, "%lf, %s", get_f64b(val), buf);
-    else if (val->flags.f32b) snprintf(str, n, "%f, %s", get_f32b(val), buf);
-    else {
-        snprintf(str, n, "%#llx?, %s", get_slonglong(val), buf);
-        return false;
+                 if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
+            else if (val->flags.s64b) { max_bytes = 8; print_as_unsigned = false; }
+            else if (val->flags.u32b) { max_bytes = 4; print_as_unsigned =  true; }
+            else if (val->flags.s32b) { max_bytes = 4; print_as_unsigned = false; }
+            else if (val->flags.u16b) { max_bytes = 2; print_as_unsigned =  true; }
+            else if (val->flags.s16b) { max_bytes = 2; print_as_unsigned = false; }
+            else if (val->flags.u8b ) { max_bytes = 1; print_as_unsigned =  true; }
+            else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
+
+            /* find the right format, considering different integer size implementations */
+                 if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
+            else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
+            else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
+            else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
+            else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
+            else if (val->flags.f64b) snprintf(str, n, "%lf, %s", get_f64b(val), buf);
+            else if (val->flags.f32b) snprintf(str, n, "%f, %s", get_f32b(val), buf);
+            else {
+                snprintf(str, n, "%#llx?, %s", get_slonglong(val), buf);
+                return false;
+            }
+         
+            break;
+        case BYTEARRAY:
+            snprintf(buf, sizeof(buf), "[bytearray]");
+            /* TODO: byte array -> string*/
+            snprintf(str, n, "??, %s", buf);
+            break;
+        default:
+            assert(false);
     }
     return true;
 }
@@ -143,11 +164,53 @@ void valnowidth(value_t * val)
     val->flags.f64b = 1;
     val->flags.f32b = 1;
 
-    val->flags.byte_array = 1; /* is this necessary? */
-
     val->flags.ineq_forwards = 1;
     val->flags.ineq_reverse = 1;
+    
+    /* don't bother with bytearray_length */
     return;
+}
+
+bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t *val)
+{
+    int i,j;
+
+    const char *cur_str;
+    char cur_char;
+    char *endptr;
+    bytearray_element_t *cur_element;
+
+    for(i = 0; i < argc; ++i)
+    {
+        /* get current string */
+        cur_str = argv[i];
+        /* test its length */
+        for(j = 0; (j < 3) && (cur_str[j]); ++j) {}
+        if (j != 2) /* length is not 2 */
+            return false;
+
+        cur_element = array + i;
+        if (strcmp(cur_str, "??") == 0)
+        {
+            cur_element->is_wildcard = 1;
+            continue;
+        }
+        else
+        {
+            /* parse as hex integer */
+            cur_char = (char)strtol(cur_str, &endptr, 16);
+            if (*endptr != '\0')
+                return false;
+
+            cur_element->is_wildcard = 0;
+            cur_element->byte = cur_char;
+        }
+    }
+
+    /* everything is ok */
+    val->bytearray_value = array;
+    val->flags.bytearray_length = argc;
+    return true;
 }
 
 bool parse_uservalue_number(const char *nptr, uservalue_t * val)
@@ -234,11 +297,29 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
 
 int flags_to_max_width_in_bytes(match_flags flags)
 {
-	     if (flags.u64b || flags.s64b || flags.f64b) return 8;
-	else if (flags.u32b || flags.s32b || flags.f32b) return 4;
-	else if (flags.u16b || flags.s16b              ) return 2;
-	else if (flags.u8b  || flags.s8b               ) return 1;
-	else    /* It can't be a variable of any size */ return 0;
+    switch(globals.options.scan_data_type)
+    {
+        case ANYNUMBER:
+        case ANYINTEGER:
+        case ANYFLOAT:
+        case INTEGER8:
+        case INTEGER16:
+        case INTEGER32:
+        case INTEGER64:
+        case FLOAT32:
+        case FLOAT64:
+                 if (flags.u64b || flags.s64b || flags.f64b) return 8;
+            else if (flags.u32b || flags.s32b || flags.f32b) return 4;
+            else if (flags.u16b || flags.s16b              ) return 2;
+            else if (flags.u8b  || flags.s8b               ) return 1;
+            else    /* It can't be a variable of any size */ return 0;
+            break;
+        case BYTEARRAY:
+            return flags.bytearray_length;
+            break;
+        default:
+            assert(false);
+    }
 }
 
 int val_max_width_in_bytes(value_t *val)

@@ -45,6 +45,7 @@ globals_t globals = {
     0,                          /* match count */
     NULL,                       /* regions */
     NULL,                       /* commands */
+    NULL,                       /* current_cmdline */
     /* options */
     {
         1,                      /* alignment */

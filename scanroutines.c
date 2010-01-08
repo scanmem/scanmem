@@ -24,7 +24,7 @@
 
 
 /* for convenience */
-#define SCAN_ROUTINE_ARGUMENTS (const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags) 
+#define SCAN_ROUTINE_ARGUMENTS (const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags, void *address) 
 int (*g_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
@@ -33,6 +33,7 @@ int (*g_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 /********************/
 /* Integer specific */
+/********************/
 
 /* for MATCHANY */
 #define DEFINE_INTEGER_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
@@ -83,6 +84,7 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(DECREASED, <, old_value)
 
 /******************/
 /* Float specific */
+/******************/
 
 /* for MATCHANY */
 #define DEFINE_FLOAT_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
@@ -122,9 +124,11 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(LESSTHAN, <, user_value)
 
 /********************/
 /* Special routines */
+/********************/
 
 /*-----------------------------------*/
 /* special EQUALTO for float numbers */
+/*-----------------------------------*/
 /* currently we round both of them to integers and compare them */
 /* TODO: let user specify a float number */
 #define DEFINE_FLOAT_EQUALTO_ROUTINE(FLOATTYPENAME, WIDTH) \
@@ -144,12 +148,13 @@ DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 
 /*-----------------------------*/
 /* for reverse changing detect */
+/*-----------------------------*/
 #define DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, REVERSEMATCHTYPENAME) \
     int scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
-        if ((new_value->flags.ineq_forwards) && scan_routine_##DATATYPENAME##_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_forwards); } \
-        if ((new_value->flags.ineq_reverse) && scan_routine_##DATATYPENAME##_##REVERSEMATCHTYPENAME (new_value, old_value, user_value, saveflags)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_reverse); } \
+        if ((new_value->flags.ineq_forwards) && scan_routine_##DATATYPENAME##_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_forwards); } \
+        if ((new_value->flags.ineq_reverse) && scan_routine_##DATATYPENAME##_##REVERSEMATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_reverse); } \
         return ret; \
     }
 
@@ -166,6 +171,7 @@ DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
 
 /*---------------------------------*/
 /* for INCREASEDBY and DECREASEDBY */
+/*---------------------------------*/
 #define DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(DATATYPENAME, DATAWIDTH) \
     int scan_routine_##DATATYPENAME##_INCREASEDBY SCAN_ROUTINE_ARGUMENTS \
     { \
@@ -216,30 +222,89 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(INTEGER64, 64)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT64, 64)
 
-/***************************/
+/*----------------*/
+/* for BYTEARRAY */
+/*----------------*/
+int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
+{
+    bytearray_element_t *array = user_value->bytearray_value;
+    unsigned short length = user_value->flags.bytearray_length;
+    int cur_idx = 0;
+    int i, j;
+    value_t val_buf = *new_value;
+    for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
+    {
+        /* match current block */
+        for(j = 0; j < sizeof(int64_t); ++j)
+        {
+            if(     (array[cur_idx].is_wildcard == 1) 
+                 || (array[cur_idx].byte == val_buf.bytes[j])) 
+            {
+                /* pass */
+            }
+            else
+            {
+                /* not matched */
+                return 0;
+            }
+            ++ cur_idx;
+        } 
+         
+        /* read next block */
+        if (!peekdata(globals.target, address+i+sizeof(int64_t), &val_buf))
+        {
+            /* cannot read */
+            return 0;
+        }
+    }
+
+    /* match bytes left */
+    for(j = 0; j < length - i; ++j)
+    {
+        if(     (array[cur_idx].is_wildcard == 1) 
+             || (array[cur_idx].byte == val_buf.bytes[j])) 
+        {
+            /* pass */
+        }
+        else
+        {
+            /* not matched */
+            return 0;
+        }
+        ++ cur_idx;
+    } 
+    
+    /* matched */
+    saveflags->bytearray_length = length;
+
+    return length;
+}
+
+/*-------------------------*/
 /* Any-xxx types specifiec */
+/*-------------------------*/
 /* this is for anynumber, anyinteger, anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
     int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0, tmp_ret;\
-        if ((tmp_ret = scan_routine_INTEGER8_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER16_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER8_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER16_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
         return ret; \
     } \
     int scan_routine_ANYFLOAT_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0, tmp_ret; \
-        if ((tmp_ret = scan_routine_FLOAT32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_FLOAT64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_FLOAT32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_FLOAT64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
         return ret; \
     } \
     int scan_routine_ANYNUMBER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
-        int ret1 = scan_routine_ANYINTEGER_##MATCHTYPENAME (new_value, old_value, user_value, saveflags); \
-        int ret2 = scan_routine_ANYFLOAT_##MATCHTYPENAME (new_value, old_value, user_value, saveflags); \
+        int ret1 = scan_routine_ANYINTEGER_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
+        int ret2 = scan_routine_ANYFLOAT_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
         return (ret1 > ret2 ? ret1 : ret2); \
     } \
 
@@ -256,6 +321,14 @@ DEFINE_ANYTYPE_ROUTINE(INCREASED_WITH_REVERSE)
 DEFINE_ANYTYPE_ROUTINE(DECREASED_WITH_REVERSE)
 DEFINE_ANYTYPE_ROUTINE(INCREASEDBY)
 DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
+
+
+
+/***************************************************************/
+/* choose a routine according to scan_data_type and match_type */
+/***************************************************************/
+
+
 
 #define CHOOSE_ROUTINE(SCANDATATYPE, ROUTINEDATATYPENAME, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     if ((dt == SCANDATATYPE) && (mt == SCANMATCHTYPE)) \
@@ -276,7 +349,6 @@ DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
 
 
 
-/* TODO: fix ineq_reserve things */
 bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
     return (g_scan_routine = get_scanroutine(dt, mt)) != NULL;
@@ -301,6 +373,8 @@ scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASEDBY, DECREASEDBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHGREATERTHAN, GREATERTHAN)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHLESSTHAN, LESSTHAN)
+
+    CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO) 
 
     return NULL;
 }

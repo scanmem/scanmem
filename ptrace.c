@@ -271,7 +271,7 @@ bool checkmatches(globals_t * vars,
 
 
     while (reading_swath.first_byte_in_child) {
-        bool is_match = false;
+        int match_length;
         value_t data_value;
         match_flags checkflags;
 
@@ -292,10 +292,10 @@ bool checkmatches(globals_t * vars,
 
             memset(&checkflags, 0, sizeof(checkflags));
 
-            is_match = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags);
+            match_length = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags, address);
         }
         
-        if (is_match)
+        if (match_length > 0)
         {
             /* Still a candidate. Write data. 
                 (We can get away with overwriting in the same array because it is guaranteed to take up the same number of bytes or fewer, and because we copied out the reading swath metadata already.)
@@ -306,7 +306,7 @@ bool checkmatches(globals_t * vars,
             
             ++vars->num_matches;
             
-            required_extra_bytes_to_record = flags_to_max_width_in_bytes(checkflags) - 1;
+            required_extra_bytes_to_record = match_length - 1;
         }
         else if (required_extra_bytes_to_record)
         {
@@ -381,6 +381,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     unsigned char *data = NULL;
     element_t *n = vars->regions->head;
     region_t *r;
+    void *address;
 
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
@@ -468,6 +469,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             
             valnowidth(&data_value);
 
+            address = r->start + offset;
+
 #if HAVE_PROCMEM           
             data_value.int64_value    = *((int64_t *)(&data[offset]));
             
@@ -489,22 +492,23 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                 }
             }
 #else
-            if (EXPECT(peekdata(vars->target, r->start + offset, &data_value) == false, false)) {
+            if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
                 break;
             }
 #endif
 
             memset(&checkflags, 0, sizeof(checkflags));
-            
+
+            int match_length;
             /* check if we have a match */
-            if (EXPECT((*g_scan_routine)(&data_value, NULL, uservalue, &checkflags), false)) {
+            if (EXPECT(((match_length = (*g_scan_routine)(&data_value, NULL, uservalue, &checkflags, address)) > 0), false)) {
                 checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 
                 ++vars->num_matches;
                 
-                required_extra_bytes_to_record = flags_to_max_width_in_bytes(checkflags) - 1;
+                required_extra_bytes_to_record = match_length - 1;
             }
             else if (required_extra_bytes_to_record)
             {

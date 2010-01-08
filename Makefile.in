@@ -247,7 +247,7 @@ scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 	handlers.h interrupt.h list.h scanmem.h value.h licence.h \
 	maps.h target_memory_info_array.h scanroutines.h \
 	scanroutines.c
-scanmem_CFLAGS = -O1 -g -Wall
+scanmem_CFLAGS = -O2 -g -Wall
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
 EXTRA_DIST = gpl-2.0.txt gpl-3.0.txt
