@@ -815,7 +815,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
             goto retl;
         }
         if (!parse_uservalue_bytearray(argv, argc, array, &val)) {
-            fprintf(stderr, "error: unable to parse command `%s`", argv[0]);
+            fprintf(stderr, "error: unable to parse command `%s`\n", argv[0]);
             ret = false;
             goto retl;
         }

@@ -83,7 +83,7 @@ int main(int argc, char **argv)
             }
             break;
         case 'v':
-            printversion(stdout);
+            printversion(stderr);
             return EXIT_SUCCESS;
         case 'h':
             printhelp();
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
     registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
                     DEFAULT_LONGDOC);
 
-    printversion(stdout);
+    printversion(stderr);
 
     /* this will initialise matches and regions */
     if (execcommand(vars, "reset") == false) {
@@ -192,11 +192,11 @@ int main(int argc, char **argv)
 
     /* check if there is a target already specified */
     if (vars->target == 0) {
-        fprintf(stdout,
+        fprintf(stderr,
                 "Enter the pid of the process to search using the \"pid\" command.\n");
-        fprintf(stdout, "Enter \"help\" for other commands.\n");
+        fprintf(stderr, "Enter \"help\" for other commands.\n");
     } else {
-        fprintf(stdout,
+        fprintf(stderr,
                 "Please enter current value, or \"help\" for other commands.\n");
     }
 
@@ -214,9 +214,9 @@ int main(int argc, char **argv)
         /* execcommand returning failure isnt fatal, just the a command couldnt complete. */
         if (execcommand(vars, line) == false) {
             if (vars->target == 0) {
-                fprintf(stdout,
+                fprintf(stderr,
                         "Enter the pid of the process to search using the \"pid\" command.\n");
-                fprintf(stdout, "Enter \"help\" for other commands.\n");
+                fprintf(stderr, "Enter \"help\" for other commands.\n");
             } else {
                 fprintf(stderr,
                         "Please enter current value, or \"help\" for other commands.\n");
@@ -249,12 +249,12 @@ void sighandler(int n)
     exit(EXIT_FAILURE);
 }
 
-/* print quick usage message to stdout */
+/* print quick usage message to stderr */
 void printhelp(void)
 {
-    printversion(stdout);
+    printversion(stderr);
 
-    fprintf(stdout, "Usage: scanmem [OPTION]... [PID]\n"
+    fprintf(stderr, "Usage: scanmem [OPTION]... [PID]\n"
             "Interactively locate and modify variables in an executing process.\n"
             "\n"
             "-p, --pid=pid\t\tset the target process pid\n"

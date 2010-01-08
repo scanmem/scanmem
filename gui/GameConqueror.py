@@ -192,9 +192,6 @@ class GameConqueror():
         self.scanresult_tv_col2_renderer = gtk.CellRendererText()
         self.scanresult_tv_col2.pack_start(self.scanresult_tv_col2_renderer, True)
         self.scanresult_tv_col2.set_attributes(self.scanresult_tv_col2_renderer, text=1)
-        # for debug
-#        self.scanresult_liststore.append(['0','1'])
-#        self.scanresult_liststore.append(['2','3'])
 
         # TODO init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
@@ -256,9 +253,6 @@ class GameConqueror():
         self.cheatlist_tv_col5_renderer.set_property('editable', True)
         self.cheatlist_tv_col5_renderer.connect('edited', self.cheatlist_edit_value_cb)
         self.cheatlist_tv_col5.set_attributes(self.cheatlist_tv_col5_renderer, text=5)
-        # for debug
-#        self.cheatlist_liststore.append(['+', True, '2', '3', '4', '5'])
-#        self.cheatlist_liststore.append([' ', False, 'desc', 'addr', 'type', 'value'])
 
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
@@ -483,7 +477,7 @@ class GameConqueror():
         # scan data type
         active = self.scan_data_type_combobox.get_active()
         assert(active >= 0)
-        dt = self.scan_data_type_combobox.get_model()[active]
+        dt = self.scan_data_type_combobox.get_model()[active][0]
         self.backend.send_command('option scan_data_type %s' % (dt,))
         # search scope
         self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
