@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100109r82) karmic; urgency=low
+
+  * BYTEARRAY supported, oh yeah
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 09 Jan 2010 02:13:05 +0800
+
 scanmem (0.09~svn20100107r74) karmic; urgency=low
 
   * Performance improved
