@@ -30,22 +30,24 @@
 
 /* some routines for working with value_t structures */
 
-typedef struct __attribute__ ((packed)) {
-	unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
-	unsigned u16b:1;        /* could be an unsigned 16-bit variable (e.g. unsigned short)     */
-	unsigned u32b:1;        /* could be an unsigned 32-bit variable (e.g. unsigned int)       */
-	unsigned u64b:1;        /* could be an unsigned 64-bit variable (e.g. unsigned long long) */
-	unsigned  s8b:1;        /* could be a    signed  8-bit variable (e.g. signed char)        */
-	unsigned s16b:1;        /* could be a    signed 16-bit variable (e.g. short)              */
-	unsigned s32b:1;        /* could be a    signed 32-bit variable (e.g. int)                */
-	unsigned s64b:1;        /* could be a    signed 64-bit variable (e.g. long long)          */
-	unsigned f32b:1;        /* could be a 32-bit floating point variable (i.e. float)         */
-	unsigned f64b:1;        /* could be a 64-bit floating point variable (i.e. double)        */
+typedef union {
+    struct __attribute__ ((packed)) {
+        unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
+        unsigned u16b:1;        /* could be an unsigned 16-bit variable (e.g. unsigned short)     */
+        unsigned u32b:1;        /* could be an unsigned 32-bit variable (e.g. unsigned int)       */
+        unsigned u64b:1;        /* could be an unsigned 64-bit variable (e.g. unsigned long long) */
+        unsigned  s8b:1;        /* could be a    signed  8-bit variable (e.g. signed char)        */
+        unsigned s16b:1;        /* could be a    signed 16-bit variable (e.g. short)              */
+        unsigned s32b:1;        /* could be a    signed 32-bit variable (e.g. int)                */
+        unsigned s64b:1;        /* could be a    signed 64-bit variable (e.g. long long)          */
+        unsigned f32b:1;        /* could be a 32-bit floating point variable (i.e. float)         */
+        unsigned f64b:1;        /* could be a 64-bit floating point variable (i.e. double)        */
 
-    unsigned byte_array:1;       /* used when search for an array of bytes */
-	
-	unsigned ineq_forwards:1; /* Whether this value has matched inequalities used the normal way */
-	unsigned ineq_reverse:1; /* Whether this value has matched inequalities in reverse */
+        unsigned ineq_forwards:1; /* Whether this value has matched inequalities used the normal way */
+        unsigned ineq_reverse:1; /* Whether this value has matched inequalities in reverse */
+    };
+
+    uint16_t bytearray_length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
 } match_flags;
 
 /* this struct describing values retrieved from target memory */
@@ -61,10 +63,16 @@ typedef struct {
         uint64_t uint64_value;  
         float float32_value;
         double float64_value;
+        int8_t bytes[sizeof(int64_t)];
     };
     
     match_flags flags;
 } value_t;
+
+typedef struct{
+    int8_t byte;
+    int8_t is_wildcard;
+} bytearray_element_t;
 
 /* this struct describing values provided by users */
 typedef struct {
@@ -78,11 +86,14 @@ typedef struct {
     uint64_t uint64_value;
     float float32_value;
     double float64_value;
-    
+
+    bytearray_element_t *bytearray_value;
+
     match_flags flags;
 } uservalue_t;
 
 bool valtostr(const value_t * val, char *str, size_t n); 
+bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t * val); /* parse bytearray, the parameter array should be allocated beforehand */
 bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */
 bool parse_uservalue_int(const char *nptr, uservalue_t * val);
 bool parse_uservalue_float(const char *nptr, uservalue_t * val);

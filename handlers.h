@@ -31,7 +31,7 @@
                "To set a value continually, for example to prevent a counter from decreasing,\n" \
                "suffix the command with '/', followed by the number of seconds to wait between\n" \
                "sets. Interrupt scanmem with ^C to stop the setting.\n\n" \
-               "Note that you can only specify integer values even for float/double matches.\n\n" \
+               "Note that this command cannot work for bytearray.\n\n" \
                "Examples:\n" \
                "\tset 10 - set all known matches to 10\n" \
                "\tset 0=0x03 - set match 0 to 0x03.\n" \
@@ -218,10 +218,12 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc);
                 "<value_type> should be one of:\n" \
                 "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
                 "\tfloat{32|64} (or f{32|64} for short)\n" \
+                "\tbytearray\n" \
                 "\n" \
                 "Example:\n" \
                 "\twrite i16 601038 0\n" \
-                "\twrite float32 601038 0\n"
+                "\twrite float32 601038 0\n" \
+                "\twrite bytearray ff 01 32\n"
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
@@ -238,6 +240,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "\t\tfloat:\tfloat of any width\n" \
                  "\t\tint{8|16|32|64}:\tinteger of given width\n" \
                  "\t\tfloat{32|64}:\tfloat of given width\n" \
+                 "\t\tbytearray:\tan array of bytes\n" \
                  "\n" \
                  "\tregion_scan_level\tspecify which regions should be scanned\n" \
                  "\t\t\t\tdefault:2\n" \

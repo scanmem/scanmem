@@ -83,9 +83,17 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     assert(argv != NULL);
     assert(vars != NULL);
 
+
     if (argc < 2) {
         fprintf(stderr,
                 "error: expected an argument, type `help set` for details.\n");
+        return false;
+    }
+
+    /* supporting `set` for bytearray will cause annoying syntax problems... */
+    if (vars->options.scan_data_type == BYTEARRAY)
+    {
+        fprintf(stderr, "error: `set` is not supported for bytearray, use `write` instead.\n");
         return false;
     }
 
@@ -310,8 +318,6 @@ fail:
 }
 
 /* XXX: add yesno command to check if matches > 099999 */
-/* example: [012] 0xffffff, csLfznu, 120, /lib/libc.so */
-
 bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
@@ -326,7 +332,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
-        char v[80];
+        char v[128];
 
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
@@ -342,14 +348,14 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
 /* try to determine the size of a pointer */
 #if ULONGMAX == 4294967295UL
-#define POINTER_FMT "10"
+#define POINTER_FMT "%10p"
 #elif ULONGMAX == 18446744073709551615UL
-#define POINTER_FMT "20"
+#define POINTER_FMT "%20p"
 #else
-#define POINTER_FMT "20"
+#define POINTER_FMT "%20p"
 #endif
 
-            fprintf(stdout, "[%2u] %"POINTER_FMT"p, %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
         }
 	
         /* Go on to the next one... */
@@ -769,6 +775,8 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
+    bool ret;
+    bytearray_element_t *array = NULL;
 
     USEPARAMS();
 
@@ -784,12 +792,33 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     case FLOAT32:
     case FLOAT64:
         /* attempt to parse command as a number */
+        if (argc != 1)
+        {
+            fprintf(stderr, "error: unknown command\n");
+            ret = false;
+            goto retl;
+        }
         if (!parse_uservalue_number(argv[0], &val)) {
-            fprintf(stderr, "error: unable to parse command `%s`", argv[0]);
-            return false;
+            fprintf(stderr, "error: unable to parse command `%s`\n", argv[0]);
+            ret = false;
+            goto retl;
         }
         break;
-    case BYTE_ARRAY:
+    case BYTEARRAY:
+        /* attempt to parse command as a bytearray */
+        array = calloc(argc, sizeof(bytearray_element_t));
+    
+        if (array == NULL)
+        {
+            fprintf(stderr, "error: there's a memory allocation error.\n");
+            ret = false;
+            goto retl;
+        }
+        if (!parse_uservalue_bytearray(argv, argc, array, &val)) {
+            fprintf(stderr, "error: unable to parse command `%s`", argv[0]);
+            ret = false;
+            goto retl;
+        }
         break;
     default:
         assert(false);
@@ -798,7 +827,8 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {
-        return false;
+        ret = false;
+        goto retl;
     }
 
     /* user has specified an exact value of the variable to find */
@@ -806,13 +836,15 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         /* already know some matches */
         if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
-            return false;
+            ret = false;
+            goto retl;
         }
     } else {
         /* initial search */
         if (searchregions(vars, MATCHEQUALTO, &val) != true) {
             fprintf(stderr, "error: failed to search target address space.\n");
-            return false;
+            ret = false;
+            goto retl;
         }
     }
 
@@ -823,7 +855,13 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         fprintf(stderr, "info: enter \"help\" for other commands.\n");
     }
 
-    return true;
+    ret = true;
+
+retl:
+    if (array)
+        free(array);
+
+    return ret;
 }
 
 bool handler__update(globals_t * vars, char **argv, unsigned argc)
@@ -968,7 +1006,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 {
     value_t o, n;
     unsigned id;
-    char *end = NULL, buf[64], timestamp[64];
+    char *end = NULL, buf[128], timestamp[64];
     time_t t;
     match_location loc;
     value_t old_val;
@@ -1033,7 +1071,6 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         if (peekdata(vars->target, address, &n) == false)
             return false;
 
-        detach(vars->target);
 
         truncval(&n, &old_val);
 
@@ -1041,7 +1078,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         match_flags tmpflags;
         memset(&tmpflags, 0x00, sizeof(tmpflags));
         scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHCHANGED));
-        if (valuecmp_routine(&o, &n, NULL, &tmpflags)) {
+        if (valuecmp_routine(&o, &n, NULL, &tmpflags, address)) {
 
             valcpy(&o, &n);
             truncval(&o, &old_val);
@@ -1057,6 +1094,9 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
             fprintf(stdout, "info: %s %10p -> %s\n", timestamp, address,
                     buf);
         }
+
+        /* detach after valuecmp_routine, since it may read more data (e.g. bytearray) */
+        detach(vars->target);
 
         (void) sleep(1);
     }
@@ -1092,13 +1132,15 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     int data_width = 0;
     const char *fmt;
     void *addr;
-    char buf[10];
-    int buf_length = 0;
+    char *buf = NULL;
+    int datatype; //0 for numbers, 1 for bytearray
+    bool ret;
 
-    if (argc != 4)
+    if (argc < 4)
     {
         fprintf(stderr, "error: bad arguments, see `help write`.\n");
-        return false;
+        ret = false;
+        goto retl;
     }
 
     /* try int first */
@@ -1106,62 +1148,136 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
       ||(strcasecmp(argv[1], "int8") == 0))
     {
         data_width = 1;
+        datatype = 0;
         fmt = "%hhd";
     }
     else if ((strcasecmp(argv[1], "i16") == 0)
            ||(strcasecmp(argv[1], "int16") == 0))
     {
         data_width = 2;
+        datatype = 0;
         fmt = "%hd";
     }
     else if ((strcasecmp(argv[1], "i32") == 0)
            ||(strcasecmp(argv[1], "int32") == 0))
     {
         data_width = 4;
+        datatype = 0;
         fmt = "%d";
     }
     else if ((strcasecmp(argv[1], "i64") == 0)
            ||(strcasecmp(argv[1], "int64") == 0))
     {
         data_width = 8;
+        datatype = 0;
         fmt = "%lld";
     }
     else if ((strcasecmp(argv[1], "f32") == 0)
            ||(strcasecmp(argv[1], "float32") == 0))  
     {
         data_width = 4;
+        datatype = 0;
         fmt = "%f";
     }
     else if ((strcasecmp(argv[1], "f64") == 0)
            ||(strcasecmp(argv[1], "float64") == 0))
     {
         data_width = 8;
+        datatype = 0;
         fmt = "%lf";
+    }
+    else if (strcasecmp(argv[1], "bytearray") == 0)
+    {
+        data_width = argc - 3;
+        datatype = 1;
     }
     /* may support more types here */
     else
     {
         fprintf(stderr, "error: bad data_type, see `help write`.\n");
-        return false;
+        ret = false;
+        goto retl;
+    }
+
+    /* check argc again */
+    if ((datatype == 0) && (argc != 4))
+    {
+        fprintf(stderr, "error: bad arguments, see `help write`.\n");
+        ret = false;
+        goto retl;
     }
 
     /* check address */
     if (sscanf(argv[2], "%p", &addr) < 1)
     {
         fprintf(stderr, "error: bad address, see `help write`.\n");
-        return false;
+        ret = false;
+        goto retl;
+    }
+
+    buf = malloc(data_width + 8); /* allocate a little bit more, just in case */
+    if (buf == NULL)
+    {
+        fprintf(stderr, "error: memory allocation failed.\n");
+        ret = false;
+        goto retl;
     }
 
     /* load value into buffer */
-    if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
+    switch(datatype)
     {
-        fprintf(stderr, "error: bad value, see `help write`.\n");
-        return false;
+    case 0: // numbers
+        if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
+        {
+            fprintf(stderr, "error: bad value, see `help write`.\n");
+            ret = false;
+            goto retl;
+        }
+        break;
+    case 1: // bytearray
+        ; /* cheat gcc */
+        /* call parse_uservalue_bytearray */
+        bytearray_element_t *array = calloc(data_width, sizeof(bytearray_element_t));
+        uservalue_t val_buf;
+        if (array == NULL)
+        {
+            fprintf(stderr, "error: memory allocation failed.\n");
+            ret = false;
+            goto retl;
+        }
+        if(!parse_uservalue_bytearray(argv+3, argc-3, array, &val_buf)) 
+        {
+            fprintf(stderr, "error: bad byte array speicified.\n");
+            free(array);
+            ret = false;
+            goto retl;
+        }
+        int i;
+        for(i = 0; i < data_width; ++i)
+        {
+            bytearray_element_t *cur_element = array+i;
+            if(cur_element->is_wildcard == 1)
+            {
+                fprintf(stderr, "error: cannot use wildcard here.\n");
+                free(array);
+                ret = false;
+                goto retl;
+            }
+            buf[i] = cur_element->byte;
+        }
+        free(array);
+        break;
+    default:
+        assert(false);
     }
-    buf_length = data_width; 
 
     /* write into memory */
-    return write_array(vars->target, addr, buf, buf_length);
+    ret = write_array(vars->target, addr, buf, data_width);
+
+retl:
+    if(buf)
+        free(buf);
+    return ret;
 }
 
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
@@ -1184,6 +1300,7 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else if (strcasecmp(argv[2], "float") == 0) { vars->options.scan_data_type = ANYFLOAT; }
         else if (strcasecmp(argv[2], "float32") == 0) { vars->options.scan_data_type = FLOAT32; }
         else if (strcasecmp(argv[2], "float64") == 0) { vars->options.scan_data_type = FLOAT64; }
+        else if (strcasecmp(argv[2], "bytearray") == 0) { vars->options.scan_data_type = BYTEARRAY; }
         else
         {
             fprintf(stderr, "error: bad value for scan_data_type, see `help option`.\n");
