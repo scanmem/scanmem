@@ -1,4 +1,4 @@
-scanmem (0.09~svn20100109r82-0ubuntu1) karmic; urgency=low
+scanmem (0.09~svn20100109r83-0ubuntu1) karmic; urgency=low
 
   * Fix version suffix 
   * Fix version of scanmem depended
