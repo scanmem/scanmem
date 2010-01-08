@@ -1,6 +1,7 @@
 TODOs
 =====
 
+- run backend in a separate thread
 - search for pointer
 - byte array / text
 - different types of locking ('>' & '<')
