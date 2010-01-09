@@ -165,12 +165,22 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc);
 #define DEFAULT_SHRTDOC NULL
 #define DEFAULT_LONGDOC "Any number in standard C language notation (leading 0x for\n" \
                 "hexadecimal, leading 0 for octal, everything else is assumed to be decimal)\n" \
+                "float numbers are also acceptable, but will be rounded if scanning integers\n" \
                 "scans the current process for variables with that value.\n" \
                 "By entering the value of the variable as it changes multiple times, scanmem can\n" \
                 "eliminate matches, eventually identifying where the variable is located.\n" \
                 "Once the variable is found, use `set` to change its value.\n"
 
 bool handler__default(globals_t * vars, char **argv, unsigned argc);
+
+#define STRING_SHRTDOC "match a given string\n"
+#define STRING_LONGDOC "usage \" <text>\n" \
+                "<text> is counted since the 2nd character following the leading \"\n" \
+                "This can only be used when scan_data_type is set to be string\n" \
+                "Example:\n" \
+                "\t\" Scan for string, spaces and ' \" are all acceptable.\n"
+
+bool handler__string(globals_t * vars, char **argv, unsigned argc);
 
 #define UPDATE_SHRTDOC "update match values without culling list"
 #define UPDATE_LONGDOC "usage: update\n" \
@@ -241,6 +251,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "\t\tint{8|16|32|64}:\tinteger of given width\n" \
                  "\t\tfloat{32|64}:\tfloat of given width\n" \
                  "\t\tbytearray:\tan array of bytes\n" \
+                 "\t\tstring:\tstring\n" \
                  "\n" \
                  "\tregion_scan_level\tspecify which regions should be scanned\n" \
                  "\t\t\t\tdefault:2\n" \

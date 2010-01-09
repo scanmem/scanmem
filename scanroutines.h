@@ -33,7 +33,8 @@ typedef enum {
     INTEGER64,
     FLOAT32,
     FLOAT64,
-    BYTEARRAY
+    BYTEARRAY,
+    STRING
 } scan_data_type_t;
 
 typedef enum {

@@ -48,6 +48,7 @@ typedef union {
     };
 
     uint16_t bytearray_length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
+    uint16_t string_length;          /* used when search for a string */
 } match_flags;
 
 /* this struct describing values retrieved from target memory */
@@ -88,6 +89,7 @@ typedef struct {
     double float64_value;
 
     bytearray_element_t *bytearray_value;
+    char *string_value;
 
     match_flags flags;
 } uservalue_t;

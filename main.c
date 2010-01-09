@@ -161,6 +161,8 @@ int main(int argc, char **argv)
                     INCREASED_LONGDOC);
     registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
                     DECREASED_LONGDOC);
+    registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
+                    STRING_LONGDOC);
     registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
                     UPDATE_LONGDOC);
     registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,

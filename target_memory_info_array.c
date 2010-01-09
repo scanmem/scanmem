@@ -25,6 +25,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "target_memory_info_array.h"
 
@@ -200,6 +201,20 @@ value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type
 	return data_to_val_aux(swath, index, swath->number_of_bytes /* ,type */);
 }
 
+void data_to_printable_string(char *buf, int buf_length, unknown_type_of_swath *swath, long index, int string_length)
+{
+    long swath_length = swath->number_of_bytes - index;
+    /* TODO: what if length is too large ? */
+    long max_length = (swath_length >= string_length) ? string_length : swath_length;
+    int i;
+    for(i = 0; i < max_length; ++i)
+    {
+        uint8_t byte = ((matches_and_old_values_swath *)swath)->data[index+i].old_value;
+        buf[i] = isprint(byte) ? byte : '.';
+    }
+    buf[i] = 0; /* null-terminate */
+}
+
 void data_to_bytearray_text(char *buf, int buf_length,  unknown_type_of_swath *swath, long index, int bytearray_length)
 {
     long swath_length = swath->number_of_bytes - index;
@@ -211,11 +226,9 @@ void data_to_bytearray_text(char *buf, int buf_length,  unknown_type_of_swath *s
     {
         uint8_t byte = ((matches_and_old_values_swath *)swath)->data[index+i].old_value;
         /* TODO: check error here */
-        snprintf(buf+bytes_used, buf_length-bytes_used, "%02x ", byte);
+        snprintf(buf+bytes_used, buf_length-bytes_used, (i<max_length-1) ? "%02x " : "%02x", byte);
         bytes_used += 3;
     }
-    /* remove the trailing space */
-    snprintf(buf+bytes_used-1, buf_length-bytes_used+1, ", [bytearray]");
 }
 
 void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */)
