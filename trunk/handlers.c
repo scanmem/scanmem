@@ -1306,14 +1306,6 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
                 ++ string_parameter;
         }
         ++ string_parameter;
-        assert(string_parameter);
-        string_parameter += sizeof("string"); /* to skip 'string' and one space, sizeof("string") includes the trailing 0 */
-        if ((*(string_parameter-1) == 0) || (*(string_parameter) == 0)) 
-        {
-            fprintf(stderr, "error: no string specified.\n");
-            ret = false;
-            goto retl;
-        }
         data_width = strlen(string_parameter);
         datatype = 2;
     }
