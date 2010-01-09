@@ -321,6 +321,7 @@ fail:
 bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
+    char *v = malloc(128);
 
     USEPARAMS();
 
@@ -332,18 +333,29 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
-        char v[128];
 
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
         /* Only actual matches are considered */
         if (flags_to_max_width_in_bytes(flags) > 0)
         {
-            value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
-            truncval_to_flags(&val, flags);
+            switch(globals.options.scan_data_type)
+            {
+            case BYTEARRAY:
+                ; /* cheat gcc */ 
+                int buf_len = flags.bytearray_length * 3 + 32;
+                v = realloc(v, buf_len); /* for each byte and '[bytearray]', this should be enough */
+                data_to_bytearray_text(v, buf_len, (unknown_type_of_swath *)reading_swath_index, reading_iterator, flags.bytearray_length);
+                break;
+            default: /* numbers */
+                ; /* cheat gcc */
+                value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                truncval_to_flags(&val, flags);
 
-            if (valtostr(&val, v, sizeof(v)) != true) {
-                strncpy(v, "unknown", sizeof(v));
+                if (valtostr(&val, v, sizeof(v)) != true) {
+                    strncpy(v, "unknown", sizeof(v));
+                }
+                break;
             }
 
 /* try to determine the size of a pointer */
@@ -368,6 +380,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         }
     }
 
+    free(v);
     return true;
 }
 
@@ -404,7 +417,6 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-
         /* I guess this is not a valid match-id */
         fprintf(stderr, "warn: you specified a non-existant match `%u`.\n", id);
         fprintf(stderr, "info: use \"list\" to list matches, or \"help\" for other commands.\n");

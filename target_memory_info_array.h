@@ -96,8 +96,13 @@ unknown_type_of_array * allocate_array(unknown_type_of_array *array, long max_by
 unknown_type_of_array * allocate_enough_to_reach(unknown_type_of_array *array, void *last_byte_to_reach_plus_one, unknown_type_of_swath **swath_pointer_to_correct);
 unknown_type_of_swath * add_element(unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element /* ,data_array_type_t type */);
 unknown_type_of_array * null_terminate(unknown_type_of_array *array, unknown_type_of_swath *swath /* ,data_array_type_t type*/);
+
+/* only at most sizeof(int64_t) bytes will be readed, if more bytes needed (e.g. bytearray), read it separatedly (for performance) */
 value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length /* ,data_array_type_t type */);
 value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type_t type */);
+/* for bytearray representation */
+void data_to_bytearray_text(char *buf, int buf_length,  unknown_type_of_swath *swath, long index, int bytearray_length);
+
 void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
 void * remote_address_of_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */);
 void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
