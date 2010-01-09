@@ -1,12 +1,13 @@
 TODOs
 =====
 
+- fix bytearray things (syntax)
+- error detection and alert
 - run backend in a separate thread
 - search for pointer
 - byte array / text
 - different types of locking ('>' & '<')
 - data check (if a valid number & if may cause overflow)
-- error detection and alert
 - syntax check 
 - syntax support 
   * 4,5 -- (values between 4 and 5)

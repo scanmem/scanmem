@@ -1,3 +1,5 @@
+* FIX strtoval for bytearray
+
 Next Version
 ============
 * find strings, or pointers to strings as well?
