@@ -1,9 +1,15 @@
+scanmem (0.09~svn20100109r83-0ubuntu2) karmic; urgency=low
+
+  * Fix version of scanmem depended
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 09 Jan 2010 15:17:55 +0800
+
 scanmem (0.09~svn20100109r83-0ubuntu1) karmic; urgency=low
 
   * Fix version suffix 
   * Fix version of scanmem depended
 
- -- WANG Lu <coolwanglu@gmail.com>  Sat, 09 Jan 2010 02:23:52 +0800
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 09 Jan 2010 15:17:51 +0800
 
 scanmem (0.09~svn20100109r82) karmic; urgency=low
 
