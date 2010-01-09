@@ -1,12 +1,11 @@
 Next Version
 ============
-* find strings, or pointers to strings as well?
-* optional float rounding techniques, eg floor(), ceil(), round(), rint(), etc?
-* search for values in files? (eg saved state)
-* save state to a file, so you can apply it to a different pid.
+* optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 
 Future
 ======
+* save state to a file, so you can apply it to a different pid.
+* search for values in files? (eg saved state)
 * macro support
 * read symbol table, and print its name if we have a match.
 * support more esoteric number formats, such as bcd, ascii, etc.
