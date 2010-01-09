@@ -282,6 +282,9 @@ int flags_to_max_width_in_bytes(match_flags flags)
         case BYTEARRAY:
             return flags.bytearray_length;
             break;
+        case STRING:
+            return flags.string_length;
+            break;
         default: /* numbers */
                  if (flags.u64b || flags.s64b || flags.f64b) return 8;
             else if (flags.u32b || flags.s32b || flags.f32b) return 4;

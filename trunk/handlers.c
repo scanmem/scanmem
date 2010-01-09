@@ -91,7 +91,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* supporting `set` for bytearray will cause annoying syntax problems... */
-    if (vars->options.scan_data_type == BYTEARRAY)
+    if ((vars->options.scan_data_type == BYTEARRAY)
+       ||(vars->options.scan_data_type == STRING))
     {
         fprintf(stderr, "error: `set` is not supported for bytearray, use `write` instead.\n");
         return false;
@@ -321,7 +322,15 @@ fail:
 bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
-    char *v = malloc(128);
+    int buf_len = 128; /* will be realloc later if necessary */
+    char *v = malloc(buf_len);
+    if (v == NULL)
+    {
+        fprintf(stderr, "error: memory allocation failed.\n");
+        return false;
+    }
+    char *bytearray_suffix = ", [bytearray]";
+    char *string_suffix = ", [string]";
 
     USEPARAMS();
 
@@ -343,9 +352,29 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
             {
             case BYTEARRAY:
                 ; /* cheat gcc */ 
-                int buf_len = flags.bytearray_length * 3 + 32;
-                v = realloc(v, buf_len); /* for each byte and '[bytearray]', this should be enough */
+                buf_len = flags.bytearray_length * 3 + 32;
+                v = realloc(v, buf_len); /* for each byte and the suffix', this should be enough */
+                if (v == NULL)
+                {
+                    fprintf(stderr, "error: memory allocation failed.\n");
+                    return false;
+                }
                 data_to_bytearray_text(v, buf_len, (unknown_type_of_swath *)reading_swath_index, reading_iterator, flags.bytearray_length);
+                assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
+                strcat(v, bytearray_suffix);
+                break;
+            case STRING:
+                ; /* cheat gcc */
+                buf_len = flags.string_length + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
+                v = realloc(v, buf_len);
+                if (v == NULL)
+                {
+                    fprintf(stderr, "error: memory allocation failed.\n");
+                    return false;
+                }
+                data_to_printable_string(v, buf_len, (unknown_type_of_swath *)reading_swath_index, reading_iterator, flags.string_length);
+                assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
+                strcat(v, string_suffix);
                 break;
             default: /* numbers */
                 ; /* cheat gcc */
@@ -784,6 +813,59 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+bool handler__string(globals_t * vars, char **argv, unsigned argc)
+{
+    /* test scan_data_type */
+    if (vars->options.scan_data_type != STRING)
+    {
+        fprintf(stderr, "error: scan_data_type is not string, see `help option`.\n");
+        return false;
+    }
+
+    /* test the length */
+    int i;
+    for(i = 0; (i < 4) && vars->current_cmdline[i]; ++i) {}
+    if (i != 4) /* cmdline too short */
+    {
+        fprintf(stderr, "error: please specify a string\n");
+        return false;
+    }
+ 
+    /* the string being scanned */
+    uservalue_t val;
+    val.string_value = vars->current_cmdline+2;
+    val.flags.string_length = strlen(val.string_value);
+ 
+    /* need a pid for the rest of this to work */
+    if (vars->target == 0) {
+        return false;
+    }
+
+    /* user has specified an exact value of the variable to find */
+    if (vars->matches) {
+        /* already know some matches */
+        if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
+            fprintf(stderr, "error: failed to search target address space.\n");
+            return false;
+        }
+    } else {
+        /* initial search */
+        if (searchregions(vars, MATCHEQUALTO, &val) != true) {
+            fprintf(stderr, "error: failed to search target address space.\n");
+            return false;
+        }
+    }
+
+    /* check if we now know the only possible candidate */
+    if (vars->num_matches == 1) {
+        fprintf(stderr,
+                "info: match identified, use \"set\" to modify value.\n");
+        fprintf(stderr, "info: enter \"help\" for other commands.\n");
+    }
+
+    return true;
+}
+
 bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
@@ -831,6 +913,11 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
             ret = false;
             goto retl;
         }
+        break;
+    case STRING:
+        fprintf(stderr, "error: unable to parse command `%s`\nIf you want to scan for a string, use command `\"`.\n", argv[0]);
+        ret = false;
+        goto retl;
         break;
     default:
         assert(false);
@@ -1145,8 +1232,9 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     const char *fmt;
     void *addr;
     char *buf = NULL;
-    int datatype; //0 for numbers, 1 for bytearray
+    int datatype; /* 0 for numbers, 1 for bytearray, 2 for string */
     bool ret;
+    char *string_parameter; /* used by string type */
 
     if (argc < 4)
     {
@@ -1202,6 +1290,32 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     {
         data_width = argc - 3;
         datatype = 1;
+    }
+    else if (strcasecmp(argv[1], "string") == 0)
+    {
+        /* locate the string parameter, say locate the beginning of the 4th parameter (2 characters after the end of the 3rd paramter)*/
+        int i;
+        string_parameter = vars->current_cmdline;
+        for(i = 0; i < 3; ++i)
+        {
+            while(((*string_parameter) == ' ')
+                 ||(*string_parameter) == '\t') 
+                ++ string_parameter;
+            while(((*string_parameter) != ' ')
+                 &&(*string_parameter) != '\t') 
+                ++ string_parameter;
+        }
+        ++ string_parameter;
+        assert(string_parameter);
+        string_parameter += sizeof("string"); /* to skip 'string' and one space, sizeof("string") includes the trailing 0 */
+        if ((*(string_parameter-1) == 0) || (*(string_parameter) == 0)) 
+        {
+            fprintf(stderr, "error: no string specified.\n");
+            ret = false;
+            goto retl;
+        }
+        data_width = strlen(string_parameter);
+        datatype = 2;
     }
     /* may support more types here */
     else
@@ -1279,6 +1393,11 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         }
         free(array);
         break;
+    case 2: //string
+        strncpy(buf, string_parameter, data_width);
+        /* debug */
+        printf("debug %d\n", data_width);
+        break;
     default:
         assert(false);
     }
@@ -1313,6 +1432,7 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else if (strcasecmp(argv[2], "float32") == 0) { vars->options.scan_data_type = FLOAT32; }
         else if (strcasecmp(argv[2], "float64") == 0) { vars->options.scan_data_type = FLOAT64; }
         else if (strcasecmp(argv[2], "bytearray") == 0) { vars->options.scan_data_type = BYTEARRAY; }
+        else if (strcasecmp(argv[2], "string") == 0) { vars->options.scan_data_type = STRING; }
         else
         {
             fprintf(stderr, "error: bad value for scan_data_type, see `help option`.\n");

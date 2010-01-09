@@ -1,14 +1,14 @@
 TODOs
 =====
 
-- fix bytearray things (syntax)
+- plugin-like system to support different datatypes (or actually representations)
+- data check (if a valid number & if may cause overflow)
+- syntax check 
 - error detection and alert
 - run backend in a separate thread
 - search for pointer
-- byte array / text
+- text
 - different types of locking ('>' & '<')
-- data check (if a valid number & if may cause overflow)
-- syntax check 
 - syntax support 
   * 4,5 -- (values between 4 and 5)
         -- might be difficult if signedness involved

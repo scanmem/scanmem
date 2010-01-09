@@ -125,7 +125,7 @@
                     <property name="visible">True</property>
                     <property name="tooltip_markup">Syntax:
 
- (N is any number, like 12, 0x34 or 5.67) 
+ For number types: (N is any number, like 12, 0x34 or 5.67) 
 &lt;span font_family="monospace"&gt;
  &lt;b&gt;N&lt;/b&gt;         Exactly this number
  &lt;b&gt;?&lt;/b&gt;         Unknown initial value
@@ -138,6 +138,12 @@
  &lt;b&gt;+ N&lt;/b&gt;       Increased by N
  &lt;b&gt;- N&lt;/b&gt;       Decreased by N
 &lt;/span&gt;
+ For bytearray: use 2-byte hexadecimal representation of each byte, separated by spaces
+&lt;span font_family="monospace"&gt;
+ e.g. FE DC BA 98 76 54 32 10
+&lt;/span&gt;
+ For string: enter the string directly
+
 </property>
                     <property name="xalign">1</property>
                     <property name="label" translatable="yes">Value:</property>
