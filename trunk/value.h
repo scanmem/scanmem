@@ -92,6 +92,8 @@ typedef struct {
     match_flags flags;
 } uservalue_t;
 
+/* used when output values to user */
+/* only work for numbers */
 bool valtostr(const value_t * val, char *str, size_t n); 
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t * val); /* parse bytearray, the parameter array should be allocated beforehand */
 bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */
