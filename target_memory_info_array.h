@@ -100,6 +100,8 @@ unknown_type_of_array * null_terminate(unknown_type_of_array *array, unknown_typ
 /* only at most sizeof(int64_t) bytes will be readed, if more bytes needed (e.g. bytearray), read it separatedly (for performance) */
 value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length /* ,data_array_type_t type */);
 value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type_t type */);
+/* for printable text representation */
+void data_to_printable_string(char *buf, int buf_length, unknown_type_of_swath *swath, long index, int string_length);
 /* for bytearray representation */
 void data_to_bytearray_text(char *buf, int buf_length,  unknown_type_of_swath *swath, long index, int bytearray_length);
 

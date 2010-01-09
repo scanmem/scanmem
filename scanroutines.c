@@ -228,7 +228,7 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT64, 64)
 int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     bytearray_element_t *array = user_value->bytearray_value;
-    unsigned short length = user_value->flags.bytearray_length;
+    int length = user_value->flags.bytearray_length;
     int cur_idx = 0;
     int i, j;
     value_t val_buf = *new_value;
@@ -280,6 +280,46 @@ int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
     return length;
 }
 
+/*------------*/
+/* for STRING */
+/*------------*/
+int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
+{
+    char *scan_string = user_value->string_value;
+    int length = user_value->flags.string_length;
+    int i, j;
+    value_t val_buf = *new_value;
+    for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
+    {
+        if(val_buf.int64_value != *((int64_t*)(scan_string+i)))
+        {
+            /* not matched */
+            return 0;
+        } 
+         
+        /* read next block */
+        if (!peekdata(globals.target, address+i+sizeof(int64_t), &val_buf))
+        {
+            /* cannot read */
+            return 0;
+        }
+    }
+
+    /* match bytes left */
+    for(j = 0; j < length - i; ++j)
+    {
+        if(val_buf.bytes[j] != *(scan_string+i+j))
+        {
+            /* not matched */
+            return 0;
+        }
+    } 
+    
+    /* matched */
+    saveflags->string_length = length;
+
+    return length;
+}
 /*-------------------------*/
 /* Any-xxx types specifiec */
 /*-------------------------*/
@@ -375,6 +415,7 @@ scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHLESSTHAN, LESSTHAN)
 
     CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO) 
+    CHOOSE_ROUTINE(STRING, STRING, MATCHEQUALTO, EQUALTO) 
 
     return NULL;
 }
