@@ -390,8 +390,9 @@
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <property name="program_name">GameConqueror</property>
-    <property name="copyright" translatable="yes">
-Copyright (C) 2009,2010 WANG Lu  &lt;coolwanglu@gmail.com&gt;</property>
+    <property name="copyright" translatable="yes">Copyright (C) 2009,2010 WANG Lu  &lt;coolwanglu@gmail.com&gt;
+
+Special thanks: Zhang Zhe</property>
     <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
     <property name="website">http://code.google.com/p/scanmem/</property>
     <property name="website_label" translatable="yes">Homepage</property>
