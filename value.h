@@ -30,6 +30,8 @@
 
 /* some routines for working with value_t structures */
 
+/* this is memory-efficient but DANGEROUS */
+/* always keep in mind that don't mess up with bytearray_length or string_length when scanning for BYTEARRAY of STRING */
 typedef union {
     struct __attribute__ ((packed)) {
         unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */

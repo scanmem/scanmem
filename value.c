@@ -147,7 +147,7 @@ void valnowidth(value_t * val)
     val->flags.ineq_forwards = 1;
     val->flags.ineq_reverse = 1;
     
-    /* don't bother with bytearray_length */
+    /* don't bother with bytearray_length and string_length */
     return;
 }
 

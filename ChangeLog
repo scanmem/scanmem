@@ -1,5 +1,8 @@
 2010-01-10 WANG Lu <coolwanglu(a)gmail.com>
 	* STRING supported
+	* Fixed a bug relacted to match_flag, now match_flags seems to be
+      `dangerous` since I made it a union now.
+	* Fixed a memory bug in target_memory_info_array.c
 
 2010-01-09 WANG Lu <coolwanglu(a)gmail.com>
     * BYTEARRAY supported, oh yeah
