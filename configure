@@ -5273,6 +5273,7 @@ rm -rf conftest*
   fi
 fi
 
+    # for debug
 
 $as_echo "#define HAVE_PROCMEM 1" >>confdefs.h
 
