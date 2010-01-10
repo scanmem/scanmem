@@ -650,6 +650,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         }
         
         /* check for any affected matches before removing it */
+        if(vars->num_matches > 0)
         {
             region_t *s;
 
