@@ -163,17 +163,23 @@ bool handler__exit(globals_t * vars, char **argv, unsigned argc);
 bool handler__help(globals_t * vars, char **argv, unsigned argc);
 
 #define DEFAULT_SHRTDOC NULL
-#define DEFAULT_LONGDOC "Any number in standard C language notation (leading 0x for\n" \
+#define DEFAULT_LONGDOC "When searching for a number, use any notation in standard C language (leading 0x for\n" \
                 "hexadecimal, leading 0 for octal, everything else is assumed to be decimal)\n" \
                 "float numbers are also acceptable, but will be rounded if scanning integers\n" \
-                "scans the current process for variables with that value.\n" \
+                "\n" \
+                "When searching for an array of byte, use 2-byte hexadecimal notation, \n" \
+                "separated by spaces, wildcard '??' is also supported. E.g. FF ?? EE ?? 02 01\n" \
+                "\n" \
+                "When searching for strings, use the \" command\n" \
+                "\n" \
+                "Scan the current process for variables with given value.\n" \
                 "By entering the value of the variable as it changes multiple times, scanmem can\n" \
                 "eliminate matches, eventually identifying where the variable is located.\n" \
                 "Once the variable is found, use `set` to change its value.\n"
 
 bool handler__default(globals_t * vars, char **argv, unsigned argc);
 
-#define STRING_SHRTDOC "match a given string\n"
+#define STRING_SHRTDOC "match a given string"
 #define STRING_LONGDOC "usage \" <text>\n" \
                 "<text> is counted since the 2nd character following the leading \"\n" \
                 "This can only be used when scan_data_type is set to be string\n" \
