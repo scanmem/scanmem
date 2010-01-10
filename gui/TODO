@@ -1,6 +1,7 @@
 TODOs
 =====
 
+- Fix search scope
 - plugin-like system to support different datatypes (or actually representations)
 - data check (if a valid number & if may cause overflow)
 - syntax check 

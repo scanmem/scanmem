@@ -112,7 +112,7 @@ class GameConquerorBackend():
 
     def send_command(self, cmd):
         # for debug
-#        print 'Send Command:',cmd
+        print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
         output_lines = self.get_output_lines()
         # for debug
