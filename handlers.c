@@ -675,11 +675,14 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
     if (invert) {
         region_t *s = keep->head->data;
         
-        if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
+        if (vars->num_matches > 0)
         {
-            fprintf(stderr, "error: memory allocation error while deleting matches\n");
+            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
+            {
+                fprintf(stderr, "error: memory allocation error while deleting matches\n");
+            }
         }
-        
+            
         /* okay, done with the regions list */
         l_destroy(vars->regions);
         
