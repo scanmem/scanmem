@@ -354,6 +354,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 ; /* cheat gcc */ 
                 buf_len = flags.bytearray_length * 3 + 32;
                 v = realloc(v, buf_len); /* for each byte and the suffix', this should be enough */
+
                 if (v == NULL)
                 {
                     fprintf(stderr, "error: memory allocation failed.\n");
@@ -1387,8 +1388,6 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         break;
     case 2: //string
         strncpy(buf, string_parameter, data_width);
-        /* debug */
-        printf("debug %d\n", data_width);
         break;
     default:
         assert(false);

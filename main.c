@@ -185,7 +185,8 @@ int main(int argc, char **argv)
     registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
                     DEFAULT_LONGDOC);
 
-    printversion(stderr);
+    if (globals.options.backend == 0)
+        printversion(stderr);
 
     /* this will initialise matches and regions */
     if (execcommand(vars, "reset") == false) {
