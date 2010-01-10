@@ -254,6 +254,10 @@ bool checkmatches(globals_t * vars,
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
     
+    /* used to fill in non-match regions */
+    match_flags zero_flag;
+    memset(&zero_flag, 0, sizeof(zero_flag));
+
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
     
@@ -271,7 +275,7 @@ bool checkmatches(globals_t * vars,
 
 
     while (reading_swath.first_byte_in_child) {
-        int match_length;
+        int match_length = 0;
         value_t data_value;
         match_flags checkflags;
 
@@ -286,8 +290,8 @@ bool checkmatches(globals_t * vars,
             value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
+            /* these are not harmful for bytearray routine, since it will ignore flags of new_value & old_value */
             truncval_to_flags(&old_val, flags);
-
             truncval_to_flags(&data_value, flags);
 
             memset(&checkflags, 0, sizeof(checkflags));
@@ -310,7 +314,7 @@ bool checkmatches(globals_t * vars,
         }
         else if (required_extra_bytes_to_record)
         {
-            old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
+            old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
             writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             --required_extra_bytes_to_record;
         }
@@ -383,6 +387,10 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     region_t *r;
     void *address;
 
+    /* used to fill in non-match regions */
+    match_flags zero_flag;
+    memset(&zero_flag, 0, sizeof(zero_flag));
+    
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
         fprintf(stderr, "error: unsupported scan for current data type.\n"); 
@@ -502,7 +510,12 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             int match_length;
             /* check if we have a match */
             if (EXPECT(((match_length = (*g_scan_routine)(&data_value, NULL, uservalue, &checkflags, address)) > 0), false)) {
-                checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
+                /* only set these flags for numbers */
+                if ((globals.options.scan_data_type != BYTEARRAY)
+                    && (globals.options.scan_data_type != STRING))
+                {
+                    checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
+                }
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 
@@ -512,7 +525,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
             else if (required_extra_bytes_to_record)
             {
-                old_value_and_match_info new_value = { get_u8b(&data_value), (match_flags){0} };
+                old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
                 writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 --required_extra_bytes_to_record;
             }
