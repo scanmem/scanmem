@@ -382,8 +382,8 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                 truncval_to_flags(&val, flags);
 
-                if (valtostr(&val, v, sizeof(v)) != true) {
-                    strncpy(v, "unknown", sizeof(v));
+                if (valtostr(&val, v, buf_len) != true) {
+                    strncpy(v, "unknown", buf_len);
                 }
                 break;
             }

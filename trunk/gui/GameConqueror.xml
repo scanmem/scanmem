@@ -393,7 +393,8 @@
     <property name="copyright" translatable="yes">
 Copyright (C) 2009,2010 WANG Lu  &lt;coolwanglu@gmail.com&gt;</property>
     <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
-    <property name="website">https://sourceforge.net/projects/gameconqueror</property>
+    <property name="website">http://code.google.com/p/scanmem/</property>
+    <property name="website_label" translatable="yes">Homepage</property>
     <property name="license">                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
 
