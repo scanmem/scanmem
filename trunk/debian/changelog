@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100110r90-0ubuntu1) karmic; urgency=high
+
+  * Fixed two memory bugs
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 10 Jan 2010 19:06:14 +0800
+
 scanmem (0.09~svn20100110r89-0ubuntu1) karmic; urgency=low
 
   * STRING scan supported
