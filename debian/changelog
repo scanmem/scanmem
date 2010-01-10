@@ -1,3 +1,9 @@
+scanmem (0.09~svn20100110r92-0ubuntu1) karmic; urgency=low
+
+  * fixed a bug in handler__list
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 10 Jan 2010 23:49:25 +0800
+
 scanmem (0.09~svn20100110r90-0ubuntu1) karmic; urgency=high
 
   * Fixed two memory bugs
