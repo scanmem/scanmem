@@ -494,12 +494,18 @@ class GameConqueror():
         self.apply_scan_settings()
         # TODO: syntax check
         cmd = self.value_input.get_text()
+
         # hack for the string type
         # TODO: we may need plugin system to provide data type specific process
         active = self.scan_data_type_combobox.get_active()
         assert(active >= 0)
         if self.scan_data_type_combobox.get_model()[active][0] == 'string':
             cmd = '" '+cmd
+
+        # hack for snapshot
+        if cmd == '?':
+            cmd = 'snapshot'
+
         self.backend.send_command(cmd)
         self.update_scan_result()
         self.search_count +=1 
