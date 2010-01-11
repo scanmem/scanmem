@@ -1,13 +1,10 @@
 TODOs
 =====
 
-- Fix search scope
+- Fix search scope stuff
+- Progress bar
 - real-time update cheatlist/scanlist
 - plugin-like system to support different datatypes (or actually representations)
-- data check (if a valid number & if may cause overflow)
-- syntax check 
-- error detection and alert
-- run backend in a separate thread
 - search for pointer
 - different types of locking ('>' & '<')
 - memory view/edit
