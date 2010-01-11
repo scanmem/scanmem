@@ -23,18 +23,21 @@ import sys
 import os
 import subprocess
 import re
+import tempfile
 
 import pygtk
 import gtk
 import gobject
 
 from consts import *
+import misc
 
 WORK_DIR = os.path.dirname(sys.argv[0])
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
+#BACKEND_ERROR_EVENT_NAME = 'gameconqueror-backend-error'
 
 # init data types
 # convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
@@ -94,9 +97,41 @@ TYPENAMES_S2G = {'I64':'int64'
 class GameConquerorBackend():
     def __init__(self):
         self.match_count = 0
-        self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        self.backend = None
+        self.error_monitor_id = None
+        self.error_listeners = []
+        self.restart()
         # read initial info
         self.get_output_lines()
+
+    def add_error_listener(self, listener):
+        self.error_listeners.append(listener)
+
+    def restart(self):
+        if self.backend is not None:
+            self.backend.kill()
+        self.last_pos = 0;
+        self.stderrfile = tempfile.TemporaryFile()
+        self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderrfile.fileno())
+        if self.error_monitor_id is not None:
+            gobject.source_remove(self.error_monitor_id)
+
+    def error_check(self, source, condition):
+        self.stderrfile.seek(0, 2) # to the end
+        if self.stderrfile.tell() > self.last_pos + 1:
+            self.stderrfile.seek(self.last_pos)
+            msg = self.stderrfile.readline()
+            self.last_pos = self.stderrfile.tell()
+           
+            if msg.startswith('error:'): # error happened
+                msg = msg[len('error:'):]
+                for listener in self.error_listeners:
+                    gobject.idle_add(listener,msg)
+            # else ignore
+
+
+            return True
+        return False
 
     def get_output_lines(self):
         lines = []
@@ -114,6 +149,7 @@ class GameConquerorBackend():
         # for debug
         print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
+        self.error_monitor_id = gobject.gobject.io_add_watch(self.stderrfile.fileno(), gobject.IO_IN, self.error_check)
         output_lines = self.get_output_lines()
         # for debug
 #        print '\n'.join(output_lines)
@@ -291,10 +327,13 @@ class GameConqueror():
         ###########################
         # init others (backend, flag...)
 
+        self.pid = 0
         self.backend = GameConquerorBackend()
+        self.backend.add_error_listener(self.backend_error_cb)
         self.search_count = 0
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
-        gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+        self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+
 
     ###########################
     # GUI callbacks
@@ -351,13 +390,7 @@ class GameConqueror():
             if res == gtk.RESPONSE_OK: # -5
                 (model, iter) = self.processlist_tv.get_selection().get_selected()
                 if iter is None:
-                    dialog = gtk.MessageDialog(None
-                                     ,gtk.DIALOG_MODAL
-                                     ,gtk.MESSAGE_ERROR
-                                     ,gtk.BUTTONS_OK
-                                     ,'Please select a process')
-                    dialog.run()
-                    dialog.destroy()
+                    self.show_error('Please select a process')
                     continue
                 else:
                     (pid, process) = model.get(iter, 0, 1)
@@ -443,6 +476,28 @@ class GameConqueror():
 
     ############################
     # core functions
+    def show_error(self, msg):
+        dialog = gtk.MessageDialog(None
+                                 ,gtk.DIALOG_MODAL
+                                 ,gtk.MESSAGE_ERROR
+                                 ,gtk.BUTTONS_OK
+                                 ,msg)
+        dialog.run()
+        dialog.destroy()
+
+    # this callback will be called from other thread
+    def backend_error_cb(self, msg):
+        gtk.gdk.threads_enter()
+        dialog = gtk.MessageDialog(None
+                                  ,gtk.DIALOG_MODAL
+                                  ,gtk.MESSAGE_ERROR
+                                  ,gtk.BUTTONS_OK
+                                  ,'Backend error: %s'%(msg,))
+        dialog.run()
+        dialog.destroy()
+        gtk.gdk.threads_leave()
+                   
+
 
     def add_to_cheat_list(self, addr, value, typestr):
         # determine longest possible type
@@ -465,6 +520,7 @@ class GameConqueror():
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.process_label.set_property('tooltip-text', process_name)
         self.backend.send_command('pid %d' % (pid,))
+        self.pid = pid
         self.reset_scan()
         # unlock all entries in cheat list
         for i in xrange(len(self.cheatlist_liststore)):
@@ -486,25 +542,24 @@ class GameConqueror():
         # search scope
         self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
 
-
+    
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
-        # set scan options
-        self.apply_scan_settings()
-        # TODO: syntax check
-        cmd = self.value_input.get_text()
-
-        # hack for the string type
-        # TODO: we may need plugin system to provide data type specific process
+        if self.pid == 0:
+            self.show_error('Please select a process')
+            return
         active = self.scan_data_type_combobox.get_active()
         assert(active >= 0)
-        if self.scan_data_type_combobox.get_model()[active][0] == 'string':
-            cmd = '" '+cmd
+        data_type = self.scan_data_type_combobox.get_model()[active][0]
+        cmd = self.value_input.get_text()
+        (success, cmd) = misc.check_scan_command(data_type, cmd)
+        if not success:
+            self.show_error(cmd)
+            return
 
-        # hack for snapshot
-        if cmd == '?':
-            cmd = 'snapshot'
+        # set scan options
+        self.apply_scan_settings()
 
         self.backend.send_command(cmd)
         self.update_scan_result()
@@ -571,4 +626,6 @@ class GameConqueror():
     
 
 if __name__ == '__main__':
+    gobject.threads_init()
+    gtk.gdk.threads_init()
     GameConqueror().main()
