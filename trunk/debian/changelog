@@ -1,3 +1,11 @@
+scanmem (0.10~svn20100112r103-0ubuntu1) karmic; urgency=low
+
+  * Better GUI
+  * Better communication between GUI & backend
+  * several bugs fixed
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 12 Jan 2010 01:40:53 +0800
+
 scanmem (0.09~svn20100110r92-0ubuntu1) karmic; urgency=low
 
   * fixed a bug in handler__list
