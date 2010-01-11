@@ -147,7 +147,7 @@ class GameConquerorBackend():
 
     def send_command(self, cmd):
         # for debug
-        print 'Send Command:',cmd
+#        print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
         self.error_monitor_id = gobject.gobject.io_add_watch(self.stderrfile.fileno(), gobject.IO_IN, self.error_check)
         output_lines = self.get_output_lines()
@@ -516,7 +516,8 @@ class GameConqueror():
         # ask backend for attaching the target process
         # update 'current process'
         # reset flags
-        print 'Select process: %d - %s' % (pid, process_name)
+        # for debug/log
+#        print 'Select process: %d - %s' % (pid, process_name)
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.process_label.set_property('tooltip-text', process_name)
         self.backend.send_command('pid %d' % (pid,))

@@ -1,3 +1,9 @@
+2010-01-12 WANG Lu <coolwanglu(a)gmail.com>
+	* Bugs fixed
+ 	* Better DEFAULT_LONGDOC
+	* Better GUI
+	* Better communication between GUI & backend
+
 2010-01-10 WANG Lu <coolwanglu(a)gmail.com>
 	* STRING supported
 	* Fixed a bug relacted to match_flag, now match_flags seems to be
