@@ -168,7 +168,7 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc);
                 "float numbers are also acceptable, but will be rounded if scanning integers\n" \
                 "\n" \
                 "When searching for an array of byte, use 2-byte hexadecimal notation, \n" \
-                "separated by spaces, wildcard '??' is also supported. E.g. FF ?? EE ?? 02 01\n" \
+                "separated by spaces, wildcard '?\?' is also supported. E.g. FF ?\? EE ?\? 02 01\n" \
                 "\n" \
                 "When searching for strings, use the \" command\n" \
                 "\n" \

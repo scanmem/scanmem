@@ -56,8 +56,7 @@ bool registercommand(const char *command, void *handler, list_t * commands,
 
     if (command != NULL) {
         if ((data = malloc(sizeof(command_t) + strlen(command) + 1)) == NULL) {
-            fprintf(stderr,
-                    "error: sorry, there was a memory allocation problem.\n");
+            show_error("sorry, there was a memory allocation problem.\n");
             return false;
         }
         data->command = (char *) data + sizeof(*data);
@@ -66,8 +65,7 @@ bool registercommand(const char *command, void *handler, list_t * commands,
         strcpy(data->command, command);
     } else {
         if ((data = malloc(sizeof(command_t))) == NULL) {
-            fprintf(stderr,
-                    "error: sorry, there was a memory allocation problem.\n");
+            show_error("sorry, there was a memory allocation problem.\n");
             return false;
         }
         data->command = NULL;
@@ -110,8 +108,7 @@ bool execcommand(globals_t * vars, const char *commandline)
 
         /* make enough size for another pointer (+1 for NULL at end) */
         if ((argv = realloc(argv, (argc + 1) * sizeof(char *))) == NULL) {
-            fprintf(stderr,
-                    "error: sorry there was a memory allocation error.\n");
+            show_error("sorry there was a memory allocation error.\n");
             return false;
         }
 

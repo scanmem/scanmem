@@ -81,16 +81,14 @@ bool attach(pid_t target)
 
     /* attach, to the target application, which should cause a SIGSTOP */
     if (ptrace(PTRACE_ATTACH, target, NULL, NULL) == -1L) {
-        fprintf(stderr, "error: failed to attach to %d, %s\n", target,
-                strerror(errno));
+        show_error("failed to attach to %d, %s\n", target, strerror(errno));
         return false;
     }
 
     /* wait for the SIGSTOP to take place. */
     if (waitpid(target, &status, 0) == -1 || !WIFSTOPPED(status)) {
-        fprintf(stderr,
-                "error: there was an error waiting for the target to stop.\n");
-        fprintf(stdout, "info: %s\n", strerror(errno));
+        show_error("there was an error waiting for the target to stop.\n");
+        show_info("%s\n", strerror(errno));
         return false;
     }
 
@@ -263,7 +261,7 @@ bool checkmatches(globals_t * vars,
     
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
-        fprintf(stderr, "error: unsupported scan for current data type.\n"); 
+        show_error("unsupported scan for current data type.\n"); 
         return false;
     }
 
@@ -287,7 +285,7 @@ bool checkmatches(globals_t * vars,
         }
         else
         {
-            value_t old_val = data_to_val_aux((unknown_type_of_swath *)reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
+            value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             /* these are not harmful for bytearray routine, since it will ignore flags of new_value & old_value */
@@ -306,7 +304,7 @@ bool checkmatches(globals_t * vars,
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
           
             old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
+            writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             
             ++vars->num_matches;
             
@@ -315,7 +313,7 @@ bool checkmatches(globals_t * vars,
         else if (required_extra_bytes_to_record)
         {
             old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
-            writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
+            writing_swath_index = add_element(&vars->matches, writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             --required_extra_bytes_to_record;
         }
         
@@ -331,13 +329,13 @@ bool checkmatches(globals_t * vars,
         }
     }
     
-    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index /* ,MATCHES_AND_VALUES */)))
+    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
-        fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
+        show_error("memory allocation error while reducing matches-array size\n");
         return false;
     }
 
-    eprintf("info: we currently have %ld matches.\n", vars->num_matches);
+    show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
     return detach(vars->target);
@@ -355,13 +353,13 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
     
     /* attempt to open the file */
     if ((fd = open(mem, O_RDONLY)) == -1) {
-        fprintf(stderr, "warn: unable to open %s.\n", mem);
+        show_error("unable to open %s.\n", mem);
         return -1;
     }
     
     /* check offset is sane */
     if (offset > region->size) {
-        fprintf(stderr, "warn: unexpected offset while reading region.\n");
+        show_error("unexpected offset while reading region.\n");
         return -1;
     }
     
@@ -393,7 +391,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
-        fprintf(stderr, "error: unsupported scan for current data type.\n"); 
+        show_error("unsupported scan for current data type.\n"); 
         return false;
     }
 
@@ -406,10 +404,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
    
     /* make sure we have some regions to search */
     if (vars->regions->size == 0) {
-        fprintf(stderr,
-                "warn: no regions defined, perhaps you deleted them all?\n");
-        fprintf(stderr,
-                "info: use the \"reset\" command to refresh regions.\n");
+        show_warn("no regions defined, perhaps you deleted them all?\n");
+        show_info("use the \"reset\" command to refresh regions.\n");
         return detach(vars->target);
     }
     
@@ -422,9 +418,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
     total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
     
-    if (!(vars->matches = allocate_array((unknown_type_of_array *)vars->matches, total_size)))
+    if (!(vars->matches = allocate_array(vars->matches, total_size)))
     {
-        fprintf(stderr, "error: could not allocate match array\n");
+        show_error("could not allocate match array\n");
         return false;
     }
     
@@ -446,7 +442,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 #if HAVE_PROCMEM        
         /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
         if ((data = calloc(r->size + sizeof(int64_t) - 1, 1)) == NULL) {
-            fprintf(stderr, "error: sorry, there was a memory allocation error.\n");
+            show_error("sorry, there was a memory allocation error.\n");
             return false;
         }
     
@@ -465,7 +461,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
         nread = r->size;
 #endif
         /* print a progress meter so user knows we havent crashed */
-        fprintf(stderr, "info: %02u/%02u searching %#10lx - %#10lx.", ++regnum,
+        /* cannot use show_info here because it'll append a '\n' */
+        show_user("info: %02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
@@ -519,7 +516,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                     checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 }
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 
                 ++vars->num_matches;
                 
@@ -528,31 +525,31 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             else if (required_extra_bytes_to_record)
             {
                 old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
-                writing_swath_index = add_element((unknown_type_of_array **)(&vars->matches), (unknown_type_of_swath *)writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
                 --required_extra_bytes_to_record;
             }
 
             /* print a simple progress meter. */
             if (EXPECT(offset % ((r->size - (r->size % 10)) / 10) == 10, false)) {
-                fprintf(stderr, ".");
+                show_user(".");
                 fflush(stderr);
             }
         }
 
         n = n->next;
-        fprintf(stderr, "ok\n");
+        show_user("ok\n");
 #if HAVE_PROCMEM
         free(data);
 #endif
     }
     
-    if (!(vars->matches = null_terminate((unknown_type_of_array *)vars->matches, (unknown_type_of_swath *)writing_swath_index /* ,MATCHES_AND_VALUES */)))
+    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
-        fprintf(stderr, "error: memory allocation error while reducing matches-array size\n");
+        show_error("memory allocation error while reducing matches-array size\n");
         return false;
     }
 
-    eprintf("info: we currently have %ld matches.\n", vars->num_matches);
+    show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
     return detach(vars->target);
@@ -568,24 +565,24 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     }
 
     if (peekdata(target, addr, &saved) == false) {
-        fprintf(stderr, "error: couldnt access the target address %10p\n",
-                addr);
+        show_error("couldnt access the target address %10p\n", addr);
         return false;
     }
     
     /* Basically, overwrite as much of the data as makes sense, and no more. */
+    /* about float/double: now value_t is a union, we can use the following way instead of the commented way, in order to avoid compiler warning */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, *((int64_t *)&(to->float64_value))); } 
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, get_s32b(to)); } /* *((int64_t *)&(to->float64_value))); } */
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
-    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, *((int32_t *)&(to->float32_value))); } 
+    else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, get_s32b(to)); } /* *((int32_t *)&(to->float32_value))); } */
     else if (saved.flags.u16b && to->flags.u16b) { set_u16b(&saved, get_u16b(to)); }
     else if (saved.flags.s16b && to->flags.s16b) { set_s16b(&saved, get_s16b(to)); }
     else if (saved.flags.u8b  && to->flags.u8b ) { set_u8b(&saved, get_u8b(to)); }
     else if (saved.flags.s8b  && to->flags.s8b ) { set_s8b(&saved, get_s8b(to)); }
     else {
-        fprintf(stderr, "error: could not determine type to poke.\n");
+        show_error("could not determine type to poke.\n");
         return false;
     }
 
@@ -638,7 +635,7 @@ bool write_array(pid_t target, void *addr, const void *data, int len)
                         continue;
                     else
                     {
-                        fprintf(stderr, "error: write_array failed.\n"); 
+                        show_error("write_array failed.\n"); 
                         return false;
                     }
                 }
@@ -649,7 +646,7 @@ bool write_array(pid_t target, void *addr, const void *data, int len)
 
                     if (ptrace(PTRACE_POKEDATA, target, addr - j, peek_value) == -1L)
                     {
-                        fprintf(stderr, "error: write_array failed.\n");
+                        show_error("write_array failed.\n");
                         return false;
                     }
 
