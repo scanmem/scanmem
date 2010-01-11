@@ -56,11 +56,11 @@ bool readmaps(pid_t target, list_t * regions)
 
         /* attempt to open the maps file */
         if ((maps = fopen(name, "r")) == NULL) {
-            fprintf(stderr, "error: failed to open maps file %s.\n", name);
+            show_error("failed to open maps file %s.\n", name);
             return false;
         }
 
-        eprintf("info: maps file located at %s opened.\n", name);
+        show_info("maps file located at %s opened.\n", name);
 
         /* read every line of the maps file */
         while (getline(&line, &len, maps) != -1) {
@@ -71,7 +71,7 @@ bool readmaps(pid_t target, list_t * regions)
 
             /* slight overallocation */
             if ((filename = alloca(len)) == NULL) {
-                fprintf(stderr, "error: failed to allocate %lu bytes for filename.\n", (unsigned long)len);
+                show_error("failed to allocate %lu bytes for filename.\n", (unsigned long)len);
                 goto error;
             }
             
@@ -109,12 +109,12 @@ bool readmaps(pid_t target, list_t * regions)
                             snprintf(exename, sizeof(exename), "/proc/%u/exe", target);
                             if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) == -1)
                             {
-                                fprintf(stderr, "error: failed to read executable link.\n");
+                                show_error("failed to read executable link.\n");
                                 goto error;
                             }
                             if (linkbuf_size >= MAX_LINKBUF_SIZE)
                             {
-                                fprintf(stderr, "error: path to the executable is too long.\n");
+                                show_error("path to the executable is too long.\n");
                                 goto error;
                             }
                             linkbuf[linkbuf_size] = 0;
@@ -128,7 +128,7 @@ bool readmaps(pid_t target, list_t * regions)
 
                 /* allocate a new region structure */
                 if ((map = calloc(1, sizeof(region_t) + strlen(filename))) == NULL) {
-                    fprintf(stderr, "error: failed to allocate memory for region.\n");
+                    show_error("failed to allocate memory for region.\n");
                     goto error;
                 }
 
@@ -147,7 +147,7 @@ bool readmaps(pid_t target, list_t * regions)
                 if (strlen(filename) != 0) {
                     /* the pathname is concatenated with the structure */
                     if ((map = realloc(map, sizeof(*map) + strlen(filename))) == NULL) {
-                        fprintf(stderr, "error: failed to allocate memory.\n");
+                        show_error("failed to allocate memory.\n");
                         goto error;
                     }
 
@@ -159,14 +159,14 @@ bool readmaps(pid_t target, list_t * regions)
                 
                 /* okay, add this guy to our list */
                 if (l_append(regions, regions->tail, map) == -1) {
-                    fprintf(stderr, "error: failed to save region.\n");
+                    show_error("failed to save region.\n");
                     goto error;
                 }
             }
         }
     }
 
-    eprintf("info: %d suitable regions found.\n", regions->size);
+    show_info("%d suitable regions found.\n", regions->size);
     
     /* release memory allocated */
     free(line);

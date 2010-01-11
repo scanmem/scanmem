@@ -59,7 +59,8 @@ am_scanmem_OBJECTS = scanmem-main.$(OBJEXT) scanmem-maps.$(OBJEXT) \
 	scanmem-target_memory_info_array.$(OBJEXT) \
 	scanmem-list.$(OBJEXT) scanmem-menu.$(OBJEXT) \
 	scanmem-commands.$(OBJEXT) scanmem-handlers.$(OBJEXT) \
-	scanmem-value.$(OBJEXT) scanmem-scanroutines.$(OBJEXT)
+	scanmem-value.$(OBJEXT) scanmem-scanroutines.$(OBJEXT) \
+	scanmem-show_message.$(OBJEXT)
 scanmem_OBJECTS = $(am_scanmem_OBJECTS)
 scanmem_LDADD = $(LDADD)
 scanmem_LINK = $(CCLD) $(scanmem_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
@@ -246,7 +247,7 @@ scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c \
 	list.c menu.c commands.c handlers.c value.c commands.h \
 	handlers.h interrupt.h list.h scanmem.h value.h licence.h \
 	maps.h target_memory_info_array.h scanroutines.h \
-	scanroutines.c
+	scanroutines.c show_message.h show_message.c
 scanmem_CFLAGS = -O2 -g -Wall
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
@@ -362,6 +363,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-menu.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-ptrace.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-scanroutines.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-show_message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-target_memory_info_array.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scanmem-value.Po@am__quote@
 
@@ -518,6 +520,20 @@ scanmem-scanroutines.obj: scanroutines.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='scanroutines.c' object='scanmem-scanroutines.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-scanroutines.obj `if test -f 'scanroutines.c'; then $(CYGPATH_W) 'scanroutines.c'; else $(CYGPATH_W) '$(srcdir)/scanroutines.c'; fi`
+
+scanmem-show_message.o: show_message.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -MT scanmem-show_message.o -MD -MP -MF $(DEPDIR)/scanmem-show_message.Tpo -c -o scanmem-show_message.o `test -f 'show_message.c' || echo '$(srcdir)/'`show_message.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/scanmem-show_message.Tpo $(DEPDIR)/scanmem-show_message.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='show_message.c' object='scanmem-show_message.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-show_message.o `test -f 'show_message.c' || echo '$(srcdir)/'`show_message.c
+
+scanmem-show_message.obj: show_message.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -MT scanmem-show_message.obj -MD -MP -MF $(DEPDIR)/scanmem-show_message.Tpo -c -o scanmem-show_message.obj `if test -f 'show_message.c'; then $(CYGPATH_W) 'show_message.c'; else $(CYGPATH_W) '$(srcdir)/show_message.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/scanmem-show_message.Tpo $(DEPDIR)/scanmem-show_message.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='show_message.c' object='scanmem-show_message.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(scanmem_CFLAGS) $(CFLAGS) -c -o scanmem-show_message.obj `if test -f 'show_message.c'; then $(CYGPATH_W) 'show_message.c'; else $(CYGPATH_W) '$(srcdir)/show_message.c'; fi`
 install-man1: $(dist_man_MANS)
 	@$(NORMAL_INSTALL)
 	test -z "$(man1dir)" || $(MKDIR_P) "$(DESTDIR)$(man1dir)"

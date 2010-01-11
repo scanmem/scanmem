@@ -79,12 +79,12 @@ int main(int argc, char **argv)
 
             /* check if that parsed correctly */
             if (*end != '\0' || *optarg == '\0' || vars->target == 0) {
-                fprintf(stderr, "error: invalid pid specified.\n");
+                show_error("invalid pid specified.\n");
                 return EXIT_FAILURE;
             }
             break;
         case 'v':
-            printversion(stderr);
+            printversion();
             return EXIT_SUCCESS;
         case 'h':
             printhelp();
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 
         /* check if that parsed correctly */
         if (*end != '\0' || argv[optind][0] == '\0' || vars->target == 0) {
-            fprintf(stderr, "error: invalid pid specified.\n");
+            show_error("invalid pid specified.\n");
             return EXIT_FAILURE;
         }
     }
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 
     /* linked list of commands, and function pointers to their handlers */
     if ((vars->commands = l_init()) == NULL) {
-        fprintf(stderr, "error: sorry, there was a memory allocation error.\n");
+        show_error("sorry, there was a memory allocation error.\n");
         ret = EXIT_FAILURE;
         goto end;
     }
@@ -193,7 +193,7 @@ int main(int argc, char **argv)
                     DEFAULT_LONGDOC);
 
     if (globals.options.backend == 0)
-        printversion(stderr);
+        printversion();
 
     /* this will initialise matches and regions */
     if (execcommand(vars, "reset") == false) {
@@ -202,12 +202,10 @@ int main(int argc, char **argv)
 
     /* check if there is a target already specified */
     if (vars->target == 0) {
-        fprintf(stderr,
-                "Enter the pid of the process to search using the \"pid\" command.\n");
-        fprintf(stderr, "Enter \"help\" for other commands.\n");
+        show_user("Enter the pid of the process to search using the \"pid\" command.\n");
+        show_user("Enter \"help\" for other commands.\n");
     } else {
-        fprintf(stderr,
-                "Please enter current value, or \"help\" for other commands.\n");
+        show_user("Please enter current value, or \"help\" for other commands.\n");
     }
 
     /* main loop, read input and process commands */
@@ -216,7 +214,7 @@ int main(int argc, char **argv)
 
         /* reads in a commandline from the user, and returns a pointer to it in *line */
         if (getcommand(vars, &line) == false) {
-            fprintf(stderr, "error: failed to read in a command.\n");
+            show_error("failed to read in a command.\n");
             ret = EXIT_FAILURE;
             break;
         }
@@ -224,12 +222,10 @@ int main(int argc, char **argv)
         /* execcommand returning failure isnt fatal, just the a command couldnt complete. */
         if (execcommand(vars, line) == false) {
             if (vars->target == 0) {
-                fprintf(stderr,
-                        "Enter the pid of the process to search using the \"pid\" command.\n");
-                fprintf(stderr, "Enter \"help\" for other commands.\n");
+                show_user("Enter the pid of the process to search using the \"pid\" command.\n");
+                show_user("Enter \"help\" for other commands.\n");
             } else {
-                fprintf(stderr,
-                        "Please enter current value, or \"help\" for other commands.\n");
+                show_user("Please enter current value, or \"help\" for other commands.\n");
             }
         }
 
@@ -250,7 +246,7 @@ int main(int argc, char **argv)
 
 void sighandler(int n)
 {
-    fprintf(stderr, "\nKilled by signal %d.\n", n);
+    show_error("\nKilled by signal %d.\n", n);
 
     if (globals.target) {
         (void) detach(globals.target);
@@ -260,11 +256,11 @@ void sighandler(int n)
 }
 
 /* print quick usage message to stderr */
-void printhelp(void)
+void printhelp()
 {
-    printversion(stderr);
+    printversion();
 
-    fprintf(stderr, "Usage: scanmem [OPTION]... [PID]\n"
+    show_user("Usage: scanmem [OPTION]... [PID]\n"
             "Interactively locate and modify variables in an executing process.\n"
             "\n"
             "-p, --pid=pid\t\tset the target process pid\n"

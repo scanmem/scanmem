@@ -85,8 +85,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
 
     if (argc < 2) {
-        fprintf(stderr,
-                "error: expected an argument, type `help set` for details.\n");
+        show_error("expected an argument, type `help set` for details.\n");
         return false;
     }
 
@@ -94,13 +93,13 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     if ((vars->options.scan_data_type == BYTEARRAY)
        ||(vars->options.scan_data_type == STRING))
     {
-        fprintf(stderr, "error: `set` is not supported for bytearray, use `write` instead.\n");
+        show_error("`set` is not supported for bytearray, use `write` instead.\n");
         return false;
     }
 
     /* check if there are any matches */
     if (vars->num_matches == 0) {
-        fprintf(stderr, "error: no matches are known.\n");
+        show_error("no matches are known.\n");
         return false;
     }
 
@@ -138,26 +137,18 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
             if (*(delay + 1) == '\0') {
                 /* empty delay count, eg: 12=32/ */
-                fprintf(stderr,
-                        "error: you specified an empty delay count, `%s`, see `help set`.\n",
-                        settings[block].value);
+                show_error("you specified an empty delay count, `%s`, see `help set`.\n", settings[block].value);
                 return false;
             } else if (*end != '\0') {
                 /* parse failed before end, probably trailing garbage, eg 34=9/16foo */
-                fprintf(stderr,
-                        "error: trailing garbage after delay count, `%s`.\n",
-                        settings[block].value);
+                show_error("trailing garbage after delay count, `%s`.\n", settings[block].value);
                 return false;
             } else if (settings[block].seconds == 0) {
                 /* 10=24/0 disables continous mode */
-                fprintf(stderr,
-                        "info: you specified a zero delay, disabling continuous mode.\n");
+                show_info("you specified a zero delay, disabling continuous mode.\n");
             } else {
                 /* valid delay count seen and understood */
-                fprintf(stderr,
-                        "info: setting %s every %u seconds until interrupted...\n",
-                        settings[block].matchids ? settings[block].
-                        matchids : "all", settings[block].seconds);
+                show_info("setting %s every %u seconds until interrupted...\n", settings[block].matchids ? settings[block].  matchids : "all", settings[block].seconds);
 
                 /* continuous mode on */
                 cont = true;
@@ -200,7 +191,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
             /* convert value */
             if (!parse_uservalue_number(settings[block].value, &userval)) {
-                fprintf(stderr, "error: bad number `%s` provided\n", settings[block].value);
+                show_error("bad number `%s` provided\n", settings[block].value);
                 goto fail;
             }
 
@@ -224,8 +215,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
                     /* check that succeeded */
                     if (*id == '\0' || *end != '\0') {
-                        fprintf(stderr,
-                                "error: could not parse match id `%s`\n", id);
+                        show_error("could not parse match id `%s`\n", id);
                         goto fail;
                     }
 
@@ -234,28 +224,26 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (loc.swath) {
                         value_t v;
                         value_t old;
-                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
 
-                        fprintf(stderr, "info: setting *%p to %#llx...\n",
-                                address, (long long)userval.int64_value);
-
+                        show_info("setting *%p to %#llx...\n", address, (long long)userval.int64_value); 
+                        
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
-                        old = data_to_val((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
                         v.flags = old.flags;
                         uservalue2value(&v, &userval);
                         
 
                         /* set the value specified */
                         if (setaddr(vars->target, address, &v) == false) {
-                            fprintf(stderr, "error: failed to set a value.\n");
+                            show_error("failed to set a value.\n");
                             goto fail;
                         }
 
                     } else {
                         /* match-id > than number of matches */
-                        fprintf(stderr,
-                                "error: found an invalid match-id `%s`\n", id);
+                        show_error("found an invalid match-id `%s`\n", id);
                         goto fail;
                     }
                 }
@@ -270,21 +258,19 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     /* Only actual matches are considered */
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
-                        void *address = remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
 
                         /* XXX: as above : make sure the sizes match */
                                     
-                        value_t old = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        value_t old = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                         value_t v;
                         v.flags = old.flags;
                         uservalue2value(&v, &userval);
 
-                        fprintf(stderr, "info: setting *%p to %#llx...\n",
-                            address, (long long)v.int64_value);
-
+                        show_info("setting *%p to %#llx...\n", address, (long long)v.int64_value); 
 
                         if (setaddr(vars->target, address, &v) == false) {
-                            fprintf(stderr, "error: failed to set a value.\n");
+                            show_error("failed to set a value.\n");
                             goto fail;
                         }
                     }
@@ -293,7 +279,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     ++reading_iterator;
                     if (reading_iterator >= reading_swath_index->number_of_bytes)
                     {
-                        reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */);
+                        reading_swath_index = local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */);
                         reading_iterator = 0;
                     }
                 }
@@ -326,7 +312,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
     char *v = malloc(buf_len);
     if (v == NULL)
     {
-        fprintf(stderr, "error: memory allocation failed.\n");
+        show_error("memory allocation failed.\n");
         return false;
     }
     char *bytearray_suffix = ", [bytearray]";
@@ -357,10 +343,10 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
                 if (v == NULL)
                 {
-                    fprintf(stderr, "error: memory allocation failed.\n");
+                    show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_bytearray_text(v, buf_len, (unknown_type_of_swath *)reading_swath_index, reading_iterator, flags.bytearray_length);
+                data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags.bytearray_length);
                 assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, bytearray_suffix);
                 break;
@@ -370,16 +356,16 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 v = realloc(v, buf_len);
                 if (v == NULL)
                 {
-                    fprintf(stderr, "error: memory allocation failed.\n");
+                    show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_printable_string(v, buf_len, (unknown_type_of_swath *)reading_swath_index, reading_iterator, flags.string_length);
+                data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags.string_length);
                 assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, string_suffix);
                 break;
             default: /* numbers */
                 ; /* cheat gcc */
-                value_t val = data_to_val((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                value_t val = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                 truncval_to_flags(&val, flags);
 
                 if (valtostr(&val, v, buf_len) != true) {
@@ -397,15 +383,15 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 #define POINTER_FMT "%20p"
 #endif
 
-            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element((unknown_type_of_swath *)reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
         }
 	
         /* Go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
-            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */)))->number_of_bytes >= 0);
-            reading_swath_index = local_address_beyond_last_element((unknown_type_of_swath *)reading_swath_index /* ,MATCHES_AND_VALUES */);
+            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */)))->number_of_bytes >= 0);
+            reading_swath_index = local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */);
             reading_iterator = 0;
         }
     }
@@ -422,8 +408,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
     match_location loc;
 
     if (argc != 2) {
-        fprintf(stderr,
-                "error: was expecting one argument, see `help delete`.\n");
+        show_error("was expecting one argument, see `help delete`.\n");
         return false;
     }
 
@@ -432,8 +417,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 
     /* check that strtoul() worked */
     if (argv[1][0] == '\0' || *end != '\0') {
-        fprintf(stderr, "error: sorry, couldnt parse `%s`, try `help delete`\n",
-                argv[1]);
+        show_error("sorry, couldnt parse `%s`, try `help delete`\n", argv[1]);
         return false;
     }
     
@@ -442,14 +426,14 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
     if (loc.swath)
     {
         /* It is not convenient to check whether anything else relies on this, so just mark it as not a REAL match */
-        loc.swath->data[loc.index].match_info = (match_flags){0};
+        memset(&(loc.swath->data[loc.index].match_info), 0, sizeof(match_flags));
         return true;
     }
     else
     {
         /* I guess this is not a valid match-id */
-        fprintf(stderr, "warn: you specified a non-existant match `%u`.\n", id);
-        fprintf(stderr, "info: use \"list\" to list matches, or \"help\" for other commands.\n");
+        show_warn("you specified a non-existant match `%u`.\n", id);
+        show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }
 }
@@ -466,17 +450,14 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 
     /* create a new linked list of regions */
     if ((vars->regions = l_init()) == NULL) {
-        fprintf(stderr,
-                "error: sorry, there was a problem allocating memory.\n");
+        show_error("sorry, there was a problem allocating memory.\n");
         return false;
     }
 
     /* read in maps if a pid is known */
     if (vars->target && readmaps(vars->target, vars->regions) != true) {
-        fprintf(stderr,
-                "error: sorry, there was a problem getting a list of regions to search.\n");
-        fprintf(stderr,
-                "warn: the pid may be invalid, or you don't have permission.\n");
+        show_error("sorry, there was a problem getting a list of regions to search.\n");
+        show_warn("the pid may be invalid, or you don't have permission.\n");
         vars->target = 0;
         return false;
     }
@@ -493,16 +474,15 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc)
         vars->target = (pid_t) strtoul(argv[1], &end, 0x00);
 
         if (vars->target == 0) {
-            fprintf(stderr, "error: `%s` does not look like a valid pid.\n",
-                    argv[1]);
+            show_error("`%s` does not look like a valid pid.\n", argv[1]);
             return false;
         }
     } else if (vars->target) {
         /* print the pid of the target program */
-        fprintf(stderr, "info: target pid is %u.\n", vars->target);
+        show_info("target pid is %u.\n", vars->target);
         return true;
     } else {
-        fprintf(stderr, "info: no target is currently set.\n");
+        show_info("no target is currently set.\n");
         return false;
     }
 
@@ -516,7 +496,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
 
     /* check that a pid has been specified */
     if (vars->target == 0) {
-        fprintf(stderr, "error: no target set, type `help pid`.\n");
+        show_error("no target set, type `help pid`.\n");
         return false;
     }
 
@@ -524,7 +504,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
     if (searchregions(vars, MATCHANY, NULL) != true) {
-        fprintf(stderr, "error: failed to save target address space.\n");
+        show_error("failed to save target address space.\n");
         return false;
     }
 
@@ -543,13 +523,13 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
 
     /* need an argument */
     if (argc < 2) {
-        fprintf(stderr, "error: expected an argument, see `help dregion`.\n");
+        show_error("expected an argument, see `help dregion`.\n");
         return false;
     }
 
      /* check that there is a process known */
     if (vars->target == 0) {
-        fprintf(stderr, "error: no target specified, see `help pid`\n");
+        show_error("no target specified, see `help pid`\n");
         return false;
     }
     
@@ -561,13 +541,13 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         
         /* check for lone '!' */
         if (*block == '\0') {
-            fprintf(stderr, "error: inverting an empty set, maybe try `reset` instead?\n");
+            show_error("inverting an empty set, maybe try `reset` instead?\n");
             return false;
         }
         
         /* create a list to keep the specified regions */
         if ((keep = l_init()) == NULL) {
-            fprintf(stderr, "error: memory allocation error.\n");
+            show_error("memory allocation error.\n");
             return false;
         }
         
@@ -588,10 +568,10 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
 
         /* check that worked, "1,abc,4,,5,6foo" */
         if (*end != '\0' || *idstr == '\0') {
-            fprintf(stderr, "error: could not parse argument %s.\n", idstr);
+            show_error("could not parse argument %s.\n", idstr);
             if (invert) {
                 if (l_concat(vars->regions, &keep) == -1) {
-                    fprintf(stderr, "error: there was a problem restoring saved regions.\n");
+                    show_error("there was a problem restoring saved regions.\n");
                     l_destroy(vars->regions);
                     l_destroy(keep);
                     return false;
@@ -619,10 +599,10 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
 
         /* check if a match was found */
         if (np == NULL) {
-            fprintf(stderr, "error: no region matching %u, or already moved.\n", id);
+            show_error("no region matching %u, or already moved.\n", id);
             if (invert) {
                 if (l_concat(vars->regions, &keep) == -1) {
-                    fprintf(stderr, "error: there was a problem restoring saved regions.\n");
+                    show_error("there was a problem restoring saved regions.\n");
                     l_destroy(vars->regions);
                     l_destroy(keep);
                     return false;
@@ -642,7 +622,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
             
             l_remove(vars->regions, np, (void *) &save);
             if (l_append(keep, keep->tail, save) == -1) {
-                fprintf(stderr, "error: sorry, there was an internal memory error.\n");
+                show_error("sorry, there was an internal memory error.\n");
                 free(save);
                 return false;
             }
@@ -665,7 +645,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
             
             if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, false)))
             {
-                fprintf(stderr, "error: memory allocation error while deleting matches\n");
+                show_error("memory allocation error while deleting matches\n");
             }
         }
 
@@ -679,7 +659,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         {
             if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
             {
-                fprintf(stderr, "error: memory allocation error while deleting matches\n");
+                show_error("memory allocation error while deleting matches\n");
             }
         }
             
@@ -700,12 +680,12 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     USEPARAMS();
 
     if (vars->target == 0) {
-        fprintf(stderr, "error: no target has been specified, see `help pid`.\n");
+        show_error("no target has been specified, see `help pid`.\n");
         return false;
     }
 
     if (vars->regions->size == 0) {
-        fprintf(stdout, "info: no regions are known.\n");
+        show_info("no regions are known.\n");
     }
     
     /* print a list of regions that are searched */
@@ -738,13 +718,13 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else if (argc > 2)
     {
-        fprintf(stderr, "error: too many values specified, see `help %s`", argv[0]);
+        show_error("too many values specified, see `help %s`", argv[0]);
         return false;
     }
     else
     {
         if (!parse_uservalue_number(argv[1], &val)) {
-            fprintf(stderr, "error: bad value specified, see `help %s`", argv[0]);
+            show_error("bad value specified, see `help %s`", argv[0]);
             return false;
         }
     }
@@ -776,35 +756,34 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        fprintf(stderr, "error: unrecogised match type seen at decinc handler.\n");
+        show_error("unrecogised match type seen at decinc handler.\n");
         return false;
     }
 
     if (vars->matches) {
         if (checkmatches(vars, m, &val) == false) {
-            fprintf(stderr, "error: failed to search target address space.\n");
+            show_error("failed to search target address space.\n");
             return false;
         }
     } else {
         /* < > = != cannot be the initial scan */
         if (argc == 1)
         {
-            fprintf(stderr, "error: cannot use that search without matches\n");
+            show_error("cannot use that search without matches\n");
             return false;
         }
         else
         {
             if (searchregions(vars, m, &val) != true) {
-                fprintf(stderr, "error: failed to search target address space.\n");
+                show_error("failed to search target address space.\n");
                 return false;
             }
         }
     }
 
     if (vars->num_matches == 1) {
-        fprintf(stderr,
-                "info: match identified, use \"set\" to modify value.\n");
-        fprintf(stderr, "info: enter \"help\" for other commands.\n");
+        show_info("match identified, use \"set\" to modify value.\n");
+        show_info("enter \"help\" for other commands.\n");
     }
 
     return true;
@@ -814,7 +793,7 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
-    printversion(stdout);
+    printversion();
     return true;
 }
 
@@ -823,7 +802,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     /* test scan_data_type */
     if (vars->options.scan_data_type != STRING)
     {
-        fprintf(stderr, "error: scan_data_type is not string, see `help option`.\n");
+        show_error("scan_data_type is not string, see `help option`.\n");
         return false;
     }
 
@@ -832,7 +811,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     for(i = 0; (i < 4) && vars->current_cmdline[i]; ++i) {}
     if (i != 4) /* cmdline too short */
     {
-        fprintf(stderr, "error: please specify a string\n");
+        show_error("please specify a string\n");
         return false;
     }
  
@@ -850,22 +829,21 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     if (vars->matches) {
         /* already know some matches */
         if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
-            fprintf(stderr, "error: failed to search target address space.\n");
+            show_error("failed to search target address space.\n");
             return false;
         }
     } else {
         /* initial search */
         if (searchregions(vars, MATCHEQUALTO, &val) != true) {
-            fprintf(stderr, "error: failed to search target address space.\n");
+            show_error("failed to search target address space.\n");
             return false;
         }
     }
 
     /* check if we now know the only possible candidate */
     if (vars->num_matches == 1) {
-        fprintf(stderr,
-                "info: match identified, use \"set\" to modify value.\n");
-        fprintf(stderr, "info: enter \"help\" for other commands.\n");
+        show_info("match identified, use \"set\" to modify value.\n");
+        show_info("enter \"help\" for other commands.\n");
     }
 
     return true;
@@ -893,12 +871,12 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         /* attempt to parse command as a number */
         if (argc != 1)
         {
-            fprintf(stderr, "error: unknown command\n");
+            show_error("unknown command\n");
             ret = false;
             goto retl;
         }
         if (!parse_uservalue_number(argv[0], &val)) {
-            fprintf(stderr, "error: unable to parse command `%s`\n", argv[0]);
+            show_error("unable to parse command `%s`\n", argv[0]);
             ret = false;
             goto retl;
         }
@@ -909,18 +887,18 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     
         if (array == NULL)
         {
-            fprintf(stderr, "error: there's a memory allocation error.\n");
+            show_error("there's a memory allocation error.\n");
             ret = false;
             goto retl;
         }
         if (!parse_uservalue_bytearray(argv, argc, array, &val)) {
-            fprintf(stderr, "error: unable to parse command `%s`\n", argv[0]);
+            show_error("unable to parse command `%s`\n", argv[0]);
             ret = false;
             goto retl;
         }
         break;
     case STRING:
-        fprintf(stderr, "error: unable to parse command `%s`\nIf you want to scan for a string, use command `\"`.\n", argv[0]);
+        show_error("unable to parse command `%s`\nIf you want to scan for a string, use command `\"`.\n", argv[0]);
         ret = false;
         goto retl;
         break;
@@ -939,14 +917,14 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     if (vars->matches) {
         /* already know some matches */
         if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
-            fprintf(stderr, "error: failed to search target address space.\n");
+            show_error("failed to search target address space.\n");
             ret = false;
             goto retl;
         }
     } else {
         /* initial search */
         if (searchregions(vars, MATCHEQUALTO, &val) != true) {
-            fprintf(stderr, "error: failed to search target address space.\n");
+            show_error("failed to search target address space.\n");
             ret = false;
             goto retl;
         }
@@ -954,9 +932,8 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 
     /* check if we now know the only possible candidate */
     if (vars->num_matches == 1) {
-        fprintf(stderr,
-                "info: match identified, use \"set\" to modify value.\n");
-        fprintf(stderr, "info: enter \"help\" for other commands.\n");
+        show_info("match identified, use \"set\" to modify value.\n");
+        show_info("enter \"help\" for other commands.\n");
     }
 
     ret = true;
@@ -974,11 +951,11 @@ bool handler__update(globals_t * vars, char **argv, unsigned argc)
     USEPARAMS();
     if (vars->matches) {
         if (checkmatches(vars, MATCHANY, NULL) == false) {
-            fprintf(stderr, "error: failed to scan target address space.\n");
+            show_error("failed to scan target address space.\n");
             return false;
         }
     } else {
-        fprintf(stderr, "error: cannot use that command without matches\n");
+        show_error("cannot use that command without matches\n");
         return false;
     }
 
@@ -1007,7 +984,7 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
 
     /* print version information for generic help */
     if (argv[1] == NULL)
-        printversion(stdout);
+        printversion();
 
     /* traverse the commands list, printing out the relevant documentation */
     while (np) {
@@ -1019,8 +996,6 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
 
         /* just `help` with no argument */
         if (argv[1] == NULL) {
-            int width;
-
             /* NULL shortdoc means dont print in help listing */
             if (command->shortdoc == NULL) {
                 np = np->next;
@@ -1028,25 +1003,12 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
             }
 
             /* print out command name */
-            if ((width =
-                 fprintf(stdout, "%s",
-                         command->command ? command->command : "default")) <
-                0) {
-                /* hmm? */
-                np = np->next;
-                continue;
-            }
-
-            /* print out the shortdoc description */
-            fprintf(stdout, "%*s%s\n", DOC_COLUMN - width, "",
-                    command->shortdoc);
+            show_user("%*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
 
             /* detailed information requested about specific command */
         } else if (command->command
                    && strcasecmp(argv[1], command->command) == 0) {
-            fprintf(stdout, "%s\n",
-                    command->longdoc ? command->
-                    longdoc : "missing documentation");
+            show_user("%s\n", command->longdoc ? command-> longdoc : "missing documentation");
             return true;
         }
 
@@ -1054,10 +1016,10 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
     }
 
     if (argc > 1) {
-        fprintf(stderr, "error: unknown command `%s`\n", argv[1]);
+        show_error("unknown command `%s`\n", argv[1]);
         return false;
     } else if (def) {
-        fprintf(stdout, "\n%s\n", def->longdoc ? def->longdoc : "");
+        show_user("\n%s\n", def->longdoc ? def->longdoc : "");
     }
 
     return true;
@@ -1065,7 +1027,7 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__eof(globals_t * vars, char **argv, unsigned argc)
 {
-    fprintf(stdout, "exit\n");
+    show_user("exit\n");
     return handler__exit(vars, argv, argc);
 }
 
@@ -1079,8 +1041,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
     USEPARAMS();
 
     if (argc < 2) {
-        fprintf(stderr,
-                "error: shell command requires an argument, see `help shell`.\n");
+        show_error("shell command requires an argument, see `help shell`.\n");
         return false;
     }
 
@@ -1099,7 +1060,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 
     /* finally execute command */
     if (system(command) == -1) {
-        fprintf(stderr, "error: system() failed, command was not executed.\n");
+        show_error("system() failed, command was not executed.\n");
         return false;
     }
 
@@ -1117,8 +1078,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     void *address;
 
     if (argc != 2) {
-        fprintf(stderr,
-                "error: was expecting one argument, see `help watch`.\n");
+        show_error("was expecting one argument, see `help watch`.\n");
         return false;
     }
 
@@ -1127,7 +1087,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     /* check that strtoul() worked */
     if (argv[1][0] == '\0' || *end != '\0') {
-        fprintf(stderr, "error: sorry, couldn't parse `%s`, try `help watch`\n",
+        show_error("sorry, couldn't parse `%s`, try `help watch`\n",
                 argv[1]);
         return false;
     }
@@ -1136,16 +1096,14 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     /* check this is a valid match-id */
     if (!loc.swath) {
-        fprintf(stderr, "error: you specified a non-existent match `%u`.\n",
-                id);
-        fprintf(stderr,
-                "info: use \"list\" to list matches, or \"help\" for other commands.\n");
+        show_error("you specified a non-existent match `%u`.\n", id);
+        show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }
     
-    address = remote_address_of_nth_element((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+    address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
     
-    old_val = data_to_val((unknown_type_of_swath *)loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+    old_val = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
     valcpy(&o, &old_val);
     valcpy(&n, &o);
 
@@ -1163,9 +1121,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     t = time(NULL);
     strftime(timestamp, sizeof(timestamp), "[%T]", localtime(&t));
 
-    fprintf(stdout,
-            "info: %s monitoring %10p for changes until interrupted...\n",
-            timestamp, address);
+    show_info("%s monitoring %10p for changes until interrupted...\n", timestamp, address);
 
     while (true) {
 
@@ -1195,7 +1151,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
             t = time(NULL);
             strftime(timestamp, sizeof(timestamp), "[%T]", localtime(&t));
 
-            fprintf(stdout, "info: %s %10p -> %s\n", timestamp, address,
+            show_info("%s %10p -> %s\n", timestamp, address,
                     buf);
         }
 
@@ -1213,18 +1169,18 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     USEPARAMS();
     
     if (argv[1] == NULL) {
-        fprintf(stderr, "error: expecting an argument.\n");
+        show_error("expecting an argument.\n");
         return false;
     }
     
     if (strcmp(argv[1], "copying") == 0)
-        fprintf(stdout, SM_COPYING);
+        show_user(SM_COPYING);
     else if (strcmp(argv[1], "warranty") == 0)
-        fprintf(stdout, SM_WARRANTY);
+        show_user(SM_WARRANTY);
     else if (strcmp(argv[1], "version") == 0)
-        printversion(stdout);
+        printversion();
     else {
-        fprintf(stderr, "error: unrecognized show command `%s`\n", argv[1]);
+        show_error("unrecognized show command `%s`\n", argv[1]);
         return false;
     }
     
@@ -1234,16 +1190,16 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
 {
     int data_width = 0;
-    const char *fmt;
+    const char *fmt = NULL;
     void *addr;
     char *buf = NULL;
     int datatype; /* 0 for numbers, 1 for bytearray, 2 for string */
     bool ret;
-    char *string_parameter; /* used by string type */
+    const char *string_parameter = NULL; /* used by string type */
 
     if (argc < 4)
     {
-        fprintf(stderr, "error: bad arguments, see `help write`.\n");
+        show_error("bad arguments, see `help write`.\n");
         ret = false;
         goto retl;
     }
@@ -1317,7 +1273,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     /* may support more types here */
     else
     {
-        fprintf(stderr, "error: bad data_type, see `help write`.\n");
+        show_error("bad data_type, see `help write`.\n");
         ret = false;
         goto retl;
     }
@@ -1325,7 +1281,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     /* check argc again */
     if ((datatype == 0) && (argc != 4))
     {
-        fprintf(stderr, "error: bad arguments, see `help write`.\n");
+        show_error("bad arguments, see `help write`.\n");
         ret = false;
         goto retl;
     }
@@ -1333,7 +1289,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     /* check address */
     if (sscanf(argv[2], "%p", &addr) < 1)
     {
-        fprintf(stderr, "error: bad address, see `help write`.\n");
+        show_error("bad address, see `help write`.\n");
         ret = false;
         goto retl;
     }
@@ -1341,7 +1297,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     buf = malloc(data_width + 8); /* allocate a little bit more, just in case */
     if (buf == NULL)
     {
-        fprintf(stderr, "error: memory allocation failed.\n");
+        show_error("memory allocation failed.\n");
         ret = false;
         goto retl;
     }
@@ -1352,7 +1308,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     case 0: // numbers
         if(sscanf(argv[3], fmt, buf) < 1) /* should be OK even for max uint64 */
         {
-            fprintf(stderr, "error: bad value, see `help write`.\n");
+            show_error("bad value, see `help write`.\n");
             ret = false;
             goto retl;
         }
@@ -1364,13 +1320,13 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         uservalue_t val_buf;
         if (array == NULL)
         {
-            fprintf(stderr, "error: memory allocation failed.\n");
+            show_error("memory allocation failed.\n");
             ret = false;
             goto retl;
         }
         if(!parse_uservalue_bytearray(argv+3, argc-3, array, &val_buf)) 
         {
-            fprintf(stderr, "error: bad byte array speicified.\n");
+            show_error("bad byte array speicified.\n");
             free(array);
             ret = false;
             goto retl;
@@ -1381,7 +1337,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
             bytearray_element_t *cur_element = array+i;
             if(cur_element->is_wildcard == 1)
             {
-                fprintf(stderr, "error: cannot use wildcard here.\n");
+                show_error("cannot use wildcard here.\n");
                 free(array);
                 ret = false;
                 goto retl;
@@ -1411,7 +1367,7 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
     /* this might need to change */
     if (argc != 3)
     {
-        fprintf(stderr, "error: bad arguments, see `help option`.\n");
+        show_error("bad arguments, see `help option`.\n");
         return false;
     }
 
@@ -1430,7 +1386,7 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else if (strcasecmp(argv[2], "string") == 0) { vars->options.scan_data_type = STRING; }
         else
         {
-            fprintf(stderr, "error: bad value for scan_data_type, see `help option`.\n");
+            show_error("bad value for scan_data_type, see `help option`.\n");
             return false;
         }
     }
@@ -1441,7 +1397,7 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else if (strcmp(argv[2], "3") == 0) {vars->options.region_scan_level = REGION_ALL; }
         else
         {
-            fprintf(stderr, "error: bad value for region_scan_level, see `help option`.\n");
+            show_error("bad value for region_scan_level, see `help option`.\n");
             return false;
         }
     }
@@ -1451,13 +1407,13 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else if (strcmp(argv[2], "1") == 0) {vars->options.detect_reverse_change = 1; }
         else
         {
-            fprintf(stderr, "error: bad value for detect_reverse_change, see `help option`.\n");
+            show_error("bad value for detect_reverse_change, see `help option`.\n");
             return false;
         }
     }
     else
     {
-        fprintf(stderr, "error: unknown option specified, see `help option`.\n");
+        show_error("unknown option specified, see `help option`.\n");
         return false;
     }
     return true;

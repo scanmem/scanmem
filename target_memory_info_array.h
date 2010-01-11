@@ -37,6 +37,7 @@ typedef struct {
 	match_flags match_info;
 } old_value_and_match_info;
 
+/*
 typedef struct {
 	void *first_byte_in_child;
 	long number_of_bytes;
@@ -51,12 +52,14 @@ typedef struct {
 	long number_of_bytes;
 	match_flags match_info[0];
 } matches_swath;
+*/
 typedef struct {
 	void *first_byte_in_child;
 	long number_of_bytes;
 	old_value_and_match_info data[0];
 } matches_and_old_values_swath;
 
+/*
 typedef struct {
 	long bytes_allocated;
 	long max_needed_bytes;
@@ -71,6 +74,7 @@ typedef struct {
 	long max_needed_bytes;
 	matches_swath swaths[0];
 } matches_array;
+*/
 typedef struct {
 	long bytes_allocated;
 	long max_needed_bytes;
@@ -92,23 +96,23 @@ typedef struct {
 	long index;
 } match_location;
 
-unknown_type_of_array * allocate_array(unknown_type_of_array *array, long max_bytes);
-unknown_type_of_array * allocate_enough_to_reach(unknown_type_of_array *array, void *last_byte_to_reach_plus_one, unknown_type_of_swath **swath_pointer_to_correct);
-unknown_type_of_swath * add_element(unknown_type_of_array **array, unknown_type_of_swath *swath, void *remote_address, void *new_element /* ,data_array_type_t type */);
-unknown_type_of_array * null_terminate(unknown_type_of_array *array, unknown_type_of_swath *swath /* ,data_array_type_t type*/);
+matches_and_old_values_array * allocate_array(matches_and_old_values_array *array, long max_bytes);
+matches_and_old_values_array * allocate_enough_to_reach(matches_and_old_values_array *array, void *last_byte_to_reach_plus_one, matches_and_old_values_swath **swath_pointer_to_correct);
+matches_and_old_values_swath * add_element(matches_and_old_values_array **array, matches_and_old_values_swath *swath, void *remote_address, void *new_element);
+matches_and_old_values_array * null_terminate(matches_and_old_values_array *array, matches_and_old_values_swath *swath);
 
 /* only at most sizeof(int64_t) bytes will be readed, if more bytes needed (e.g. bytearray), read it separatedly (for performance) */
-value_t data_to_val_aux(unknown_type_of_swath *swath, long index, long swath_length /* ,data_array_type_t type */);
-value_t data_to_val(unknown_type_of_swath *swath, long index /* ,data_array_type_t type */);
+value_t data_to_val_aux(matches_and_old_values_swath *swath, long index, long swath_length);
+value_t data_to_val(matches_and_old_values_swath *swath, long index);
 /* for printable text representation */
-void data_to_printable_string(char *buf, int buf_length, unknown_type_of_swath *swath, long index, int string_length);
+void data_to_printable_string(char *buf, int buf_length, matches_and_old_values_swath *swath, long index, int string_length);
 /* for bytearray representation */
-void data_to_bytearray_text(char *buf, int buf_length,  unknown_type_of_swath *swath, long index, int bytearray_length);
+void data_to_bytearray_text(char *buf, int buf_length,  matches_and_old_values_swath *swath, long index, int bytearray_length);
 
-void * remote_address_of_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
-void * remote_address_of_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */);
-void * local_address_beyond_nth_element(unknown_type_of_swath *swath, long n /* ,data_array_type_t type */);
-void * local_address_beyond_last_element(unknown_type_of_swath *swath /* ,data_array_type_t type */);
+void * remote_address_of_nth_element(matches_and_old_values_swath *swath, long n);
+void * remote_address_of_last_element(matches_and_old_values_swath *swath);
+void * local_address_beyond_nth_element(matches_and_old_values_swath *swath, long n);
+void * local_address_beyond_last_element(matches_and_old_values_swath *swath);
 match_location nth_match(matches_and_old_values_array *matches, unsigned n);
 matches_and_old_values_array * delete_by_region(matches_and_old_values_array *array, long *num_matches, region_t *which, bool invert);
 
