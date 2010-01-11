@@ -49,7 +49,7 @@ globals_t globals = {
     /* options */
     {
         1,                      /* alignment */
-        1,                      /* debug */
+        0,                      /* debug */
         0,                      /* backend */
         ANYINTEGER,             /* scan_data_type */
         REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */ 
@@ -67,12 +67,13 @@ int main(int argc, char **argv)
         {"version", 0, NULL, 'v'},      /* print version */
         {"help", 0, NULL, 'h'}, /* print help summary */
         {"backend", 0, NULL, 'b'}, /* run as backend */
+        {"debug", 0, NULL, 'd'}, /* enable debug mode */
         {NULL, 0, NULL, 0},
     };
 
     /* process command line */
     while (true) {
-        switch (getopt_long(argc, argv, "vhbp:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhbdp:", longopts, &optindex)) {
         case 'p':
             vars->target = (pid_t) strtoul(optarg, &end, 0);
 
@@ -90,6 +91,9 @@ int main(int argc, char **argv)
             return EXIT_SUCCESS;
         case 'b':
             vars->options.backend = 1;
+            break;
+        case 'd':
+            vars->options.debug = 1;
             break;
         case -1:
             goto done;
@@ -113,13 +117,16 @@ int main(int argc, char **argv)
     }
 
     /* before attaching to target, install signal handler to detach on error */
-    (void) signal(SIGHUP, sighandler);
-    (void) signal(SIGINT, sighandler);
-    (void) signal(SIGSEGV, sighandler);
-    (void) signal(SIGABRT, sighandler);
-    (void) signal(SIGILL, sighandler);
-    (void) signal(SIGFPE, sighandler);
-    (void) signal(SIGTERM, sighandler);
+    if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
+    {
+        (void) signal(SIGHUP, sighandler);
+        (void) signal(SIGINT, sighandler);
+        (void) signal(SIGSEGV, sighandler);
+        (void) signal(SIGABRT, sighandler);
+        (void) signal(SIGILL, sighandler);
+        (void) signal(SIGFPE, sighandler);
+        (void) signal(SIGTERM, sighandler);
+    }
 
     /* linked list of commands, and function pointers to their handlers */
     if ((vars->commands = l_init()) == NULL) {

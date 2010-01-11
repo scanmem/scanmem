@@ -413,12 +413,14 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
         return detach(vars->target);
     }
     
+    total_size = sizeof(matches_and_old_values_array);
+
     while (n) {
         total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
         n = n->next;
     }
     
-    total_size += sizeof(matches_and_old_values_swath);
+    total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
     
     if (!(vars->matches = allocate_array((unknown_type_of_array *)vars->matches, total_size)))
     {

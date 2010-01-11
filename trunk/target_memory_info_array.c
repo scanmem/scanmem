@@ -140,7 +140,7 @@ unknown_type_of_array * null_terminate (unknown_type_of_array *array, unknown_ty
     else
     {
         swath = local_address_beyond_last_element(swath /* ,type */);
-        array = allocate_enough_to_reach(array, ((void *)swath) + SIZE_OF_ELEMENT_TYPE(type), &swath);
+        array = allocate_enough_to_reach(array, ((void *)swath) + sizeof(matches_and_old_values_swath), &swath);
         swath->first_byte_in_child = NULL;
         swath->number_of_bytes = 0;
     }

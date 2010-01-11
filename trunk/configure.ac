@@ -49,7 +49,6 @@ AC_CHECK_FILE([/proc/self/maps], [], [
 AC_CHECK_FILE([/proc/self/mem], [
     # LARGEFILE support required for this to work
     AC_SYS_LARGEFILE
-    # for debug
     AC_DEFINE(HAVE_PROCMEM, [1], [Enable /proc/pid/mem support])
 ],[
     # This will hurt performance.
