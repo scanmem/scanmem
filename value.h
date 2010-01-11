@@ -91,7 +91,7 @@ typedef struct {
     double float64_value;
 
     bytearray_element_t *bytearray_value;
-    char *string_value;
+    const char *string_value;
 
     match_flags flags;
 } uservalue_t;

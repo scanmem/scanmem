@@ -285,7 +285,7 @@ int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*------------*/
 int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
-    char *scan_string = user_value->string_value;
+    const char *scan_string = user_value->string_value;
     int length = user_value->flags.string_length;
     int i, j;
     value_t val_buf = *new_value;

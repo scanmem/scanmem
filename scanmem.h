@@ -14,6 +14,7 @@
 #include "list.h"
 #include "value.h"
 #include "maps.h"
+#include "show_message.h"
 #include "target_memory_info_array.h"
 
 /*lint +libh(config.h) */
@@ -28,11 +29,13 @@
 # define  PACKAGE_VERSION "(unknown)"
 #endif
 
+/*
 #ifndef NDEBUG
 # define eprintf(x, y...) fprintf(stderr, x, ## y)
 #else
 # define eprintf(x, y...)
 #endif
+*/
 
 #ifdef _lint
 /*lint -save -e652 -e683 -e547 */
@@ -99,7 +102,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 bool peekdata(pid_t pid, void *addr, value_t * result);
 bool attach(pid_t target);
 bool getcommand(globals_t * vars, char **line);
-int printversion(FILE * fp);
+void printversion();
 
 bool write_array(pid_t target, void *addr, const void *data, int len);
 #endif
