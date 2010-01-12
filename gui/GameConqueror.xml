@@ -155,20 +155,8 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkLabel" id="Version_Label">
-                    <property name="width_request">36</property>
-                    <property name="height_request">30</property>
-                    <property name="visible">True</property>
-                    <property name="label" translatable="yes">version</property>
-                  </object>
-                  <packing>
-                    <property name="x">344</property>
-                    <property name="y">56</property>
-                  </packing>
-                </child>
-                <child>
                   <object class="GtkLabel" id="Process_Label">
-                    <property name="width_request">210</property>
+                    <property name="width_request">280</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="tooltip_text" translatable="yes">Select a Process</property>
@@ -197,8 +185,7 @@
                     </child>
                   </object>
                   <packing>
-                    <property name="x">280</property>
-                    <property name="y">9</property>
+                    <property name="x">350</property>
                   </packing>
                 </child>
                 <child>
@@ -325,8 +312,8 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkProgressBar" id="Scan_ProgressBar">
-                    <property name="width_request">203</property>
+                  <object class="GtkProgressBar" id="ScanProgress_ProgressBar">
+                    <property name="width_request">350</property>
                     <property name="height_request">14</property>
                     <property name="visible">True</property>
                   </object>
