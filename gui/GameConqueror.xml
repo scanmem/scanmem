@@ -90,7 +90,7 @@
                 </child>
                 <child>
                   <object class="GtkEntry" id="Value_Input">
-                    <property name="width_request">254</property>
+                    <property name="width_request">280</property>
                     <property name="height_request">25</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -104,8 +104,8 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="Scan_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">35</property>
+                    <property name="height_request">35</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -114,8 +114,8 @@
                     <signal name="clicked" handler="Scan_Button_clicked_cb"/>
                   </object>
                   <packing>
-                    <property name="x">322</property>
-                    <property name="y">96</property>
+                    <property name="x">350</property>
+                    <property name="y">93</property>
                   </packing>
                 </child>
                 <child>
@@ -156,7 +156,7 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="Process_Label">
-                    <property name="width_request">280</property>
+                    <property name="width_request">287</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="tooltip_text" translatable="yes">Select a Process</property>
@@ -200,7 +200,7 @@
                     <signal name="clicked" handler="Reset_Button_clicked_cb"/>
                   </object>
                   <packing>
-                    <property name="x">350</property>
+                    <property name="x">385</property>
                     <property name="y">96</property>
                   </packing>
                 </child>
@@ -301,25 +301,23 @@
                     <child type="label">
                       <object class="GtkLabel" id="label2">
                         <property name="visible">True</property>
-                        <property name="yalign">0.47999998927116394</property>
-                        <property name="use_markup">True</property>
                       </object>
                     </child>
                   </object>
                   <packing>
-                    <property name="x">12</property>
+                    <property name="x">14</property>
                     <property name="y">126</property>
                   </packing>
                 </child>
                 <child>
                   <object class="GtkProgressBar" id="ScanProgress_ProgressBar">
                     <property name="width_request">350</property>
-                    <property name="height_request">7</property>
+                    <property name="height_request">10</property>
                     <property name="visible">True</property>
                   </object>
                   <packing>
                     <property name="x">14</property>
-                    <property name="y">71</property>
+                    <property name="y">70</property>
                   </packing>
                 </child>
                 <child>
@@ -330,11 +328,43 @@
                     <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Manually add an entry</property>
                     <property name="image">add_image</property>
                   </object>
                   <packing>
-                    <property name="x">381</property>
-                    <property name="y">288</property>
+                    <property name="x">385</property>
+                    <property name="y">287</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="RemoveAllCheat_Button">
+                    <property name="width_request">28</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Remove all entries</property>
+                    <property name="image">delete_image</property>
+                  </object>
+                  <packing>
+                    <property name="x">194</property>
+                    <property name="y">287</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="MemoryViewer_Button">
+                    <property name="width_request">28</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="sensitive">False</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Memory Viewer</property>
+                    <property name="image">image1</property>
+                  </object>
+                  <packing>
+                    <property name="x">14</property>
+                    <property name="y">287</property>
                   </packing>
                 </child>
               </object>
@@ -1174,7 +1204,14 @@ Public License instead of this License.  But first, please read
   </object>
   <object class="GtkImage" id="add_image">
     <property name="visible">True</property>
-    <property name="tooltip_text" translatable="yes">Manually add an entry</property>
     <property name="stock">gtk-add</property>
+  </object>
+  <object class="GtkImage" id="delete_image">
+    <property name="visible">True</property>
+    <property name="stock">gtk-delete</property>
+  </object>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="stock">gtk-edit</property>
   </object>
 </interface>
