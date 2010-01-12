@@ -209,6 +209,8 @@ class GameConqueror():
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
         self.value_input = self.builder.get_object('Value_Input')
+        
+        self.scanoption_frame = self.builder.get_object('ScanOption_Frame')
         self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
 
         self.scan_button = self.builder.get_object('Scan_Button')
@@ -599,6 +601,7 @@ class GameConqueror():
         self.scanresult_liststore.clear()
         self.backend.send_command('reset')
         self.update_scan_result()
+        self.scanoption_frame.set_sensitive(True)
 
     def apply_scan_settings (self):
         # scan data type
@@ -608,6 +611,8 @@ class GameConqueror():
         self.backend.send_command('option scan_data_type %s' % (dt,))
         # search scope
         self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
+        # TODO: ugly, reset to make region_scan_level taking effect
+        self.backend.send_command('reset')
 
     
     # perform scanning through backend
@@ -627,10 +632,13 @@ class GameConqueror():
             return
 
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
+        self.search_count +=1 
         self.main_window.set_sensitive(False)
+        self.scanoption_frame.set_sensitive(False) # no need to check search_count here
         self.if_scanning = True
-        # set scan options
-        self.apply_scan_settings()
+        # set scan options only when first scan, since this will reset backend
+        if self.search_count == 1:
+            self.apply_scan_settings()
         self.backend.send_command(cmd, get_output = False)
 
     def finish_scan(self):
@@ -638,7 +646,6 @@ class GameConqueror():
         # for debug
         print '\n'.join(self.backend.get_output_lines())
         self.update_scan_result()
-        self.search_count +=1 
  
     def update_scan_result(self):
         self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))
