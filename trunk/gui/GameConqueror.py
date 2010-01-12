@@ -357,12 +357,13 @@ class GameConqueror():
         ###########################
         # init others (backend, flag...)
 
-        self.pid = 0
+        self.pid = 0 # target pid
+        self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
+
         self.backend = GameConquerorBackend()
         self.backend.add_error_listener(self.backend_error_cb)
         self.backend.add_progress_listener(self.backend_progress_cb)
         self.search_count = 0
-        self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
         self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
 
 
@@ -520,6 +521,9 @@ class GameConqueror():
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
         self.show_error('Backend error: %s'%(msg,))
+        # in case we found error while scanning
+        print 'got saved'
+        self.main_window.set_sensitive(True)
         gtk.gdk.threads_leave()
                    
     # this callback will be called from other thread
@@ -592,14 +596,13 @@ class GameConqueror():
             self.show_error(cmd)
             return
 
+        # disable the window before perform scanning, such that if result come so fast, we won't mess it up
+        self.main_window.set_sensitive(False)
         # set scan options
         self.apply_scan_settings()
         self.backend.send_command(cmd, get_output = False)
-        # TODO disable everything
-        self.main_window.set_sensitive(False)
 
     def finish_scan(self):
-        # TODO: enable everything
         self.main_window.set_sensitive(True)
         self.backend.get_output_lines()
         self.update_scan_result()
