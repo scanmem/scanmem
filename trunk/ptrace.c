@@ -335,6 +335,13 @@ bool checkmatches(globals_t * vars,
         return false;
     }
 
+    /* hack for front-end, it needs this information */
+    /* TODO: we'll need progress for checkmatches too */
+    if (vars->options.backend == 1)
+    {
+        show_scan_progress(1,1);
+    }
+
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
@@ -384,6 +391,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     element_t *n = vars->regions->head;
     region_t *r;
     void *address;
+    unsigned long total_scan_bytes = 0;
+    unsigned long bytes_scanned = 0;
 
     /* used to fill in non-match regions */
     match_flags zero_flag;
@@ -429,6 +438,10 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
     
+    /* get total byte */
+    for(n = vars->regions->head; n; n = n->next)
+        total_scan_bytes += ((region_t *)n->data)->size;
+
     n = vars->regions->head;
 
     /* check every memory region */
@@ -462,7 +475,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 #endif
         /* print a progress meter so user knows we havent crashed */
         /* cannot use show_info here because it'll append a '\n' */
-        show_user("info: %02u/%02u searching %#10lx - %#10lx.", ++regnum,
+        show_info("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
@@ -530,18 +543,23 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 
             /* print a simple progress meter. */
-            if (EXPECT(offset % ((r->size - (r->size % 10)) / 10) == 10, false)) {
-                show_user(".");
-                fflush(stderr);
+            if (EXPECT((offset % ((r->size) / 10) == 10), false)) {
+                /* for user, just print a dot */
+                show_scan_progress(bytes_scanned+offset, total_scan_bytes);
             }
         }
 
+        bytes_scanned += r->size;
         n = n->next;
         show_user("ok\n");
-#if HAVE_PROCMEM
+#if HAVE_PROCME
         free(data);
 #endif
     }
+
+    /* tell front-end we've done */
+    if(vars->options.backend == 1)
+        show_scan_progress(total_scan_bytes, total_scan_bytes);
     
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {

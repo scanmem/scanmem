@@ -56,6 +56,7 @@ def check_scan_command (data_type, cmd):
         if len(cmdl) > 2:
             return (False, 'Too many parameters')
         
+        # TODO: these commands should not be the initial scan
         if cmdl[0] in ['>', '<', '+', '-']:
             if len(cmdl) == 1:
                 return (True, cmd)

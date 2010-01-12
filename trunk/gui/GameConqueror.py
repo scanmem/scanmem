@@ -36,6 +36,7 @@ WORK_DIR = os.path.dirname(sys.argv[0])
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
+IO_WATCHER_INTERVAL = 100
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 #BACKEND_ERROR_EVENT_NAME = 'gameconqueror-backend-error'
 
@@ -98,14 +99,16 @@ class GameConquerorBackend():
     def __init__(self):
         self.match_count = 0
         self.backend = None
-        self.error_monitor_id = None
+        self.stderr_monitor_id = None
         self.error_listeners = []
+        self.progress_listeners = []
         self.restart()
-        # read initial info
-        self.get_output_lines()
 
     def add_error_listener(self, listener):
         self.error_listeners.append(listener)
+
+    def add_progress_listener(self, listener):
+        self.progress_listeners.append(listener)
 
     def restart(self):
         if self.backend is not None:
@@ -113,25 +116,48 @@ class GameConquerorBackend():
         self.last_pos = 0;
         self.stderrfile = tempfile.TemporaryFile()
         self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderrfile.fileno())
-        if self.error_monitor_id is not None:
-            gobject.source_remove(self.error_monitor_id)
+        if self.stderr_monitor_id is not None:
+            gobject.source_remove(self.stderr_monitor_id)
+        self.add_io_watcher()
+        # read initial info
+        self.get_output_lines()
 
-    def error_check(self, source, condition):
+    def stderr_monitor(self, source, condition):
         self.stderrfile.seek(0, 2) # to the end
-        if self.stderrfile.tell() > self.last_pos + 1:
-            self.stderrfile.seek(self.last_pos)
+        if self.stderrfile.tell() > self.last_pos:
+            self.stderrfile.seek(self.last_pos, 0)
             msg = self.stderrfile.readline()
             self.last_pos = self.stderrfile.tell()
            
             if msg.startswith('error:'): # error happened
                 msg = msg[len('error:'):]
                 for listener in self.error_listeners:
-                    gobject.idle_add(listener,msg)
-            # else ignore
-
-
+                    listener(msg)
+            elif msg.startswith('info:'):
+                pass
+            elif msg.startswith('warn:'):
+                pass
+            elif msg.startswith('scan_progress:'):
+                try:
+                    l = msg.split(' ')
+                    if len(l) == 3:
+                        cur = int(l[1])
+                        total = int(l[2])
+                        for listener in self.progress_listeners:
+                            listener(cur, total)
+                    else: # invalid scan_progress text
+                        pass
+                except:
+                    pass
+            else: # unknown type of message, maybe log it?
+                pass
             return True
-        return False
+        else:
+            gobject.timeout_add(IO_WATCHER_INTERVAL, self.add_io_watcher)
+            return False
+
+    def add_io_watcher(self):
+        self.stderr_monitor_id = gobject.gobject.io_add_watch(self.stderrfile.fileno(), gobject.IO_IN, self.stderr_monitor)
 
     def get_output_lines(self):
         lines = []
@@ -145,15 +171,18 @@ class GameConquerorBackend():
                 break
         return lines
 
-    def send_command(self, cmd):
+    # for scan command, we don't want get_output immediately
+    def send_command(self, cmd, get_output = True):
         # for debug
 #        print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
-        self.error_monitor_id = gobject.gobject.io_add_watch(self.stderrfile.fileno(), gobject.IO_IN, self.error_check)
-        output_lines = self.get_output_lines()
-        # for debug
-#        print '\n'.join(output_lines)
-        return output_lines
+        if get_output:
+            output_lines = self.get_output_lines()
+            # for debug
+    #        print '\n'.join(output_lines)
+            return output_lines
+        else:
+            return []
 
     # for test only
     def run(self):
@@ -173,16 +202,17 @@ class GameConqueror():
         self.builder.add_from_file(os.path.join(WORK_DIR, 'GameConqueror.xml'))
 
         self.main_window = self.builder.get_object('MainWindow')
+        self.main_window.set_title('GameConqueror %s' % (VERSION,))
         self.about_dialog = self.builder.get_object('AboutDialog')
         # set version
         self.about_dialog.set_version(VERSION)
-        self.builder.get_object('Version_Label').set_label(VERSION)
 
         self.process_list_dialog = self.builder.get_object('ProcessListDialog')
 
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
         self.value_input = self.builder.get_object('Value_Input')
+        self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
@@ -330,6 +360,7 @@ class GameConqueror():
         self.pid = 0
         self.backend = GameConquerorBackend()
         self.backend.add_error_listener(self.backend_error_cb)
+        self.backend.add_progress_listener(self.backend_progress_cb)
         self.search_count = 0
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
         self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
@@ -488,15 +519,16 @@ class GameConqueror():
     # this callback will be called from other thread
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
-        dialog = gtk.MessageDialog(None
-                                  ,gtk.DIALOG_MODAL
-                                  ,gtk.MESSAGE_ERROR
-                                  ,gtk.BUTTONS_OK
-                                  ,'Backend error: %s'%(msg,))
-        dialog.run()
-        dialog.destroy()
+        self.show_error('Backend error: %s'%(msg,))
         gtk.gdk.threads_leave()
                    
+    # this callback will be called from other thread
+    def backend_progress_cb(self, cur, total):
+        gtk.gdk.threads_enter()
+        self.scanprogress_progressbar.set_fraction(float(cur)/total)
+        if cur == total:
+            self.finish_scan()
+        gtk.gdk.threads_leave()
 
 
     def add_to_cheat_list(self, addr, value, typestr):
@@ -554,6 +586,7 @@ class GameConqueror():
         assert(active >= 0)
         data_type = self.scan_data_type_combobox.get_model()[active][0]
         cmd = self.value_input.get_text()
+   
         (success, cmd) = misc.check_scan_command(data_type, cmd)
         if not success:
             self.show_error(cmd)
@@ -561,8 +594,14 @@ class GameConqueror():
 
         # set scan options
         self.apply_scan_settings()
+        self.backend.send_command(cmd, get_output = False)
+        # TODO disable everything
+        self.main_window.set_sensitive(False)
 
-        self.backend.send_command(cmd)
+    def finish_scan(self):
+        # TODO: enable everything
+        self.main_window.set_sensitive(True)
+        self.backend.get_output_lines()
         self.update_scan_result()
         self.search_count +=1 
  
