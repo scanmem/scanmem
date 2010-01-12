@@ -205,7 +205,7 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkFrame" id="frame1">
+                  <object class="GtkFrame" id="ScanOption_Frame">
                     <property name="width_request">399</property>
                     <property name="height_request">154</property>
                     <property name="visible">True</property>
