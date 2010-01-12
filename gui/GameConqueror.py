@@ -36,7 +36,7 @@ WORK_DIR = os.path.dirname(sys.argv[0])
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
-IO_WATCHER_INTERVAL = 100
+STDERR_MONITOR_INTERVAL = 100
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 #BACKEND_ERROR_EVENT_NAME = 'gameconqueror-backend-error'
 
@@ -118,13 +118,16 @@ class GameConquerorBackend():
         self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderrfile.fileno())
         if self.stderr_monitor_id is not None:
             gobject.source_remove(self.stderr_monitor_id)
-        self.add_io_watcher()
+        self.stderr_monitor_id = gobject.timeout_add(STDERR_MONITOR_INTERVAL, self.stderr_monitor)
         # read initial info
         self.get_output_lines()
 
-    def stderr_monitor(self, source, condition):
-        self.stderrfile.seek(0, 2) # to the end
-        if self.stderrfile.tell() > self.last_pos:
+    def stderr_monitor(self):
+        while True:
+            self.stderrfile.seek(0, 2) # to the end
+            if self.stderrfile.tell() == self.last_pos:
+                break
+
             self.stderrfile.seek(self.last_pos, 0)
             msg = self.stderrfile.readline()
             self.last_pos = self.stderrfile.tell()
@@ -151,13 +154,7 @@ class GameConquerorBackend():
                     pass
             else: # unknown type of message, maybe log it?
                 pass
-            return True
-        else:
-            gobject.timeout_add(IO_WATCHER_INTERVAL, self.add_io_watcher)
-            return False
-
-    def add_io_watcher(self):
-        self.stderr_monitor_id = gobject.gobject.io_add_watch(self.stderrfile.fileno(), gobject.IO_IN, self.stderr_monitor)
+        return True
 
     def get_output_lines(self):
         lines = []
@@ -351,6 +348,13 @@ class GameConqueror():
         self.scanresult_popup_item1.connect('activate', self.scanresult_popup_cb, 'add_to_cheat_list')
         self.scanresult_popup.show_all()
 
+        # init popup menu for cheatlist
+        self.cheatlist_popup = gtk.Menu()
+        self.cheatlist_popup_item1 = gtk.MenuItem("Remove this entry")
+        self.cheatlist_popup.append(self.cheatlist_popup_item1)
+        self.cheatlist_popup_item1.connect('activate', self.cheatlist_popup_cb, 'remove_entry')
+        self.cheatlist_popup.show_all()
+
         self.builder.connect_signals(self)
         self.main_window.connect('destroy', self.exit)
 
@@ -391,6 +395,24 @@ class GameConqueror():
             self.scanresult_popup.popup(None, None, None, 0, 0)
             return True
         return False
+
+    def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
+        if event.button == 3: # right click
+            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
+            if iter is not None:
+                self.cheatlist_popup.popup(None, None, None, event.button, event.get_time())
+                return True
+            return False
+        return False
+
+
+    def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
+        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
+        if iter is not None:
+            self.cheatlist_popup.popup(None, None, None, 0, 0)
+            return True
+        return False
+
 
 
     def ScanResult_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
@@ -460,6 +482,16 @@ class GameConqueror():
             return False
         return False
 
+    def cheatlist_popup_cb(self, menuitem, data=None):
+        if data == 'remove_entry':
+            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
+            if iter is not None:
+                self.cheatlist_liststore.remove(iter) 
+                return True
+            return False
+        return False
+
+
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
         row = int(path)
         locked = self.cheatlist_liststore[row][1]
@@ -521,8 +553,6 @@ class GameConqueror():
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
         self.show_error('Backend error: %s'%(msg,))
-        # in case we found error while scanning
-        print 'got saved'
         self.main_window.set_sensitive(True)
         gtk.gdk.threads_leave()
                    
@@ -598,13 +628,15 @@ class GameConqueror():
 
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.main_window.set_sensitive(False)
+        self.if_scanning = True
         # set scan options
         self.apply_scan_settings()
         self.backend.send_command(cmd, get_output = False)
 
     def finish_scan(self):
         self.main_window.set_sensitive(True)
-        self.backend.get_output_lines()
+        # for debug
+        print '\n'.join(self.backend.get_output_lines())
         self.update_scan_result()
         self.search_count +=1 
  
