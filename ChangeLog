@@ -3,6 +3,7 @@
  	* Better DEFAULT_LONGDOC
 	* Better GUI
 	* Better communication between GUI & backend
+	* Progress bar in GUI
 
 2010-01-10 WANG Lu <coolwanglu(a)gmail.com>
 	* STRING supported
