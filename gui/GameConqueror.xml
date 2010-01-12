@@ -138,7 +138,7 @@
  &lt;b&gt;+ N&lt;/b&gt;       Increased by N
  &lt;b&gt;- N&lt;/b&gt;       Decreased by N
 &lt;/span&gt;
- For bytearray: use 2-byte hexadecimal representation of each byte, separated by spaces
+ For bytearray: use 2-byte hexadecimal notation for each byte, separated by spaces
 &lt;span font_family="monospace"&gt;
  e.g. FE DC BA 98 76 54 32 10
 &lt;/span&gt;
