@@ -1,3 +1,10 @@
+scanmem (0.10~svn20100112r112-0ubuntu1) karmic; urgency=low
+
+  * Several UI improved
+  * prevent a situation of deaklock
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 12 Jan 2010 22:58:20 +0800
+
 scanmem (0.10~svn20100112r109-0ubuntu1) karmic; urgency=low
 
   * Progress bar added
