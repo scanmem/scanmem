@@ -1,3 +1,11 @@
+scanmem (0.10~svn20100112r109-0ubuntu1) karmic; urgency=low
+
+  * Progress bar added
+  * Terminal removed
+  * Bugs fixed
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 12 Jan 2010 16:57:41 +0800
+
 scanmem (0.10~svn20100112r103-0ubuntu1) karmic; urgency=low
 
   * Better GUI
