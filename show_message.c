@@ -67,3 +67,17 @@ void show_user(const char *fmt, ...)
     }
     va_end (args);
 }
+
+void show_scan_progress(unsigned long cur, unsigned long total)
+{
+    if (globals.options.backend == 0)
+    {
+        fprintf(stderr, ",");
+        fflush(stderr);
+    }
+    else
+    {
+        fprintf(stderr, "scan_progress: %lu %lu\n", cur, total);
+    }
+}
+
