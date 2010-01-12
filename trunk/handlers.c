@@ -809,7 +809,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     /* test the length */
     int i;
     for(i = 0; (i < 4) && vars->current_cmdline[i]; ++i) {}
-    if (i != 4) /* cmdline too short */
+    if (i != 3) /* cmdline too short */
     {
         show_error("please specify a string\n");
         return false;
