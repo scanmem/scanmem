@@ -360,6 +360,8 @@
                 <property name="height_request">100</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <signal name="button_release_event" handler="CheatList_TreeView_button_release_event_cb"/>
+                <signal name="popup_menu" handler="CheatList_TreeView_popup_menu_cb"/>
               </object>
             </child>
           </object>

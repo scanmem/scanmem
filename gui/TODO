@@ -2,10 +2,10 @@ TODOs
 =====
 
 - Fix search scope stuff
-- Progress bar
-- real-time update cheatlist/scanlist
-- plugin-like system to support different datatypes (or actually representations)
+- real-time update cheatlist/scanlist -- add a 'set' value
+- popup for cheatlist/scanlist
 - search for pointer
 - different types of locking ('>' & '<')
 - memory view/edit
+- plugin-like system to support different datatypes (or actually representations)
 - UI improvement will be done only when needed!

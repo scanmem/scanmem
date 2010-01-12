@@ -101,7 +101,7 @@ def test_number (string):
         int_value = int(string)
     except:
         pass
-    if int_value is None:
+    if (int_value is None) and string.startswith('0x'):
         try:
             int_value = int(string, 16)
         except:
