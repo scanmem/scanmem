@@ -364,6 +364,7 @@ class GameConqueror():
         # init others (backend, flag...)
 
         self.pid = 0 # target pid
+        self.is_scanning = False
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
 
         self.backend = GameConquerorBackend()
@@ -375,6 +376,19 @@ class GameConqueror():
 
     ###########################
     # GUI callbacks
+
+    def MemoryViewer_Button_clicked_cb(self, button, data=None):
+        # TODO
+        return True
+
+    def RemoveAllCheat_Button_clicked_cb(self, button, data=None):
+        self.cheatlist_liststore.clear()
+        return True
+
+    def ManuallyAddCheat_Button_clicked_cb(self, button, data=None):
+        # TODO
+        return True
+
     def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
         return SEARCH_SCOPE_NAMES[int(value)]
 
@@ -555,14 +569,15 @@ class GameConqueror():
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
         self.show_error('Backend error: %s'%(msg,))
-        self.main_window.set_sensitive(True)
+        if self.is_scanning:
+            self.finish_scan()
         gtk.gdk.threads_leave()
                    
     # this callback will be called from other thread
     def backend_progress_cb(self, cur, total):
         gtk.gdk.threads_enter()
         self.scanprogress_progressbar.set_fraction(float(cur)/total)
-        if cur == total:
+        if (cur == total) and self.is_scanning:
             self.finish_scan()
         gtk.gdk.threads_leave()
 
@@ -633,9 +648,9 @@ class GameConqueror():
 
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.search_count +=1 
-        self.main_window.set_sensitive(False)
         self.scanoption_frame.set_sensitive(False) # no need to check search_count here
-        self.if_scanning = True
+        self.main_window.set_sensitive(False)
+        self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
         if self.search_count == 1:
             self.apply_scan_settings()
@@ -643,8 +658,8 @@ class GameConqueror():
 
     def finish_scan(self):
         self.main_window.set_sensitive(True)
-        # for debug
-        print '\n'.join(self.backend.get_output_lines())
+        self.backend.get_output_lines()
+        self.is_scanning = False
         self.update_scan_result()
  
     def update_scan_result(self):

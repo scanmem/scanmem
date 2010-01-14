@@ -10,21 +10,21 @@ Upstream Authors:
         WANG  Lu      <coolwanglu(a)gmail.com>
 
 Files: *
-Copyright © 2009,2010      Tavis Ormandy, Eli Dupree, WANG Lu  <taviso@sdf.lonestar.org, elidupree@charter.net, coolwanglu@gmail.com>
 Copyright © 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
+Copyright © 2009           Eli Dupree <elidupree@charter.net>
+Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
 License: GPL-2
 
-Files: list.*, test/*
-Copyright © 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
-License: GPL-2
-
-Files: target_memory_into_array.*
-Copyright © 2009           Eli   Dupree  <elidupree(a)charter.net>
-License: GPL-2
-
-Files: scanroutines.*, gui/GameConqueror*
-Copyright © 2009,2010      WANG  Lu      <coolwanglu(a)gmail.com>
+Files: scanroutines.*, 
+       show_message.*, 
+       gui/GameConqueror*
+Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
 License: GPL-3
+
+Files: gui/hexview.py
+Coypright © 2008,2009      Adriano Monteiro Marques
+Copyright © 2010           WANG Lu <coolwanglu@gmail.com>
+License: GPL-2
 
 Files: install-sh
 Copyright © 1994 X Consortium
