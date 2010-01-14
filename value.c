@@ -3,8 +3,9 @@
 
  simple routines for working with the value_t data structure.
 
- Copyright (C) 2009,2010      Tavis Ormandy, Eli Dupree, WANG Lu  <taviso@sdf.lonestar.org, elidupree@charter.net, coolwanglu@gmail.com>
  Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
+ Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
+ Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
