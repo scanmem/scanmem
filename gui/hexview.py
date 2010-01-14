@@ -146,13 +146,13 @@ class AsciiText(BaseText):
         return True
 
     def __on_key_press(self, widget, evt, data=None):
-        buffer = self.get_buffer()
-        bounds = buffer.get_selection_bounds()
-        if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
-            self.select_a_char()
-        else:
-            c = evt.keyval
-            if unichr(c) in AsciiText._printable:
+        c = evt.keyval
+        if unichr(c) in AsciiText._printable:
+            buffer = self.get_buffer()
+            bounds = buffer.get_selection_bounds()
+            if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
+                self.select_a_char()
+            else:
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
                 off -= off / (self._parent.bpl + 1)
@@ -161,7 +161,8 @@ class AsciiText(BaseText):
 
     def __on_button_release(self, widget, event, data=None):
         buffer = self.get_buffer()
-        if not buffer.get_selection_bounds():
+        bounds = buffer.get_selection_bounds()
+        if (not bounds) or (bounds[1].get_offset() - bounds[0].get_offset() == 1):
             self.select_a_char()
         # return False in order to let other handler handle it
         return False
@@ -282,13 +283,13 @@ class HexText(BaseText):
         self.prev_end = None
 
     def __on_key_press(self, widget, evt, data=None):
-        buffer = self.get_buffer()
-        bounds = buffer.get_selection_bounds()
-        if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
-            self.select_a_char()
-        else:
-            char = evt.keyval
-            if unichr(char) in HexText._hexdigits:
+        char = evt.keyval
+        if unichr(char) in HexText._hexdigits:
+            buffer = self.get_buffer()
+            bounds = buffer.get_selection_bounds()
+            if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
+                self.select_a_char()
+            else:
                 c = unichr(char).upper()
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
@@ -308,7 +309,8 @@ class HexText(BaseText):
 
     def __on_button_release(self, widget, event, data=None):
         buffer = self.get_buffer()
-        if not buffer.get_selection_bounds():
+        bounds = buffer.get_selection_bounds()
+        if (not bounds) or (bounds[1].get_offset() - bounds[0].get_offset() == 1):
             self.select_a_char()
         # return False in order to let other handler handle it
         return False
