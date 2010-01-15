@@ -1,0 +1,20 @@
+#labels Featured
+#How to build and install
+
+= Scanmem & GameConqueror =
+
+{{{
+./configure --enable-gui && make
+sudo make install
+}}}
+
+then run `gameconqueror` for GameConqueror, and `scanmem` for scanmem
+there'll be also a menu item in the `Game` category
+
+
+= Scanmem only =
+
+{{{
+./configure && make
+sudo make install
+}}}
