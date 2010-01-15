@@ -31,6 +31,7 @@ import gobject
 
 from consts import *
 import misc
+import hexview
 
 WORK_DIR = os.path.dirname(sys.argv[0])
 BACKEND = ['scanmem', '-b']
@@ -206,6 +207,13 @@ class GameConqueror():
 
         self.process_list_dialog = self.builder.get_object('ProcessListDialog')
 
+        # init memory editor
+        self.memory_editor_window = self.builder.get_object('MemoryEditor_Window')
+        self.memory_editor_hexview = hexview.HexView()
+        self.memory_editor_window.child.pack_start(self.memory_editor_hexview)
+        self.memory_editor_hexview.show_all()
+        self.address_entry = self.builder.get_object('Address_Entry')
+
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
         self.value_input = self.builder.get_object('Value_Input')
@@ -364,6 +372,8 @@ class GameConqueror():
         # init others (backend, flag...)
 
         self.pid = 0 # target pid
+        self.maps = []
+        self.last_hexedit_address = (0,0) # used for hexview
         self.is_scanning = False
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
 
@@ -377,9 +387,27 @@ class GameConqueror():
     ###########################
     # GUI callbacks
 
-    def MemoryViewer_Button_clicked_cb(self, button, data=None):
-        # TODO
+    def MemoryEditor_Window_delete_event_cb(self, widget, event, data=None):
+        self.memory_editor_window.hide()
         return True
+
+    def MemoryEditor_Button_clicked_cb(self, button, data=None):
+        if self.pid == 0:
+            self.show_error('Please select a process')
+            return
+        self.browse_memory()
+        return True
+
+    def MemoryEditorJumpTo_Button_clicked_cb(self, button, data=None):
+        txt = self.address_entry.get_text()
+        if txt == '':
+            return
+        try:
+            addr = int(txt, 16)
+            self.browse_memory(addr)
+        except:
+            self.show_error('Invalid address')
+
 
     def RemoveAllCheat_Button_clicked_cb(self, button, data=None):
         self.cheatlist_liststore.clear()
@@ -565,6 +593,53 @@ class GameConqueror():
         dialog.run()
         dialog.destroy()
 
+    def browse_memory(self, addr=None):
+        # select a region contains addr
+        try:
+            self.read_maps()
+        except:
+            show_error('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege')
+        selected_region = None
+        if addr:
+            for m in self.maps:
+                if m['start_addr'] <= addr and addr < m['end_addr']:
+                    selected_region = m
+                    break
+            if selected_region:
+                if selected_region['flags'][0] != 'r': # not readable
+                    show_error('Address %X is not readable' % (addr,))
+                    return
+            else:
+                show_error('Address %X is not valid' % (addr,))
+                return
+        else:
+            # just select the first readable region
+            for m in self.maps:
+                if m['flags'][0] == 'r':
+                    selected_region = m
+                    break
+            if selected_region is None:
+                self.show_error('Cannot find a readable region')
+                return
+            addr = selected_region['start_addr']
+
+        # read region if necessary
+        start_addr = selected_region['start_addr']
+        end_addr = selected_region['end_addr']
+        if self.last_hexedit_address[0] != start_addr or \
+           self.last_hexedit_address[1] != end_addr:
+            try:
+                data = self.read_memory(start_addr, end_addr - start_addr)
+            except IOError,e:
+                self.show_error('Cannot')
+                return
+            self.last_hexedit_address = (start_addr, end_addr)
+            self.memory_editor_hexview.payload=data
+            self.memory_editor_hexview.base_addr = start_addr
+        if addr:
+            self.memory_editor_hexview.show_addr(addr)
+        self.memory_editor_window.show()
+
     # this callback will be called from other thread
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
@@ -601,14 +676,43 @@ class GameConqueror():
         # reset flags
         # for debug/log
 #        print 'Select process: %d - %s' % (pid, process_name)
+        self.pid = pid
+        try:
+            self.read_maps()
+        except:
+            self.pid = 0
+            self.process_label.set_text('No process selected')
+            self.process_label.set_property('tooltip-text', 'Select a process')
+            self.show_error('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege')
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.process_label.set_property('tooltip-text', process_name)
         self.backend.send_command('pid %d' % (pid,))
-        self.pid = pid
         self.reset_scan()
         # unlock all entries in cheat list
         for i in xrange(len(self.cheatlist_liststore)):
             self.cheatlist_liststore[i][1] = False
+
+    def read_maps(self):
+        lines = open('/proc/%d/maps' % (self.pid,)).readlines()
+        self.maps = []
+        for l in lines:
+            item = {}
+            info = l.split(' ', 5)
+            addr = info[0]
+            idx = addr.index('-')
+            item['start_addr'] = int(addr[:idx],16)
+            item['end_addr'] = int(addr[idx+1:],16)
+            item['size'] = item['end_addr'] - item['start_addr']
+            item['flags'] = info[1]
+            item['offset'] = info[2]
+            item['dev'] = info[3]
+            item['inode'] = int(info[4])
+            if len(info) < 6:
+                item['pathname'] = ''
+            else:
+                item['pathname'] = info[5].lstrip() # don't use strip
+            self.maps.append(item)
+
 
     def reset_scan(self):
         self.search_count = 0
@@ -641,15 +745,18 @@ class GameConqueror():
         data_type = self.scan_data_type_combobox.get_model()[active][0]
         cmd = self.value_input.get_text()
    
-        (success, cmd) = misc.check_scan_command(data_type, cmd)
-        if not success:
-            self.show_error(cmd)
+        try:
+            cmd = misc.check_scan_command(data_type, cmd)
+        except Exception,e:
+            # this is not quite good
+            self.show_error(e.args[0])
             return
 
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.search_count +=1 
         self.scanoption_frame.set_sensitive(False) # no need to check search_count here
         self.main_window.set_sensitive(False)
+        self.memory_editor_window.set_sensitive(False)
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
         if self.search_count == 1:
@@ -658,6 +765,7 @@ class GameConqueror():
 
     def finish_scan(self):
         self.main_window.set_sensitive(True)
+        self.memory_editor_window.set_sensitive(True)
         self.backend.get_output_lines()
         self.is_scanning = False
         self.update_scan_result()
@@ -709,6 +817,16 @@ class GameConqueror():
                 self.write_value(addr, typestr, value)
         return not self.exit_flag
 
+    def read_memory(self, addr, length):
+        lines = self.backend.send_command('dump %X %d' % (addr, length))
+        data = []
+        for l in lines:
+            data.extend([unichr(int(item,16)) for item in l.split()])
+        if len(data) != length:
+            raise Exception('Cannot access target memory')
+        return ''.join(data)
+            
+ 
     # typestr: use our typenames
     def write_value(self, addr, typestr, value):
         self.backend.send_command('write %s %s %s'%(typestr, addr, value))

@@ -71,7 +71,7 @@ void show_scan_progress(unsigned long cur, unsigned long total)
 {
     if (globals.options.backend == 0)
     {
-        fprintf(stderr, ",");
+        fprintf(stderr, ".");
         fflush(stderr);
     }
     else

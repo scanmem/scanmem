@@ -104,5 +104,6 @@ bool attach(pid_t target);
 bool getcommand(globals_t * vars, char **line);
 void printversion();
 
+bool read_array(pid_t target, void *addr, char *buf, int len);
 bool write_array(pid_t target, void *addr, const void *data, int len);
 #endif
