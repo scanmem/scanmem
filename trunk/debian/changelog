@@ -1,6 +1,7 @@
-scanmem (0.10~svn20100114r??-0ubuntu1) karmic; urgency=low
+scanmem (0.10~svn20100116r119-0ubuntu1) karmic; urgency=low
 
   * Rearranged copyright strings
+  * Memory Viewer
 
  -- WANG Lu <coolwanglu@gmail.com>  Thu, 14 Jan 2010 16:55:22 +0800
 

@@ -1,8 +1,6 @@
 Next Version
 ============
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
-* remove regions_scan_level, let gui handle this
-* set format for output when running as backend
 * performance
 
 Future

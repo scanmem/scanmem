@@ -24,9 +24,9 @@
 # else msg is error message
 def check_scan_command (data_type, cmd):
     if cmd == '':
-        return (False, 'No value provided')
+        raise ValueError('No value provided')
     if data_type == 'string':
-        return (True, '" ' + cmd)
+        return '" ' + cmd
     elif data_type == 'bytearray':
         cmd = cmd.strip() 
         bytes = cmd.split(' ')
@@ -34,61 +34,61 @@ def check_scan_command (data_type, cmd):
             if byte.strip() == '':
                 continue
             if len(byte) != 2:
-                return (False, 'Bad value: %s' % (byte, ))
+                raise ValueError('Bad value: %s' % (byte, ))
             if byte == '??':
                 continue
             try:
                _ = int(byte,16)
             except:
-                return (False, 'Bad value: %s' % (byte, ))
-        return (True, cmd)
+                raise ValueError('Bad value: %s' % (byte, ))
+        return cmd
     else: # for numbers
         cmd = cmd.strip() 
         # hack for snapshot
         if cmd == '?':
-            return (True, 'snapshot')
+            return 'snapshot'
         
         # these two commands has no parameters
         if cmd == '=' or cmd == '!=':
-            return (True, cmd)
+            return cmd
 
         cmdl = cmd.split()
         if len(cmdl) > 2:
-            return (False, 'Too many parameters')
+            raise ValueError('Too many parameters')
         
         # TODO: these commands should not be the initial scan
         if cmdl[0] in ['>', '<', '+', '-']:
             if len(cmdl) == 1:
-                return (True, cmd)
+                return cmd
             else:
                 num_to_check = cmdl[1]
         else:
             if len(cmdl) > 1:
-                return (False, 'Bad command %s' % (cmd,))
+                raise ValueError('Bad command %s' % (cmd,))
             else:
                 num_to_check = cmdl[0]
 
         (cbn, iv, fv) = test_number(num_to_check)
         if data_type.startswith('int'):
             if iv is None:
-                return (False, '%s is not an integer' % (num_to_check,))
+                raise ValueError('%s is not an integer' % (num_to_check,))
             if data_type == 'int':
                 width = 64
             else:
                 width = int(data_type[len('int'):])
             if iv > ((1<<width)-1):
-                return (False, '%s is too large for %s' % (num_to_check, data_type))
+                raise ValueError('%s is too large for %s' % (num_to_check, data_type))
             if iv < -(1<<(width-1)):
-                return (False, '%s is too small for %s' % (num_to_check, data_type))
+                raise ValueError('%s is too small for %s' % (num_to_check, data_type))
 
 
         if data_type.startswith('float') and (cbf is None):
-            return (False, '%s is not a float' % (num_to_check,))
+            raise ValueError('%s is not a float' % (num_to_check,))
         if data_type == 'number' and (not cbn):
-            return (False, '%s is not a number' % (num_to_check,))
+            raise ValueError('%s is not a number' % (num_to_check,))
 
         # finally
-        return (True, cmd)
+        return cmd
 
 
 

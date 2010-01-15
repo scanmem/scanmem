@@ -39,6 +39,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <limits.h>            /* to determine the word width */
+#include <errno.h>
 
 #include <readline/readline.h>
 
@@ -306,6 +307,9 @@ fail:
 }
 
 /* XXX: add yesno command to check if matches > 099999 */
+/* FORMAT (don't change, front-end depends on this): 
+ * [#no] addr, value, [possible types (separated by space)]
+ */
 bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
@@ -1188,12 +1192,86 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+bool handler__dump(globals_t * vars, char **argv, unsigned argc)
+{
+    void *addr;
+    char *endptr;
+    char *buf = NULL;
+    int len;
+
+    if (argc != 3)
+    {
+        show_error("bad argument, see `help dump`.\n");
+        return false;
+    }
+    
+    /* check address */
+    errno = 0;
+    addr = (void *)(strtoll(argv[1], &endptr, 16));
+    if ((errno != 0) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help write`.\n");
+        return false;
+    }
+
+    /* check length */
+    errno = 0;
+    len = strtoll(argv[2], &endptr, 0);
+    if ((errno != 0) || (*endptr != '\0'))
+    {
+        show_error("bad length, see `help write`.\n");
+        return false;
+    }
+
+    buf = malloc(len + sizeof(long));
+    if (buf == NULL)
+    {
+        show_error("memory allocation failed.\n");
+        return false;
+    }
+
+    if (!read_array(vars->target, addr, buf, len))
+    {
+        show_error("read memory failed.\n");
+        free(buf);
+        return false;
+    }
+
+    /* print it out */
+    int i,j;
+    int buf_idx = 0;
+    for (i = 0; i + 16 < len; i += 16)
+    {
+        if (vars->options.backend == 0)
+            printf("%p: ", addr+i);
+        for (j = 0; j < 16; ++j)
+        {
+            printf("%02X ", (unsigned char)(buf[buf_idx++]));
+        }
+        printf("\n");
+    }
+    if (i < len)
+    {
+        if (vars->options.backend == 0)
+            printf("%p: ", addr+i);
+        for (; i < len; ++i)
+        {
+            printf("%02X ", (unsigned char)(buf[buf_idx++]));
+        }
+        printf("\n");
+    }
+
+    free(buf);
+    return true;
+}
+
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
 {
     int data_width = 0;
     const char *fmt = NULL;
     void *addr;
     char *buf = NULL;
+    char *endptr;
     int datatype; /* 0 for numbers, 1 for bytearray, 2 for string */
     bool ret;
     const char *string_parameter = NULL; /* used by string type */
@@ -1288,7 +1366,9 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* check address */
-    if (sscanf(argv[2], "%p", &addr) < 1)
+    errno = 0;
+    addr = (void *)strtoll(argv[2], &endptr, 16);
+    if ((errno != 0) || (*endptr != '\0'))
     {
         show_error("bad address, see `help write`.\n");
         ret = false;

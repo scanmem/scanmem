@@ -227,6 +227,11 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc);
 
+#define DUMP_SHRTDOC "examine a memory region."
+#define DUMP_LONGDOC "usage: dump <address> <length>\n" 
+    
+bool handler__dump(globals_t * vars, char **argv, unsigned argc);
+
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
                 "\n" \
