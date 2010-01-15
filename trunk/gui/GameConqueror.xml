@@ -407,7 +407,6 @@
   </object>
   <object class="GtkAboutDialog" id="AboutDialog">
     <property name="border_width">5</property>
-    <property name="resizable">False</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <property name="program_name">GameConqueror</property>
@@ -1121,6 +1120,7 @@ Public License instead of this License.  But first, please read
     <property name="title" translatable="yes">Press Ctrl+F to search for a process</property>
     <property name="resizable">False</property>
     <property name="modal">True</property>
+    <property name="icon">GameConqueror_128x128.png</property>
     <property name="type_hint">normal</property>
     <property name="has_separator">False</property>
     <child internal-child="vbox">
@@ -1219,6 +1219,7 @@ Public License instead of this License.  But first, please read
   <object class="GtkWindow" id="MemoryEditor_Window">
     <property name="height_request">280</property>
     <property name="resizable">False</property>
+    <property name="icon">GameConqueror_128x128.png</property>
     <signal name="delete_event" handler="MemoryEditor_Window_delete_event_cb"/>
     <child>
       <object class="GtkVBox" id="vbox2">
@@ -1236,26 +1237,27 @@ Public License instead of this License.  But first, please read
               </object>
             </child>
             <child>
-              <object class="GtkEntry" id="Address_Entry">
+              <object class="GtkEntry" id="MemoryEditor_Address_Entry">
                 <property name="width_request">140</property>
                 <property name="height_request">28</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="invisible_char">&#x25CF;</property>
+                <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb"/>
               </object>
               <packing>
                 <property name="x">70</property>
               </packing>
             </child>
             <child>
-              <object class="GtkButton" id="MemoryEditorJumpTo_Button">
+              <object class="GtkButton" id="MemoryEditor_JumpTo_Button">
                 <property name="width_request">28</property>
                 <property name="height_request">28</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="image">jumpto_image</property>
-                <signal name="clicked" handler="MemoryEditorJumpTo_Button_clicked_cb"/>
+                <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb"/>
               </object>
               <packing>
                 <property name="x">210</property>

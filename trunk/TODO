@@ -2,6 +2,7 @@ Next Version
 ============
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance
+* speedhack
 
 Future
 ======

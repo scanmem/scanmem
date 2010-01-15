@@ -1,8 +1,9 @@
 TODOs
 =====
 
-- Documentation
 - editable flag for hexview
+- make hexview editable or now based on the flag of the region
+- Documentation
 - memory edit fix & popup
 - logging
 - custom address region scan

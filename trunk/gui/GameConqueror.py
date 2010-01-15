@@ -212,7 +212,7 @@ class GameConqueror():
         self.memory_editor_hexview = hexview.HexView()
         self.memory_editor_window.child.pack_start(self.memory_editor_hexview)
         self.memory_editor_hexview.show_all()
-        self.address_entry = self.builder.get_object('Address_Entry')
+        self.memoryeditor_address_entry = self.builder.get_object('MemoryEditor_Address_Entry')
 
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
@@ -398,8 +398,18 @@ class GameConqueror():
         self.browse_memory()
         return True
 
-    def MemoryEditorJumpTo_Button_clicked_cb(self, button, data=None):
-        txt = self.address_entry.get_text()
+    def MemoryEditor_Address_Entry_activate_cb(self, entry, data=None):
+        txt = self.memoryeditor_address_entry.get_text()
+        if txt == '':
+            return
+        try:
+            addr = int(txt, 16)
+            self.browse_memory(addr)
+        except:
+            self.show_error('Invalid address')
+
+    def MemoryEditor_JumpTo_Button_clicked_cb(self, button, data=None):
+        txt = self.memoryeditor_address_entry.get_text()
         if txt == '':
             return
         try:
