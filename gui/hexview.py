@@ -157,6 +157,7 @@ class AsciiText(BaseText):
                 off = iter.get_offset()
                 off -= off / (self._parent.bpl + 1)
                 self._parent.set_char_at_offset(off, unichr(c), self)
+            return True
         return False
 
     def __on_button_release(self, widget, event, data=None):
@@ -235,6 +236,7 @@ class AsciiText(BaseText):
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
         if not start and not end:
+            # deselect
             if self.prev_start and self.prev_end and \
                self.prev_start != self.prev_end:
 
@@ -255,17 +257,27 @@ class AsciiText(BaseText):
         if self.prev_start and self.prev_end:
             if self.buffer.get_iter_at_mark(self.prev_start).get_offset() == start \
                and self.buffer.get_iter_at_mark(self.prev_end).get_offset() == end:
+                # nothing to do
                 return
             else:
-                self.buffer.delete_mark(self.prev_start)
-                self.buffer.delete_mark(self.prev_end)
+                # remove old selection
+                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                                       self.buffer.get_iter_at_mark(self.prev_start),
+                                       self.buffer.get_iter_at_mark(self.prev_end))
 
+        # apply new selection
         start_iter = self.buffer.get_iter_at_offset(start)
         end_iter = self.buffer.get_iter_at_offset(end)
 
         self.buffer.apply_tag(self._parent.tag_sec_sel, start_iter, end_iter)
-        self.prev_start = self.buffer.create_mark(None, start_iter, True)
-        self.prev_end = self.buffer.create_mark(None, end_iter, False)
+        if self.prev_start:
+            self.buffer.move_mark(self.prev_start, start_iter)
+        else:
+            self.prev_start = self.buffer.create_mark(None, start_iter, True)
+        if self.prev_end:
+            self.buffer.move_mark(self.prev_end, end_iter)
+        else:
+            self.prev_end = self.buffer.create_mark(None, end_iter, False)
 
 
 class HexText(BaseText):
@@ -303,7 +315,7 @@ class HexText(BaseText):
                     l = list(txt)
                     l[pos] = c
                     self._parent.set_char_at_offset(off, unichr(int(''.join(l),16)), self)
-                
+            return True
         return False
 
 
@@ -419,9 +431,9 @@ class HexText(BaseText):
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
         if not start and not end:
+            # deselect
             if self.prev_start and self.prev_end and \
                self.prev_start != self.prev_end:
-
                 self.buffer.remove_tag(self._parent.tag_sec_sel, 
                                        self.buffer.get_iter_at_mark(self.prev_start),
                                        self.buffer.get_iter_at_mark(self.prev_end))
@@ -440,16 +452,23 @@ class HexText(BaseText):
                and self.buffer.get_iter_at_mark(self.prev_end).get_offset() == end:
                 return
             else:
-                self.buffer.delete_mark(self.prev_start)
-                self.buffer.delete_mark(self.prev_end)
+                # remove old selection
+                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                                       self.buffer.get_iter_at_mark(self.prev_start),
+                                       self.buffer.get_iter_at_mark(self.prev_end))
 
         start_iter = self.buffer.get_iter_at_offset(start)
         end_iter = self.buffer.get_iter_at_offset(end)
 
         self.buffer.apply_tag(self._parent.tag_sec_sel, start_iter, end_iter)
-        self.prev_start = self.buffer.create_mark(None, start_iter, True)
-        self.prev_end = self.buffer.create_mark(None, end_iter, False)
-
+        if self.prev_start:
+            self.buffer.move_mark(self.prev_start, start_iter)
+        else:
+            self.prev_start = self.buffer.create_mark(None, start_iter, True)
+        if self.prev_end:
+            self.buffer.move_mark(self.prev_end, end_iter)
+        else:
+            self.prev_end = self.buffer.create_mark(None, end_iter, False)
 
 class HexView(gtk.HBox):
     __gtype_name__ = "HexView"
@@ -476,22 +495,29 @@ class HexView(gtk.HBox):
 
         self.char_changed_listeners = []
 
-        self.vadj, self.hadj = gtk.Adjustment(), gtk.Adjustment()
+        self.vadj = gtk.Adjustment()
         self.vscroll = gtk.VScrollbar(self.vadj)
+
+        # used to scroll
+        self.scroll_mark = None
 
         self.offset_text = OffsetText(self)
         self.hex_text = HexText(self)
         self.ascii_text = AsciiText(self)
 
-        self.offset_text.set_scroll_adjustments(self.hadj, self.vadj)
-        self.hex_text.set_scroll_adjustments(self.hadj, self.vadj)
-        self.ascii_text.set_scroll_adjustments(self.hadj, self.vadj)
+        self.offset_text.set_scroll_adjustments(None, self.vadj)
+        self.hex_text.set_scroll_adjustments(None, self.vadj)
+        self.ascii_text.set_scroll_adjustments(None, self.vadj)
 
         self.hex_text.buffer.connect('mark-set', self.__on_hex_change)
         self.ascii_text.buffer.connect('mark-set', self.__on_ascii_change)
 
+        self.offset_text.connect('scroll-event', self.__on_scroll_event)
+        self.hex_text.connect('scroll-event', self.__on_scroll_event)
+        self.ascii_text.connect('scroll-event', self.__on_scroll_event)
+
         def scroll(widget):
-            widget.set_size_request(-1, 80)
+            widget.set_size_request(-1, 128)
             frame = gtk.Frame()
             frame.set_shadow_type(gtk.SHADOW_IN)
             frame.add(widget)
@@ -502,17 +528,35 @@ class HexView(gtk.HBox):
         self.pack_start(scroll(self.ascii_text), False, False)
         self.pack_end(self.vscroll, False, False)
 
+    def __on_scroll_event(self, widget, event, data=None):
+        self.vscroll.emit('scroll-event', event)
+
     def add_char_changed_listener(self, listener):
         self.char_changed_listeners.append(listener)
 
-    def scroll_to_offset(self, offset):
-        off = offset
-        off += off / self.bpl
+    # scroll to the addr
+    # select the byte at addr
+    # set focus
+    def show_addr(self, addr):
+        gobject.idle_add(self.show_addr_helper, addr)
 
-        buf = self.ascii_text.get_buffer()
+    def show_addr_helper(self, addr):
+        off = addr - self._base_addr
+        off *= 3
+
+        buf = self.hex_text.get_buffer()
         off_iter = buf.get_iter_at_offset(off)
-        off,off_iter.get_offset()
-        self.ascii_text.scroll_to_iter(off_iter, 0, True, 0, 0)
+
+        if self.scroll_mark is None:
+            self.scroll_mark = buf.create_mark(None, off_iter)
+        else:
+            buf.move_mark(self.scroll_mark, off_iter)
+
+        self.hex_text.scroll_to_mark(self.scroll_mark, 0, True, 0, 0)
+        iter2 = off_iter.copy()
+        iter2.forward_char()
+        buf.select_range(off_iter, iter2)
+        self.hex_text.grab_focus()
 
     def do_realize(self):
         gtk.HBox.do_realize(self)
@@ -646,10 +690,10 @@ class HexView(gtk.HBox):
 gobject.type_register(HexView)
 
 
-def char_changed_handler(offset, char):
-    print '%X' % (offset,), char, '%02X' % (ord(char),)
 
 if __name__ == "__main__":
+    def char_changed_handler(offset, char):
+        print '%X' % (offset,), char, '%02X' % (ord(char),)
     w = gtk.Window()
     w.resize(500,500)
     view = HexView()

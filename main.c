@@ -183,6 +183,7 @@ int main(int argc, char **argv)
     registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                     WATCH_LONGDOC);
     registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
+    registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC, DUMP_LONGDOC);
     registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
     registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
 

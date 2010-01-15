@@ -94,7 +94,7 @@ bool readmaps(pid_t target, list_t * regions)
                             useful = true;
                             break;
                         case REGION_HEAP_STACK_EXECUTABLE_BSS:
-                            if (inode == 0)
+                            if (filename[0] == '\0')
                             {
                                 useful = true;
                                 break;

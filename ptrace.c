@@ -618,6 +618,28 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
 }
 
 /* TODO: may use /proc/<pid>/mem here */
+bool read_array(pid_t target, void *addr, char *buf, int len)
+{
+    if (attach(target) == false) {
+        return false;
+    }
+
+    int i;
+    /* here we just read long by long, this should be ok for most of time */
+    /* partial hit is not handled */
+    for(i = 0; i < len; i += sizeof(long))
+    {
+        errno = 0;
+        *((long *)(buf+i)) = ptrace(PTRACE_PEEKDATA, target, addr+i, NULL);
+        if (EXPECT((*((long *)(buf+i)) == -1L) && (errno != 0), false)) {
+            return false;
+        }
+    }
+
+    return detach(target);
+}
+
+/* TODO: may use /proc/<pid>/mem here */
 bool write_array(pid_t target, void *addr, const void *data, int len)
 {
     int i,j;

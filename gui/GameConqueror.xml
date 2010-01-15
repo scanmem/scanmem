@@ -159,7 +159,7 @@
                     <property name="width_request">287</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
-                    <property name="tooltip_text" translatable="yes">Select a Process</property>
+                    <property name="tooltip_text" translatable="yes">Select a process</property>
                     <property name="xalign">0</property>
                     <property name="label" translatable="yes">No process selected</property>
                   </object>
@@ -354,16 +354,15 @@
                   </packing>
                 </child>
                 <child>
-                  <object class="GtkButton" id="MemoryViewer_Button">
+                  <object class="GtkButton" id="MemoryEditor_Button">
                     <property name="width_request">28</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
-                    <property name="sensitive">False</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
-                    <property name="tooltip_text" translatable="yes">Memory Viewer</property>
-                    <property name="image">image1</property>
-                    <signal name="clicked" handler="MemoryViewer_Button_clicked_cb"/>
+                    <property name="tooltip_text" translatable="yes">Memory Editor</property>
+                    <property name="image">edit_image</property>
+                    <signal name="clicked" handler="MemoryEditor_Button_clicked_cb"/>
                   </object>
                   <packing>
                     <property name="x">14</property>
@@ -1213,8 +1212,67 @@ Public License instead of this License.  But first, please read
     <property name="visible">True</property>
     <property name="stock">gtk-delete</property>
   </object>
-  <object class="GtkImage" id="image1">
+  <object class="GtkImage" id="edit_image">
     <property name="visible">True</property>
     <property name="stock">gtk-edit</property>
+  </object>
+  <object class="GtkWindow" id="MemoryEditor_Window">
+    <property name="height_request">280</property>
+    <property name="resizable">False</property>
+    <signal name="delete_event" handler="MemoryEditor_Window_delete_event_cb"/>
+    <child>
+      <object class="GtkVBox" id="vbox2">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkFixed" id="fixed2">
+            <property name="visible">True</property>
+            <child>
+              <object class="GtkLabel" id="label6">
+                <property name="width_request">70</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="label" translatable="yes">Address:</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="Address_Entry">
+                <property name="width_request">140</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">&#x25CF;</property>
+              </object>
+              <packing>
+                <property name="x">70</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="MemoryEditorJumpTo_Button">
+                <property name="width_request">28</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="image">jumpto_image</property>
+                <signal name="clicked" handler="MemoryEditorJumpTo_Button_clicked_cb"/>
+              </object>
+              <packing>
+                <property name="x">210</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkImage" id="jumpto_image">
+    <property name="visible">True</property>
+    <property name="stock">gtk-jump-to</property>
   </object>
 </interface>
