@@ -1,3 +1,9 @@
+scanmem (0.10~svn20100116r127-0ubuntu1) karmic; urgency=low
+
+  * Memory Editor 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 17 Jan 2010 00:06:56 +0800
+
 scanmem (0.10~svn20100116r120-0ubuntu1) karmic; urgency=low
 
   * Rearranged copyright strings
