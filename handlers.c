@@ -975,7 +975,7 @@ bool handler__exit(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-#define DOC_COLUMN 11           /* which column descriptions start on with help command */
+#define DOC_COLUMN  11           /* which column descriptions start on with help command */
 
 bool handler__help(globals_t * vars, char **argv, unsigned argc)
 {
@@ -1008,7 +1008,7 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
             }
 
             /* print out command name */
-            show_user("%*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
+            show_user("%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
 
             /* detailed information requested about specific command */
         } else if (command->command
