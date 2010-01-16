@@ -1,8 +1,7 @@
 TODOs
 =====
 
-- editable flag for hexview
-- make hexview editable or now based on the flag of the region
+- popup in memory editor
 - Documentation
 - memory edit fix & popup
 - logging
