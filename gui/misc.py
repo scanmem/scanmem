@@ -17,6 +17,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import gtk
+
 # check syntax, data range etc.
 # translate if neccesary
 # return (success, msg)
@@ -112,5 +114,62 @@ def test_number (string):
         pass
     return (((int_value is not None) or (float_value is not None)), int_value, float_value)
 
+# convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
+def build_simple_str_liststore(l):
+    r = gtk.ListStore(str)
+    for e in l:
+        r.append([e])
+    return r
 
+# create a renderer for the combobox, set the text to `col`
+def build_combobox(combobox, model, col=0):
+    combobox.set_model(model)
+    renderer = gtk.CellRendererText()
+    combobox.pack_start(renderer, True)
+    combobox.add_attribute(renderer, 'text', col)
 
+# set active item of the `combobox`
+# such that the value at `col` is `name`
+def combobox_set_active_item(combobox, name, col=0):
+    model = combobox.get_model()
+    iter = model.get_iter_first()
+    while iter is not None:
+        if model.get_value(iter, col) == name:
+            break
+        iter = model.iter_next(iter)
+    if iter is None:
+        raise ValueError('Cannot locate the item for %s'%(name,))
+    combobox.set_active_iter(iter)
+
+# append a column to `treeview`, with given `title`
+# keyword parameters
+#   renderer_class -- default: gtk.CellRendererText
+#   attributes --  if not None, will be applied to renderer
+#   properties -- if not None, will be applied to renderer
+#   signals -- if not None, will be connected to renderer
+# the latter two should be a list of tuples, i.e.  ((name1, value1), (name2, value2))
+def treeview_append_column(treeview, title, **kwargs):
+    renderer_class = kwargs.get('renderer_class', gtk.CellRendererText)
+    attributes = kwargs.get('attributes')
+    properties = kwargs.get('properties')
+    signals = kwargs.get('signals')
+
+    column = gtk.TreeViewColumn(title)
+    treeview.append_column(column)
+    renderer = renderer_class()
+    column.pack_start(renderer, True)
+    if attributes:
+        for k,v in attributes:
+            column.add_attribute(renderer, k, v)
+    if properties:
+        for k,v in properties:
+            renderer.set_property(k,v)
+    if signals:
+        for k,v in signals:
+            renderer.connect(k,v)
+
+# data is optional data to callback
+def menu_append_item(menu, name, callback, data):
+    item = gtk.MenuItem(name)
+    menu.append(item)
+    item.connect('activate', callback, data)
