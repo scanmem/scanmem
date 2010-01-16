@@ -1,3 +1,9 @@
+scanmem (0.10~svn20100116r129-0ubuntu1) karmic; urgency=low
+
+  * Fix float search
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 17 Jan 2010 01:24:11 +0800
+
 scanmem (0.10~svn20100116r127-0ubuntu1) karmic; urgency=low
 
   * Memory Editor 

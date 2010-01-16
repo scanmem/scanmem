@@ -84,7 +84,7 @@ def check_scan_command (data_type, cmd):
                 raise ValueError('%s is too small for %s' % (num_to_check, data_type))
 
 
-        if data_type.startswith('float') and (cbf is None):
+        if data_type.startswith('float') and (fv is None):
             raise ValueError('%s is not a float' % (num_to_check,))
         if data_type == 'number' and (not cbn):
             raise ValueError('%s is not a number' % (num_to_check,))
