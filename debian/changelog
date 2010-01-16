@@ -1,4 +1,4 @@
-scanmem (0.10~svn20100116r129-0ubuntu1) karmic; urgency=low
+scanmem (0.10~svn20100116r129-0ubuntu1) karmic; urgency=high
 
   * Fix float search
 
