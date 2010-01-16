@@ -527,7 +527,7 @@ class GameConqueror():
             try:
                 data = self.read_memory(start_addr, end_addr - start_addr)
             except IOError,e:
-                self.show_error('Cannot')
+                self.show_error('Cannot read memory')
                 return
             self.last_hexedit_address = (start_addr, end_addr)
             self.memoryeditor_hexview.payload=data
