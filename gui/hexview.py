@@ -146,8 +146,10 @@ class AsciiText(BaseText):
         return True
 
     def __on_key_press(self, widget, evt, data=None):
+        if not self._parent.editable:
+            return False
         c = evt.keyval
-        if unichr(c) in AsciiText._printable:
+        if c < 256 and (chr(c) in AsciiText._printable):
             buffer = self.get_buffer()
             bounds = buffer.get_selection_bounds()
             if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
@@ -155,8 +157,9 @@ class AsciiText(BaseText):
             else:
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
-                off -= off / (self._parent.bpl + 1)
-                self._parent.set_char_at_offset(off, unichr(c), self)
+                org_off = off - off / (self._parent.bpl + 1)
+                self._parent.emit('char-changed', org_off, c)
+                self.select_a_char(buffer.get_iter_at_offset(off+1))
             return True
         return False
 
@@ -295,26 +298,29 @@ class HexText(BaseText):
         self.prev_end = None
 
     def __on_key_press(self, widget, evt, data=None):
+        if not self._parent.editable:
+            return False
         char = evt.keyval
-        if unichr(char) in HexText._hexdigits:
+        if char < 256 and (chr(char) in HexText._hexdigits):
             buffer = self.get_buffer()
             bounds = buffer.get_selection_bounds()
             if bounds and (bounds[1].get_offset() - bounds[0].get_offset() > 1):
                 self.select_a_char()
             else:
-                c = unichr(char).upper()
+                c = chr(char).upper()
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
                 pos = off % 3
-                off /= 3
+                org_off = off / 3
                 txt = buffer.get_text(
-                        buffer.get_iter_at_offset(off*3),
-                        buffer.get_iter_at_offset(off*3+2),
+                        buffer.get_iter_at_offset(org_off*3),
+                        buffer.get_iter_at_offset(org_off*3+2),
                         True)
                 if pos < 2:
                     l = list(txt)
                     l[pos] = c
-                    self._parent.set_char_at_offset(off, unichr(int(''.join(l),16)), self)
+                    self._parent.emit('char-changed', org_off, int(''.join(l),16))
+                    self.select_a_char(buffer.get_iter_at_offset(off+1))
             return True
         return False
 
@@ -492,14 +498,12 @@ class HexView(gtk.HBox):
         self._font = "Monospace 10"
         self._payload = ""
         self._base_addr = 0;
-
-        self.char_changed_listeners = []
+        self.scroll_mark = None
+        self.editable = False
 
         self.vadj = gtk.Adjustment()
         self.vscroll = gtk.VScrollbar(self.vadj)
 
-        # used to scroll
-        self.scroll_mark = None
 
         self.offset_text = OffsetText(self)
         self.hex_text = HexText(self)
@@ -528,11 +532,10 @@ class HexView(gtk.HBox):
         self.pack_start(scroll(self.ascii_text), False, False)
         self.pack_end(self.vscroll, False, False)
 
+#        self.connect('char-changed', self.do_char_changed)
+
     def __on_scroll_event(self, widget, event, data=None):
         self.vscroll.emit('scroll-event', event)
-
-    def add_char_changed_listener(self, listener):
-        self.char_changed_listeners.append(listener)
 
     # scroll to the addr
     # select the byte at addr
@@ -610,13 +613,7 @@ class HexView(gtk.HBox):
         )
         return True
 
-    def set_char_at_offset(self, offset, char, caller):
-        for listener in self.char_changed_listeners:
-            listener(self.base_addr + offset, char)
-
-        buffer = caller.get_buffer()
-        raw_off = buffer.get_iter_at_mark(buffer.get_insert()).get_offset()
-
+    def do_char_changed(self, offset, charval):
         hex_buffer = self.hex_text.get_buffer()
         ascii_buffer = self.ascii_text.get_buffer()
         # set text
@@ -624,15 +621,14 @@ class HexView(gtk.HBox):
         iter1 = hex_buffer.get_iter_at_offset(offset * 3)
         iter2 = hex_buffer.get_iter_at_offset(offset * 3 + 2)
         hex_buffer.delete(iter1, iter2)
-        hex_buffer.insert(iter1, '%02X'%(ord(char),))
+        hex_buffer.insert(iter1, '%02X'%(charval,))
         # set ascii
         iter1 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl)
         iter2 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl + 1)
         ascii_buffer.delete(iter1, iter2)
+        char = chr(charval)
         ascii_buffer.insert(iter1, (char in AsciiText._printable and char or '.'))
-
-        iter = caller.get_buffer().get_iter_at_offset(raw_off+1)
-        caller.select_a_char(iter)
+        return True
 
     def get_payload(self):
         return self._payload
@@ -688,18 +684,19 @@ class HexView(gtk.HBox):
     base_addr = property(get_base_addr, set_base_addr)
 
 gobject.type_register(HexView)
-
-
+gobject.signal_new('char-changed', HexView, gobject.SIGNAL_RUN_LAST, gobject.TYPE_BOOLEAN, (int,int))
 
 if __name__ == "__main__":
-    def char_changed_handler(offset, char):
-        print '%X' % (offset,), char, '%02X' % (ord(char),)
+    def char_changed_handler(hexview, offset, charval):
+        print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
+        return False
     w = gtk.Window()
     w.resize(500,500)
     view = HexView()
     view.payload = "Woo welcome this is a simple read/only HexView widget for PacketManipulator"*16
     view.base_addr = 0x6fff000000000000;
-    view.add_char_changed_listener(char_changed_handler)
+#    view.connect('char-changed', char_changed_handler)
+    view.editable = True
     w.add(view)
     w.show_all()
     w.connect('delete-event', lambda *w: gtk.main_quit())
