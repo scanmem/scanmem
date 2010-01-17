@@ -1,6 +1,5 @@
 Next Version
 ============
-* progress report for checkmatches
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance
 * speedhack
