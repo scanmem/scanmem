@@ -22,6 +22,7 @@
 import sys
 import os
 import re
+import tempfile
 
 import pygtk
 import gtk
@@ -716,13 +717,12 @@ class GameConqueror():
         return not self.exit_flag
 
     def read_memory(self, addr, length):
-        lines = self.backend.send_command('dump %x %d' % (addr, length))
-        data = []
-        for l in lines:
-            data.extend([unichr(int(item,16)) for item in l.split()])
+        f = tempfile.NamedTemporaryFile()
+        self.backend.send_command('dump %x %d %s' % (addr, length, f.name))
+        data = f.read()
         if len(data) != length:
             raise Exception('Cannot access target memory')
-        return ''.join(data)
+        return data
             
     # addr could be int or str
     def write_value(self, addr, typestr, value):
