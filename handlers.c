@@ -1198,8 +1198,10 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     char *endptr;
     char *buf = NULL;
     int len;
+    bool dump_to_file = false;
+    FILE *dump_f = NULL;
 
-    if (argc != 3)
+    if (argc < 3 || argc > 4)
     {
         show_error("bad argument, see `help dump`.\n");
         return false;
@@ -1210,7 +1212,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     addr = (void *)(strtoll(argv[1], &endptr, 16));
     if ((errno != 0) || (*endptr != '\0'))
     {
-        show_error("bad address, see `help write`.\n");
+        show_error("bad address, see `help dump`.\n");
         return false;
     }
 
@@ -1219,8 +1221,19 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     len = strtoll(argv[2], &endptr, 0);
     if ((errno != 0) || (*endptr != '\0'))
     {
-        show_error("bad length, see `help write`.\n");
+        show_error("bad length, see `help dump`.\n");
         return false;
+    }
+
+    /* check filename */
+    if (argc == 4)
+    {
+        if((dump_f = fopen(argv[3], "wb")) == NULL)
+        {
+            show_error("failed to open file\n");
+            return false;
+        }
+        dump_to_file = true;
     }
 
     buf = malloc(len + sizeof(long));
@@ -1237,28 +1250,40 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    /* print it out */
-    int i,j;
-    int buf_idx = 0;
-    for (i = 0; i + 16 < len; i += 16)
+    if(dump_to_file)
     {
-        if (vars->options.backend == 0)
-            printf("%p: ", addr+i);
-        for (j = 0; j < 16; ++j)
+        if(fwrite(buf,1,len,dump_f) != len)
         {
-            printf("%02X ", (unsigned char)(buf[buf_idx++]));
-        }
-        printf("\n");
+            show_error("write to file failed.\n");
+            free(buf);
+            return false;
+        }  
     }
-    if (i < len)
+    else
     {
-        if (vars->options.backend == 0)
-            printf("%p: ", addr+i);
-        for (; i < len; ++i)
+        /* print it out */
+        int i,j;
+        int buf_idx = 0;
+        for (i = 0; i + 16 < len; i += 16)
         {
-            printf("%02X ", (unsigned char)(buf[buf_idx++]));
+            if (vars->options.backend == 0)
+                printf("%p: ", addr+i);
+            for (j = 0; j < 16; ++j)
+            {
+                printf("%02X ", (unsigned char)(buf[buf_idx++]));
+            }
+            printf("\n");
         }
-        printf("\n");
+        if (i < len)
+        {
+            if (vars->options.backend == 0)
+                printf("%p: ", addr+i);
+            for (; i < len; ++i)
+            {
+                printf("%02X ", (unsigned char)(buf[buf_idx++]));
+            }
+            printf("\n");
+        }
     }
 
     free(buf);

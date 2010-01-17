@@ -350,7 +350,7 @@ bool checkmatches(globals_t * vars,
 }
 
 /* read region using /proc/pid/mem */
-ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offset, size_t max)
+ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
 {
     char mem[32];
     int fd;
@@ -364,15 +364,9 @@ ssize_t readregion(void *buf, pid_t target, const region_t *region, size_t offse
         show_error("unable to open %s.\n", mem);
         return -1;
     }
-    
-    /* check offset is sane */
-    if (offset > region->size) {
-        show_error("unexpected offset while reading region.\n");
-        return -1;
-    }
-    
+
     /* try to honour the request */
-    len = pread(fd, buf, MIN(region->size - offset, max), (unsigned long)region->start + offset);
+    len = pread(fd, buf, count, offset);
     
     /* clean up */
     close(fd);
@@ -462,7 +456,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
         /* keep reading until completed */
         while (nread < r->size) {
-            if ((len = readregion(data + nread, vars->target, r, nread, r->size)) == -1) {
+            if ((len = readregion(vars->target, data+nread, r->size-nread, (unsigned long)(r->start+nread))) == -1) {
                 /* no, continue with whatever data was read */
                 break;
             } else {
@@ -624,6 +618,27 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
         return false;
     }
 
+#if HAVE_PROCMEM
+    int nread=0;
+    ssize_t tmpl;
+    while (nread < len) {
+        if ((tmpl = readregion(target, buf+nread, len-nread, (unsigned long)(addr+nread))) == -1) {
+            /* no, continue with whatever data was read */
+            break;
+        } else {
+            /* some data was read */
+            nread += tmpl;
+        }
+    }
+
+    if (nread < len)
+    {
+        detach(target);
+        return false;
+    }
+
+    return detach(target);
+#else
     int i;
     /* here we just read long by long, this should be ok for most of time */
     /* partial hit is not handled */
@@ -632,11 +647,12 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
         errno = 0;
         *((long *)(buf+i)) = ptrace(PTRACE_PEEKDATA, target, addr+i, NULL);
         if (EXPECT((*((long *)(buf+i)) == -1L) && (errno != 0), false)) {
+            detach(target);
             return false;
         }
     }
-
     return detach(target);
+#endif
 }
 
 /* TODO: may use /proc/<pid>/mem here */

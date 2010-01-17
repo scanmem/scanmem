@@ -227,8 +227,11 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc);
 
-#define DUMP_SHRTDOC "examine a memory region."
-#define DUMP_LONGDOC "usage: dump <address> <length>\n" 
+#define DUMP_SHRTDOC "dump a memory region to screen or a file" 
+#define DUMP_LONGDOC "usage: dump <address> <length> [<filename>]\n" \
+                "\n" \
+                "If <filename> is given, save the region of memory to the file \n" \
+                "Otherwise display it in a human-readable format.\n"
     
 bool handler__dump(globals_t * vars, char **argv, unsigned argc);
 

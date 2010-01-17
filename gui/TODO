@@ -1,11 +1,11 @@
 TODOs
 =====
 
+- icon in processlist
 - limit size of bytes read for memory editor
 - processlist sortable
 - popup in memory editor
 - Documentation
-- memory edit fix & popup
 - logging
 - custom address region scan
 - real-time update cheatlist/scanlist -- add a 'set' value
