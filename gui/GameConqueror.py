@@ -23,6 +23,7 @@ import sys
 import os
 import re
 import tempfile
+import platform
 
 import pygtk
 import gtk
@@ -222,6 +223,10 @@ class GameConqueror():
                              ,'Browse this address'
                              ,self.scanresult_popup_cb
                              ,'browse_this_address')
+        misc.menu_append_item(self.scanresult_popup
+                             ,'Scan for this address'
+                             ,self.scanresult_popup_cb
+                             ,'scan_for_this_address')
         self.scanresult_popup.show_all()
 
         # init popup menu for cheatlist
@@ -241,7 +246,6 @@ class GameConqueror():
 
         ###########################
         # init others (backend, flag...)
-
         self.pid = 0 # target pid
         self.maps = []
         self.last_hexedit_address = (0,0) # used for hexview
@@ -253,6 +257,7 @@ class GameConqueror():
         self.backend.add_progress_listener(self.backend_progress_cb)
         self.search_count = 0
         self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+
 
     ###########################
     # GUI callbacks
@@ -399,36 +404,32 @@ class GameConqueror():
         return False
 
     def scanresult_popup_cb(self, menuitem, data=None):
+        (model, iter) = self.scanresult_tv.get_selection().get_selected()
+        (addr, value, typestr) = model.get(iter, 0, 1, 2)
+        if iter is None:
+            return False
         if data == 'add_to_cheat_list':
-            (model, iter) = self.scanresult_tv.get_selection().get_selected()
-            if iter is not None:
-                (addr, value, typestr) = model.get(iter, 0, 1, 2)
-                self.add_to_cheat_list(addr, value, typestr)
-                return True
-            return False
+            self.add_to_cheat_list(addr, value, typestr)
+            return True
         elif data == 'browse_this_address':
-            (model, iter) = self.scanresult_tv.get_selection().get_selected()
-            if iter is not None:
-                addr = model.get(iter, 0)[0]
-                self.browse_memory(int(addr,16))
-                return True
-            return False
+            self.browse_memory(int(addr,16))
+            return True
+        elif data == 'scan_for_this_address':
+            self.scan_for_addr(int(addr,16))
+            return True
         return False
 
     def cheatlist_popup_cb(self, menuitem, data=None):
+        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
+        addr = model.get(iter, 3)[0]
+        if iter is None:
+            return False
         if data == 'remove_entry':
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is not None:
-                self.cheatlist_liststore.remove(iter) 
-                return True
-            return False
+            self.cheatlist_liststore.remove(iter) 
+            return True
         elif data == 'browse_this_address':
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is not None:
-                addr = model.get(iter, 3)[0]
-                self.browse_memory(int(addr,16))
-                return True
-            return False
+            self.browse_memory(int(addr,16))
+            return True
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
@@ -489,6 +490,30 @@ class GameConqueror():
                                  ,msg)
         dialog.run()
         dialog.destroy()
+
+    # return None if unknown
+    def get_pointer_width(self):
+        bits = platform.architecture()[0]
+        if not bits.endswith('bit'):
+            return None
+        try:
+            bitn = int(bits[:-len('bit')])
+            if bitn not in [8,16,32,64]:
+                return None
+            else:
+                return bitn
+        except:
+            return None
+        
+    def scan_for_addr(self, addr):
+        bits = self.get_pointer_width()
+        if bits is None:
+            show_error('Unknown architecture, you may report to developers')
+            return
+        self.reset_scan()
+        self.value_input.set_text('%#x'%(addr,))
+        misc.combobox_set_active_item(self.scan_data_type_combobox, 'int%d'%(bits,))
+        self.do_scan()
 
     def browse_memory(self, addr=None):
         # select a region contains addr
