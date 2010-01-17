@@ -1,3 +1,9 @@
+scanmem (0.10~svn20100118r133-0ubuntu1) karmic; urgency=low
+
+  * added `scan for this address1
+
+ -- WANG Lu <coolwanglu@gmail.com>  Mon, 18 Jan 2010 00:16:15 +0800
+
 scanmem (0.10~svn20100116r129-0ubuntu1) karmic; urgency=high
 
   * Fix float search
