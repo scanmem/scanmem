@@ -1,15 +1,15 @@
 TODOs
 =====
 
-- icon in processlist
 - limit size of bytes read for memory editor
 - processlist sortable
-- popup in memory editor
+- popup in memory editor -- like `add entry for this address`
+- manually add cheat
+- icon in processlist
 - Documentation
 - logging
 - custom address region scan
-- real-time update cheatlist/scanlist -- add a 'set' value
-- search for pointer
-- different types of locking ('>' & '<')
+- real-time update cheatlist/scanlist -- add a 'set' column
+- different types of locking ('+' & '-')
 - plugin-like system to support different datatypes (or actually representations)
-- UI improvement will be done only when needed!
+- different representation (dec, hex ...) for cheatlist

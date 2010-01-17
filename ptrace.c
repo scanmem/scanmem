@@ -273,6 +273,9 @@ bool checkmatches(globals_t * vars,
         return false;
 
 
+    int bytes_scanned = 0;
+    int total_scan_bytes = reading_swath.number_of_bytes;
+
     while (reading_swath.first_byte_in_child) {
         int match_length = 0;
         value_t data_value;
@@ -317,6 +320,12 @@ bool checkmatches(globals_t * vars,
             writing_swath_index = add_element(&vars->matches, writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
             --required_extra_bytes_to_record;
         }
+
+        if (EXPECT((total_scan_bytes >= 110) && (bytes_scanned % ((total_scan_bytes) / 10) == 10), false)) {
+            /* for user, just print a dot */
+            show_scan_progress(bytes_scanned, total_scan_bytes);
+        }
+        ++ bytes_scanned;
         
         /* Go on to the next one... */
         ++reading_iterator;
@@ -340,7 +349,7 @@ bool checkmatches(globals_t * vars,
     /* TODO: we'll need progress for checkmatches too */
     if (vars->options.backend == 1)
     {
-        show_scan_progress(1,1);
+        show_scan_progress(total_scan_bytes, total_scan_bytes);
     }
 
     show_info("we currently have %ld matches.\n", vars->num_matches);
@@ -538,7 +547,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 
             /* print a simple progress meter. */
-            if (EXPECT((offset % ((r->size) / 10) == 10), false)) {
+            if (EXPECT((r->size >= 110) && (offset % ((r->size) / 10) == 10), false)) {
                 /* for user, just print a dot */
                 show_scan_progress(bytes_scanned+offset, total_scan_bytes);
             }

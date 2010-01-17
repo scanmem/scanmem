@@ -120,13 +120,17 @@ This command is used to change the value of the variable(s) once found by elimin
 Please note, some applications will store values in multiple locations.
 
 .B dump
-.I <address> <length>
+.I <address> <length> [<filename>]
 
 Dump the memory region starting from 
 .I <address>
 of length
 .I <length>
-into a human-readable format
+into a human-readable format.
+
+If 
+.I <filename>
+is given, data will be saved into the file, otherwise data will be displayed into stdout in a human readable format
 
 .B write
 .I <value_type> <address> <value>
