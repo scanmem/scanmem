@@ -47,17 +47,33 @@ static char **commandcompletion(const char *text, int start, int end);
 bool getcommand(globals_t * vars, char **line)
 {
     char prompt[64];
+    bool success = true;
 
     assert(vars != NULL);
 
-    snprintf(prompt, sizeof(prompt), "%ld>%s", vars->num_matches, vars->options.backend ? "\n" : " "); /* if running as a backend, output a \n for better machine reading */
+    snprintf(prompt, sizeof(prompt), "%ld>", vars->num_matches);
 
     rl_readline_name = "scanmem";
     rl_attempted_completion_function = commandcompletion;
 
     while (true) {
-        /* read in the next command using readline library */
-        if ((*line = readline(prompt)) == NULL) {
+        if (vars->options.backend == 0)
+        {
+            /* for normal user, read in the next command using readline library */
+            success = ((*line = readline(prompt)) != NULL);
+        }
+        else 
+        {
+            /* disable readline for front-end, since readline may produce ansi escape codes, which is terrible for front-end */
+            printf("%s\n", prompt); /* add a newline for front-end */
+            *line = NULL; /* let getline malloc it */
+            size_t n;
+            ssize_t bytes_read = getline(line, &n, stdin);
+            success = (bytes_read > 0);
+            if (success)
+                (*line)[bytes_read-1] = '\0'; /* remove the trialing newline */
+        }
+        if (!success) {
             /* EOF */
             if ((*line = strdup("__eof")) == NULL) {
                 fprintf(stderr,
