@@ -476,7 +476,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
         /* debug */
         if (nread < r->size)
-            fprintf(stderr, "error, cannot read entire memory region\n")
+            fprintf(stderr, "error, cannot read entire memory region\n");
 #else     
         /* cannot use /proc/pid/mem */
         nread = r->size;
