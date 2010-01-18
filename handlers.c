@@ -233,7 +233,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
-                        v.flags = old.flags;
+                        v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
                         
 

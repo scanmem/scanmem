@@ -21,7 +21,6 @@
 */
 
 /* prepare LARGEFILE support, i'll autoconf this later */
-#if HAVE_PROCMEM
 # ifdef _FILE_OFFSET_BITS
 #  undef _FILE_OFFSET_BITS
 # endif
@@ -30,7 +29,6 @@
 #  undef _LARGEFILE64_SOURCE
 # endif
 # define _LARGEFILE64_SOURCE
-#endif
 
 /* for pread */
 # ifdef _XOPEN_SOURCE
@@ -359,7 +357,7 @@ bool checkmatches(globals_t * vars,
 }
 
 /* read region using /proc/pid/mem */
-ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
+ssize_t readregion(pid_t target, void *buf, size_t count, off_t offset)
 {
     char mem[32];
     int fd;
@@ -391,12 +389,16 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     int required_extra_bytes_to_record = 0;
     long total_size = 0;
     unsigned regnum = 0;
-    unsigned char *data = NULL;
     element_t *n = vars->regions->head;
     region_t *r;
-    void *address;
     unsigned long total_scan_bytes = 0;
     unsigned long bytes_scanned = 0;
+    void *address = NULL;
+
+#if HAVE_PROCMEM
+    unsigned char *data = NULL;
+    ssize_t len = 0;
+#endif
 
     /* used to fill in non-match regions */
     match_flags zero_flag;
@@ -451,7 +453,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     /* check every memory region */
     while (n) {
         unsigned offset, nread = 0;
-        ssize_t len = 0;
 
         /* load the next region */
         r = n->data;
@@ -465,7 +466,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
         /* keep reading until completed */
         while (nread < r->size) {
-            if ((len = readregion(vars->target, data+nread, r->size-nread, (unsigned long)(r->start+nread))) == -1) {
+            if ((len = readregion(vars->target, data+nread, r->size-nread, (off_t)(r->start+nread))) == -1) {
                 /* no, continue with whatever data was read */
                 break;
             } else {
@@ -629,10 +630,10 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
     }
 
 #if HAVE_PROCMEM
-    int nread=0;
+    unsigned nread=0;
     ssize_t tmpl;
     while (nread < len) {
-        if ((tmpl = readregion(target, buf+nread, len-nread, (unsigned long)(addr+nread))) == -1) {
+        if ((tmpl = readregion(target, buf+nread, len-nread, (off_t)(addr+nread))) == -1) {
             /* no, continue with whatever data was read */
             break;
         } else {
