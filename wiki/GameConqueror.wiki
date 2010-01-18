@@ -6,4 +6,5 @@ GameConqueror is written in PyGTK.
 = Features =
 
   * Locking on multiple variables
+  * Memory Viewer/Editor
   * ... many to be done
