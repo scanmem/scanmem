@@ -474,9 +474,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
         }
 
-        /* debug */
-        if (nread < r->size)
-            fprintf(stderr, "error, cannot read entire memory region\n");
 #else     
         /* cannot use /proc/pid/mem */
         nread = r->size;
@@ -521,9 +518,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 #else
             if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
-                /* debug */
-                if (nread < r->size)
-                    fprintf(stderr, "error, cannot read entire memory region(ptrace)\n")
                 break;
             }
 #endif
