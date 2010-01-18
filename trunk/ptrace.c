@@ -473,6 +473,10 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                 nread += len;
             }
         }
+
+        /* debug */
+        if (nread < r->size)
+            fprintf(stderr, "error, cannot read entire memory region\n")
 #else     
         /* cannot use /proc/pid/mem */
         nread = r->size;
@@ -499,7 +503,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             data_value.int64_value    = *((int64_t *)(&data[offset]));
             
             /* Mark which values this can't be */
-            if (nread - offset < sizeof(int64_t))
+            if (EXPECT((nread - offset < sizeof(int64_t)), false))
             {
                 data_value.flags.u64b = data_value.flags.s64b = data_value.flags.f64b = 0;
                 if (nread - offset < sizeof(int32_t))
@@ -517,6 +521,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 #else
             if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
+                /* debug */
+                if (nread < r->size)
+                    fprintf(stderr, "error, cannot read entire memory region(ptrace)\n")
                 break;
             }
 #endif
@@ -533,7 +540,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                     checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 }
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value);
                 
                 ++vars->num_matches;
                 
@@ -542,7 +549,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             else if (required_extra_bytes_to_record)
             {
                 old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value /* ,MATCHES_AND_VALUES */);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value);
                 --required_extra_bytes_to_record;
             }
 
