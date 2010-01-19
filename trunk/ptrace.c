@@ -58,7 +58,9 @@
 #define min(a,b) (((a)<(b))?(a):(b))
 
 /* ptrace peek buffer, used by peekdata() */
-#define MAX_PEEKBUF_SIZE (4*sizeof(int64_t))
+/* make it larger in order to reduce shift */
+/* #define MAX_PEEKBUF_SIZE (4*sizeof(int64_t)) */
+#define MAX_PEEKBUF_SIZE (1024)
 static struct {
     uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from ptrace()  */
     unsigned size;              /* number of entries (in bytes) */
@@ -137,16 +139,19 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         shift_size1 = (reqaddr + sizeof(int64_t)) - (peekbuf.base + peekbuf.size);
         shift_size1 = sizeof(long) * (1 + (shift_size1-1) / sizeof(long));
 
-        /* head shift */
-        shift_size2 = reqaddr-peekbuf.base;
-        shift_size2 = sizeof(long) * (shift_size2 / sizeof(long));
-
-        for (i = shift_size2; i < peekbuf.size; ++i)
+        /* head shift if necessary*/
+        if (((reqaddr + sizeof(int64_t)) - (peekbuf.base + MAX_PEEKBUF_SIZE)) > 0) 
         {
-            peekbuf.cache[i - shift_size2] = peekbuf.cache[i];
+            shift_size2 = reqaddr-peekbuf.base;
+            shift_size2 = sizeof(long) * (shift_size2 / sizeof(long));
+
+            for (i = shift_size2; i < peekbuf.size; ++i)
+            {
+                peekbuf.cache[i - shift_size2] = peekbuf.cache[i];
+            }
+            peekbuf.size -= shift_size2;
+            peekbuf.base += shift_size2;
         }
-        peekbuf.size -= shift_size2;
-        peekbuf.base += shift_size2;
     } else {
 
         /* cache miss, invalidate cache */
