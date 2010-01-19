@@ -69,6 +69,7 @@ bool getcommand(globals_t * vars, char **line)
         {
             /* disable readline for front-end, since readline may produce ansi escape codes, which is terrible for front-end */
             printf("%s\n", prompt); /* add a newline for front-end */
+            fflush(stdout); /* otherwise front-end may not receive this */
             *line = NULL; /* let getline malloc it */
             size_t n;
             ssize_t bytes_read = getline(line, &n, stdin);
