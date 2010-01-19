@@ -350,7 +350,7 @@ bool checkmatches(globals_t * vars,
 }
 
 /* read region using /proc/pid/mem */
-ssize_t readregion(pid_t target, void *buf, size_t count, off_t offset)
+ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
 {
     char mem[32];
     int fd;
@@ -459,7 +459,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
         /* keep reading until completed */
         while (nread < r->size) {
-            if ((len = readregion(vars->target, data+nread, r->size-nread, (off_t)(r->start+nread))) == -1) {
+            if ((len = readregion(vars->target, data+nread, r->size-nread, (unsigned long)(r->start+nread))) == -1) {
                 /* no, continue with whatever data was read */
                 break;
             } else {
@@ -626,7 +626,7 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
     unsigned nread=0;
     ssize_t tmpl;
     while (nread < len) {
-        if ((tmpl = readregion(target, buf+nread, len-nread, (off_t)(addr+nread))) == -1) {
+        if ((tmpl = readregion(target, buf+nread, len-nread, (unsigned long)(addr+nread))) == -1) {
             /* no, continue with whatever data was read */
             break;
         } else {
