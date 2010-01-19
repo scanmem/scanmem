@@ -1,3 +1,10 @@
+scanmem (0.10~svn20100119r145-0ubuntu1) karmic; urgency=high
+
+  * Several bugs fixed
+  * some code optimization
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 19 Jan 2010 21:18:19 +0800
+
 scanmem (0.10~svn20100118r133-0ubuntu1) karmic; urgency=low
 
   * added `scan for this address1

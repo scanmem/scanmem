@@ -140,7 +140,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         shift_size1 = sizeof(long) * (1 + (shift_size1-1) / sizeof(long));
 
         /* head shift if necessary*/
-        if (((reqaddr + sizeof(int64_t)) - (peekbuf.base + MAX_PEEKBUF_SIZE)) > 0) 
+        if (peekbuf.size + shift_size1 > MAX_PEEKBUF_SIZE) 
         {
             shift_size2 = reqaddr-peekbuf.base;
             shift_size2 = sizeof(long) * (shift_size2 / sizeof(long));
