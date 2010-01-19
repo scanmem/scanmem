@@ -5,6 +5,10 @@
 #ifndef _COMMANDS_INC
 #define _COMMANDS_INC           /* include guard */
 
+#include <stdbool.h>
+
+#include "scanmem.h"
+
 /*lint -esym(534,registercommand) okay to ignore return value */
 
 typedef struct {

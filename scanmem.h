@@ -7,19 +7,17 @@
 #ifndef _SCANMEM_INC
 #define _SCANMEM_INC            /* include guard */
 
+/*lint +libh(config.h) */
+#include "config.h"
+
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>          /*lint !e537 */
+
 #include "scanroutines.h"
 #include "list.h"
 #include "value.h"
-#include "maps.h"
-#include "show_message.h"
 #include "target_memory_info_array.h"
-
-/*lint +libh(config.h) */
-
-#include "config.h"
 
 /* list of functions where i dont want to be warned about ignored return value */
 

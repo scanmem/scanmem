@@ -24,6 +24,8 @@
 # define _GNU_SOURCE
 #endif
 
+#include "config.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -34,6 +36,7 @@
 #include "scanmem.h"
 #include "commands.h"
 #include "handlers.h"
+#include "show_message.h"
 
 static void printhelp(void);
 static void sighandler(int n);
