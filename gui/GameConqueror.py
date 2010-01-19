@@ -577,9 +577,11 @@ class GameConqueror():
     # this callback will be called from other thread
     def backend_progress_cb(self, cur, total):
         gtk.gdk.threads_enter()
-        self.scanprogress_progressbar.set_fraction(float(cur)/total)
+        # cur and total may be 0!
         if (cur == total) and self.is_scanning:
+            self.scanprogress_progressbar.set_fraction(1.0)
             self.finish_scan()
+        self.scanprogress_progressbar.set_fraction(float(cur)/total)
         gtk.gdk.threads_leave()
 
     def add_to_cheat_list(self, addr, value, typestr):
