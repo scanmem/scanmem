@@ -122,13 +122,13 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     /* check if we have a cache hit */
     if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
-            (unsigned) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
+            (unsigned long) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
 
         result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
         return true;
     } else if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
-            (unsigned) (reqaddr - peekbuf.base) < peekbuf.size) {
+            (unsigned long) (reqaddr - peekbuf.base) < peekbuf.size) {
 
         assert(peekbuf.size != 0);
 
@@ -161,7 +161,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     
     for (i = 0; i < shift_size1; i += sizeof(long))
     {
-        char *ptrace_address = peekbuf.base + peekbuf.size + i;
+        char *ptrace_address = peekbuf.base + peekbuf.size;
         long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
 
         /* check if ptrace() succeeded */
