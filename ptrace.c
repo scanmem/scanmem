@@ -20,15 +20,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-/* prepare LARGEFILE support, i'll autoconf this later */
-# ifdef _FILE_OFFSET_BITS
-#  undef _FILE_OFFSET_BITS
-# endif
-# define _FILE_OFFSET_BITS 64
-# ifdef _LARGEFILE64_SOURCE
-#  undef _LARGEFILE64_SOURCE
-# endif
-# define _LARGEFILE64_SOURCE
+#include "config.h"
 
 /* for pread */
 # ifdef _XOPEN_SOURCE
@@ -61,6 +53,7 @@
 #include "value.h"
 #include "scanroutines.h"
 #include "scanmem.h"
+#include "show_message.h"
 
 #define min(a,b) (((a)<(b))?(a):(b))
 

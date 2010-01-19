@@ -24,6 +24,8 @@
 # define _GNU_SOURCE
 #endif
 
+#include "config.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <stddef.h>
@@ -36,6 +38,7 @@
 #include "list.h"
 #include "maps.h"
 #include "scanmem.h"
+#include "show_message.h"
 
 bool readmaps(pid_t target, list_t * regions)
 {
