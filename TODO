@@ -1,5 +1,6 @@
 Next Version
 ============
+* optimize if (xxx == 1), peekbuf (shift2 vs maxbufsize)
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance
 * speedhack
