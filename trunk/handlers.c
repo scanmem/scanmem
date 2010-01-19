@@ -24,6 +24,8 @@
 # define _GNU_SOURCE
 #endif
 
+#include "config.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -40,13 +42,14 @@
 #include <sys/time.h>
 #include <limits.h>            /* to determine the word width */
 #include <errno.h>
+#include <inttypes.h>
 
 #include <readline/readline.h>
 
-#include "scanmem.h"
 #include "commands.h"
 #include "handlers.h"
 #include "interrupt.h"
+#include "show_message.h"
 
 #define USEPARAMS() ((void) vars, (void) argv, (void) argc)     /* macro to hide gcc unused warnings */
 
@@ -228,7 +231,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t old;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
 
-                        show_info("setting *%p to %#llx...\n", address, (long long)userval.int64_value); 
+                        show_info("setting *%p to %#"PRIx64"...\n", address, userval.int64_value); 
                         
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
@@ -269,7 +272,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         v.flags = old.flags;
                         uservalue2value(&v, &userval);
 
-                        show_info("setting *%p to %#llx...\n", address, (long long)v.int64_value); 
+                        show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
 
                         if (setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
@@ -1314,28 +1317,28 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     {
         data_width = 1;
         datatype = 0;
-        fmt = "%hhd";
+        fmt = "%"PRId8;
     }
     else if ((strcasecmp(argv[1], "i16") == 0)
            ||(strcasecmp(argv[1], "int16") == 0))
     {
         data_width = 2;
         datatype = 0;
-        fmt = "%hd";
+        fmt = "%"PRId16;
     }
     else if ((strcasecmp(argv[1], "i32") == 0)
            ||(strcasecmp(argv[1], "int32") == 0))
     {
         data_width = 4;
         datatype = 0;
-        fmt = "%d";
+        fmt = "%"PRId32;
     }
     else if ((strcasecmp(argv[1], "i64") == 0)
            ||(strcasecmp(argv[1], "int64") == 0))
     {
         data_width = 8;
         datatype = 0;
-        fmt = "%lld";
+        fmt = "%"PRId64;
     }
     else if ((strcasecmp(argv[1], "f32") == 0)
            ||(strcasecmp(argv[1], "float32") == 0))  

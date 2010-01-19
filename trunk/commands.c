@@ -24,6 +24,8 @@
 # define _GNU_SOURCE
 #endif
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -35,8 +37,8 @@
 
 #include <readline/readline.h>
 
-#include "scanmem.h"
 #include "commands.h"
+#include "show_message.h"
 
 /*
  * registercommand - add the command and a pointer to its handler to the commands list.

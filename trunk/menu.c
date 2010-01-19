@@ -22,6 +22,8 @@
 # define _GNU_SOURCE
 #endif
 
+#include "config.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,6 +36,7 @@
 
 #include "scanmem.h"
 #include "commands.h"
+#include "show_message.h"
 
 static char *commandgenerator(const char *text, int state);
 static char **commandcompletion(const char *text, int start, int end);
