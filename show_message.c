@@ -32,7 +32,7 @@ void show_info(const char *fmt, ...)
     fprintf(stderr, "info: ");
     vfprintf(stderr, fmt, args);
     /* make sure this line ends, it's ok if this creates a new line, since the front-end will ignore it */
-    if (globals.options.backend == 1) fprintf(stderr, "\n");  
+    if (globals.options.backend) fprintf(stderr, "\n");  
     va_end (args);
 }
 
@@ -43,7 +43,7 @@ void show_error(const char *fmt, ...)
     fprintf(stderr, "error: ");
     vfprintf(stderr, fmt, args);
     /* make sure this line ends, it's ok if this creates a new line, since the front-end will ignore it */
-    if (globals.options.backend == 1) fprintf(stderr, "\n");  
+    if (globals.options.backend) fprintf(stderr, "\n");  
     va_end (args);
 }
 
@@ -54,7 +54,7 @@ void show_warn(const char *fmt, ...)
     fprintf(stderr, "warn: ");
     vfprintf(stderr, fmt, args);
     /* make sure this line ends, it's ok if this creates a new line, since the front-end will ignore it */
-    if (globals.options.backend == 1) fprintf(stderr, "\n");  
+    if (globals.options.backend) fprintf(stderr, "\n");  
     va_end (args);
 }
 
@@ -62,16 +62,31 @@ void show_user(const char *fmt, ...)
 {
     va_list args;
     va_start (args, fmt);
-    if (globals.options.backend == 0)
+    if (!(globals.options.backend))
     {
         vfprintf(stderr, fmt, args);
     }
     va_end (args);
 }
 
+void show_debug(const char *fmt, ...)
+{
+    va_list args;
+    va_start (args, fmt);
+    if (globals.options.debug)
+    {
+        fprintf(stderr, "debug: ");
+        vfprintf(stderr, fmt, args);
+        /* make sure this line ends, it's ok if this creates a new line, since the front-end will ignore it */
+        if (globals.options.backend) fprintf(stderr, "\n");  
+    }
+    va_end (args);
+}
+
+
 void show_scan_progress(unsigned long cur, unsigned long total)
 {
-    if (globals.options.backend == 0)
+    if (!(globals.options.backend))
     {
         fprintf(stderr, ".");
         fflush(stderr);

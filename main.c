@@ -197,7 +197,7 @@ int main(int argc, char **argv)
     registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
                     DEFAULT_LONGDOC);
 
-    if (globals.options.backend == 0)
+    if (!(globals.options.backend))
         printversion();
 
     /* this will initialise matches and regions */
