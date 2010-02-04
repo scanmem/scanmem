@@ -91,7 +91,7 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
     }
     else
     {
-        long local_index_excess = remote_address - remote_address_of_last_element(swath ) - 1;
+        long local_index_excess = remote_address - remote_address_of_last_element(swath );
         long local_address_excess = local_index_excess * sizeof(old_value_and_match_info);
          
         if (local_address_excess >= sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info))
@@ -108,7 +108,7 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
             /* It is most memory-efficient to write over the intervening space with null values */
             *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath ) + local_address_excess, &swath);
             memset(local_address_beyond_last_element(swath), 0, local_address_excess);
-            swath->number_of_bytes += local_index_excess;
+            swath->number_of_bytes += local_index_excess - 1;
         }
     }
     
