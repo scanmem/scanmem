@@ -431,6 +431,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     
     total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
     
+    show_debug("allocate array, size %ld\n", total_size);
+
     if (!(vars->matches = allocate_array(vars->matches, total_size)))
     {
         show_error("could not allocate match array\n");
