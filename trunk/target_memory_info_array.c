@@ -30,11 +30,6 @@
 
 #include "target_memory_info_array.h"
 
-#define SIZE_OF_ELEMENT_TYPE(type) sizeof(old_value_and_match_info)
-/*
-#define SIZE_OF_ELEMENT_TYPE(type) (type == MATCHES ? sizeof(match_flags) : type == MATCHES_AND_VALUES ? sizeof(old_value_and_match_info) : sizeof(unsigned char))
-*/
-
 matches_and_old_values_array * allocate_array (matches_and_old_values_array *array, long max_bytes)
 {
     /* Make enough space for the array header and a null first swath. */
@@ -58,7 +53,11 @@ matches_and_old_values_array * allocate_enough_to_reach(matches_and_old_values_a
         matches_and_old_values_array *original_location = array;
         
         /* Allocate twice as much each time, so we don't have to do it too often */
-        long bytes_to_allocate = array->bytes_allocated * 2;
+        long bytes_to_allocate = array->bytes_allocated;
+        while(bytes_to_allocate < bytes_needed)
+            bytes_to_allocate *= 2;
+
+        show_debug("to_allocate %ld, max %ld\n", bytes_to_allocate, array->max_needed_bytes);
         
         /* Sometimes we know an absolute max that we will need */
         if (array->max_needed_bytes < bytes_to_allocate)
@@ -86,19 +85,19 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
         assert(swath->first_byte_in_child == NULL);
         
         /* We have to overwrite this as a new swath */
-        *array = allocate_enough_to_reach(*array, (void *)swath + sizeof(matches_and_old_values_swath) + SIZE_OF_ELEMENT_TYPE(type), &swath);
+        *array = allocate_enough_to_reach(*array, (void *)swath + sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info), &swath);
         
         swath->first_byte_in_child = remote_address;
     }
     else
     {
-        long local_index_excess = remote_address - 1 - remote_address_of_last_element(swath );
-        long local_address_excess = local_index_excess * SIZE_OF_ELEMENT_TYPE(type);
+        long local_index_excess = remote_address - remote_address_of_last_element(swath );
+        long local_address_excess = local_index_excess * sizeof(old_value_and_match_info);
          
-        if (local_address_excess >= sizeof(matches_and_old_values_swath))
+        if (local_address_excess >= sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info))
         {
             /* It is most memory-efficient to start a new swath */
-            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath ) + sizeof(matches_and_old_values_swath) + SIZE_OF_ELEMENT_TYPE(type), &swath);
+            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath ) + sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info), &swath);
 
             swath = local_address_beyond_last_element(swath );
             swath->first_byte_in_child = remote_address;
@@ -107,9 +106,8 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
         else
         {
             /* It is most memory-efficient to write over the intervening space with null values */
-            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath ) + local_address_excess + SIZE_OF_ELEMENT_TYPE(type), &swath);
-            
-            memset(local_address_beyond_last_element(swath ), 0, local_address_excess);
+            *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath ) + local_address_excess, &swath);
+            memset(local_address_beyond_last_element(swath), 0, local_address_excess);
             swath->number_of_bytes += local_index_excess;
         }
     }

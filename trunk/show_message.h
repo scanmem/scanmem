@@ -43,6 +43,9 @@ void show_error(const char *fmt, ...);
 /* prepend 'warn: ', output to stderr */
 void show_warn(const char *fmt, ...);
 
+/* display message only when in debug mode */
+void show_debug(const char *fmt, ...);
+
 /* display message only when not running as a backend */
 void show_user(const char *fmt, ...);
 
