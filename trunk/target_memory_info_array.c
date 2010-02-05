@@ -29,6 +29,7 @@
 #include <ctype.h>
 
 #include "target_memory_info_array.h"
+#include "show_message.h"
 
 matches_and_old_values_array * allocate_array (matches_and_old_values_array *array, long max_bytes)
 {

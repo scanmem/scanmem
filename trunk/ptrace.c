@@ -244,6 +244,16 @@ bool checkmatches(globals_t * vars,
 {
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
+
+    long bytes_scanned = 0;
+    long total_scan_bytes = 0;
+    matches_and_old_values_swath *tmp_swath_index = reading_swath_index;
+    while(tmp_swath_index->number_of_bytes)
+    {
+        total_scan_bytes += tmp_swath_index->number_of_bytes;
+        tmp_swath_index = (matches_and_old_values_swath *)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
+    }
+
     int reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     writing_swath_index->first_byte_in_child = NULL;
@@ -267,11 +277,6 @@ bool checkmatches(globals_t * vars,
     /* stop and attach to the target */
     if (attach(vars->target) == false)
         return false;
-
-
-    int bytes_scanned = 0;
-    int total_scan_bytes = reading_swath.number_of_bytes;
-
     while (reading_swath.first_byte_in_child) {
         int match_length = 0;
         value_t data_value;
