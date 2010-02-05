@@ -1,3 +1,10 @@
+scanmem (0.10~svn20100205r151-0ubuntu1) karmic; urgency=low
+
+  * Added some debug info relative to memory allocation
+  * Release 0.10
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 04 Feb 2010 21:27:40 +0800
+
 scanmem (0.10~svn20100119r145-0ubuntu1) karmic; urgency=high
 
   * Several bugs fixed

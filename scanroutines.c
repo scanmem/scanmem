@@ -227,6 +227,11 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT64, 64)
 /*----------------*/
 /* for BYTEARRAY */
 /*----------------*/
+int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
+{
+   return saveflags->bytearray_length = ((old_value)->flags.bytearray_length); 
+}
+
 int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     bytearray_element_t *array = user_value->bytearray_value;
@@ -285,6 +290,10 @@ int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*------------*/
 /* for STRING */
 /*------------*/
+int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
+{
+   return saveflags->string_length = ((old_value)->flags.string_length); 
+}
 int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
