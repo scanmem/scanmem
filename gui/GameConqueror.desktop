@@ -1,6 +1,6 @@
 [Desktop Entry]
 Name=Game Conqueror
-Comment=A Game hacking tool. A GUI front-end for scanmem.
+Comment=A game hacking tool. A GUI front-end for scanmem.
 Exec=gameconqueror
 Terminal=false
 Type=Application
