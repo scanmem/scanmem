@@ -1,3 +1,10 @@
+scanmem (0.10~svn20100205r151-0ubuntu1) lucid; urgency=low
+
+  * Repackage for Lucid
+  * Replace libreadline5-dev with libreadline-dev
+
+ -- WANG Lu <coolwanglu@gmail.com>  Wed, 14 Apr 2010 03:06:09 +0800
+
 scanmem (0.10~svn20100205r151-0ubuntu1) karmic; urgency=low
 
   * Added some debug info relative to memory allocation
