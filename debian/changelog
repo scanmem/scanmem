@@ -1,4 +1,4 @@
-scanmem (0.10~svn20100205r151-0ubuntu1) lucid; urgency=low
+scanmem (0.10~svn20100414r155-0ubuntu1) lucid; urgency=low
 
   * Repackage for Lucid
   * Replace libreadline5-dev with libreadline-dev
