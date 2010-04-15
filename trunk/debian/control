@@ -17,7 +17,7 @@ Description: Program to locate and modify a variable in a running process
 
 Package: gameconqueror
 Architecture: all
-Depends: scanmem (> 0.08), python, python-gtk2
+Depends: scanmem (>= 0.10), python, python-gtk2
 Description: A GUI for scanmem, a game hacking tool
  Scanmem is a simple interactive debugging utility for Linux, used to locate
  the address of a variable in a running process. This can be used for the
