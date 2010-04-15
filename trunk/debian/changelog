@@ -1,3 +1,9 @@
+scanmem (0.10-1) unstable; urgency=low
+
+  * Packging for Debian
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 15 Apr 2010 15:57:54 +0800
+
 scanmem (0.10~svn20100414r155-0ubuntu1) lucid; urgency=low
 
   * Repackage for Lucid
