@@ -1,8 +1,9 @@
-scanmem (0.10-1) unstable; urgency=low
+scanmem (0.10~svn20100420r161-0ubuntu1) lucid; urgency=low
 
-  * Packging for Debian
+  * Merge manpage and other packaging files for Debian (thanks to Kartik
+          Mistry)
 
- -- WANG Lu <coolwanglu@gmail.com>  Thu, 15 Apr 2010 15:57:54 +0800
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 20 Apr 2010 21:25:18 +0800
 
 scanmem (0.10~svn20100414r155-0ubuntu1) lucid; urgency=low
 
