@@ -1,10 +1,11 @@
 Next Version
 ============
+* fix freebsd build
 * optimize `if (xxx == 1)`
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance
 * speedhack
-* bytearray flag check (truncval_to_flags, checkmatches, update comand for bytearray&string)
+* bytearray flag check (truncval_to_flags, checkmatches, update command for bytearray&string)
 
 Future
 ======
