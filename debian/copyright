@@ -13,18 +13,18 @@ Files: *
 Copyright © 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
 Copyright © 2009           Eli Dupree <elidupree@charter.net>
 Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
-License: GPL-2
+License: GPL-2+
 
-Files: scanroutines.*, 
-       show_message.*, 
+Files: scanroutines.*,
+       show_message.*,
        gui/GameConqueror*
 Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
-License: GPL-3
+License: GPL-3+
 
 Files: gui/hexview.py
 Coypright © 2008,2009      Adriano Monteiro Marques
 Copyright © 2010           WANG Lu <coolwanglu@gmail.com>
-License: GPL-2
+License: GPL-2+
 
 Files: install-sh
 Copyright © 1994 X Consortium
@@ -55,7 +55,7 @@ License:
 
 	FSF changes to this file are in the public domain.
 
-License: GPL-2
+License: GPL-2+
 	This package is free software; you can redistribute it and/or modify it
 	under the terms of the GNU General Public License as published by the
 	Free Software Foundation; either version 2 of the License, or (at your
@@ -70,23 +70,23 @@ License: GPL-2
 	with this package; if not, write to the Free Software Foundation, Inc.,
 	51 Franklin St, Fifth Floor, Boston, MA  02110-1301 USA
 
-License: GPL-3
+License: GPL-3+
+	This package is free software: you can redistribute it and/or modify
+	it under the terms of the GNU General Public License as published by
+	the Free Software Foundation, either version 3 of the License, or
+	(at your option) any later version.
 
-    This package is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
+	This package is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	GNU General Public License for more details.
 
-    This package is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
+	You should have received a copy of the GNU General Public License
+	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-On Debian-based systems, the complete text of the GNU General Public License can be
-found in /usr/share/common-licenses/GPL, /usr/share/common-licenses/GPL-2 and /usr/share/common-licenses/GPL-3.
+On Debian-based systems, the complete text of the GNU General Public License
+can be found in /usr/share/common-licenses/GPL-2 and
+/usr/share/common-licenses/GPL-3.
 
 The Debian packaging is:
 
