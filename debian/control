@@ -2,8 +2,8 @@ Source: scanmem
 Section: utils
 Priority: extra
 Maintainer: WANG Lu <coolwanglu@gmail.com>
-Build-Depends: cdbs, debhelper (>= 7), autotools-dev, libreadline-dev
-Standards-Version: 3.8.1
+Build-Depends: cdbs, debhelper (>= 7.0.50~), autotools-dev, libreadline-dev
+Standards-Version: 3.8.4
 Homepage: http://code.google.com/p/scanmem/
 
 Package: scanmem
