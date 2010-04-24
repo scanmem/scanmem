@@ -1,4 +1,4 @@
-scanmem (0.10-1~svn20100424-3ubuntu1) lucid; urgency=low
+scanmem (0.10-1~svn20100425-1ubuntu1) lucid; urgency=low
 
   * Suggest gameconqueror in scanmem
 
