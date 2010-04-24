@@ -1,4 +1,6 @@
-scanmem (0.10-1~svn20100424-2~lucid1) lucid; urgency=low
+scanmem (0.10-1~svn20100424-2) lucid; urgency=low
+
+  * rewrote dependencies
 
   [Thanks to Bryan Cain]
   * "Manually Add a Cheat" dialog
