@@ -8,7 +8,7 @@ Homepage: http://code.google.com/p/scanmem/
 
 Package: scanmem
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: libc6, libreadline6
 Description: Program to locate and modify a variable in a running process
  Scanmem is a simple interactive debugging utility for Linux, used to locate
  the address of a variable in a running process. This can be used for the
