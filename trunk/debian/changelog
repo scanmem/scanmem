@@ -1,3 +1,9 @@
+scanmem (0.10-1~svn20100424-3ubuntu1) lucid; urgency=low
+
+  * Suggest gameconqueror in scanmem
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 25 Apr 2010 06:02:20 +0800
+
 scanmem (0.10-1~svn20100424-2) lucid; urgency=low
 
   * rewrote dependencies
