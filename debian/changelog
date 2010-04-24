@@ -1,3 +1,20 @@
+scanmem (0.10-1~svn20100424-2~lucid1) lucid; urgency=low
+
+  [Thanks to Bryan Cain]
+  * "Manually Add a Cheat" dialog
+  * update value in the list of scan result
+  * update/write value in the cheat list
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 24 Apr 2010 22:24:09 +0800
+
+scanmem (0.10-1~svn20100424~lucid1) lucid; urgency=low
+
+  * reversion the package, since new scanmem is included in Debian now.
+  Besides, this needs to be rebuilt on different distributions, so a
+  distribution suffix is appended
+  
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 24 Apr 2010 16:16:25 +0800
+
 scanmem (0.10~svn20100420r161-0ubuntu1) lucid; urgency=low
 
   * Merge manpage and other packaging files for Debian (thanks to Kartik
