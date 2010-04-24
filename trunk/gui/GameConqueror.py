@@ -3,6 +3,7 @@
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
     Copyright (C) 2009,2010 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2010 Bryan Cain
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -22,6 +23,7 @@
 import sys
 import os
 import re
+import struct
 import tempfile
 import platform
 
@@ -84,7 +86,23 @@ TYPENAMES_S2G = {'I64':'int64'
                 ,'string':'string'
                 }   
 
+# convert our typenames into struct format characters
+TYPENAMES_G2STRUCT = {'int8':'b'
+                     ,'int16':'h'
+                     ,'int32':'i'
+                     ,'int64':'q'
+                     ,'float32':'f'
+                     ,'float64':'d'
+                     }
         
+# sizes in bytes of integer and float types
+TYPESIZES = {'int8':1
+            ,'int16':2
+            ,'int32':4
+            ,'int64':8
+            ,'float32':4
+            ,'float64':8
+            }
 
 class GameConqueror():
     def __init__(self):
@@ -100,6 +118,7 @@ class GameConqueror():
         self.about_dialog.set_version(VERSION)
 
         self.process_list_dialog = self.builder.get_object('ProcessListDialog')
+        self.addcheat_dialog = self.builder.get_object('AddCheatDialog')
 
         # init memory editor
         self.memoryeditor_window = self.builder.get_object('MemoryEditor_Window')
@@ -150,6 +169,8 @@ class GameConqueror():
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         self.cheatlist_liststore = gtk.ListStore(str, bool, str, str, str, str)
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
+        self.cheatlist_updates = []
+        self.cheatlist_editing = False
         # Lock Flag
         misc.treeview_append_column(self.cheatlist_tv, '' 
                                         ,renderer_class = gtk.CellRendererCombo
@@ -159,7 +180,9 @@ class GameConqueror():
                                                       ,('model', LOCK_FLAG_TYPES)
                                                       ,('text-column', 0)
                                         )
-                                        ,signals = (('edited', self.cheatlist_toggle_lock_flag_cb),)
+                                        ,signals = (('edited', self.cheatlist_toggle_lock_flag_cb),
+                                                    ('editing-started', self.cheatlist_edit_start),
+                                                    ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Lock
         misc.treeview_append_column(self.cheatlist_tv, 'Lock'
@@ -174,7 +197,9 @@ class GameConqueror():
         misc.treeview_append_column(self.cheatlist_tv, 'Description'
                                         ,attributes = (('text',2),)
                                         ,properties = (('editable', True),)
-                                        ,signals = (('edited', self.cheatlist_edit_description_cb),)
+                                        ,signals = (('edited', self.cheatlist_edit_description_cb),
+                                                    ('editing-started', self.cheatlist_edit_start),
+                                                    ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Address
         misc.treeview_append_column(self.cheatlist_tv, 'Address'
@@ -188,13 +213,17 @@ class GameConqueror():
                                                       ,('has-entry', False)
                                                       ,('model', LOCK_VALUE_TYPES)
                                                       ,('text-column', 0))
-                                        ,signals = (('edited', self.cheatlist_edit_type_cb),)
+                                        ,signals = (('edited', self.cheatlist_edit_type_cb),
+                                                    ('editing-started', self.cheatlist_edit_start),
+                                                    ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Value 
         misc.treeview_append_column(self.cheatlist_tv, 'Value'
                                         ,attributes = (('text',5),)
                                         ,properties = (('editable', True),)
-                                        ,signals = (('edited', self.cheatlist_edit_value_cb),)
+                                        ,signals = (('edited', self.cheatlist_edit_value_cb),
+                                                    ('editing-started', self.cheatlist_edit_start),
+                                                    ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
 
         # init ProcessList_TreeView
@@ -213,6 +242,15 @@ class GameConqueror():
                                         ,attributes = (('text',1),)
                                    )
 
+        # init AddCheatDialog
+        self.addcheat_address_input = self.builder.get_object('Address_Input')
+        self.addcheat_description_input = self.builder.get_object('Description_Input')
+        self.addcheat_type_combobox = self.builder.get_object('Type_ComboBox')
+        misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
+        misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
+        
+        
+        
         # init popup menu for scanresult
         self.scanresult_popup = gtk.Menu()
         misc.menu_append_item(self.scanresult_popup
@@ -298,7 +336,7 @@ class GameConqueror():
         return True
 
     def ManuallyAddCheat_Button_clicked_cb(self, button, data=None):
-        # TODO
+        self.addcheat_dialog.show()
         return True
 
     def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
@@ -380,6 +418,29 @@ class GameConqueror():
         self.process_list_dialog.hide()
         return True
 
+    def ConfirmAddCheat_Button_clicked_cb(self, button, data=None):
+        try:
+            addr = self.addcheat_address_input.get_text()
+        except ValueError:
+            self.show_error('Please enter a valid address.')
+            return False
+
+        description = self.addcheat_description_input.get_text()
+        if not description: description = 'No Description'
+        typestr = LOCK_VALUE_TYPES[self.addcheat_type_combobox.get_active()][0]
+        if 'int' in typestr: value = 0
+        elif 'float' in typestr: value = 0.0
+        elif 'string' in typestr: value = ''
+        else: value = None
+        
+        self.add_to_cheat_list(addr, value, typestr, description)
+        self.addcheat_dialog.hide()
+        return True
+
+    def CloseAddCheat_Button_clicked_cb(self, button, data=None):
+        self.addcheat_dialog.hide()
+        return True
+
     def Scan_Button_clicked_cb(self, button, data=None):
         self.do_scan()
         return True
@@ -393,7 +454,7 @@ class GameConqueror():
         self.about_dialog.hide()
         return True
 
-    #######################3
+    #######################
     # customed callbacks
     # (i.e. not standard event names are used)
     
@@ -402,6 +463,12 @@ class GameConqueror():
         self.write_value(addr, 'int8', charval)
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
+
+    
+    def cheatlist_edit_start(self, a, b, c):
+        self.cheatlist_editing = True
+    def cheatlist_edit_cancel(self, a):
+        self.cheatlist_editing = False
 
     def scanresult_popup_cb(self, menuitem, data=None):
         (model, iter) = self.scanresult_tv.get_selection().get_selected()
@@ -420,6 +487,7 @@ class GameConqueror():
         return False
 
     def cheatlist_popup_cb(self, menuitem, data=None):
+        self.cheatlist_editing = False
         (model, iter) = self.cheatlist_tv.get_selection().get_selected()
         addr = model.get(iter, 3)[0]
         if iter is None:
@@ -446,6 +514,7 @@ class GameConqueror():
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
+        self.cheatlist_editing = False
         # currently only one lock flag is supported
         return True
         row = int(path)
@@ -454,11 +523,13 @@ class GameConqueror():
         return True
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
+        self.cheatlist_editing = False
         row = int(path)
         self.cheatlist_liststore[row][2] = new_text
         return True
 
     def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
+        self.cheatlist_editing = False
         row = int(path)
         self.cheatlist_liststore[row][5] = new_text
         if self.cheatlist_liststore[row][1]: # locked
@@ -467,17 +538,18 @@ class GameConqueror():
         else:
             # write it for once
             (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[row]
+            self.cheatlist_updates.append(row)
             self.write_value(addr, typestr, value)
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
+        self.cheatlist_editing = False
         row = int(path)
         self.cheatlist_liststore[row][4] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # false unlock it
             self.cheatlist_liststore[row][1] = False
             pass
-        # TODO may need read & update (reinterpret) the value
         return True
 
     ############################
@@ -505,6 +577,25 @@ class GameConqueror():
         except:
             return None
         
+    # return the size in bytes of the value in memory
+    def get_type_size(self, typename, value):
+        if typename in TYPESIZES.keys(): # int or float type; fixed length
+            return TYPESIZES[typename]
+        elif typename == 'bytearray':
+            return len(value)
+        elif typename == 'string': # string = characters + one null byte 
+            return len(value) + 1
+        return None
+
+    # parse bytes dumped by scanmem into number, string, etc.
+    def bytes2value(self, typename, bytes):
+        if typename in TYPENAMES_G2STRUCT.keys():
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
+        elif typename == 'string':
+            return struct.unpack('%is'%len(bytes), bytes)
+        else:
+            return bytes
+    
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
         if bits is None:
@@ -584,14 +675,15 @@ class GameConqueror():
         self.scanprogress_progressbar.set_fraction(float(cur)/total)
         gtk.gdk.threads_leave()
 
-    def add_to_cheat_list(self, addr, value, typestr):
+    def add_to_cheat_list(self, addr, value, typestr, description='No Description'):
         # determine longest possible type
         types = typestr.split()
+        vt = typestr
         for t in types:
             if TYPENAMES_S2G.has_key(t):
                 vt = TYPENAMES_S2G[t]
                 break
-        self.cheatlist_liststore.prepend(['=', False, 'No Description', addr, vt, value])
+        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value])
 
     def get_process_list(self):
         return [e.strip().split(' ',1) for e in os.popen('ps -wweo pid=,command= --sort=-pid').readlines()]
@@ -729,24 +821,46 @@ class GameConqueror():
             r2 = tup[0][0]
         return (r1, r2)
  
-    # read/write data periodly
+    # read/write data periodically
     def data_worker(self):
         rows = self.get_visible_rows(self.scanresult_tv)
         if rows is not None:
             (r1, r2) = rows # [r1, r2] rows are visible
-            # TODO: update some part of scanresult
-        # TODO read unlocked values in cheat list
-        # write locked values in cheat list
+            for i in xrange(r1, r2+1):
+                row = self.scanresult_liststore[i]
+                addr, cur_value, scanmem_type = row
+                row[1] = str(self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value))
+        # write locked values in cheat list and read unlocked values
         for i in xrange(len(self.cheatlist_liststore)):
             (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[i]
             if locked:
                 self.write_value(addr, typestr, value)
+            elif i in self.cheatlist_updates:
+                print 'Adding value for position', i
+                self.write_value(addr, typestr, value)
+                self.cheatlist_updates.remove(i)
+            else:
+                newvalue = self.read_value(addr, typestr, value)
+                if newvalue != value and not locked and not self.cheatlist_editing:
+                    self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, newvalue)
         return not self.exit_flag
 
+    def read_value(self, addr, typestr, prev_value):
+        return self.bytes2value(typestr, self.read_memory(addr, self.get_type_size(typestr, prev_value)))
+    
+    # addr could be int or str
     def read_memory(self, addr, length):
-        f = tempfile.NamedTemporaryFile()
-        self.backend.send_command('dump %x %d %s' % (addr, length, f.name))
-        data = f.read()
+        if isinstance(addr,int):
+            addr = '%x'%(addr,)
+        # TODO restore file approach when dumping to file in scanmem is fixed
+        #f = tempfile.NamedTemporaryFile()
+        #self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
+        #data = f.read()
+        lines = self.backend.send_command('dump %s %d' % (addr, length))
+        data = ''
+        for line in lines:
+            bytes = line.strip().split()
+            for byte in bytes: data += chr(int(byte, 16))
         if len(data) != length:
             raise Exception('Cannot access target memory')
         return data
