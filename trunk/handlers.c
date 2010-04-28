@@ -1255,7 +1255,9 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
 
     if(dump_to_file)
     {
-        if(fwrite(buf,1,len,dump_f) != len)
+        size_t s = fwrite(buf,1,len,dump_f);
+        fclose(dump_f);
+        if (s != len)
         {
             show_error("write to file failed.\n");
             free(buf);
