@@ -852,17 +852,18 @@ class GameConqueror():
     def read_memory(self, addr, length):
         if isinstance(addr,int):
             addr = '%x'%(addr,)
-        # TODO restore file approach when dumping to file in scanmem is fixed
-        #f = tempfile.NamedTemporaryFile()
-        #self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
-        #data = f.read()
-        lines = self.backend.send_command('dump %s %d' % (addr, length))
-        data = ''
-        for line in lines:
-            bytes = line.strip().split()
-            for byte in bytes: data += chr(int(byte, 16))
+        f = tempfile.NamedTemporaryFile()
+        self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
+        data = f.read()
+
+#        lines = self.backend.send_command('dump %s %d' % (addr, length))
+#        data = ''
+#        for line in lines:
+#            bytes = line.strip().split()
+#            for byte in bytes: data += chr(int(byte, 16))
+        # TODO raise Exception here isn't good
         if len(data) != length:
-            raise Exception('Cannot access target memory')
+            self.show_error('Cannot access target memory')
         return data
             
     # addr could be int or str
