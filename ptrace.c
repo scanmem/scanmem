@@ -50,6 +50,14 @@
 # define EXPECT(x,y) x
 #endif
 
+// Dirty hack for FreeBSD
+#if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
+#define PTRACE_ATTACH PT_ATTACH
+#define PTRACE_DETACH PT_DETACH
+#define PTRACE_PEEKDATA PT_READ_D
+#define PTRACE_POKEDATA PT_WRITE_D
+#endif
+
 #include "value.h"
 #include "scanroutines.h"
 #include "scanmem.h"
@@ -96,7 +104,8 @@ bool attach(pid_t target)
 
 bool detach(pid_t target)
 {
-    return ptrace(PTRACE_DETACH, target, NULL, 0) == 0;
+    // addr is ignore under Linux, but should be 1 under FreeBSD in order to let the child process continue at what it had been interrupted
+    return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
 }
 
 /*
