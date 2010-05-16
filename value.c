@@ -219,6 +219,7 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
         val->float64_value = (double) val->int64_value;   
         return true;
     }
+
     return false;
 }
 
@@ -271,7 +272,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     if ((errno != 0) || (*endptr != '\0'))
         return false;
     
-    /* I'm not sure how to distuiguish float & double, but I guess it's not necessary here */
+    /* I'm not sure how to distinguish float & double, but I guess it's not necessary here */
     val->flags.f32b = val->flags.f64b = 1;
     val->float32_value = (float) num;
     val->float64_value =  num;   

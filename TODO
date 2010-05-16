@@ -1,6 +1,6 @@
 Next Version
 ============
-* fix freebsd build
+* use PT_IO on freebsd, instead of PT_READ/WRITE_D
 * optimize `if (xxx == 1)`
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance

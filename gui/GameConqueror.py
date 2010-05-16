@@ -26,6 +26,8 @@ import re
 import struct
 import tempfile
 import platform
+import threading
+import time
 
 import pygtk
 import gtk
@@ -295,6 +297,7 @@ class GameConqueror():
         self.backend.add_progress_listener(self.backend_progress_cb)
         self.search_count = 0
         self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+        self.command_lock = threading.RLock()
 
 
     ###########################
@@ -672,7 +675,8 @@ class GameConqueror():
         if (cur == total) and self.is_scanning:
             self.scanprogress_progressbar.set_fraction(1.0)
             self.finish_scan()
-        self.scanprogress_progressbar.set_fraction(float(cur)/total)
+        else:
+            self.scanprogress_progressbar.set_fraction(float(cur)/total)
         gtk.gdk.threads_leave()
 
     def add_to_cheat_list(self, addr, value, typestr, description='No Description'):
@@ -704,8 +708,12 @@ class GameConqueror():
             self.show_error('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege')
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.process_label.set_property('tooltip-text', process_name)
+
+        self.command_lock.acquire()
         self.backend.send_command('pid %d' % (pid,))
         self.reset_scan()
+        self.command_lock.release()
+
         # unlock all entries in cheat list
         for i in xrange(len(self.cheatlist_liststore)):
             self.cheatlist_liststore[i][1] = False
@@ -732,11 +740,16 @@ class GameConqueror():
             self.maps.append(item)
 
     def reset_scan(self):
+        self.command_lock.acquire()
         self.search_count = 0
         # reset search type and value type
         self.scanresult_liststore.clear()
+        
+        self.command_lock.acquire()
         self.backend.send_command('reset')
         self.update_scan_result()
+        self.command_lock.release()
+
         self.scanoption_frame.set_sensitive(True)
 
     def apply_scan_settings (self):
@@ -744,11 +757,14 @@ class GameConqueror():
         active = self.scan_data_type_combobox.get_active()
         assert(active >= 0)
         dt = self.scan_data_type_combobox.get_model()[active][0]
+
+        self.command_lock.acquire()
         self.backend.send_command('option scan_data_type %s' % (dt,))
         # search scope
         self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
         # TODO: ugly, reset to make region_scan_level taking effect
         self.backend.send_command('reset')
+        self.command_lock.release()
 
     
     # perform scanning through backend
@@ -776,9 +792,12 @@ class GameConqueror():
         self.memoryeditor_window.set_sensitive(False)
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
+
+        self.command_lock.acquire()
         if self.search_count == 1:
             self.apply_scan_settings()
         self.backend.send_command(cmd, get_output = False)
+        # command_lock will be released when scanning is finished
 
     def finish_scan(self):
         self.main_window.set_sensitive(True)
@@ -786,13 +805,17 @@ class GameConqueror():
         self.backend.get_output_lines()
         self.is_scanning = False
         self.update_scan_result()
+        self.command_lock.release()
  
     def update_scan_result(self):
         self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))
         if (self.backend.match_count > SCAN_RESULT_LIST_LIMIT):
             self.scanresult_liststore.clear()
         else:
+            self.command_lock.acquire()
             lines = self.backend.send_command('list')
+            self.command_lock.release()
+
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
@@ -823,26 +846,28 @@ class GameConqueror():
  
     # read/write data periodically
     def data_worker(self):
-        rows = self.get_visible_rows(self.scanresult_tv)
-        if rows is not None:
-            (r1, r2) = rows # [r1, r2] rows are visible
-            for i in xrange(r1, r2+1):
-                row = self.scanresult_liststore[i]
-                addr, cur_value, scanmem_type = row
-                row[1] = str(self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value))
-        # write locked values in cheat list and read unlocked values
-        for i in xrange(len(self.cheatlist_liststore)):
-            (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[i]
-            if locked:
-                self.write_value(addr, typestr, value)
-            elif i in self.cheatlist_updates:
-                print 'Adding value for position', i
-                self.write_value(addr, typestr, value)
-                self.cheatlist_updates.remove(i)
-            else:
-                newvalue = self.read_value(addr, typestr, value)
-                if newvalue != value and not locked and not self.cheatlist_editing:
-                    self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, newvalue)
+        if (not self.is_scanning) and self.command_lock.acquire(0): # non-blocking
+            rows = self.get_visible_rows(self.scanresult_tv)
+            if rows is not None:
+                (r1, r2) = rows # [r1, r2] rows are visible
+                for i in xrange(r1, r2+1):
+                    row = self.scanresult_liststore[i]
+                    addr, cur_value, scanmem_type = row
+                    row[1] = str(self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value))
+            # write locked values in cheat list and read unlocked values
+            for i in xrange(len(self.cheatlist_liststore)):
+                (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[i]
+                if locked:
+                    self.write_value(addr, typestr, value)
+                elif i in self.cheatlist_updates:
+                    print 'Adding value for position', i
+                    self.write_value(addr, typestr, value)
+                    self.cheatlist_updates.remove(i)
+                else:
+                    newvalue = self.read_value(addr, typestr, value)
+                    if newvalue != value and not locked and not self.cheatlist_editing:
+                        self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, newvalue)
+            self.command_lock.release()           
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):
@@ -853,7 +878,11 @@ class GameConqueror():
         if isinstance(addr,int):
             addr = '%x'%(addr,)
         f = tempfile.NamedTemporaryFile()
+
+        self.command_lock.acquire()
         self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
+        self.command_lock.release()
+
         data = f.read()
 
 #        lines = self.backend.send_command('dump %s %d' % (addr, length))
@@ -870,7 +899,10 @@ class GameConqueror():
     def write_value(self, addr, typestr, value):
         if isinstance(addr,int):
             addr = '%x'%(addr,)
+
+        self.command_lock.acquire()
         self.backend.send_command('write %s %s %s'%(typestr, addr, value))
+        self.command_lock.release()
 
     def exit(self, object, data=None):
         self.exit_flag = True
