@@ -1,3 +1,9 @@
+2010-04-28 Wang Lu <coolwanglu(a)gmail.com>
+	* Bug fix: dump_to_file
+	[Thanks to Bryan Cain]
+	* Manually add a cheat entry
+	* Update values in the lists
+
 2010-01-19 WANG Lu <coolwanglu(a)gmail.com>
 	* Bug fix: read /proc/<pid>/mem on 32bit machines
 	* Bug fix: scan for double variables on 32bit machines
