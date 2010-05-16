@@ -245,9 +245,9 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc);
                 "\tbytearray\n" \
                 "\n" \
                 "Example:\n" \
-                "\twrite i16 601038 0\n" \
-                "\twrite float32 601038 0\n" \
-                "\twrite bytearray ff 01 32\n"
+                "\twrite i16 60103e 0\n" \
+                "\twrite float32 60103e 0\n" \
+                "\twrite bytearray 60103e ff 01 32\n"
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
