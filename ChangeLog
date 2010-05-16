@@ -1,5 +1,8 @@
+2010-05-16 Wang Lu <coolwanglu(a)gmail.com>
+	* Fix build on FreeBSD
+	* Bug fix: freezing when scanning multiple variables
+
 2010-04-28 Wang Lu <coolwanglu(a)gmail.com>
-	* Fix build and make it working on freebsd
 	* Bug fix: dump_to_file
 	[Thanks to Bryan Cain]
 	* Manually add a cheat entry
