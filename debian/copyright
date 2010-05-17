@@ -17,8 +17,18 @@ License: GPL-2+
 
 Files: scanroutines.*,
        show_message.*,
-       gui/GameConqueror*
+       gui/GameConqueror*,
+       gui/backend*,
+       gui/misc*,
+       gui/backend*,
+       gui/consts*,
 Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
+License: GPL-3+
+
+Files: gui/GameConqueror.py,
+       gui/GameConqueror.xml
+Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
+Copyright © 2010           Bryan Cain 
 License: GPL-3+
 
 Files: gui/hexview.py
