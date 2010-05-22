@@ -199,7 +199,14 @@ bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *
 bool parse_uservalue_number(const char *nptr, uservalue_t * val)
 {
     /* TODO multiple rounding method */
-    if(parse_uservalue_float(nptr, val))
+    if (parse_uservalue_int(nptr, val))
+    {
+        val->flags.f32b = val->flags.f64b = 1;
+        val->float32_value = (float) val->int64_value;
+        val->float64_value = (double) val->int64_value;   
+        return true;
+    }
+    else if(parse_uservalue_float(nptr, val))
     {
         double num = val->float64_value;
         if (num >=        (double)(0) && num < (double)(1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)num); }
@@ -210,13 +217,6 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
         if (num >= (double)-(1LL<<31) && num < (double)(1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)num); }
         if (           (double)(true) &&          (double)(true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)num); }
         if (           (double)(true) &&          (double)(true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)num); }
-        return true;
-    }
-    else if (parse_uservalue_int(nptr, val))
-    {
-        val->flags.f32b = val->flags.f64b = 1;
-        val->float32_value = (float) val->int64_value;
-        val->float64_value = (double) val->int64_value;   
         return true;
     }
 
