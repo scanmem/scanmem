@@ -611,7 +611,7 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     /* about float/double: now value_t is a union, we can use the following way instead of the commented way, in order to avoid compiler warning */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
-    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, get_s32b(to)); } /* *((int64_t *)&(to->float64_value))); } */
+    else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, get_s64b(to)); } /* *((int64_t *)&(to->float64_value))); } */
     else if (saved.flags.u32b && to->flags.u32b) { set_u32b(&saved, get_u32b(to)); }
     else if (saved.flags.s32b && to->flags.s32b) { set_s32b(&saved, get_s32b(to)); }
     else if (saved.flags.f32b && to->flags.f32b) { set_s32b(&saved, get_s32b(to)); } /* *((int32_t *)&(to->float32_value))); } */
@@ -636,7 +636,6 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
     return detach(target);
 }
 
-/* TODO: may use /proc/<pid>/mem here */
 bool read_array(pid_t target, void *addr, char *buf, int len)
 {
     if (attach(target) == false) {

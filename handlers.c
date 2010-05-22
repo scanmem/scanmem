@@ -231,14 +231,13 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         value_t old;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
 
-                        show_info("setting *%p to %#"PRIx64"...\n", address, userval.int64_value); 
-                        
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
                         
+                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value); 
 
                         /* set the value specified */
                         if (setaddr(vars->target, address, &v) == false) {
@@ -269,7 +268,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                                     
                         value_t old = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                         value_t v;
-                        v.flags = old.flags;
+                        v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
                         uservalue2value(&v, &userval);
 
                         show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
