@@ -1,16 +1,19 @@
+2010-05-22 Wang Lu <coolwanglu(a)gmail.com>
+	* Fixed `set' command
+
 2010-05-16 Wang Lu <coolwanglu(a)gmail.com>
-	* Fix build on FreeBSD
-	* Bug fix: freezing when scanning multiple variables
+	* Fixed build on FreeBSD
+	* Bug fixed: freezing when scanning multiple variables
 
 2010-04-28 Wang Lu <coolwanglu(a)gmail.com>
-	* Bug fix: dump_to_file
+	* Bug fixed: dump_to_file
 	[Thanks to Bryan Cain]
 	* Manually add a cheat entry
 	* Update values in the lists
 
 2010-01-19 WANG Lu <coolwanglu(a)gmail.com>
-	* Bug fix: read /proc/<pid>/mem on 32bit machines
-	* Bug fix: scan for double variables on 32bit machines
+	* Bug fixed: read /proc/<pid>/mem on 32bit machines
+	* Bug fixed: scan for double variables on 32bit machines
 	* a little improvement on peekbuf
 	* Better communication, replace readline with printf when running as
       backend
