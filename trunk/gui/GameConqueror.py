@@ -596,6 +596,8 @@ class GameConqueror():
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
             return struct.unpack('%is'%len(bytes), bytes)
+        elif typename == 'bytearray':
+            return ' '.join(['%02x'%ord(i) for i in bytes])
         else:
             return bytes
     
