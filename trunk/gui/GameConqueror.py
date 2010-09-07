@@ -164,8 +164,8 @@ class GameConqueror():
         self.scanresult_liststore = gtk.ListStore(str, str, str) 
         self.scanresult_tv.set_model(self.scanresult_liststore)
         # init columns
-        misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),) )
-        misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),) )
+        misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
+        misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),), properties = (('family', 'monospace'),))
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
@@ -206,6 +206,7 @@ class GameConqueror():
         # Address
         misc.treeview_append_column(self.cheatlist_tv, 'Address'
                                         ,attributes = (('text',3),)
+                                        ,properties = (('family', 'monospace'),)
                                    )
         # Type
         misc.treeview_append_column(self.cheatlist_tv, 'Type'
@@ -222,7 +223,8 @@ class GameConqueror():
         # Value 
         misc.treeview_append_column(self.cheatlist_tv, 'Value'
                                         ,attributes = (('text',5),)
-                                        ,properties = (('editable', True),)
+                                        ,properties = (('editable', True)
+                                                      ,('family', 'monospace'))
                                         ,signals = (('edited', self.cheatlist_edit_value_cb),
                                                     ('editing-started', self.cheatlist_edit_start),
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
@@ -584,8 +586,10 @@ class GameConqueror():
     def get_type_size(self, typename, value):
         if typename in TYPESIZES.keys(): # int or float type; fixed length
             return TYPESIZES[typename]
-        elif typename == 'bytearray' or typename == 'string':
+        elif typename == 'bytearray':
             return len(value)
+        elif typename == 'string':
+            return len(eval('\''+value+'\''))
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
@@ -593,7 +597,7 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT.keys():
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
-            return '%s'%(bytes,)
+            return repr('%s'%(bytes,))[1:-1]
         elif typename == 'bytearray':
             return ' '.join(['%02x'%ord(i) for i in bytes])
         else:
@@ -860,7 +864,6 @@ class GameConqueror():
                 if locked:
                     self.write_value(addr, typestr, value)
                 elif i in self.cheatlist_updates:
-                    print 'Adding value for position', i
                     self.write_value(addr, typestr, value)
                     self.cheatlist_updates.remove(i)
                 else:
@@ -875,9 +878,6 @@ class GameConqueror():
     
     # addr could be int or str
     def read_memory(self, addr, length):
-        # for debug
-        print 'read_memory', addr, length
-
         if isinstance(addr,int):
             addr = '%x'%(addr,)
         f = tempfile.NamedTemporaryFile()
