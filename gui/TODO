@@ -1,6 +1,7 @@
 TODOs
 =====
 
+- seems a bug of displaying value (byte array?)
 - limit size of bytes read for memory editor
 - processlist sortable
 - popup in memory editor -- like `add entry for this address`

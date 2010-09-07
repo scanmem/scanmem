@@ -584,10 +584,8 @@ class GameConqueror():
     def get_type_size(self, typename, value):
         if typename in TYPESIZES.keys(): # int or float type; fixed length
             return TYPESIZES[typename]
-        elif typename == 'bytearray':
+        elif typename == 'bytearray' or typename == 'string':
             return len(value)
-        elif typename == 'string': # string = characters + one null byte 
-            return len(value) + 1
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
@@ -595,7 +593,7 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT.keys():
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
-            return struct.unpack('%is'%len(bytes), bytes)
+            return '%s'%(bytes,)
         elif typename == 'bytearray':
             return ' '.join(['%02x'%ord(i) for i in bytes])
         else:
@@ -877,6 +875,9 @@ class GameConqueror():
     
     # addr could be int or str
     def read_memory(self, addr, length):
+        # for debug
+        print 'read_memory', addr, length
+
         if isinstance(addr,int):
             addr = '%x'%(addr,)
         f = tempfile.NamedTemporaryFile()
