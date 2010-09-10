@@ -572,7 +572,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
         bytes_scanned += r->size;
         n = n->next;
         show_user("ok\n");
-#if HAVE_PROCME
+#if HAVE_PROCMEM
         free(data);
 #endif
     }
