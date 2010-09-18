@@ -1,3 +1,8 @@
+2010-09-19 WANG Lu <coolwanglu(a)gmail.com>
+    * Fixed memory leak
+	* Set monospace font to the lists
+	* Fixed value parsing for strings
+
 2010-05-22 Wang Lu <coolwanglu(a)gmail.com>
 	* Fixed `set' command
 
