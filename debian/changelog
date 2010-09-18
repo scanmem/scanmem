@@ -1,3 +1,11 @@
+scanmem (0.11-1~svn20100919-0ubuntu1) lucid; urgency=low
+
+  * Fixed memory leak
+  * Set monospace font to the lists
+  * Fixed value parsing for strings
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 19 Sep 2010 03:22:58 +0800
+
 scanmem (0.11-1~svn20100516-0ubuntu1) lucid; urgency=low
 
   * Fix build on FreeBSD
