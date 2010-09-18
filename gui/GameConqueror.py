@@ -587,7 +587,7 @@ class GameConqueror():
         if typename in TYPESIZES.keys(): # int or float type; fixed length
             return TYPESIZES[typename]
         elif typename == 'bytearray':
-            return len(value)
+            return (len(value.strip())+1)/3
         elif typename == 'string':
             return len(eval('\''+value+'\''))
         return None
