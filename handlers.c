@@ -1448,14 +1448,10 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         for(i = 0; i < data_width; ++i)
         {
             bytearray_element_t *cur_element = array+i;
-            if(cur_element->is_wildcard == 1)
+            if(cur_element->is_wildcard == 0)
             {
-                show_error("cannot use wildcard here.\n");
-                free(array);
-                ret = false;
-                goto retl;
+                buf[i] = cur_element->byte;
             }
-            buf[i] = cur_element->byte;
         }
         free(array);
         break;
