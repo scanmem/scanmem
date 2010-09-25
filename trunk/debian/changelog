@@ -1,3 +1,11 @@
+scanmem (0.12-1~svn20100926-0ubuntu1) lucid; urgency=low
+
+  * update version to 0.12
+  * fix bytearray display problem
+  * allow wildcard when writing bytearrays
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 26 Sep 2010 02:37:10 +0800
+
 scanmem (0.11-1~svn20100919-0ubuntu1) lucid; urgency=low
 
   * Fixed memory leak
