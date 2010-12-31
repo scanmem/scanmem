@@ -1,7 +1,7 @@
 TODOs
 =====
 
-- error handling (target process quitted) for data_worker
+- error handling (target process quitted) for data_worker --> error codes
 - different color for different addresses (heap, stack, module etc)
 - limit size of bytes read for memory editor
 - processlist sortable

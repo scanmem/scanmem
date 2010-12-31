@@ -1,5 +1,6 @@
 Next Version
 ============
+* error code in show_messages
 * use /proc/pid/mem if possible; use PT_IO on freebsd, instead of PT_READ/WRITE_D
 * optimize `if (xxx == 1)`
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
