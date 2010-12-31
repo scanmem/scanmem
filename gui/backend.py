@@ -101,7 +101,7 @@ class GameConquerorBackend():
         return lines
 
     # for scan command, we don't want get_output immediately
-    def send_command(self, cmd, get_output = True, block = True):
+    def send_command(self, cmd, get_output = True):
         # for debug
 #        print 'Send Command:',cmd
         self.backend.stdin.write(cmd+'\n')
