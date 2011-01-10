@@ -297,6 +297,7 @@ class GameConqueror():
         self.backend = GameConquerorBackend()
         self.backend.add_error_listener(self.backend_error_cb)
         self.backend.add_progress_listener(self.backend_progress_cb)
+        self.check_backend_version()
         self.search_count = 0
         self.data_worker_id = gobject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
         self.command_lock = threading.RLock()
@@ -913,6 +914,10 @@ class GameConqueror():
 
     def main(self):
         gtk.main()
+
+    def check_backend_version(self):
+        if self.backend.version != VERSION:
+            self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
     
 

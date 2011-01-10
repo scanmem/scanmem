@@ -198,7 +198,15 @@ int main(int argc, char **argv)
                     DEFAULT_LONGDOC);
 
     if (!(globals.options.backend))
+    {
+        // show welcome message
         printversion();
+    }
+    else
+    {
+        // tell front-end our version
+        printf("%s\n", PACKAGE_VERSION); 
+    }
 
     /* this will initialise matches and regions */
     if (execcommand(vars, "reset") == false) {

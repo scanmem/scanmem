@@ -27,7 +27,7 @@
  *  all messages prefixed with 'warn:' will be considered nonfatal error
  *  all messages prefixed with 'info:' will be ignored (by the front-end)
  *
- *  Don't output multi-line messages with above preifx, use multiple show_xxx instead
+ *  DO NOT output multi-line messages with above prefix, use multiple show_xxx instead
  *  And you may or may not append a '\n' to the message.
  *
  *  To display message to user only, use show_user, nothing will be prepended, and the message will be ignore if scanmem is running as a backend

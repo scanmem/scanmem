@@ -34,6 +34,7 @@ class GameConquerorBackend():
         self.stderr_monitor_id = None
         self.error_listeners = []
         self.progress_listeners = []
+        self.version = ''
         self.restart()
 
     def add_error_listener(self, listener):
@@ -52,7 +53,9 @@ class GameConquerorBackend():
             gobject.source_remove(self.stderr_monitor_id)
         self.stderr_monitor_id = gobject.timeout_add(STDERR_MONITOR_INTERVAL, self.stderr_monitor)
         # read initial info
-        self.get_output_lines()
+        l = self.get_output_lines()
+        if len(l) > 0:
+            self.version = l[0].strip()
 
     def stderr_monitor(self):
         while True:
