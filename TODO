@@ -2,6 +2,7 @@ Current
 ============
 * ask for root privilege
 * error code in show_messages
+
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance
 * speedhack
