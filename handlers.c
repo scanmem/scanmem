@@ -98,7 +98,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     if ((vars->options.scan_data_type == BYTEARRAY)
        ||(vars->options.scan_data_type == STRING))
     {
-        show_error("`set` is not supported for bytearray, use `write` instead.\n");
+        show_error("`set` is not supported for bytearray or string, use `write` instead.\n");
         return false;
     }
 
@@ -801,7 +801,7 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
-    printversion();
+    printversion(stderr);
     return true;
 }
 
@@ -982,6 +982,7 @@ bool handler__exit(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__help(globals_t * vars, char **argv, unsigned argc)
 {
+    bool ret = false;
     list_t *commands = vars->commands;
     element_t *np = NULL;
     command_t *def = NULL;
@@ -990,9 +991,17 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
 
     np = commands->head;
 
+    /* pager support, dirty ugly hardcoded */
+    FILE *outfd = popen("more", "w"); 
+    if (outfd == NULL)
+    {
+        show_warn("Cannot execute pager, fall back to normal output\n");
+        outfd = stderr;
+    }
+
     /* print version information for generic help */
     if (argv[1] == NULL)
-        printversion();
+        printversion(outfd);
 
     /* traverse the commands list, printing out the relevant documentation */
     while (np) {
@@ -1011,13 +1020,14 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
             }
 
             /* print out command name */
-            show_user("%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
+            fprintf(outfd, "%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
 
             /* detailed information requested about specific command */
         } else if (command->command
                    && strcasecmp(argv[1], command->command) == 0) {
-            show_user("%s\n", command->longdoc ? command-> longdoc : "missing documentation");
-            return true;
+            fprintf(outfd, "%s\n", command->longdoc ? command-> longdoc : "missing documentation");
+            ret = true;
+            goto retl;
         }
 
         np = np->next;
@@ -1025,12 +1035,19 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
 
     if (argc > 1) {
         show_error("unknown command `%s`\n", argv[1]);
-        return false;
+        ret = false;
     } else if (def) {
-        show_user("\n%s\n", def->longdoc ? def->longdoc : "");
+        fprintf(outfd, "\n%s\n", def->longdoc ? def->longdoc : "");
+        ret = true;
     }
+    
+    ret = true;
 
-    return true;
+retl:
+    if (outfd != stderr)
+        pclose(outfd);
+
+    return ret;
 }
 
 bool handler__eof(globals_t * vars, char **argv, unsigned argc)
@@ -1188,7 +1205,7 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     else if (strcmp(argv[1], "warranty") == 0)
         show_user(SM_WARRANTY);
     else if (strcmp(argv[1], "version") == 0)
-        printversion();
+        printversion(stderr);
     else {
         show_error("unrecognized show command `%s`\n", argv[1]);
         return false;
