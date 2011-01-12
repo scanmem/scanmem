@@ -88,7 +88,7 @@ int main(int argc, char **argv)
             }
             break;
         case 'v':
-            printversion();
+            printversion(stderr);
             return EXIT_SUCCESS;
         case 'h':
             printhelp();
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
     if (!(globals.options.backend))
     {
         // show welcome message
-        printversion();
+        printversion(stderr);
     }
     else
     {
@@ -271,7 +271,7 @@ void sighandler(int n)
 /* print quick usage message to stderr */
 void printhelp()
 {
-    printversion();
+    printversion(stderr);
 
     show_user("Usage: scanmem [OPTION]... [PID]\n"
             "Interactively locate and modify variables in an executing process.\n"

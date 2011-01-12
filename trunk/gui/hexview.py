@@ -4,7 +4,7 @@
 #
 # Extended by Wang Lu
 # Added editing and cursor moving stuff
-# Copyright (C) 2010 WANG Lu <coolwanglu@gmail.com>
+# Copyright (C) 2010,2011 WANG Lu <coolwanglu@gmail.com>
 #
 # First version
 # Copyright (C) 2008, 2009 Adriano Monteiro Marques

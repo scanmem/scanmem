@@ -22,12 +22,12 @@ Files: scanroutines.*,
        gui/misc*,
        gui/backend*,
        gui/consts*,
-Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
+Copyright © 2009,2010,2011      WANG Lu <coolwanglu@gmail.com>
 License: GPL-3+
 
 Files: gui/GameConqueror.py,
        gui/GameConqueror.xml
-Copyright © 2009,2010      WANG Lu <coolwanglu@gmail.com>
+Copyright © 2009,2010,2011      WANG Lu <coolwanglu@gmail.com>
 Copyright © 2010           Bryan Cain 
 License: GPL-3+
 
@@ -100,6 +100,6 @@ can be found in /usr/share/common-licenses/GPL-2 and
 
 The Debian packaging is:
 
-    Copyright © 2010 WANG Lu <coolwanglu@gmail.com>
+    Copyright © 2010,2011 WANG Lu <coolwanglu@gmail.com>
 
 and is licensed under the GPL version 3, see above.

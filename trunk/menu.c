@@ -152,9 +152,9 @@ static char *commandgenerator(const char *text, int state)
     return NULL;
 }
 
-void printversion()
+void printversion(FILE *outfd)
 {
-    show_user("scanmem version %s\n"
+    fprintf(outfd, "scanmem version %s\n"
                "Copyright (C) 2009,2010 Tavis Ormandy, Eli Dupree, WANG Lu\n"
                "Copyright (C) 2006-2009 Tavis Ormandy\n"
                "scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"

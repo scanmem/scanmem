@@ -1,3 +1,9 @@
+2011-01-12 WANG Lu <coolwanglu(a)gmail.com>
+	* Using pager when showing help messages
+
+2011-01-11 WANG Lu <coolwanglu(a)gmail.com>
+	* Check version of scanmem right after GameConqueror starts
+	
 2010-09-19 WANG Lu <coolwanglu(a)gmail.com>
     * Fixed memory leak
 	* Set monospace font to the lists
