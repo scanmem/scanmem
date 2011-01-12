@@ -26,6 +26,7 @@
 
 #include "config.h"
 
+#include <unistd.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -206,6 +207,11 @@ int main(int argc, char **argv)
     {
         // tell front-end our version
         printf("%s\n", PACKAGE_VERSION); 
+    }
+
+    if (getuid() != 0)
+    {
+        show_error("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
     }
 
     /* this will initialise matches and regions */
