@@ -17,7 +17,7 @@ In GameConqueror, just see the tooltip of the label "Value:" -- yeah, that's bas
 
 ==Why run as root?==
 
-Ptrace is recently being protected in some OSes.
+ptrace is recently being protected in some OSes.
 
 For example, Ubuntu 10.10, see:
 https://wiki.ubuntu.com/SecurityTeam/Roadmap/KernelHardening#ptrace%20Protection
