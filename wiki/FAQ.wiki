@@ -15,7 +15,7 @@ In scanmem see `help`, and you may also want to try `help option`. Don't worry, 
 In GameConqueror, just see the tooltip of the label "Value:" -- yeah, that's basically the same of what you see in scanmem. Also don't forget to check the tooltips of other controls. 
 
 
-==I still don't know how to hack my game!==
+==I still don't know how to hack my games!==
 Check [Tutorial] for a guide of how to use scanmem, although the example there is based on a old version of scanmem, and I don't want to update it because that should be enough and nice!
 
 But you are encouraged to use GameConqueror for more complicated tasks, unless you are cool with commands, but remember that GameConqueror provides more! 
