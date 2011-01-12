@@ -2,4 +2,4 @@
 
 DATADIR=@PKGDATADIR@
 
-exec python -OO $DATADIR/GameConqueror.py
+exec gksu -k --description "GameConqueror" "python -OO $DATADIR/GameConqueror.py"
