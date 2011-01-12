@@ -2,7 +2,7 @@
 """
     GameConquerorBackend: communication with scanmem
     
-    Copyright (C) 2010 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2010,2011 Wang Lu <coolwanglu(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by

@@ -2,6 +2,7 @@ Current
 ============
 * ask for root privilege
 * error code in show_messages
+* option: whether to search in readonly regions
 
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
 * performance

@@ -31,7 +31,7 @@
                "To set a value continually, for example to prevent a counter from decreasing,\n" \
                "suffix the command with '/', followed by the number of seconds to wait between\n" \
                "sets. Interrupt scanmem with ^C to stop the setting.\n\n" \
-               "Note that this command cannot work for bytearray.\n\n" \
+               "Note that this command cannot work for bytearray or string.\n\n" \
                "Examples:\n" \
                "\tset 10 - set all known matches to 10\n" \
                "\tset 0=0x03 - set match 0 to 0x03.\n" \
@@ -251,34 +251,40 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc);
 
 bool handler__write(globals_t * vars, char **argv, unsigned argc);
 
-#define OPTION_SHRTDOC "set runtime options of scanmem"
+#define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
                  "Here are all options and their possible values\n" \
-                 "\tscan_data_type\t\tspecify what type of data should be considered\n" \
-                 "\t\t\t\tdefault:int\n" \
-                 "\t\t\t\tMOST OF TIME YOU MUST EXECUTE `reset' IMMEDIATELY AFTER CHANGING scan_data_type\n" \
-                 "\t\tpossible values:\n" \
-                 "\t\tnumber:\tinteger or float\n" \
-                 "\t\tint:\tinteger of any width\n" \
-                 "\t\tfloat:\tfloat of any width\n" \
-                 "\t\tint{8|16|32|64}:\tinteger of given width\n" \
-                 "\t\tfloat{32|64}:\tfloat of given width\n" \
-                 "\t\tbytearray:\tan array of bytes\n" \
-                 "\t\tstring:\tstring\n" \
                  "\n" \
-                 "\tregion_scan_level\tspecify which regions should be scanned\n" \
-                 "\t\t\t\tdefault:2\n" \
-                 "\t\tpossible values:\n" \
-                 "\t\t1:\theap, stack and executable only\n" \
-                 "\t\t2:\theap, stack executable and bss only\n" \
-                 "\t\t3:\teverything(e.g. other libs)\n" \
-                 "\tdetect_reverse_change\twhether to (also) search for values that changes oppositely as given order\n" \
-                 "\t\t\t\tdefault:0\n" \
-                 "\t\t\t\tIf you want to use this feature, you can only search for INCREASED or DECREASED after initial search\n" \
-                 "\t\tpossible values:\n" \
-                 "\t\t0:\tdisabled\n" \
-                 "\t\t1:\tenabled\n" \
+                 "scan_data_type\t\tspecify what type of data should be considered\n" \
+                 "\t\t\tDefault:int\n" \
+                 "\tMOST OF TIME YOU MUST EXECUTE `reset' IMMEDIATELY AFTER CHANGING scan_data_type\n" \
+                 "\n" \
+                 "\tPossible Values:\n" \
+                 "\tnumber:\t\t\tinteger or float\n" \
+                 "\tint:\t\t\tinteger of any width\n" \
+                 "\tfloat:\t\t\tfloat of any width\n" \
+                 "\tint{8|16|32|64}:\tinteger of given width\n" \
+                 "\tfloat{32|64}:\t\tfloat of given width\n" \
+                 "\tbytearray:\t\tan array of bytes\n" \
+                 "\tstring:\t\t\tstring\n" \
+                 "\n" \
+                 "region_scan_level\tspecify which regions should be scanned\n" \
+                 "\t\t\tDefault:2\n" \
+                 "\n" \
+                 "\tPossible Values:\n" \
+                 "\t1:\theap, stack and executable only\n" \
+                 "\t2:\theap, stack executable and bss only\n" \
+                 "\t3:\teverything(e.g. other libs)\n" \
+                 "\n" \
+                 "detect_reverse_change\twhether to (also) search for values that changes oppositely as given order\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\tIf you want to use this feature, you can only search for INCREASED or DECREASED after initial search\n" \
+                 "\n" \
+                 "\tpossible values:\n" \
+                 "\t0:\tdisabled\n" \
+                 "\t1:\tenabled\n" \
+                 "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
 

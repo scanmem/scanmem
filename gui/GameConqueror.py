@@ -2,7 +2,7 @@
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
-    Copyright (C) 2009,2010 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2009,2010,2011 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
 
     This program is free software: you can redistribute it and/or modify

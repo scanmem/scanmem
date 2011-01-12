@@ -1,3 +1,11 @@
+scanmem (0.12-1~svn20110112-0ubuntu1) maverick; urgency=low
+
+  * Pack for maverick
+  * Check version of scanmem right after starting gameconqueror
+  * Using pager when showing help messages
+
+ -- WANG Lu <coolwanglu@gmail.com>  Wed, 12 Jan 2011 19:31:45 +0800
+
 scanmem (0.12-1~svn20100926-0ubuntu1) lucid; urgency=low
 
   * update version to 0.12
