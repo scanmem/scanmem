@@ -1,3 +1,9 @@
+scanmem (0.12-1~svn20110113-0ubuntu1) maverick; urgency=low
+
+  * Run as root
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 13 Jan 2011 01:09:24 +0800
+
 scanmem (0.12-1~svn20110112-0ubuntu1) maverick; urgency=low
 
   * Pack for maverick
