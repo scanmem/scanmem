@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Game Conqueror
 Comment=A game hacking tool. A GUI front-end for scanmem.
-Exec=gameconqueror
+Exec=gksudo gameconqueror
 Terminal=false
 Type=Application
 Icon=GameConqueror_128x128.png
