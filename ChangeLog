@@ -1,5 +1,6 @@
 2011-01-13 WANG Lu <coolwanglu(a)gmail.com>
 	* Run as root
+	* Skip when readlink on /proc/pid/exe fails
 
 2011-01-12 WANG Lu <coolwanglu(a)gmail.com>
 	* Using pager when showing help messages
