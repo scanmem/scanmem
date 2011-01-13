@@ -105,7 +105,7 @@ if ans == 'n':
     print 'Skipped.'
     sys.exit(0)
    
-if os.system('dput ppa:coolwanglu/%s' % (package,)) != 0:
+if os.system('dput ppa:coolwanglu/%s %s' % (package, package+'_'+deb_version+'_source.changes')) != 0:
     print 'Failed in uploading by dput'
     sys.exit(-1)
 
