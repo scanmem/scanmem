@@ -19,6 +19,10 @@ if os.system('svn ci') != 0:
 
 print
 print 'Generating version...'
+if os.system('svn up') != 0:
+    print 'Cannot SVN update'
+    sys.exit(-1)
+
 try:
     rev = re.findall(r'Revision:\s*(\d+)', os.popen('svn info').read())[0]
 except:
