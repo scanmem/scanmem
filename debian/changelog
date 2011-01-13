@@ -1,6 +1,6 @@
-scanmem (0.12-2~svn20110113r207-0ubuntu1) maverick; urgency=low
+scanmem (0.12-2~svn20110113r209-0ubuntu1) maverick; urgency=low
 
-  * Skipp if readlink on /proc/pid/exe fails
+  * Skip if readlink on /proc/pid/exe fails
 
  -- WANG Lu <coolwanglu@gmail.com>  Thu, 13 Jan 2011 19:07:47 +0800
 
