@@ -34,16 +34,16 @@ except:
 
 # debug, current "-2" for overwriting last version, 
 # change back to 1 next time!
-full_deb_version = version+'-2~svn'+today_timestr+'r'+rev+'-0ubuntu1'
+deb_version = version+'-2~svn'+today_timestr+'r'+rev+'-0ubuntu1'
 
 #check if we need to update debian/changelog
-if re.findall(r'\(([^)]+)\)', open('debian/changelog').readline())[0] == full_deb_version:
+if re.findall(r'\(([^)]+)\)', open('debian/changelog').readline())[0] == deb_version:
     print
     print 'No need to update debian/changelog, skipping'
 else:
     print
     print 'Writing debian/changelog'
-    if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
+    if os.system('dch -v "%s"' % (deb_version,)) != 0:
         print 'Failed when updating debian/changelog'
         sys.exit(-1)
 
@@ -53,9 +53,47 @@ if os.system('svn ci -m "update debian/changelog for packaging"') != 0:
     sys.exit(-1)
 
 print
-print 'Creating tarball'
+print 'Building...'
+# handling files
 if os.system('./configure --enable-gui && make dist') != 0:
     print 'Failed in creating tarball'
     sys.exit(-1)
+
+orig_tar_filename = package+'-'+version+'.tar.gz'
+if os.system('test -e %s && cp %s ../build-area' % (orig_tar_filename, orig_tar_filename)) != 0:
+    print 'Cannot copy tarball file to build area'
+    sys.exit(-1)
+
+deb_orig_tar_filename = package+'_'+deb_version+'.orig.tar.gz'
+
+try:
+    os.chdir('../build-area')
+except:
+    print 'Cannot find ../build-area'
+    sys.exit(-1)
+try:
+    os.rmdir(package+'-'+version)
+except:
+    pass
+
+if os.system('mv %s %s && tar -xvf %s' % (orig_tar_filename, deb_orig_tar_filename, deb_orig_tar_filename)) != 0:
+    print 'Cannot extract tarball'
+    sys.exit(-1)
+
+try:
+    os.chdir(package+'-'+version)
+except:
+    print 'Cannot enter project dir'
+    sys.exit(-1)
+
+os.system('cp -r ../../%s/debian .' % (package,))
+
+# building
+if os.system('debuild -S -sa') != 0:
+    print 'Failed in debuild'
+    sys.exit(-1)
+
+print
+print 'Everything seems to be good so far'
 
 
