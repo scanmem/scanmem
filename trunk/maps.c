@@ -111,18 +111,15 @@ bool readmaps(pid_t target, list_t * regions)
                             }
                             /* test if the region is mapped to the executable */
                             snprintf(exename, sizeof(exename), "/proc/%u/exe", target);
-                            if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) == -1)
+                            if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) > 0)
                             {
-                                show_error("failed to read executable link.\n");
-                                goto error;
+                                linkbuf[linkbuf_size] = 0;
                             }
-                            if (linkbuf_size >= MAX_LINKBUF_SIZE)
+                            else /* readlink may fail for special processes, just treat as empty in order not to miss those regions */
                             {
-                                show_error("path to the executable is too long.\n");
-                                goto error;
+                                linkbuf[0] = 0;
                             }
-                            linkbuf[linkbuf_size] = 0;
-                            if (strcmp(filename, linkbuf) == 0)
+                            if (strncmp(filename, linkbuf, MAX_LINKBUF_SIZE) == 0)
                                 useful = true;
                         break;
                 }
