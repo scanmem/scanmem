@@ -38,16 +38,17 @@ except:
 
 # debug, current "-2" for overwriting last version, 
 # change back to 1 next time!
-deb_version = version+'-2~svn'+today_timestr+'r'+rev+'-0ubuntu1'
+deb_version = version+'-2~svn'+today_timestr+'r'+rev
+full_deb_version = deb_version+'-0ubuntu1'
 
 #check if we need to update debian/changelog
-if re.findall(r'\(([^)]+)\)', open('debian/changelog').readline())[0] == deb_version:
+if re.findall(r'\(([^)]+)\)', open('debian/changelog').readline())[0] == full_deb_version:
     print
     print 'No need to update debian/changelog, skipping'
 else:
     print
     print 'Writing debian/changelog'
-    if os.system('dch -v "%s"' % (deb_version,)) != 0:
+    if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
         print 'Failed when updating debian/changelog'
         sys.exit(-1)
 
