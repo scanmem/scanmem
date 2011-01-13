@@ -75,10 +75,9 @@ try:
 except:
     print 'Cannot find ../build-area'
     sys.exit(-1)
-try:
-    os.rmdir(package+'-'+version)
-except:
-    pass
+
+# remove old dir
+os.system('rm -rf %s' % (package+'-'+version,))
 
 if os.system('mv %s %s && tar -xvf %s' % (orig_tar_filename, deb_orig_tar_filename, deb_orig_tar_filename)) != 0:
     print 'Cannot extract tarball'
