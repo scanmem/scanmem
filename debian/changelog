@@ -1,3 +1,9 @@
+scanmem (0.12-2~svn20110113r192-0ubuntu1) maverick; urgency=low
+
+  * Skipp if readlink on /proc/pid/exe fails
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 13 Jan 2011 19:07:47 +0800
+
 scanmem (0.12-1~svn20110113-0ubuntu1) maverick; urgency=low
 
   * Run as root
