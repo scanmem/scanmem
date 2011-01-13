@@ -94,6 +94,22 @@ if os.system('debuild -S -sa') != 0:
     sys.exit(-1)
 
 print
-print 'Everything seems to be good so far'
+sys.stdout.write('Everything seems to be good so far, upload?(y/n)')
+sys.stdout.flush()
+ans = raw_input().lower()
+while ans not in ['y', 'n']:
+    sys.stdout.write('I don\'t understand, enter \'y\' or \'n\':')
+    ans = raw_input().lower()
+
+if ans == 'n':
+    print 'Skipped.'
+    sys.exit(0)
+   
+if os.system('dput ppa:coolwanglu/%s' % (package,)) != 0:
+    print 'Failed in uploading by dput'
+    sys.exit(-1)
+
+print 'All done. Cool!'
+
 
 
