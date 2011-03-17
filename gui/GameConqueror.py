@@ -536,6 +536,9 @@ class GameConqueror():
 
     def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
+        # ignore empty value
+        if new_text == '':
+            return True
         row = int(path)
         self.cheatlist_liststore[row][5] = new_text
         if self.cheatlist_liststore[row][1]: # locked
