@@ -36,9 +36,7 @@ except:
     print 'Cannot get package name and version number'
     sys.exit(-1)
 
-# debug, current "-2" for overwriting last version, 
-# change back to 1 next time!
-deb_version = version+'-2~svn'+today_timestr+'r'+rev
+deb_version = version+'-1~svn'+today_timestr+'r'+rev
 full_deb_version = deb_version+'-0ubuntu1'
 
 #check if we need to update debian/changelog
@@ -113,6 +111,7 @@ if os.system('dput ppa:coolwanglu/%s ../%s' % (package, package+'_'+full_deb_ver
     print 'Failed in uploading by dput'
     sys.exit(-1)
 
+print 'Build area not cleaned.'
 print 'All done. Cool!'
 
 
