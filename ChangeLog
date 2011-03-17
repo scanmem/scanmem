@@ -1,5 +1,6 @@
 2011-03-14 WANG Lu <coolwanglu(a)gmail.com>
 	* Ignore empty input at cheatlist
+	* Process list dialog is resizable
 
 2011-01-13 WANG Lu <coolwanglu(a)gmail.com>
 	* Run as root
