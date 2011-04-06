@@ -31,10 +31,10 @@
 #include "target_memory_info_array.h"
 #include "show_message.h"
 
-matches_and_old_values_array * allocate_array (matches_and_old_values_array *array, long max_bytes)
+matches_and_old_values_array * allocate_array (matches_and_old_values_array *array, unsigned long max_bytes)
 {
     /* Make enough space for the array header and a null first swath. */
-    long bytes_to_allocate = sizeof(matches_and_old_values_array) + sizeof(matches_and_old_values_swath);
+    unsigned long bytes_to_allocate = sizeof(matches_and_old_values_array) + sizeof(matches_and_old_values_swath);
     
     if (!(array = realloc(array, bytes_to_allocate))) return NULL;
     
@@ -46,7 +46,7 @@ matches_and_old_values_array * allocate_array (matches_and_old_values_array *arr
 
 matches_and_old_values_array * allocate_enough_to_reach(matches_and_old_values_array *array, void *last_byte_to_reach_plus_one, matches_and_old_values_swath **swath_pointer_to_correct)
 {
-    long bytes_needed = (last_byte_to_reach_plus_one - (void *)array);
+    unsigned long bytes_needed = (last_byte_to_reach_plus_one - (void *)array);
     
     if (bytes_needed <= array->bytes_allocated) return array;
     else
@@ -54,7 +54,7 @@ matches_and_old_values_array * allocate_enough_to_reach(matches_and_old_values_a
         matches_and_old_values_array *original_location = array;
         
         /* Allocate twice as much each time, so we don't have to do it too often */
-        long bytes_to_allocate = array->bytes_allocated;
+        unsigned long bytes_to_allocate = array->bytes_allocated;
         while(bytes_to_allocate < bytes_needed)
             bytes_to_allocate *= 2;
 
@@ -92,8 +92,8 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
     }
     else
     {
-        long local_index_excess = remote_address - remote_address_of_last_element(swath );
-        long local_address_excess = local_index_excess * sizeof(old_value_and_match_info);
+        unsigned long local_index_excess = remote_address - remote_address_of_last_element(swath );
+        unsigned long local_address_excess = local_index_excess * sizeof(old_value_and_match_info);
          
         if (local_address_excess >= sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info))
         {
@@ -122,7 +122,7 @@ matches_and_old_values_swath * add_element (matches_and_old_values_array **array
 
 matches_and_old_values_array * null_terminate (matches_and_old_values_array *array, matches_and_old_values_swath *swath )
 {
-    long bytes_needed;
+    unsigned long bytes_needed;
     
     if (swath->number_of_bytes == 0)
     {
