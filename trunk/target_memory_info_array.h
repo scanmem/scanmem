@@ -40,44 +40,44 @@ typedef struct {
 /*
 typedef struct {
 	void *first_byte_in_child;
-	long number_of_bytes;
+	unsigned long number_of_bytes;
 } unknown_type_of_swath;
 typedef struct {
 	void *first_byte_in_child;
-	long number_of_bytes;
+	unsigned long number_of_bytes;
 	uint8_t copied_bytes[0];
 } copied_data_swath;
 typedef struct {
 	void *first_byte_in_child;
-	long number_of_bytes;
+	unsigned long number_of_bytes;
 	match_flags match_info[0];
 } matches_swath;
 */
 typedef struct {
 	void *first_byte_in_child;
-	long number_of_bytes;
+	unsigned long number_of_bytes;
 	old_value_and_match_info data[0];
 } matches_and_old_values_swath;
 
 /*
 typedef struct {
-	long bytes_allocated;
-	long max_needed_bytes;
+	unsigned long bytes_allocated;
+	unsigned long max_needed_bytes;
 } unknown_type_of_array;
 typedef struct {
-	long bytes_allocated;
-	long max_needed_bytes;
+	unsigned long bytes_allocated;
+	unsigned long max_needed_bytes;
 	copied_data_swath swaths[0];
 } copied_data_array;
 typedef struct {
-	long bytes_allocated;
-	long max_needed_bytes;
+	unsigned long bytes_allocated;
+	unsigned long max_needed_bytes;
 	matches_swath swaths[0];
 } matches_array;
 */
 typedef struct {
-	long bytes_allocated;
-	long max_needed_bytes;
+	unsigned long bytes_allocated;
+	unsigned long max_needed_bytes;
 	matches_and_old_values_swath swaths[0];
 } matches_and_old_values_array;
 
@@ -96,7 +96,7 @@ typedef struct {
 	long index;
 } match_location;
 
-matches_and_old_values_array * allocate_array(matches_and_old_values_array *array, long max_bytes);
+matches_and_old_values_array * allocate_array(matches_and_old_values_array *array, unsigned long max_bytes);
 matches_and_old_values_array * allocate_enough_to_reach(matches_and_old_values_array *array, void *last_byte_to_reach_plus_one, matches_and_old_values_swath **swath_pointer_to_correct);
 matches_and_old_values_swath * add_element(matches_and_old_values_array **array, matches_and_old_values_swath *swath, void *remote_address, void *new_element);
 matches_and_old_values_array * null_terminate(matches_and_old_values_array *array, matches_and_old_values_swath *swath);
