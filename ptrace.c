@@ -399,7 +399,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 {
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
-    long total_size = 0;
+    unsigned long total_size = 0;
     unsigned regnum = 0;
     element_t *n = vars->regions->head;
     region_t *r;
