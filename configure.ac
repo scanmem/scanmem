@@ -1,5 +1,5 @@
 # $Id: configure.ac,v 1.1 2007/06/04 22:51:13 taviso Exp $
-AC_INIT([scanmem], [0.12], [http://code.google.com/p/scanmem/])
+AC_INIT([scanmem], [0.13], [http://code.google.com/p/scanmem/])
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADER([config.h])

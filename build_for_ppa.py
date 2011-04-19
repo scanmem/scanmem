@@ -36,8 +36,7 @@ except:
     print 'Cannot get package name and version number'
     sys.exit(-1)
 
-# changed back to -1 in next main version! (0.13)
-deb_version = version+'-2~svn'+today_timestr+'r'+rev
+deb_version = version+'-1~svn'+today_timestr+'r'+rev
 full_deb_version = deb_version+'-0ubuntu1'
 
 #check if we need to update debian/changelog
