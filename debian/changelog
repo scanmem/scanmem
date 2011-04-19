@@ -1,3 +1,9 @@
+scanmem (0.13-1~svn20110419r224-0ubuntu1) maverick; urgency=low
+
+  * 0.13 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 19 Apr 2011 11:51:48 +0800
+
 scanmem (0.12-2~svn20110419r222-0ubuntu1) maverick; urgency=low
 
   * clean for release 
