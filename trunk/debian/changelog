@@ -1,3 +1,11 @@
+scanmem (0.13-1~svn20110426r228-0ubuntu1) natty; urgency=low
+
+  * Pack for Natty
+  * Remote the '-k' parameter of gksu in order to make gameconqueror works in
+  Natty 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 26 Apr 2011 23:53:30 +0800
+
 scanmem (0.13-1~svn20110420r226-0ubuntu1) maverick; urgency=low
 
   * Better debian files, thanks to Kartik 
