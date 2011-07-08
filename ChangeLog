@@ -1,3 +1,7 @@
+2011-07-08 WANG Lu <coolwanglu(a)gmail.com>
+	* Fix manpage
+	* Fix process list displaying (Issue 26)
+
 2011-03-14 WANG Lu <coolwanglu(a)gmail.com>
 	* Ignore empty input at cheatlist
 	* Process list dialog is resizable
@@ -14,7 +18,7 @@
 	* Check version of scanmem right after GameConqueror starts
 	
 2010-09-19 WANG Lu <coolwanglu(a)gmail.com>
-    * Fixed memory leak
+	* Fixed memory leak
 	* Set monospace font to the lists
 	* Fixed value parsing for strings
 

@@ -406,7 +406,7 @@ class GameConqueror():
         self.processlist_liststore.clear()
         pl = self.get_process_list()
         for p in pl:
-            self.processlist_liststore.append([p[0], p[1][:50]]) # limit the length here, otherwise it may crash (why?)
+            self.processlist_liststore.append([p[0], (p[1][:50] if len(p) > 1 else '<unknown>')]) # limit the length here, otherwise it may crash (why?)
         self.process_list_dialog.show()
         while True:
             res = self.process_list_dialog.run()
