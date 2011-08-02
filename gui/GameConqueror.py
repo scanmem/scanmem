@@ -882,7 +882,7 @@ class GameConqueror():
     
     # addr could be int or str
     def read_memory(self, addr, length):
-        if isinstance(addr,int):
+        if not isinstance(addr,str):
             addr = '%x'%(addr,)
         f = tempfile.NamedTemporaryFile()
 
@@ -904,7 +904,7 @@ class GameConqueror():
             
     # addr could be int or str
     def write_value(self, addr, typestr, value):
-        if isinstance(addr,int):
+        if not isinstance(addr,str):
             addr = '%x'%(addr,)
 
         self.command_lock.acquire()

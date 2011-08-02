@@ -1,3 +1,6 @@
+2011-08-02 WANG Lu <coolwanglu(a)gmail.com>
+	* Fix memory browser
+
 2011-07-08 WANG Lu <coolwanglu(a)gmail.com>
 	* Fix manpage
 	* Fix process list displaying (Issue 26)
