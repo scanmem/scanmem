@@ -1,5 +1,6 @@
 2011-08-15 WANG Lu <coolwanglu(a)gmail.com>
 	* Improve the process selection dialog
+	* Make tooltip for the 'Value' label more obvious 
 
 2011-08-02 WANG Lu <coolwanglu(a)gmail.com>
 	* Fix memory browser
