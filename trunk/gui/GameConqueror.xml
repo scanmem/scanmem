@@ -72,8 +72,8 @@
                 <property name="width">105</property>
                 <child>
                   <object class="GtkButton" id="SelectProcess_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -188,8 +188,8 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="Reset_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -320,8 +320,8 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="ManuallyAddCheat_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
                     <property name="visible">True</property>
                     <property name="sensitive">True</property>
                     <property name="can_focus">True</property>
@@ -337,8 +337,8 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="RemoveAllCheat_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -353,8 +353,8 @@
                 </child>
                 <child>
                   <object class="GtkButton" id="MemoryEditor_Button">
-                    <property name="width_request">28</property>
-                    <property name="height_request">28</property>
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
@@ -1125,6 +1125,118 @@ Public License instead of this License.  But first, please read
         <property name="visible">True</property>
         <property name="spacing">2</property>
         <child>
+            <object class="GtkFrame" id="frame3">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label_xalign">0</property>
+                <property name="shadow_type">in</property>
+                <child>
+                  <object class="GtkAlignment" id="alignment5">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="left_padding">12</property>
+                    <child>
+                      <object class="GtkVBox" id="box2">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <child>
+                          <object class="GtkHBox" id="box3">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkLabel" id="label16">
+                                <property name="width_request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">Process:</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="ProcessFilter_Input">
+                                <property name="width_request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">•</property>
+                                <signal name="changed" handler="ProcessFilter_Input_changed_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkHBox" id="box4">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <child>
+                              <object class="GtkLabel" id="label17">
+                                <property name="width_request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="xalign">0</property>
+                                <property name="label" translatable="yes">User:</property>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">0</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkEntry" id="UserFilter_Input">
+                                <property name="width_request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="invisible_char">•</property>
+                                <signal name="changed" handler="UserFilter_Input_changed_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="expand">False</property>
+                                <property name="fill">True</property>
+                                <property name="position">1</property>
+                              </packing>
+                            </child>
+                          </object>
+                          <packing>
+                            <property name="expand">False</property>
+                            <property name="fill">True</property>
+                            <property name="position">1</property>
+                          </packing>
+                        </child>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child type="label">
+                  <object class="GtkLabel" id="label15">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="label" translatable="yes">Filter</property>
+                    <property name="use_markup">True</property>
+                  </object>
+                </child>
+          </object>
+          <packing>
+            <property name="position">0</property>
+            <property name="expand">False</property>
+            <property name="pack_type">start</property>
+          </packing>
+        </child>
+        <child>
           <object class="GtkScrolledWindow" id="scrolledwindow1">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
@@ -1140,6 +1252,8 @@ Public License instead of this License.  But first, please read
           </object>
           <packing>
             <property name="position">1</property>
+            <property name="expand">True</property>
+            <property name="pack_type">start</property>
           </packing>
         </child>
         <child internal-child="action_area">
@@ -1178,7 +1292,7 @@ Public License instead of this License.  But first, please read
           <packing>
             <property name="expand">False</property>
             <property name="pack_type">end</property>
-            <property name="position">0</property>
+            <property name="position">2</property>
           </packing>
         </child>
       </object>
