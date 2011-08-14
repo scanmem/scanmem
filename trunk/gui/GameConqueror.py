@@ -108,6 +108,7 @@ TYPESIZES = {'int8':1
 
 class GameConqueror():
     def __init__(self):
+        gtk.settings_get_default().set_long_property('gtk-tooltip-timeout', 0, '')
         ##################################
         # init GUI
         self.builder = gtk.Builder()
