@@ -230,11 +230,16 @@ class GameConqueror():
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
 
+        # init ProcessList
+        self.processfilter_input = self.builder.get_object('ProcessFilter_Input')
+        self.userfilter_input = self.builder.get_object('UserFilter_Input')
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
         self.processlist_tv.get_selection().set_mode(gtk.SELECTION_SINGLE)
-        self.processlist_liststore = gtk.ListStore(str, str)
-        self.processlist_tv.set_model(self.processlist_liststore)
+        self.processlist_liststore = gtk.ListStore(str, str, str)
+        self.processlist_filter = self.processlist_liststore.filter_new(root=None)
+        self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
+        self.processlist_tv.set_model(self.processlist_filter)
         self.processlist_tv.set_enable_search(True)
         self.processlist_tv.set_search_column(1)
         # first col
@@ -242,10 +247,14 @@ class GameConqueror():
                                         ,attributes = (('text',0),)
                                    )
         # second col
-        misc.treeview_append_column(self.processlist_tv, 'Process'
+        misc.treeview_append_column(self.processlist_tv, 'User'
                                         ,attributes = (('text',1),)
                                    )
 
+        # third col
+        misc.treeview_append_column(self.processlist_tv, 'Process'
+                                        ,attributes = (('text',2),)
+                                   )
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
@@ -393,10 +402,16 @@ class GameConqueror():
             return True
         return False
 
+    def ProcessFilter_Input_changed_cb(self, widget, data=None):
+        self.processlist_filter.refilter()
+
+    def UserFilter_Input_changed_cb(self, widget, data=None):
+        self.processlist_filter.refilter()
+
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
         (model, iter) = self.processlist_tv.get_selection().get_selected()
         if iter is not None:
-            (pid, process) = model.get(iter, 0, 1)
+            (pid, user, process) = model.get(iter, 0, 1, 2)
             self.select_process(int(pid), process)
             self.process_list_dialog.response(gtk.RESPONSE_CANCEL)
             return True
@@ -406,7 +421,8 @@ class GameConqueror():
         self.processlist_liststore.clear()
         pl = self.get_process_list()
         for p in pl:
-            self.processlist_liststore.append([p[0], (p[1][:50] if len(p) > 1 else '<unknown>')]) # limit the length here, otherwise it may crash (why?)
+           # self.processlist_liststore.append([p[0], (p[1][:50] if len(p) > 1 else '<unknown>')]) # limit the length here, otherwise it may crash (why?)
+            self.processlist_liststore.append([p[0], (p[1] if len(p) > 1 else '<unknown>'),(p[2] if len(p) > 2 else '<unknown>')])
         self.process_list_dialog.show()
         while True:
             res = self.process_list_dialog.run()
@@ -561,6 +577,15 @@ class GameConqueror():
             pass
         return True
 
+    def processlist_filter_func(self, model, iter, data=None):
+        (pid, user, process) = model.get(iter, 0, 1, 2)
+        return process is not None and \
+                process.find(self.processfilter_input.get_text()) != -1 and \
+                user is not None and \
+                user.find(self.userfilter_input.get_text()) != -1
+        
+
+
     ############################
     # core functions
     def show_error(self, msg):
@@ -698,7 +723,7 @@ class GameConqueror():
         self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value])
 
     def get_process_list(self):
-        return [e.strip().split(' ',1) for e in os.popen('ps -wweo pid=,command= --sort=-pid').readlines()]
+        return [map(str.strip, e.strip().split(' ',2)) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
 
     def select_process(self, pid, process_name):
         # ask backend for attaching the target process
