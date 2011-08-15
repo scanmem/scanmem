@@ -88,7 +88,7 @@
                 </child>
                 <child>
                   <object class="GtkEntry" id="Value_Input">
-                    <property name="width_request">280</property>
+                    <property name="width_request">263</property>
                     <property name="height_request">25</property>
                     <property name="visible">True</property>
                     <property name="can_focus">True</property>
@@ -96,7 +96,7 @@
                     <signal name="activate" handler="Value_Input_activate_cb"/>
                   </object>
                   <packing>
-                    <property name="x">63</property>
+                    <property name="x">80</property>
                     <property name="y">98</property>
                   </packing>
                 </child>
@@ -118,7 +118,7 @@
                 </child>
                 <child>
                   <object class="GtkLabel" id="label1">
-                    <property name="width_request">42</property>
+                    <property name="width_request">57</property>
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="tooltip_markup">Syntax:
