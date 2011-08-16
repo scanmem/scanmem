@@ -1,3 +1,12 @@
+scanmem (0.13-1~svn20110816r235-0ubuntu1) natty; urgency=low
+
+  * Added a filter in process selection dialog
+  * Fixed issue 26 on process seledction dialog
+  * Improve UI
+  * Fixed freezing after switching the target process 
+
+ -- wl <wl@wl-ubuntu.fareast.corp.microsoft.com>  Tue, 16 Aug 2011 12:53:45 +0800
+
 scanmem (0.13-1~svn20110426r228-0ubuntu1) natty; urgency=low
 
   * Pack for Natty
