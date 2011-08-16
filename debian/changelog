@@ -1,4 +1,4 @@
-scanmem (0.13-1~svn20110816r235-0ubuntu1) natty; urgency=low
+scanmem (0.13-1~svn20110816r237-0ubuntu1) natty; urgency=low
 
   * Added a filter in process selection dialog
   * Fixed issue 26 on process seledction dialog
