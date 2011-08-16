@@ -162,7 +162,7 @@ class GameConqueror():
         # we may need a cell data func here
         # create model
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
-        self.scanresult_liststore = gtk.ListStore(str, str, str) 
+        self.scanresult_liststore = gtk.ListStore(str, str, str, bool) #addr, value, type, valid
         self.scanresult_tv.set_model(self.scanresult_liststore)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
@@ -170,7 +170,7 @@ class GameConqueror():
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
-        self.cheatlist_liststore = gtk.ListStore(str, bool, str, str, str, str)
+        self.cheatlist_liststore = gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
@@ -303,6 +303,7 @@ class GameConqueror():
         self.last_hexedit_address = (0,0) # used for hexview
         self.is_scanning = False
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
+        self.is_data_worker_working = False
 
         self.backend = GameConquerorBackend()
         self.backend.add_error_listener(self.backend_error_cb)
@@ -525,9 +526,10 @@ class GameConqueror():
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
         row = int(path)
-        locked = self.cheatlist_liststore[row][1]
-        locked = not locked
-        self.cheatlist_liststore[row][1] = locked
+        if self.cheatlist_liststore[row][6]: # valid
+            locked = self.cheatlist_liststore[row][1]
+            locked = not locked
+            self.cheatlist_liststore[row][1] = locked
         if locked:
             #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
             pass
@@ -557,13 +559,15 @@ class GameConqueror():
         if new_text == '':
             return True
         row = int(path)
+        if not self.cheatlist_liststore[row][6]: #not valid
+            return True
         self.cheatlist_liststore[row][5] = new_text
         if self.cheatlist_liststore[row][1]: # locked
             # data_worker will handle this
             pass
         else:
             # write it for once
-            (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[row]
+            (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
             self.cheatlist_updates.append(row)
             self.write_value(addr, typestr, value)
         return True
@@ -624,6 +628,8 @@ class GameConqueror():
 
     # parse bytes dumped by scanmem into number, string, etc.
     def bytes2value(self, typename, bytes):
+        if bytes is None:
+            return None
         if typename in TYPENAMES_G2STRUCT.keys():
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
@@ -674,13 +680,12 @@ class GameConqueror():
             addr = selected_region['start_addr']
 
         # read region if necessary
-        start_addr = selected_region['start_addr']
-        end_addr = selected_region['end_addr']
+        start_addr = max(addr - 1024, selected_region['start_addr'])
+        end_addr = min(addr + 1024, selected_region['end_addr'])
         if self.last_hexedit_address[0] != start_addr or \
            self.last_hexedit_address[1] != end_addr:
-            try:
-                data = self.read_memory(start_addr, end_addr - start_addr)
-            except IOError,e:
+            data = self.read_memory(start_addr, end_addr - start_addr)
+            if data is None:
                 self.show_error('Cannot read memory')
                 return
             self.last_hexedit_address = (start_addr, end_addr)
@@ -697,7 +702,9 @@ class GameConqueror():
     # this callback will be called from other thread
     def backend_error_cb(self, msg):
         gtk.gdk.threads_enter()
-        self.show_error('Backend error: %s'%(msg,))
+        # we don't want massive error output for data worker
+        if not self.is_data_worker_working:
+            self.show_error('Backend error: %s'%(msg,))
         if self.is_scanning:
             self.finish_scan()
         gtk.gdk.threads_leave()
@@ -721,7 +728,7 @@ class GameConqueror():
             if TYPENAMES_S2G.has_key(t):
                 vt = TYPENAMES_S2G[t]
                 break
-        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value])
+        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value, True])
 
     def get_process_list(self):
         return [map(str.strip, e.strip().split(' ',2)) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
@@ -858,7 +865,7 @@ class GameConqueror():
                 (a, v, t) = map(str.strip, line.split(',')[:3])
                 a = '%x'%(int(a,16),)
                 t = t[1:-1]
-                self.scanresult_liststore.append([a, v, t])
+                self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
@@ -881,16 +888,25 @@ class GameConqueror():
     # read/write data periodically
     def data_worker(self):
         if (not self.is_scanning) and self.command_lock.acquire(0): # non-blocking
+            self.is_data_worker_working = True
             rows = self.get_visible_rows(self.scanresult_tv)
             if rows is not None:
                 (r1, r2) = rows # [r1, r2] rows are visible
                 for i in xrange(r1, r2+1):
                     row = self.scanresult_liststore[i]
-                    addr, cur_value, scanmem_type = row
-                    row[1] = str(self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value))
+                    addr, cur_value, scanmem_type, valid = row
+                    if valid:
+		        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                        if new_value is not None:
+                            row[1] = str(new_value)
+                        else:
+                            row[1] = '??'
+                            row[3] = False
             # write locked values in cheat list and read unlocked values
             for i in xrange(len(self.cheatlist_liststore)):
-                (lockflag, locked, desc, addr, typestr, value) = self.cheatlist_liststore[i]
+                (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
+                if not valid:
+                    continue
                 if locked:
                     self.write_value(addr, typestr, value)
                 elif i in self.cheatlist_updates:
@@ -898,9 +914,12 @@ class GameConqueror():
                     self.cheatlist_updates.remove(i)
                 else:
                     newvalue = self.read_value(addr, typestr, value)
-                    if newvalue != value and not locked and not self.cheatlist_editing:
-                        self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, newvalue)
+                    if newvalue is None:
+                        self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
+                    elif newvalue != value and not locked and not self.cheatlist_editing:
+                        self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, newvalue, valid)
             self.command_lock.release()           
+            self.is_data_worker_working = False 
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):
@@ -925,7 +944,8 @@ class GameConqueror():
 #            for byte in bytes: data += chr(int(byte, 16))
         # TODO raise Exception here isn't good
         if len(data) != length:
-            self.show_error('Cannot access target memory')
+            # self.show_error('Cannot access target memory')
+            data = None
         return data
             
     # addr could be int or str

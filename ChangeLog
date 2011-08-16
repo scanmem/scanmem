@@ -1,3 +1,6 @@
+2011-08-16 WANG Lu <coolwanglu(a)gmail.com>
+	* Fix freeze after switching the target process
+
 2011-08-15 WANG Lu <coolwanglu(a)gmail.com>
 	* Improve the process selection dialog
 	* Make tooltip for the 'Value' label more obvious 
