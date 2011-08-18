@@ -1,0 +1,15 @@
+#Features in the future
+
+Here's a list of features requested by users or planned by myself.
+More ideas and codes are welcome.
+
+== scanmem ==
+  * Non-blocking process attaching
+  * Speed hack
+  * Different float number rouding functions
+
+== GameConqueror ==
+  * Change a number of entries at the same time
+  * Save/Load the list of addresses
+  * Call by shortkeys and attach to the current window automatically
+  * Plugins (general or specifically -- like customized data structure)
