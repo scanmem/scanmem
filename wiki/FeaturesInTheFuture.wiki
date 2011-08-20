@@ -7,6 +7,9 @@ More ideas and codes are welcome.
   * Non-blocking process attaching
   * Speed hack
   * Different float number rouding functions
+  * Better 'set' comand
+    - bytearray support
+    - reference to search result
 
 == GameConqueror ==
   * Change a number of entries at the same time
