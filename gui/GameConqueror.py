@@ -38,6 +38,7 @@ from hexview import HexView
 from backend import GameConquerorBackend
 import misc
 
+CLIPBOARD = gtk.clipboard_get()
 WORK_DIR = os.path.dirname(sys.argv[0])
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
@@ -172,6 +173,7 @@ class GameConqueror():
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         self.cheatlist_liststore = gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
+        self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
         # Lock Flag
@@ -287,6 +289,10 @@ class GameConqueror():
                              ,'Browse this address'
                              ,self.cheatlist_popup_cb
                              ,'browse_this_address')
+        misc.menu_append_item(self.cheatlist_popup
+                             ,'Copy address'
+                             ,self.cheatlist_popup_cb
+                             ,'copy_address')
         misc.menu_append_item(self.cheatlist_popup
                              ,'Remove this entry'
                              ,self.cheatlist_popup_cb
@@ -521,6 +527,9 @@ class GameConqueror():
             return True
         elif data == 'browse_this_address':
             self.browse_memory(int(addr,16))
+            return True
+        elif data == 'copy_address':
+            CLIPBOARD.set_text(addr)
             return True
         return False
 
