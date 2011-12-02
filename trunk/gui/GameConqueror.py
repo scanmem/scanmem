@@ -176,6 +176,7 @@ class GameConqueror():
         self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
+        self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
         misc.treeview_append_column(self.cheatlist_tv, '' 
                                         ,renderer_class = gtk.CellRendererCombo
@@ -515,6 +516,14 @@ class GameConqueror():
             self.scan_for_addr(int(addr,16))
             return True
         return False
+        
+    def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
+        keycode = event.keyval
+        pressedkey = gtk.gdk.keyval_name(keycode)
+        if pressedkey == 'Delete':
+            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
+            if iter is None: return
+            self.cheatlist_liststore.remove(iter) 
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
