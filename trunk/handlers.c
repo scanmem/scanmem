@@ -525,7 +525,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
     unsigned id;
     bool invert = false;
     char *end = NULL, *idstr = NULL, *block = NULL;
-    element_t *np, *p, *pp;
+    element_t *np, *pp;
     list_t *keep = NULL;
     region_t *save;
 
@@ -591,7 +591,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         
         /* initialise list pointers */
         np = vars->regions->head;
-        p = pp = NULL;
+        pp = NULL;
         
         /* find the correct region node */
         while (np) {
@@ -1462,6 +1462,30 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
             goto retl;
         }
         int i;
+
+        {
+            // if wildcard is provided in the bytearray, we need the original data.
+            bool wildcard_used = false;
+            for(i = 0; i < data_width; ++i)
+            {
+                if(array[i].is_wildcard == 1)
+                {
+                    wildcard_used = true;
+                    break;
+                }
+            }
+            if (wildcard_used)
+            {
+                if(!read_array(vars->target, addr, buf, data_width))
+                {
+                    show_error("read memory failed.\n");
+                    free(array);
+                    ret = false;
+                    goto retl;
+                }
+            }
+        }
+
         for(i = 0; i < data_width; ++i)
         {
             bytearray_element_t *cur_element = array+i;
