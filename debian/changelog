@@ -1,3 +1,12 @@
+scanmem (0.13-1~svn20111216r245-0ubuntu1) oneiric; urgency=low
+
+  * Support wildcards when writing bytearrays
+  [Thanks to Incarus6]
+  * Delete an item upon DELETE key is pressed
+  * Copy address & cheatlist reorderable
+
+ -- WANG Lu <coolwanglu@gmail.com>  Fri, 16 Dec 2011 03:16:11 +0800
+
 scanmem (0.13-1~svn20110816r238-0ubuntu1) natty; urgency=low
 
   * Added a filter in process selection dialog
