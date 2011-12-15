@@ -1,3 +1,9 @@
+2011-12-16 WANG Lu <coolwanglu(a)gmail.com>
+	* Support wildcards when writing bytearrays
+	[Thanks to Incarus6]
+	* Delete an item upon DELETE key is pressed
+	* Copy address & cheatlist reorderable
+
 2011-08-16 WANG Lu <coolwanglu(a)gmail.com>
 	* Fix freeze after switching the target process
 
