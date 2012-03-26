@@ -1,3 +1,8 @@
+2011-03-26 WANG Lu <coolwanglu(a)gmail.com>
+	* Fix for '!=' as 'not equal to'
+	* Typo	
+	* Option 'dump_with_ascii' added (Thanks to sec)
+
 2011-12-16 WANG Lu <coolwanglu(a)gmail.com>
 	* Support wildcards when writing bytearrays
 	[Thanks to Incarus6]

@@ -744,7 +744,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else if (strcmp(argv[0], "!=") == 0)
     {
-        m = MATCHCHANGED;
+        m = (argc == 1) ? MATCHCHANGED : MATCHNOTEQUALTO;
     }
     else if (strcmp(argv[0], "<") == 0)
     {
@@ -1296,15 +1296,36 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
             {
                 printf("%02X ", (unsigned char)(buf[buf_idx++]));
             }
+            if(vars->options.dump_with_ascii == 1)
+            {
+                for (j = 0; j < 16; ++j)
+                {
+                    char c = buf[i+j];
+                    printf("%c", isprint(c) ? c : '.');
+                }
+            }
             printf("\n");
         }
         if (i < len)
         {
             if (vars->options.backend == 0)
                 printf("%p: ", addr+i);
-            for (; i < len; ++i)
+            for (j = i; j < len; ++j)
             {
                 printf("%02X ", (unsigned char)(buf[buf_idx++]));
+            }
+            if(vars->options.dump_with_ascii == 1)
+            {
+                while(j%16 !=0) // skip "empty" numbers
+                {
+                    printf("   ");
+                    ++j;
+                }
+                for (j = 0; i+j < len; ++j)
+                {
+                    char c = buf[i+j];
+                    printf("%c", isprint(c) ? c : '.');
+                }
             }
             printf("\n");
         }
@@ -1558,6 +1579,16 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else
         {
             show_error("bad value for detect_reverse_change, see `help option`.\n");
+            return false;
+        }
+    }
+    else if (strcasecmp(argv[1], "dump_with_ascii") == 0)
+    {
+        if (strcmp(argv[2], "0") == 0) {vars->options.dump_with_ascii = 0; }
+        else if (strcmp(argv[2], "1") == 0) {vars->options.dump_with_ascii = 1; }
+        else
+        {
+            show_error("bad value for dump_with_ascii, see `help option`.\n");
             return false;
         }
     }
