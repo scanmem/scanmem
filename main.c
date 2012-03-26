@@ -59,6 +59,7 @@ globals_t globals = {
         ANYINTEGER,             /* scan_data_type */
         REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */ 
         0,                      /* detect_reverse_change */
+        1,                      /* dump_with_ascii */
     }
 };
 
