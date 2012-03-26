@@ -1,3 +1,10 @@
+scanmem (0.13-1~svn20120326r247-0ubuntu1) oneiric; urgency=low
+
+  * Fix for '!=' as 'not euqal to'
+  * Option 'dump_with_ascii' added (thanks to sec)
+
+ -- WANG Lu <coolwanglu@gmail.com>  Mon, 26 Mar 2012 14:31:06 +0800
+
 scanmem (0.13-1~svn20111216r245-0ubuntu1) oneiric; urgency=low
 
   * Support wildcards when writing bytearrays
