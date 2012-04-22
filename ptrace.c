@@ -192,7 +192,15 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
                             continue;
                     
                     /* Cache it with the appropriate offset */
-                    *((long *)&peekbuf.cache[peekbuf.size - j]) = ptraced_long;
+                    if(peekbuf.size >= j)
+                    {
+                        *((long *)&peekbuf.cache[peekbuf.size - j]) = ptraced_long;
+                    }
+                    else
+                    {
+                        *((long *)&peekbuf.cache[0]) = ptraced_long;
+                        peekbuf.base -= j;
+                    }
                     peekbuf.size += sizeof(long) - j;
                     last_address_gathered = ptrace_address + sizeof(long) - j;
                     
