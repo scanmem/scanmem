@@ -1,3 +1,9 @@
+scanmem (0.13-1~svn20120422r249-0ubuntu1) oneiric; urgency=low
+
+  * Fixed a bug which may cause a crash 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sun, 22 Apr 2012 11:05:01 +0800
+
 scanmem (0.13-1~svn20120326r247-0ubuntu1) oneiric; urgency=low
 
   * Fix for '!=' as 'not euqal to'
