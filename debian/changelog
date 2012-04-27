@@ -1,3 +1,9 @@
+scanmem (0.13-1~svn20120427r250-0ubuntu1) precise; urgency=low
+
+  * Build for Precise
+
+ -- WANG Lu <coolwanglu@gmail.com>  Fri, 27 Apr 2012 19:21:59 +0800
+
 scanmem (0.13-1~svn20120422r249-0ubuntu1) oneiric; urgency=low
 
   * Fixed a bug which may cause a crash 
