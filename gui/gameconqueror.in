@@ -2,4 +2,8 @@
 
 DATADIR=@PKGDATADIR@
 
-exec gksu --description "GameConqueror" "python -OO $DATADIR/GameConqueror.py"
+if [[ "$(id -u)" != "0" ]]; then
+    exec gksu --description "GameConqueror" "python -OO $DATADIR/GameConqueror.py"
+else
+    exec "python -OO $DATADIR/GameConqueror.py"
+fi
