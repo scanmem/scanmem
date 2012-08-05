@@ -1,4 +1,4 @@
-2011-03-26 WANG Lu <coolwanglu(a)gmail.com>
+2012-03-26 WANG Lu <coolwanglu(a)gmail.com>
 	* Fix for '!=' as 'not equal to'
 	* Typo	
 	* Option 'dump_with_ascii' added (Thanks to sec)
