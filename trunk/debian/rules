@@ -3,5 +3,5 @@
 %:
 	dh $@
 
-configure:
+override_dh_auto_configure:
 	./configure --enable-gui
