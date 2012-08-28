@@ -1,3 +1,9 @@
+scanmem (0.13-1~svn20120828r254-0ubuntu1) precise; urgency=low
+
+  * repackaging following the new standard 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 28 Aug 2012 13:32:58 +0800
+
 scanmem (0.13-1~svn20120427r250-0ubuntu1) precise; urgency=low
 
   * Build for Precise
