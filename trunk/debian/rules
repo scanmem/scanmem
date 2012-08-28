@@ -4,4 +4,4 @@
 	dh $@
 
 override_dh_auto_configure:
-	./configure --enable-gui
+	dh_auto_configure -- --enable-gui
