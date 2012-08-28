@@ -1,3 +1,9 @@
+scanmem (0.13-1~svn20120829r260-0ubuntu1) precise; urgency=low
+
+  * update debian/rules 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Wed, 29 Aug 2012 01:41:14 +0800
+
 scanmem (0.13-1~svn20120828r259-0ubuntu1) precise; urgency=low
 
   * update debian/rules 
