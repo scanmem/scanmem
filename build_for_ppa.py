@@ -12,10 +12,12 @@ import sys
 import re
 import time
 
+"""
 print 'SVN commit...'
 if os.system('svn ci') != 0:
     print 'Failed in svn commit.'
     sys.exit(-1)
+    """
 
 print
 print 'Generating version...'
@@ -50,10 +52,12 @@ else:
         print 'Failed when updating debian/changelog'
         sys.exit(-1)
 
+"""
 # commit again
 if os.system('svn ci -m "update debian/changelog for packaging"') != 0:
     print 'Failed in svn commit.'
     sys.exit(-1)
+    """
 
 print
 print 'Building...'

@@ -7,12 +7,14 @@ Upstream-Contact:
  WANG Lu <coolwanglu(a)gmail.com>.
 
 Files: *
-Copyright © 2006, 2007, 2009 Tavis Ormandy <taviso@sdf.lonestar.org>
-Copyright © 2009 Eli Dupree <elidupree@charter.net>
-Copyright © 2009, 2010 WANG Lu <coolwanglu@gmail.com>
+Copyright: 2006, 2007, 2009 Tavis Ormandy <taviso@sdf.lonestar.org>
+Copyright: 2009 Eli Dupree <elidupree@charter.net>
+Copyright: 2009, 2010 WANG Lu <coolwanglu@gmail.com>
 License: GPL-2+
 
-Files: scanroutines.*, show_message.*, gui/GameConqueror*
+Files: scanroutines.*
+       show_message.*
+       gui/GameConqueror*
 Copyright: © 2009, 2010, 2011 WANG Lu <coolwanglu@gmail.com>
 Copyright: © 2010, Bryan Cain
 License: GPL-3+
@@ -85,5 +87,5 @@ License: GPL-3+
  /usr/share/common-licenses/GPL-3.
 
 Files: debian/*
-Copyright: © 2010-2011, WANG Lu <coolwanglu@gmail.com>
+Copyright: 2010-2011, WANG Lu <coolwanglu@gmail.com>
 License: GPL-3+
