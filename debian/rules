@@ -5,3 +5,8 @@
 
 override_dh_auto_configure:
 	dh_auto_configure -- --enable-gui
+
+override_dh_auto_install:
+	dh_auto_install
+	dh_install
+
