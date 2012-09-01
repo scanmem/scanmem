@@ -1,3 +1,15 @@
+scanmem (0.13-1~svn20120901r261-0ubuntu1) precise; urgency=low
+
+  * Fixing install 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 01 Sep 2012 15:24:13 +0800
+
+scanmem (0.13-1~svn20120829r261-0ubuntu1) precise; urgency=low
+
+  * correct the dh_auto_configure stuff 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Wed, 29 Aug 2012 02:27:05 +0800
+
 scanmem (0.13-1~svn20120829r260-0ubuntu1) precise; urgency=low
 
   * update debian/rules 
