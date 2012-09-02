@@ -1,14 +1,8 @@
-scanmem (0.13-1~svn20120901r262-0ubuntu1) precise; urgency=low
+scanmem (0.13-1~svn20120901r263-0ubuntu1) precise; urgency=low
 
   * Fixing install 
 
- -- WANG Lu <coolwanglu@gmail.com>  Sat, 01 Sep 2012 15:49:13 +0800
-
-scanmem (0.13-1~svn20120901r261-0ubuntu1) precise; urgency=low
-
-  * Fixing install 
-
- -- WANG Lu <coolwanglu@gmail.com>  Sat, 01 Sep 2012 15:24:13 +0800
+ -- WANG Lu <coolwanglu@gmail.com>  Sat, 01 Sep 2012 16:07:03 +0800
 
 scanmem (0.13-1~svn20120829r261-0ubuntu1) precise; urgency=low
 
