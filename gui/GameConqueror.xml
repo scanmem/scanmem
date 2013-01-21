@@ -123,7 +123,7 @@
                     <property name="visible">True</property>
                     <property name="tooltip_markup">Syntax:
 
- For number types: (N is any number, like 12, 0x34 or 5.67) 
+ For number types: 
 &lt;span font_family="monospace"&gt;
  &lt;b&gt;N&lt;/b&gt;         Exactly this number
  &lt;b&gt;?&lt;/b&gt;         Unknown initial value
@@ -136,6 +136,12 @@
  &lt;b&gt;+ N&lt;/b&gt;       Increased by N
  &lt;b&gt;- N&lt;/b&gt;       Decreased by N
 &lt;/span&gt;
+ where N could be a number of a simple math expression embraced by (), e.g.
+ 12
+ 0x34
+ 5.67
+ (- 8 * 9)
+
  For bytearray: use 2-byte hexadecimal notation for each byte, separated by spaces
 &lt;span font_family="monospace"&gt;
  e.g. FE DC BA 98 76 54 32 10

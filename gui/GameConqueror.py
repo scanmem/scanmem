@@ -2,7 +2,7 @@
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
-    Copyright (C) 2009,2010,2011 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
 
     This program is free software: you can redistribute it and/or modify
@@ -141,6 +141,7 @@ class GameConqueror():
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
+        self.is_first_scan = True
 
         ###
         # Set scan data type
@@ -810,6 +811,7 @@ class GameConqueror():
         self.command_lock.release()
 
         self.scanoption_frame.set_sensitive(True)
+        self.is_first_scan = True
 
     def apply_scan_settings (self):
         # scan data type
@@ -838,7 +840,7 @@ class GameConqueror():
         cmd = self.value_input.get_text()
    
         try:
-            cmd = misc.check_scan_command(data_type, cmd)
+            cmd = misc.check_scan_command(data_type, cmd, self.is_first_scan)
         except Exception,e:
             # this is not quite good
             self.show_error(e.args[0])
@@ -865,6 +867,7 @@ class GameConqueror():
         self.is_scanning = False
         self.update_scan_result()
         self.command_lock.release()
+        self.is_first_scan = False
  
     def update_scan_result(self):
         self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))

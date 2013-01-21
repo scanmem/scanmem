@@ -1,7 +1,8 @@
 """
     Misc funtions for Game Conqueror
     
-    Copyright (C) 2010,2011 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -24,7 +25,7 @@ import gtk
 # return (success, msg)
 # if success == True, msg is converted command
 # else msg is error message
-def check_scan_command (data_type, cmd):
+def check_scan_command (data_type, cmd, is_first_scan):
     if cmd == '':
         raise ValueError('No value provided')
     if data_type == 'string':
@@ -45,74 +46,49 @@ def check_scan_command (data_type, cmd):
                 raise ValueError('Bad value: %s' % (byte, ))
         return cmd
     else: # for numbers
-        cmd = cmd.strip() 
+        cmd = cmd.strip()
         # hack for snapshot
         if cmd == '?':
             return 'snapshot'
-        
-        # these two commands has no parameters
-        if cmd == '=' or cmd == '!=':
+
+        is_operator_cmd = cmd in ['=', '!=', '>', '<', '+', '-']
+        if not is_first_scan and is_operator_cmd:
             return cmd
 
-        cmdl = cmd.split()
-        if len(cmdl) > 2:
-            raise ValueError('Too many parameters')
-        
-        # TODO: these commands should not be the initial scan
-        if cmdl[0] in ['>', '<', '+', '-']:
-            if len(cmdl) == 1:
-                return cmd
-            else:
-                num_to_check = cmdl[1]
-        else:
-            if len(cmdl) > 1:
-                raise ValueError('Bad command %s' % (cmd,))
-            else:
-                num_to_check = cmdl[0]
+        if is_first_scan and (is_operator_cmd or cmd[:2] in ['+ ', '- ']):
+            raise ValueError('Command \"%s\" is not valid for the first scan' % (cmd[:2],))
 
-        (cbn, iv, fv) = test_number(num_to_check)
+        # evaluating the command
+        if cmd[:2] in ['+ ', '- ', '> ', '< ']:
+            num = eval_operand(cmd[2:])
+            cmd = cmd[:2] + str(num)
+        else:
+            num = eval_operand(cmd)
+            cmd = str(num)
+
         if data_type.startswith('int'):
-            if iv is None:
-                raise ValueError('%s is not an integer' % (num_to_check,))
+            if not (isinstance(num, int) or isinstance(num, long)):
+                raise ValueError('%s is not an integer' % (num,))
             if data_type == 'int':
                 width = 64
             else:
                 width = int(data_type[len('int'):])
-            if iv > ((1<<width)-1):
-                raise ValueError('%s is too large for %s' % (num_to_check, data_type))
-            if iv < -(1<<(width-1)):
-                raise ValueError('%s is too small for %s' % (num_to_check, data_type))
-
-
-        if data_type.startswith('float') and (fv is None):
-            raise ValueError('%s is not a float' % (num_to_check,))
-        if data_type == 'number' and (not cbn):
-            raise ValueError('%s is not a number' % (num_to_check,))
+            if num > ((1<<width)-1) or num < -(1<<(width-1)):
+                raise ValueError('%s is too bulky for %s' % (num, data_type))
 
         # finally
         return cmd
 
-
-
-# test if given string is a number
-# return (could_be_number, int_value, float_value)
-def test_number (string):
-    int_value = None
-    float_value = None
+# evaluate the expression
+def eval_operand(s):
     try:
-        int_value = int(string)
+        v = eval(s)
+        if isinstance(v, (int,long,float)):
+            return v
     except:
         pass
-    if (int_value is None) and string.startswith('0x'):
-        try:
-            int_value = int(string, 16)
-        except:
-            pass
-    try:
-        float_value = float(string)
-    except:
-        pass
-    return (((int_value is not None) or (float_value is not None)), int_value, float_value)
+
+    raise ValueError('Bad value: %s' % (s,))
 
 # convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
 def build_simple_str_liststore(l):
