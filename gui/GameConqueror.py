@@ -637,7 +637,7 @@ class GameConqueror():
         
     # return the size in bytes of the value in memory
     def get_type_size(self, typename, value):
-        if typename in TYPESIZES.keys(): # int or float type; fixed length
+        if typename in TYPESIZES: # int or float type; fixed length
             return TYPESIZES[typename]
         elif typename == 'bytearray':
             return (len(value.strip())+1)/3
@@ -649,7 +649,7 @@ class GameConqueror():
     def bytes2value(self, typename, bytes):
         if bytes is None:
             return None
-        if typename in TYPENAMES_G2STRUCT.keys():
+        if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
             return repr('%s'%(bytes,))[1:-1]
@@ -744,13 +744,13 @@ class GameConqueror():
         types = typestr.split()
         vt = typestr
         for t in types:
-            if TYPENAMES_S2G.has_key(t):
+            if t in TYPENAMES_S2G:
                 vt = TYPENAMES_S2G[t]
                 break
         self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value, True])
 
     def get_process_list(self):
-        return [map(str.strip, e.strip().split(' ',2)) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
+        return [list(map(str.strip, e.strip().split(' ',2))) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
 
     def select_process(self, pid, process_name):
         # ask backend for attaching the target process
@@ -775,7 +775,7 @@ class GameConqueror():
         self.command_lock.release()
 
         # unlock all entries in cheat list
-        for i in xrange(len(self.cheatlist_liststore)):
+        for i in range(len(self.cheatlist_liststore)):
             self.cheatlist_liststore[i][1] = False
 
     def read_maps(self):
@@ -841,7 +841,7 @@ class GameConqueror():
    
         try:
             cmd = misc.check_scan_command(data_type, cmd, self.is_first_scan)
-        except Exception,e:
+        except Exception as e:
             # this is not quite good
             self.show_error(e.args[0])
             return
@@ -883,7 +883,7 @@ class GameConqueror():
             self.scanresult_liststore.clear()
             for line in lines:
                 line = line[line.find(']')+1:]
-                (a, v, t) = map(str.strip, line.split(',')[:3])
+                (a, v, t) = list(map(str.strip, line.split(',')[:3]))
                 a = '%x'%(int(a,16),)
                 t = t[1:-1]
                 self.scanresult_liststore.append([a, v, t, True])
@@ -913,7 +913,7 @@ class GameConqueror():
             rows = self.get_visible_rows(self.scanresult_tv)
             if rows is not None:
                 (r1, r2) = rows # [r1, r2] rows are visible
-                for i in xrange(r1, r2+1):
+                for i in range(r1, r2+1):
                     row = self.scanresult_liststore[i]
                     addr, cur_value, scanmem_type, valid = row
                     if valid:
@@ -924,7 +924,7 @@ class GameConqueror():
                             row[1] = '??'
                             row[3] = False
             # write locked values in cheat list and read unlocked values
-            for i in xrange(len(self.cheatlist_liststore)):
+            for i in range(len(self.cheatlist_liststore)):
                 (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
                 if not valid:
                     continue

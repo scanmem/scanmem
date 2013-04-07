@@ -70,7 +70,7 @@ class OffsetText(BaseText):
         self.off_len = len('%x'%(base_addr+len(txt),))
         output = []
 
-        for i in xrange(tot_lines):
+        for i in range(tot_lines):
             output.append(("%0" + str(self.off_len) + "x") % (base_addr + i*bpl))
 
         if output:
@@ -203,10 +203,9 @@ class AsciiText(BaseText):
         output = []
 
         convert = lambda i: "".join(
-            map(lambda x: (x in AsciiText._printable) and (x) or ('.'),
-                list(i)))
+            [(x in AsciiText._printable) and (x) or ('.') for x in list(i)])
 
-        for i in xrange(tot_lines):
+        for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
                 output.append(
                     convert(txt[i * bpl:])
@@ -405,7 +404,7 @@ class HexText(BaseText):
         output = []
         convert = lambda x: '%02X'%(ord(x),)
 
-        for i in xrange(tot_lines):
+        for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
                 output.append(
                     " ".join(map(convert, txt[i * bpl:]))
