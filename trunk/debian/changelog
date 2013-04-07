@@ -1,3 +1,10 @@
+scanmem (0.13-1~svn20130121r265-0ubuntu1) quantal; urgency=low
+
+  [Thanks to Mattias <mattiasmun(a)gmail.com>]
+  * Supports math expreesion for scanning 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Mon, 21 Jan 2013 17:12:27 +0800
+
 scanmem (0.13-1~svn20120901r263-0ubuntu1) precise; urgency=low
 
   * Fixing install 
