@@ -21,7 +21,7 @@
 import subprocess
 import tempfile
 import re
-import gobject
+from gi.repository import GObject
 
 BACKEND = ['scanmem', '-b']
 BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
@@ -50,8 +50,8 @@ class GameConquerorBackend():
         self.stderrfile = tempfile.TemporaryFile()
         self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderrfile.fileno())
         if self.stderr_monitor_id is not None:
-            gobject.source_remove(self.stderr_monitor_id)
-        self.stderr_monitor_id = gobject.timeout_add(STDERR_MONITOR_INTERVAL, self.stderr_monitor)
+            GObject.source_remove(self.stderr_monitor_id)
+        self.stderr_monitor_id = GObject.timeout_add(STDERR_MONITOR_INTERVAL, self.stderr_monitor)
         # read initial info
         l = self.get_output_lines()
         if len(l) > 0:
