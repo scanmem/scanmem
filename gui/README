@@ -2,16 +2,13 @@ Game Conqueror
 ==============
 Game Conqueror is a graphical game cheating tool under Linux, as a frontend of scanmem.
 
-Interface and user-feeling are expected to be similar and hopefully better than CheatEngine (a powerful cheating tool under Windows).
 
-
-
-Requirement
+Requirements
 ===========
 scanmem (latest version)
-Python
-PyGTK
-
+Python (2.x)
+PyGObject
+GTK+ 3
 
 
 Usage
@@ -19,10 +16,7 @@ Usage
 You are supposed to be familiar with cheating tools like CheatEngine
 
 - Search for a value in the Value entry, then press Enter or the scan buttons
-  * Use syntax supported by scanmem
-    1. <an integer>: search for the number -- so far you should provide an integer even when search for a float number, 
-                    and rounding will be used
-    2. <, =, >: search for values that decreased, not changed, and increased, respectively
+  * Check supported syntax via the '?' mark 
   * You scan enable/disable searching for integer/float using the checkboxes.
   * Pay attention to 'Found: XX' at topleft 
   * Results will be displayed in the left list if there are not too many 
@@ -32,29 +26,9 @@ You are supposed to be familiar with cheating tools like CheatEngine
 !! Currently only '=' locking is supported, which means the '>' and '<' flags are useless
 !! Pay attention to the output of GameConqueror, you'll see error messages from scanmem -- so GameConqueror is recommended to be executed in a shell
 
-
-Comparing with CheatEngine
-==========================
-You may have a feeling of deja vu, because the UI is almost a clone of CheatEngine, yep, that's right
-And here's the differences:
-
-Adv. of GameConqueror/scanmem
----------------------
-* data type/width auto detected -- you won't need to struggle among them anymore!
-* flexible syntax -- to be implemented
-
-
-Disadv.of GameConqueror/scanmem
------------------------
-* memory editing might be supported
-* currently, assemble/disassemble/pointers are not taken into consideration
-
-
-
 Author
 ======
 WANG Lu  <coolwanglu(a)gmail.com>
-
 
 
 License
