@@ -2,6 +2,7 @@
  $Id: menu.c,v 1.15 2007-04-11 10:43:27+01 taviso Exp taviso $
 
  Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
+ Copyright (C) 2010,2011 Lu Wang <coolwanglu@gmail.com>
 
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -38,8 +39,60 @@
 #include "commands.h"
 #include "show_message.h"
 
-static char *commandgenerator(const char *text, int state);
-static char **commandcompletion(const char *text, int start, int end);
+/* command generator for readline completion */
+static char *commandgenerator(const char *text, int state)
+{
+    static unsigned index = 0;
+    unsigned i;
+    size_t len;
+    element_t *np;
+
+    /* reset generator if state == 0, otherwise continue from last time */
+    index = state ? index : 0;
+
+    np = globals.commands ? globals.commands->head : NULL;
+
+    len = strlen(text);
+
+    /* skip to the last node checked */
+    for (i = 0; np && i < index; i++)
+        np = np->next;
+
+    /* traverse the commands list, checking for matches */
+    while (np) {
+        command_t *command = np->data;
+
+        np = np->next;
+
+        /* record progress */
+        index++;
+
+        /* if shortdoc is NULL, this is not supposed to be user visible */
+        if (command == NULL || command->command == NULL
+            || command->shortdoc == NULL)
+            continue;
+
+        /* check if we have a match */
+        if (strncmp(text, command->command, len) == 0) {
+            return strdup(command->command);
+        }
+    }
+
+    return NULL;
+}
+
+/* custom completor program for readline */
+static char **commandcompletion(const char *text, int start, int end)
+{
+    (void) end;
+
+    /* never use default completer (filenames), even if I dont generate any matches */
+    rl_attempted_completion_over = 1;
+
+    /* only complete on the first word, the command */
+    return start ? NULL : rl_completion_matches(text, commandgenerator);
+}
+
 
 /*
  * getcommand() reads in a command using readline, and places a pointer to the
@@ -96,60 +149,6 @@ bool getcommand(globals_t * vars, char **line)
     /* record this line to readline history */
     add_history(*line);
     return true;
-}
-
-/* custom completor program for readline */
-static char **commandcompletion(const char *text, int start, int end)
-{
-    (void) end;
-
-    /* never use default completer (filenames), even if I dont generate any matches */
-    rl_attempted_completion_over = 1;
-
-    /* only complete on the first word, the command */
-    return start ? NULL : rl_completion_matches(text, commandgenerator);
-}
-
-/* command generator for readline completion */
-static char *commandgenerator(const char *text, int state)
-{
-    static unsigned index = 0;
-    unsigned i;
-    size_t len;
-    element_t *np;
-
-    /* reset generator if state == 0, otherwise continue from last time */
-    index = state ? index : 0;
-
-    np = globals.commands ? globals.commands->head : NULL;
-
-    len = strlen(text);
-
-    /* skip to the last node checked */
-    for (i = 0; np && i < index; i++)
-        np = np->next;
-
-    /* traverse the commands list, checking for matches */
-    while (np) {
-        command_t *command = np->data;
-
-        np = np->next;
-
-        /* record progress */
-        index++;
-
-        /* if shortdoc is NULL, this is not supposed to be user visible */
-        if (command == NULL || command->command == NULL
-            || command->shortdoc == NULL)
-            continue;
-
-        /* check if we have a match */
-        if (strncmp(text, command->command, len) == 0) {
-            return strdup(command->command);
-        }
-    }
-
-    return NULL;
 }
 
 void printversion(FILE *outfd)
