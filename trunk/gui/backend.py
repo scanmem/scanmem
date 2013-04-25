@@ -52,21 +52,19 @@ class GameConquerorBackend():
     # for scan command, we don't want get_output immediately
     def send_command(self, cmd, get_output = False):
         if get_output:
-            # backup stdout
-            backup_stdout_fileno = os.dup(sys.stdout.fileno())
-            directed_file = tempfile.TemporaryFile()
-            os.dup2(directed_file.fileno(), sys.stdout.fileno())
+            with tempfile.TemporaryFile() as directed_file:
+                backup_stdout_fileno = os.dup(sys.stdout.fileno())
+                os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-        self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
-        sys.stdout.flush()
+                self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
+                sys.stdout.flush()
 
-        if get_output:
-            os.dup2(backup_stdout_fileno, sys.stdout.fileno())
-            os.close(backup_stdout_fileno)
-            directed_file.seek(0)
-            return directed_file.readlines()
+                os.dup2(backup_stdout_fileno, sys.stdout.fileno())
+                os.close(backup_stdout_fileno)
+                directed_file.seek(0)
+                return directed_file.readlines()
         else:
-            return []
+            self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
 
     def get_match_count(self):
         return self.lib.get_num_matches()

@@ -28,6 +28,7 @@ import tempfile
 import platform
 import threading
 import time
+import json
 
 import gi
 from gi.repository import Gtk
@@ -355,12 +356,51 @@ class GameConqueror():
         except:
             self.show_error('Invalid address')
 
+    def ManuallyAddCheat_Button_clicked_cb(self, button, data=None):
+        self.addcheat_dialog.show()
+        return True
+
     def RemoveAllCheat_Button_clicked_cb(self, button, data=None):
         self.cheatlist_liststore.clear()
         return True
 
-    def ManuallyAddCheat_Button_clicked_cb(self, button, data=None):
-        self.addcheat_dialog.show()
+    def LoadCheat_Button_clicked_cb(self, button, data=None):
+        dialog = Gtk.FileChooserDialog("Open..",
+                self.main_window,
+                Gtk.FileChooserAction.OPEN,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            try:
+                with open(dialog.get_filename(), 'rb') as f:
+                    obj = json.load(f)
+                    for row in obj['cheat_list']:
+                        self.add_to_cheat_list(row[3],row[5],row[4],row[2])
+            except:
+                pass
+        dialog.destroy()
+        return True
+
+    def SaveCheat_Button_clicked_cb(self, button, data=None):
+        dialog = Gtk.FileChooserDialog("Save..",
+                self.main_window,
+                Gtk.FileChooserAction.SAVE,
+                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_default_response(Gtk.ResponseType.OK)
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            try:
+                with open(dialog.get_filename(), 'wb') as f:
+                    obj = {'cheat_list' : [list(i) for i in self.cheatlist_liststore]}
+                    json.dump(obj, f);
+            except:
+                pass
+        dialog.destroy()
         return True
 
     def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
@@ -733,7 +773,7 @@ class GameConqueror():
             if t in TYPENAMES_S2G:
                 vt = TYPENAMES_S2G[t]
                 break
-        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, value, True])
+        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, str(value), True])
 
     def get_process_list(self):
         return [list(map(str.strip, e.strip().split(' ',2))) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
@@ -900,7 +940,7 @@ class GameConqueror():
  
     # read/write data periodically
     def data_worker(self):
-        if (not self.is_scanning) and self.command_lock.acquire(0): # non-blocking
+        if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking
             self.is_data_worker_working = True
             rows = self.get_visible_rows(self.scanresult_tv)
             if rows is not None:
@@ -909,7 +949,7 @@ class GameConqueror():
                     row = self.scanresult_liststore[i]
                     addr, cur_value, scanmem_type, valid = row
                     if valid:
-		        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
                         if new_value is not None:
                             row[1] = str(new_value)
                         else:
