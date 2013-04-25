@@ -1162,7 +1162,7 @@ Public License instead of this License.  But first, please read
                                 <property name="height_request">28</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Avaiable in the next version</property>
+                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Not avaiable in this version</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Round Type:</property>
                               </object>
@@ -1223,7 +1223,7 @@ Public License instead of this License.  But first, please read
                     <signal name="clicked" handler="ManuallyAddCheat_Button_clicked_cb" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="x">385</property>
+                    <property name="x">14</property>
                     <property name="y">287</property>
                   </packing>
                 </child>
@@ -1239,7 +1239,39 @@ Public License instead of this License.  But first, please read
                     <signal name="clicked" handler="RemoveAllCheat_Button_clicked_cb" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="x">194</property>
+                    <property name="x">50</property>
+                    <property name="y">287</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="LoadCheat_Button">
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Load address list from file</property>
+                    <property name="image">load_image</property>
+                    <signal name="clicked" handler="LoadCheat_Button_clicked_cb" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="x">86</property>
+                    <property name="y">287</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkButton" id="SaveCheat_Button">
+                    <property name="width_request">32</property>
+                    <property name="height_request">32</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                    <property name="receives_default">True</property>
+                    <property name="tooltip_text" translatable="yes">Save address list to file</property>
+                    <property name="image">save_image</property>
+                    <signal name="clicked" handler="SaveCheat_Button_clicked_cb" swapped="no"/>
+                  </object>
+                  <packing>
+                    <property name="x">122</property>
                     <property name="y">287</property>
                   </packing>
                 </child>
@@ -1255,7 +1287,7 @@ Public License instead of this License.  But first, please read
                     <signal name="clicked" handler="MemoryEditor_Button_clicked_cb" swapped="no"/>
                   </object>
                   <packing>
-                    <property name="x">14</property>
+                    <property name="x">380</property>
                     <property name="y">287</property>
                   </packing>
                 </child>
@@ -1564,6 +1596,16 @@ Public License instead of this License.  But first, please read
     <property name="visible">True</property>
     <property name="can_focus">False</property>
     <property name="stock">gtk-edit</property>
+  </object>
+  <object class="GtkImage" id="load_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-open</property>
+  </object>
+  <object class="GtkImage" id="save_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-save</property>
   </object>
   <object class="GtkImage" id="find_image">
     <property name="visible">True</property>
