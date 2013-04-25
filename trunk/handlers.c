@@ -448,7 +448,6 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
-
     USEPARAMS();
 
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }

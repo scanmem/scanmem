@@ -18,108 +18,71 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import subprocess
+import sys
+import os
+import ctypes
 import tempfile
 import re
 from gi.repository import GObject
 
-BACKEND = ['scanmem', '-b']
-BACKEND_END_OF_OUTPUT_PATTERN = re.compile(r'(\d+)>\s*')
-STDERR_MONITOR_INTERVAL = 100
-
 class GameConquerorBackend():
+    BACKEND_FUNCS = {
+        'init' : (ctypes.c_bool, ),
+        'set_backend' : (None, ),
+        'backend_exec_cmd' : (None, ctypes.c_char_p),
+        'get_num_matches' : (ctypes.c_long, ),
+        'get_version' : (ctypes.c_char_p, ),
+        'get_scan_progress' : (ctypes.c_double, ),
+        'reset_scan_progress' : (None,)
+    }
     def __init__(self):
-        self.match_count = 0
-        self.backend = None
-        self.stderr_monitor_id = None
-        self.error_listeners = []
-        self.progress_listeners = []
+        self.lib = ctypes.CDLL('libscanmem.so')
+        self.init_lib_functions()
+        self.lib.set_backend()
+        self.lib.init()
+        self.send_command('reset')
         self.version = ''
-        self.restart()
 
-    def add_error_listener(self, listener):
-        self.error_listeners.append(listener)
-
-    def add_progress_listener(self, listener):
-        self.progress_listeners.append(listener)
-
-    def restart(self):
-        if self.backend is not None:
-            self.backend.kill()
-        self.last_pos = 0;
-        self.stderrfile = tempfile.TemporaryFile()
-        self.backend = subprocess.Popen(BACKEND, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.stderrfile.fileno())
-        if self.stderr_monitor_id is not None:
-            GObject.source_remove(self.stderr_monitor_id)
-        self.stderr_monitor_id = GObject.timeout_add(STDERR_MONITOR_INTERVAL, self.stderr_monitor)
-        # read initial info
-        l = self.get_output_lines()
-        if len(l) > 0:
-            self.version = l[0].strip()
-
-    def stderr_monitor(self):
-        while True:
-            self.stderrfile.seek(0, 2) # to the end
-            if self.stderrfile.tell() == self.last_pos:
-                break
-
-            self.stderrfile.seek(self.last_pos, 0)
-            msg = self.stderrfile.readline()
-            self.last_pos = self.stderrfile.tell()
-           
-            if msg.startswith('error:'): # error happened
-                msg = msg[len('error:'):]
-                for listener in self.error_listeners:
-                    listener(msg)
-            elif msg.startswith('info:'):
-                pass
-            elif msg.startswith('warn:'):
-                pass
-            elif msg.startswith('scan_progress:'):
-                try:
-                    l = msg.split(' ')
-                    if len(l) == 3:
-                        cur = int(l[1])
-                        total = int(l[2])
-                        for listener in self.progress_listeners:
-                            listener(cur, total)
-                    else: # invalid scan_progress text
-                        pass
-                except:
-                    pass
-            else: # unknown type of message, maybe log it?
-                pass
-        return True
-
-    def get_output_lines(self):
-        lines = []
-        while True:
-            line = self.backend.stdout.readline()
-            match = BACKEND_END_OF_OUTPUT_PATTERN.match(line)
-            if match is None:
-                lines.append(line)
-            else:
-                self.match_count = int(match.groups()[0])
-                break
-        return lines
+    def init_lib_functions(self):
+        for k,v in GameConquerorBackend.BACKEND_FUNCS.items():
+            f = getattr(self.lib, k)
+            f.restype = v[0]
+            f.argtypes = v[1:]
 
     # for scan command, we don't want get_output immediately
-    def send_command(self, cmd, get_output = True):
-        # for debug
-#        print 'Send Command:',cmd
-        self.backend.stdin.write(cmd+'\n')
+    def send_command(self, cmd, get_output = False):
         if get_output:
-            output_lines = self.get_output_lines()
-            # for debug
-#            print 'Output:\n'+'\n'.join(output_lines)
-            return output_lines
+            # backup stdout
+            backup_stdout_fileno = os.dup(sys.stdout.fileno())
+            directed_file = tempfile.TemporaryFile()
+            os.dup2(directed_file.fileno(), sys.stdout.fileno())
+
+        self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
+        sys.stdout.flush()
+
+        if get_output:
+            os.dup2(backup_stdout_fileno, sys.stdout.fileno())
+            os.close(backup_stdout_fileno)
+            directed_file.seek(0)
+            return directed_file.readlines()
         else:
             return []
+
+    def get_match_count(self):
+        return self.lib.get_num_matches()
+
+    def get_version(self):
+        return self.lib.get_version()
+
+    def get_scan_progress(self):
+        return self.lib.get_scan_progress()
+
+    def reset_scan_progress(self):
+        self.lib.reset_scan_progress()
 
     # for test only
     def run(self):
         while True:
-            print '\n'.join(self.get_output_lines())
             l = sys.stdin.readline()
             self.backend.stdin.write(l)
 

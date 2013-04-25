@@ -343,6 +343,8 @@ bool checkmatches(globals_t * vars,
             /* for user, just print a dot */
             show_scan_progress(bytes_scanned, total_scan_bytes);
         }
+        if(total_scan_bytes > 0)
+            vars->scan_progress = ((double)bytes_scanned) / total_scan_bytes;
         ++ bytes_scanned;
         
         /* Go on to the next one... */
@@ -369,6 +371,7 @@ bool checkmatches(globals_t * vars,
     {
         show_scan_progress(total_scan_bytes, total_scan_bytes);
     }
+    vars->scan_progress = 1.0;
 
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
@@ -575,6 +578,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                 /* for user, just print a dot */
                 show_scan_progress(bytes_scanned+offset, total_scan_bytes);
             }
+            if(total_scan_bytes > 0)
+                vars->scan_progress = ((double)bytes_scanned + offset) / total_scan_bytes;
         }
 
         bytes_scanned += r->size;
@@ -588,6 +593,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     /* tell front-end we've done */
     if(vars->options.backend == 1)
         show_scan_progress(total_scan_bytes, total_scan_bytes);
+    vars->scan_progress = 1.0;
     
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
