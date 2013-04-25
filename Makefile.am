@@ -1,16 +1,44 @@
-# $Id: Makefile.am,v 1.5 2007-04-14 18:47:39+01 taviso Exp $
+ACLOCAL_AMFLAGS = -I m4
+
 SUBDIRS = test
 if ENABLE_GUI
   SUBDIRS += gui
-else
-  SUBDIRS += 
 endif
 
+AM_CFLAGS = -O2 -g -Wall
+
+lib_LTLIBRARIES = libscanmem.la
+
+libscanmem_la_SOURCES = commands.h \
+    commands.c \
+    ptrace.c \
+    menu.c \
+    handlers.h \
+    handlers.c \
+    interrupt.h \
+    list.h \
+    list.c \
+    licence.h \
+    maps.h \
+    maps.c \
+    scanmem.h \
+    scanmem.c \
+    scanroutines.h \
+    scanroutines.c \
+    show_message.h \
+    show_message.c \
+    target_memory_info_array.h \
+    target_memory_info_array.c \
+    value.h \
+    value.c 
+
+libscanmem_la_LDFLAGS = -version-info 1:0:0
+
 bin_PROGRAMS = scanmem
-scanmem_SOURCES = main.c maps.c ptrace.c target_memory_info_array.c list.c menu.c commands.c handlers.c value.c
-scanmem_SOURCES += commands.h handlers.h interrupt.h list.h scanmem.h value.h licence.h maps.h target_memory_info_array.h
-scanmem_SOURCES += scanroutines.h scanroutines.c show_message.h show_message.c
-scanmem_CFLAGS = -O2 -g -Wall
+
+scanmem_SOURCES = main.c
+scanmem_LDADD = libscanmem.la
+
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
 
