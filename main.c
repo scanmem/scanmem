@@ -46,7 +46,6 @@ static void printhelp()
             "Interactively locate and modify variables in an executing process.\n"
             "\n"
             "-p, --pid=pid\t\tset the target process pid\n"
-            "-b, --backend\t\trun as backend, used by frontend\n"
             "-h, --help\t\tprint this message\n"
             "-v, --version\t\tprint version information\n"
             "\n"
@@ -56,85 +55,78 @@ static void printhelp()
     return;
 }
 
-int main(int argc, char **argv)
+static void parse_parameter(int argc, char ** argv)
 {
-    char *end;
-    int optindex, ret = EXIT_SUCCESS;
-    globals_t *vars = &globals;
     struct option longopts[] = {
         {"pid", 1, NULL, 'p'},  /* target pid */
         {"version", 0, NULL, 'v'},      /* print version */
         {"help", 0, NULL, 'h'}, /* print help summary */
-        {"backend", 0, NULL, 'b'}, /* run as backend */
         {"debug", 0, NULL, 'd'}, /* enable debug mode */
         {NULL, 0, NULL, 0},
     };
 
+    char *end;
+    int optindex;
+    bool done = false;
     /* process command line */
-    while (true) {
+    while (!done) {
         switch (getopt_long(argc, argv, "vhbdp:", longopts, &optindex)) {
-        case 'p':
-            vars->target = (pid_t) strtoul(optarg, &end, 0);
+            case 'p':
+                globals.target = (pid_t) strtoul(optarg, &end, 0);
 
-            /* check if that parsed correctly */
-            if (*end != '\0' || *optarg == '\0' || vars->target == 0) {
-                show_error("invalid pid specified.\n");
-                return EXIT_FAILURE;
-            }
-            break;
-        case 'v':
-            printversion(stderr);
-            return EXIT_SUCCESS;
-        case 'h':
-            printhelp();
-            return EXIT_SUCCESS;
-        case 'b':
-            vars->options.backend = 1;
-            break;
-        case 'd':
-            vars->options.debug = 1;
-            break;
-        case -1:
-            goto done;
-        default:
-            printhelp();
-            return EXIT_FAILURE;
+                /* check if that parsed correctly */
+                if (*end != '\0' || *optarg == '\0' || globals.target == 0) {
+                    show_error("invalid pid specified.\n");
+                    exit(EXIT_FAILURE);
+                }
+                break;
+            case 'v':
+                printversion(stderr);
+                exit(EXIT_FAILURE);
+            case 'h':
+                printhelp();
+                exit(EXIT_FAILURE);
+            case 'd':
+                globals.options.debug = 1;
+                break;
+            case -1:
+                done = true;
+                break;
+            default:
+                printhelp();
+                exit(EXIT_FAILURE);
         }
     }
-
-  done:
-
     /* parse any pid specified after arguments */
     if (optind <= argc && argv[optind]) {
-        vars->target = (pid_t) strtoul(argv[optind], &end, 0);
+        globals.target = (pid_t) strtoul(argv[optind], &end, 0);
 
         /* check if that parsed correctly */
-        if (*end != '\0' || argv[optind][0] == '\0' || vars->target == 0) {
+        if (*end != '\0' || argv[optind][0] == '\0' || globals.target == 0) {
             show_error("invalid pid specified.\n");
-            return EXIT_FAILURE;
+            exit(EXIT_FAILURE);
         }
     }
+}
+
+int main(int argc, char **argv)
+{
+    if (getuid() != 0)
+    {
+        show_error("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
+    }
+    
+    parse_parameter(argc, argv);
+
+    int ret = EXIT_SUCCESS;
+    globals_t *vars = &globals;
+
+    printversion(stderr);
 
     if (!init()) {
         show_error("Initialization failed.\n");
         ret = EXIT_FAILURE;
         goto end;
-    }
-
-    if (!(globals.options.backend))
-    {
-        // show welcome message
-        printversion(stderr);
-    }
-    else
-    {
-        // tell front-end our version
-        printf("%s\n", PACKAGE_VERSION); 
-    }
-
-    if (getuid() != 0)
-    {
-        show_error("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
     }
 
     /* this will initialise matches and regions */

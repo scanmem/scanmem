@@ -315,11 +315,9 @@ class GameConqueror():
         self.is_data_worker_working = False
 
         self.backend = GameConquerorBackend()
-        self.backend.add_error_listener(self.backend_error_cb)
-        self.backend.add_progress_listener(self.backend_progress_cb)
         self.check_backend_version()
         self.search_count = 0
-        self.data_worker_id = GObject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+        GObject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
         self.command_lock = threading.RLock()
 
 
@@ -720,25 +718,12 @@ class GameConqueror():
         self.memoryeditor_window.show()
 
     # this callback will be called from other thread
-    def backend_error_cb(self, msg):
+    def progress_watcher(self):
         Gdk.threads_enter()
-        # we don't want massive error output for data worker
-        if not self.is_data_worker_working:
-            self.show_error('Backend error: %s'%(msg,))
-        if self.is_scanning:
-            self.finish_scan()
+        self.scanprogress_progressbar.set_fraction(self.backend.get_scan_progress())
+        Gdk.flush()
         Gdk.threads_leave()
-                   
-    # this callback will be called from other thread
-    def backend_progress_cb(self, cur, total):
-        Gdk.threads_enter()
-        # cur and total may be 0!
-        if (cur == total) and self.is_scanning:
-            self.scanprogress_progressbar.set_fraction(1.0)
-            self.finish_scan()
-        else:
-            self.scanprogress_progressbar.set_fraction(float(cur)/total)
-        Gdk.threads_leave()
+        return True
 
     def add_to_cheat_list(self, addr, value, typestr, description='No Description'):
         # determine longest possible type
@@ -758,7 +743,6 @@ class GameConqueror():
         # update 'current process'
         # reset flags
         # for debug/log
-#        print 'Select process: %d - %s' % (pid, process_name)
         self.pid = pid
         try:
             self.read_maps()
@@ -801,7 +785,6 @@ class GameConqueror():
             self.maps.append(item)
 
     def reset_scan(self):
-        self.command_lock.acquire()
         self.search_count = 0
         # reset search type and value type
         self.scanresult_liststore.clear()
@@ -854,29 +837,37 @@ class GameConqueror():
         self.memoryeditor_window.set_sensitive(False)
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
-
-        self.command_lock.acquire()
         if self.search_count == 1:
             self.apply_scan_settings()
-        self.backend.send_command(cmd, get_output = False)
-        # command_lock will be released when scanning is finished
+        self.backend.reset_scan_progress()
+        self.progress_watcher_id = GObject.idle_add(self.progress_watcher)
+        threading.Thread(target=self.scan_thread_func, args=(cmd,)).start()
 
-    def finish_scan(self):
+    def scan_thread_func(self, cmd):
+        self.command_lock.acquire()
+        self.backend.send_command(cmd)
+
+        Gdk.threads_enter()
+        GObject.source_remove(self.progress_watcher_id)
+
         self.main_window.set_sensitive(True)
         self.memoryeditor_window.set_sensitive(True)
-        self.backend.get_output_lines()
         self.is_scanning = False
         self.update_scan_result()
-        self.command_lock.release()
         self.is_first_scan = False
- 
+
+        Gdk.flush()
+        Gdk.threads_leave()
+        self.command_lock.release()
+
     def update_scan_result(self):
-        self.found_count_label.set_text('Found: %d' % (self.backend.match_count,))
-        if (self.backend.match_count > SCAN_RESULT_LIST_LIMIT):
+        match_count = self.backend.get_match_count()
+        self.found_count_label.set_text('Found: %d' % (match_count,))
+        if (match_count > SCAN_RESULT_LIST_LIMIT):
             self.scanresult_liststore.clear()
         else:
             self.command_lock.acquire()
-            lines = self.backend.send_command('list')
+            lines = self.backend.send_command('list', get_output = True)
             self.command_lock.release()
 
             self.scanresult_tv.set_model(None)
@@ -987,7 +978,7 @@ class GameConqueror():
         Gtk.main()
 
     def check_backend_version(self):
-        if self.backend.version != VERSION:
+        if self.backend.get_version() != VERSION:
             self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
 
     
