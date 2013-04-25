@@ -1,4 +1,6 @@
 /*
+ *
+ * scanmem.c : interfaces 
 
  Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
  Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
@@ -43,6 +45,7 @@ globals_t globals = {
     0,                          /* pid target */
     NULL,                       /* matches */
     0,                          /* match count */
+    0,                          /* scan progress */
     NULL,                       /* regions */
     NULL,                       /* commands */
     NULL,                       /* current_cmdline */
@@ -153,3 +156,34 @@ bool init()
     return true;
 }
 
+/* for front-ends */
+void set_backend()
+{
+    globals.options.backend = 1;
+}
+
+/* the front end does not know our globals */
+void backend_exec_cmd(const char * commandline)
+{
+    execcommand(&globals, commandline);
+}
+
+long get_num_matches()
+{
+    return globals.num_matches;
+}
+
+const char * get_version()
+{
+    return PACKAGE_VERSION;
+}
+
+double get_scan_progress()
+{
+    return globals.scan_progress;
+}
+
+void reset_scan_progress()
+{
+    globals.scan_progress = 0;
+}
