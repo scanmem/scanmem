@@ -1,9 +1,3 @@
-/*
-
- $Id: scanmem.h,v 1.21 2007-06-05 01:45:35+01 taviso Exp taviso $
-
-*/
-
 #ifndef _SCANMEM_INC
 #define _SCANMEM_INC            /* include guard */
 
@@ -96,15 +90,18 @@ extern globals_t globals;
 
 bool init();
 
+/* ptrace.c */
 bool detach(pid_t target);
 bool setaddr(pid_t target, void *addr, const value_t * to);
 bool checkmatches(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
 bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
 bool peekdata(pid_t pid, void *addr, value_t * result);
 bool attach(pid_t target);
+bool read_array(pid_t target, void *addr, char *buf, int len);
+bool write_array(pid_t target, void *addr, const void *data, int len);
+
+/* menu.c */
 bool getcommand(globals_t * vars, char **line);
 void printversion();
 
-bool read_array(pid_t target, void *addr, char *buf, int len);
-bool write_array(pid_t target, void *addr, const void *data, int len);
 #endif
