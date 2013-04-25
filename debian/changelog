@@ -1,3 +1,12 @@
+scanmem (0.14-1~git20130426r7917a-0ubuntu1) quantal; urgency=low
+
+  * Bump version
+  * Better integration
+  * Save/Load cheat list
+  * Do not freeze when the target process exited
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 25 Apr 2013 23:56:03 +0800
+
 scanmem (0.13-1~svn20130121r265-0ubuntu1) quantal; urgency=low
 
   [Thanks to Mattias <mattiasmun(a)gmail.com>]

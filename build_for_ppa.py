@@ -4,6 +4,9 @@
 Dirty script for building package for PPA
 by WangLu
 2011.01.13
+
+modified for git
+2013.04.25
 """
 
 
@@ -12,33 +15,24 @@ import sys
 import re
 import time
 
-"""
-print 'SVN commit...'
-if os.system('svn ci') != 0:
-    print 'Failed in svn commit.'
-    sys.exit(-1)
-    """
-
-print
 print 'Generating version...'
-if os.system('svn up') != 0:
-    print 'Cannot SVN update'
-    sys.exit(-1)
 
 try:
-    rev = re.findall(r'Revision:\s*(\d+)', os.popen('svn info').read())[0]
+    rev = open('.git/refs/heads/master').read()[:5]
 except:
     print 'Cannot get revision number'
     sys.exit(-1)
 
 today_timestr = time.strftime('%Y%m%d')
+package='scanmem'
+projectname='scanmem'
 try:
     package,version = re.findall(r'AC_INIT\(\[([^]]+)\],\s*\[([^]]+)\]', open('configure.ac').read())[0]
 except:
     print 'Cannot get package name and version number'
     sys.exit(-1)
 
-deb_version = version+'-1~svn'+today_timestr+'r'+rev
+deb_version = version+'-1~git'+today_timestr+'r'+rev
 full_deb_version = deb_version+'-0ubuntu1'
 
 #check if we need to update debian/changelog
@@ -51,13 +45,6 @@ else:
     if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
         print 'Failed when updating debian/changelog'
         sys.exit(-1)
-
-"""
-# commit again
-if os.system('svn ci -m "update debian/changelog for packaging"') != 0:
-    print 'Failed in svn commit.'
-    sys.exit(-1)
-    """
 
 print
 print 'Building...'
