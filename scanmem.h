@@ -59,6 +59,7 @@ typedef struct {
     pid_t target;
     matches_and_old_values_array *matches;
     long num_matches;
+    double scan_progress;
     list_t *regions;
     list_t *commands;      /* command handlers */
     const char *current_cmdline; /* the command being executed */
