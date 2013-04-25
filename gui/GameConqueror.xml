@@ -6,7 +6,7 @@
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <property name="program_name">GameConqueror</property>
-    <property name="copyright" translatable="yes">Copyright (C) 2009,2010,2011 WANG Lu  &lt;coolwanglu@gmail.com&gt;
+    <property name="copyright" translatable="yes">Copyright (C) 2009-2013 WANG Lu  &lt;coolwanglu@gmail.com&gt;
 Copyright (C) 2010 Bryan Cain
 
 Special thanks: Zhang Zhe</property>
