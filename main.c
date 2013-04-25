@@ -31,37 +31,30 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <getopt.h>             /*lint -e537 */
-#include <signal.h>
 #include <stdbool.h>
 
 #include "scanmem.h"
 #include "commands.h"
-#include "handlers.h"
 #include "show_message.h"
 
-static void printhelp(void);
-static void sighandler(int n);
+/* print quick usage message to stderr */
+static void printhelp()
+{
+    printversion(stderr);
 
-/* global settings */
-globals_t globals = {
-    0,                          /* exit flag */
-    0,                          /* pid target */
-    NULL,                       /* matches */
-    0,                          /* match count */
-    NULL,                       /* regions */
-    NULL,                       /* commands */
-    NULL,                       /* current_cmdline */
-    /* options */
-    {
-        1,                      /* alignment */
-        0,                      /* debug */
-        0,                      /* backend */
-        ANYINTEGER,             /* scan_data_type */
-        REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */ 
-        0,                      /* detect_reverse_change */
-        1,                      /* dump_with_ascii */
-    }
-};
+    show_user("Usage: scanmem [OPTION]... [PID]\n"
+            "Interactively locate and modify variables in an executing process.\n"
+            "\n"
+            "-p, --pid=pid\t\tset the target process pid\n"
+            "-b, --backend\t\trun as backend, used by frontend\n"
+            "-h, --help\t\tprint this message\n"
+            "-v, --version\t\tprint version information\n"
+            "\n"
+            "scanmem is an interactive debugging utility, enter `help` at the prompt\n"
+            "for further assistance.\n"
+            "\n" "Report bugs to <%s>.\n", PACKAGE_BUGREPORT);
+    return;
+}
 
 int main(int argc, char **argv)
 {
@@ -122,82 +115,11 @@ int main(int argc, char **argv)
         }
     }
 
-    /* before attaching to target, install signal handler to detach on error */
-    if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
-    {
-        (void) signal(SIGHUP, sighandler);
-        (void) signal(SIGINT, sighandler);
-        (void) signal(SIGSEGV, sighandler);
-        (void) signal(SIGABRT, sighandler);
-        (void) signal(SIGILL, sighandler);
-        (void) signal(SIGFPE, sighandler);
-        (void) signal(SIGTERM, sighandler);
-    }
-
-    /* linked list of commands, and function pointers to their handlers */
-    if ((vars->commands = l_init()) == NULL) {
-        show_error("sorry, there was a memory allocation error.\n");
+    if (!init()) {
+        show_error("Initialization failed.\n");
         ret = EXIT_FAILURE;
         goto end;
     }
-
-    /* NULL shortdoc means dont display this command in `help` listing */
-    registercommand("set", handler__set, vars->commands, SET_SHRTDOC,
-                    SET_LONGDOC);
-    registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,
-                    LIST_LONGDOC);
-    registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
-                    DELETE_LONGDOC);
-    registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-                    RESET_LONGDOC);
-    registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
-                    PID_LONGDOC);
-    registercommand("snapshot", handler__snapshot, vars->commands,
-                    SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC);
-    registercommand("dregion", handler__dregion, vars->commands,
-                    DREGION_SHRTDOC, DREGION_LONGDOC);
-    registercommand("dregions", handler__dregion, vars->commands,
-                    NULL, DREGION_LONGDOC);
-    registercommand("lregions", handler__lregions, vars->commands,
-                    LREGIONS_SHRTDOC, LREGIONS_LONGDOC);
-    registercommand("version", handler__version, vars->commands,
-                    VERSION_SHRTDOC, VERSION_LONGDOC);
-    registercommand("=", handler__decinc, vars->commands, NOTCHANGED_SHRTDOC,
-                    NOTCHANGED_LONGDOC);
-    registercommand("!=", handler__decinc, vars->commands, CHANGED_SHRTDOC,
-                    CHANGED_LONGDOC);
-    registercommand("<", handler__decinc, vars->commands, LESSTHAN_SHRTDOC,
-                    LESSTHAN_LONGDOC);
-    registercommand(">", handler__decinc, vars->commands, GREATERTHAN_SHRTDOC,
-                    GREATERTHAN_LONGDOC);
-    registercommand("+", handler__decinc, vars->commands, INCREASED_SHRTDOC,
-                    INCREASED_LONGDOC);
-    registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
-                    DECREASED_LONGDOC);
-    registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
-                    STRING_LONGDOC);
-    registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
-                    UPDATE_LONGDOC);
-    registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,
-                    EXIT_LONGDOC);
-    registercommand("quit", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
-    registercommand("q", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
-    registercommand("help", handler__help, vars->commands, HELP_SHRTDOC,
-                    HELP_LONGDOC);
-    registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC, SHELL_LONGDOC);
-    registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
-                    WATCH_LONGDOC);
-    registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
-    registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC, DUMP_LONGDOC);
-    registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
-    registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
-
-    /* commands beginning with __ have special meaning */
-    registercommand("__eof", handler__eof, vars->commands, NULL, NULL);
-
-    /* special value NULL means no other matches */
-    registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
-                    DEFAULT_LONGDOC);
 
     if (!(globals.options.backend))
     {
@@ -264,32 +186,3 @@ int main(int argc, char **argv)
     return ret;
 }
 
-void sighandler(int n)
-{
-    show_error("\nKilled by signal %d.\n", n);
-
-    if (globals.target) {
-        (void) detach(globals.target);
-    }
-
-    exit(EXIT_FAILURE);
-}
-
-/* print quick usage message to stderr */
-void printhelp()
-{
-    printversion(stderr);
-
-    show_user("Usage: scanmem [OPTION]... [PID]\n"
-            "Interactively locate and modify variables in an executing process.\n"
-            "\n"
-            "-p, --pid=pid\t\tset the target process pid\n"
-            "-b, --backend\t\trun as backend, used by frontend\n"
-            "-h, --help\t\tprint this message\n"
-            "-v, --version\t\tprint version information\n"
-            "\n"
-            "scanmem is an interactive debugging utility, enter `help` at the prompt\n"
-            "for further assistance.\n"
-            "\n" "Report bugs to <%s>.\n", PACKAGE_BUGREPORT);
-    return;
-}

@@ -1,10 +1,13 @@
 # $Id: configure.ac,v 1.1 2007/06/04 22:51:13 taviso Exp $
-AC_INIT([scanmem], [0.13], [http://code.google.com/p/scanmem/])
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AC_INIT([scanmem],[0.14],[http://code.google.com/p/scanmem/])
+AC_CONFIG_MACRO_DIR([m4])
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
 AC_CONFIG_SRCDIR([main.c])
 AC_CONFIG_HEADER([config.h])
-AC_GNU_SOURCE
+AC_USE_SYSTEM_EXTENSIONS
 AC_HEADER_STDBOOL
+
+LT_INIT
 
 AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
 
