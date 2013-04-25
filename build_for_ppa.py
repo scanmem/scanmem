@@ -23,7 +23,7 @@ except:
     print 'Cannot get revision number'
     sys.exit(-1)
 
-today_timestr = time.strftime('%Y%m%d')
+today_timestr = time.strftime('%Y%m%d%H%M')
 package='scanmem'
 projectname='scanmem'
 try:
