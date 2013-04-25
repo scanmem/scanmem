@@ -688,7 +688,7 @@ GObject.type_register(HexView)
 
 if __name__ == "__main__":
     def char_changed_handler(hexview, offset, charval):
-        print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
+        #print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
         return False
     w = Gtk.Window()
     w.resize(500,500)
