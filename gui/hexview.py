@@ -4,7 +4,8 @@
 #
 # Extended by Wang Lu
 # Added editing and cursor moving stuff
-# Copyright (C) 2010,2011 WANG Lu <coolwanglu@gmail.com>
+# Port to GTK 3
+# Copyright (C) 2010,2011,2013 WANG Lu <coolwanglu@gmail.com>
 #
 # First version
 # Copyright (C) 2008, 2009 Adriano Monteiro Marques
@@ -24,38 +25,45 @@
 # along with this program; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 
-import gtk
-import pango
-import gobject
+from gi.repository import Gtk
+from gi.repository import Gdk
+from gi.repository import Pango
+from gi.repository import GObject
 
-class BaseText(gtk.TextView):
-    __gtype_name__ = "BaseText"
+class BaseText(Gtk.TextView):
+    __gtype_name__ = 'BaseText'
 
     def __init__(self, parent):
-        self.buffer = gtk.TextBuffer(parent.table)
-        gtk.TextView.__init__(self, self.buffer)
+        super(BaseText, self).__init__()
+        self.buffer = self.get_buffer()
 
         self._parent = parent
-        self.modify_font(pango.FontDescription(parent.font))
+        self.modify_font(Pango.FontDescription(parent.font))
         self.set_editable(False)
+        self.texttag = self.buffer.create_tag(None)
 
-gobject.type_register(BaseText)
+GObject.type_register(BaseText)
 
 class OffsetText(BaseText):
+    __gtype_name__ = 'OffsetText'
+
     def __init__(self, parent):
-        BaseText.__init__(self, parent)
+        super(OffsetText, self).__init__(parent)
         self.off_len = 1
         self.connect('button-press-event', self.__on_button_press)
-        self.connect('size-request', self.__on_size_request)
         self.connect('realize', self.__on_realize)
 
         self.set_cursor_visible(False)
+        self.texttag.set_property('weight', Pango.Weight.BOLD)
 
     def __on_button_press(self, widget, evt):
         return True
 
     def __on_realize(self, widget):
-        self.modify_base(gtk.STATE_NORMAL, self.style.dark[gtk.STATE_NORMAL])
+        """
+        TODO
+        self.modify_base(Gtk.StateType.NORMAL, self.get_style().dark[Gtk.StateType.NORMAL])
+        """
         return True
 
     def render(self, txt):
@@ -77,37 +85,44 @@ class OffsetText(BaseText):
             self.buffer.insert_with_tags(
                 self.buffer.get_end_iter(),
                 "\n".join(output),
-                self._parent.tag_offset
+                self.texttag
             )
 
-    def __on_size_request(self, widget, alloc):
+    def do_get_preferred_width(self):
         ctx = self.get_pango_context()
-        font = ctx.load_font(pango.FontDescription(self._parent.font))
+        font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = pango.PIXELS(metric.get_approximate_char_width()) * (self.off_len + 1)
+        w = metric.get_approximate_char_width() / Pango.SCALE * (self.off_len + 1)
         w += 2
 
-        if alloc.width < w:
-            alloc.width = w
-        return True
+        return w,w 
+
+    def do_get_preferred_height(self):
+        return 0,0
 
 class AsciiText(BaseText):
+    __gtype_name__ = 'AsciiText'
     _printable = \
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%" \
         "&'()*+,-./:;<=>?@[\]^_`{|}~ "
 
     def __init__(self, parent):
-        BaseText.__init__(self, parent)
-        self.connect('size-request', self.__on_size_request)
+        super(AsciiText, self).__init__(parent)
         self.connect('key-press-event', self.__on_key_press)
         self.connect('button-release-event', self.__on_button_release)
         self.connect_after('move-cursor', self.__on_move_cursor)
         self.prev_start = None
         self.prev_end = None
-
+        """
+        TODO
+        self.texttag.set_property(
+            'background-gdk',
+            self.get_style().text_aa[Gtk.StateType.NORMAL]
+        )
+        """
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
-        if True: #step_size == gtk.MOVEMENT_VISUAL_POSITIONS:
+        if True: #step_size == Gtk.MovementStep.VISUAL_POSITIONS:
             buffer = self.get_buffer()
             insert_mark = buffer.get_insert()
             insert_iter = buffer.get_iter_at_mark(insert_mark)
@@ -189,7 +204,7 @@ class AsciiText(BaseText):
             end_iter = insert_iter.copy()
             end_iter.forward_char()
         buffer.select_range(insert_iter, end_iter)
-        self.scroll_to_iter(insert_iter, 0)
+        self.scroll_to_iter(insert_iter, 0, False, 0, 0)
 
     def render(self, txt):
         self.buffer.set_text('')
@@ -219,21 +234,21 @@ class AsciiText(BaseText):
             self.buffer.insert_with_tags(
                 self.buffer.get_end_iter(),
                 "\n".join(output),
-                self._parent.tag_ascii
+                self.texttag
             )
 
-    def __on_size_request(self, widget, alloc):
+    def do_get_preferred_width(self):
         ctx = self.get_pango_context()
-        font = ctx.load_font(pango.FontDescription(self._parent.font))
+        font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = pango.PIXELS(metric.get_approximate_char_width()) * self._parent.bpl
+        w = metric.get_approximate_char_width() / Pango.SCALE * self._parent.bpl
         w += 2
 
-        if alloc.width < w:
-            alloc.width = w
+        return w,w
 
-        return True
+    def do_get_preferred_height(self):
+        return 0,0
 
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
@@ -242,7 +257,7 @@ class AsciiText(BaseText):
             if self.prev_start and self.prev_end and \
                self.prev_start != self.prev_end:
 
-                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                self.buffer.remove_tag(self.texttag,
                                        self.buffer.get_iter_at_mark(self.prev_start),
                                        self.buffer.get_iter_at_mark(self.prev_end))
 
@@ -263,7 +278,7 @@ class AsciiText(BaseText):
                 return
             else:
                 # remove old selection
-                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                self.buffer.remove_tag(self.texttag,
                                        self.buffer.get_iter_at_mark(self.prev_start),
                                        self.buffer.get_iter_at_mark(self.prev_end))
 
@@ -271,7 +286,7 @@ class AsciiText(BaseText):
         start_iter = self.buffer.get_iter_at_offset(start)
         end_iter = self.buffer.get_iter_at_offset(end)
 
-        self.buffer.apply_tag(self._parent.tag_sec_sel, start_iter, end_iter)
+        self.buffer.apply_tag(self.texttag, start_iter, end_iter)
         if self.prev_start:
             self.buffer.move_mark(self.prev_start, start_iter)
         else:
@@ -283,11 +298,11 @@ class AsciiText(BaseText):
 
 
 class HexText(BaseText):
+    __gtype_name__ = 'HexText'
     _hexdigits = '0123456789abcdefABCDEF'
 
     def __init__(self, parent):
-        BaseText.__init__(self, parent)
-        self.connect('size-request', self.__on_size_request)
+        super(HexText, self).__init__(parent)
         self.connect('realize', self.__on_realize)
         self.connect('button-release-event', self.__on_button_release)
         self.connect('key-press-event', self.__on_key_press)
@@ -295,6 +310,13 @@ class HexText(BaseText):
 
         self.prev_start = None
         self.prev_end = None
+        """
+        TODO
+        self.texttag.set_property(
+            'background-gdk',
+            self.get_style().mid[Gtk.StateType.NORMAL]
+        )
+        """
 
     def __on_key_press(self, widget, evt, data=None):
         if not self._parent.editable:
@@ -350,10 +372,10 @@ class HexText(BaseText):
             end_iter = insert_iter.copy()
             end_iter.forward_char()
         buffer.select_range(insert_iter, end_iter)
-        self.scroll_to_iter(insert_iter, 0)
+        self.scroll_to_iter(insert_iter, 0, False, 0, 0)
 
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
-        if True: #step_size == gtk.MOVEMENT_VISUAL_POSITIONS:
+        if True: #step_size == Gtk.MovementStep.VISUAL_POSITIONS:
             buffer = self.get_buffer()
             insert_mark = buffer.get_insert()
             insert_iter = buffer.get_iter_at_mark(insert_mark)
@@ -390,7 +412,11 @@ class HexText(BaseText):
         return False
 
     def __on_realize(self, widget):
-        self.modify_base(gtk.STATE_NORMAL, self.style.mid[gtk.STATE_NORMAL])
+        """
+        TODO
+        self.modify_base(Gtk.StateType.NORMAL, self.get_style().mid[Gtk.StateType.NORMAL])
+        """
+        return True
 
     def render(self, txt):
         self.buffer.set_text('')
@@ -418,20 +444,21 @@ class HexText(BaseText):
             self.buffer.insert_with_tags(
                 self.buffer.get_end_iter(),
                 "\n".join(output).upper(),
-                self._parent.tag_hex
+                self.texttag
             )
 
-    def __on_size_request(self, widget, alloc):
+    def do_get_preferred_width(self):
         ctx = self.get_pango_context()
-        font = ctx.load_font(pango.FontDescription(self._parent.font))
+        font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
 
-        w = pango.PIXELS(metric.get_approximate_char_width()) * \
+        w = metric.get_approximate_char_width() / Pango.SCALE * \
                         (self._parent.bpl * 3 - 1)
         w += 2
+        return w,w
 
-        if alloc.width < w:
-            alloc.width = w
+    def do_get_preferred_height(self):
+        return 0,0
 
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
@@ -439,7 +466,7 @@ class HexText(BaseText):
             # deselect
             if self.prev_start and self.prev_end and \
                self.prev_start != self.prev_end:
-                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                self.buffer.remove_tag(self.texttag,
                                        self.buffer.get_iter_at_mark(self.prev_start),
                                        self.buffer.get_iter_at_mark(self.prev_end))
 
@@ -458,14 +485,14 @@ class HexText(BaseText):
                 return
             else:
                 # remove old selection
-                self.buffer.remove_tag(self._parent.tag_sec_sel, 
+                self.buffer.remove_tag(self.texttag,
                                        self.buffer.get_iter_at_mark(self.prev_start),
                                        self.buffer.get_iter_at_mark(self.prev_end))
 
         start_iter = self.buffer.get_iter_at_offset(start)
         end_iter = self.buffer.get_iter_at_offset(end)
 
-        self.buffer.apply_tag(self._parent.tag_sec_sel, start_iter, end_iter)
+        self.buffer.apply_tag(self.texttag, start_iter, end_iter)
         if self.prev_start:
             self.buffer.move_mark(self.prev_start, start_iter)
         else:
@@ -475,23 +502,15 @@ class HexText(BaseText):
         else:
             self.prev_end = self.buffer.create_mark(None, end_iter, False)
 
-class HexView(gtk.HBox):
-    __gtype_name__ = "HexView"
+class HexView(Gtk.Box):
+    __gtype_name__ = 'HexView'
+    __gsignals__ = {
+        'char-changed' : (GObject.SignalFlags.RUN_LAST, GObject.TYPE_BOOLEAN, (int,int))
+    }
 
     def __init__(self):
-        gtk.HBox.__init__(self, False, 4)
+        super(HexView, self).__init__(False, 4)
         self.set_border_width(4)
-
-        self.table = gtk.TextTagTable()
-        self.tag_offset = gtk.TextTag('hex-o-view')       # offset view
-        self.tag_hex = gtk.TextTag('hex-x-view')          # hex view
-        self.tag_ascii = gtk.TextTag('hex-a-view')        # ascii view
-        self.tag_sec_sel = gtk.TextTag('hex-s-selection') # secondary selection
-
-        self.table.add(self.tag_offset)
-        self.table.add(self.tag_hex)
-        self.table.add(self.tag_ascii)
-        self.table.add(self.tag_sec_sel)
 
         self._bpl = 16
         self._font = "Monospace 10"
@@ -500,47 +519,46 @@ class HexView(gtk.HBox):
         self.scroll_mark = None
         self.editable = False
 
-        self.vadj = gtk.Adjustment()
-        self.vscroll = gtk.VScrollbar(self.vadj)
+        self.vadj = Gtk.Adjustment()
+        self.vscroll = Gtk.Scrollbar.new(Gtk.Orientation.VERTICAL, self.vadj)
 
 
         self.offset_text = OffsetText(self)
         self.hex_text = HexText(self)
         self.ascii_text = AsciiText(self)
 
-        self.offset_text.set_scroll_adjustments(None, self.vadj)
-        self.hex_text.set_scroll_adjustments(None, self.vadj)
-        self.ascii_text.set_scroll_adjustments(None, self.vadj)
+        self.offset_text.set_vadjustment(self.vadj)
+        self.hex_text.set_vadjustment(self.vadj)
+        self.ascii_text.set_vadjustment(self.vadj)
 
         self.hex_text.buffer.connect('mark-set', self.__on_hex_change)
         self.ascii_text.buffer.connect('mark-set', self.__on_ascii_change)
 
-        self.offset_text.connect('scroll-event', self.__on_scroll_event)
-        self.hex_text.connect('scroll-event', self.__on_scroll_event)
-        self.ascii_text.connect('scroll-event', self.__on_scroll_event)
-
         def scroll(widget):
             widget.set_size_request(-1, 128)
-            frame = gtk.Frame()
-            frame.set_shadow_type(gtk.SHADOW_IN)
+            frame = Gtk.ScrolledWindow.new(None, self.vadj)
+#            frame.set_shadow_type(Gtk.ShadowType.IN)
+            frame.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.NEVER)
             frame.add(widget)
+            frame.connect('scroll-event', self.__on_scroll_event)
             return frame
 
-        self.pack_start(scroll(self.offset_text), False, False)
-        self.pack_start(scroll(self.hex_text), False, False)
-        self.pack_start(scroll(self.ascii_text), False, False)
-        self.pack_end(self.vscroll, False, False)
+        self.pack_start(scroll(self.offset_text), expand=False, fill=False, padding=0)
+        self.pack_start(scroll(self.hex_text), expand=False, fill=False, padding=0)
+        self.pack_start(scroll(self.ascii_text), expand=False, fill=False, padding=0)
+        self.pack_end(self.vscroll, False, False, 0)
 
 #        self.connect('char-changed', self.do_char_changed)
 
     def __on_scroll_event(self, widget, event, data=None):
-        self.vscroll.emit('scroll-event', event)
+        self.vscroll.emit('scroll-event', event.copy())
+        return True
 
     # scroll to the addr
     # select the byte at addr
     # set focus
     def show_addr(self, addr):
-        gobject.idle_add(self.show_addr_helper, addr)
+        GObject.idle_add(self.show_addr_helper, addr)
 
     def show_addr_helper(self, addr):
         off = addr - self._base_addr
@@ -561,23 +579,7 @@ class HexView(gtk.HBox):
         self.hex_text.grab_focus()
 
     def do_realize(self):
-        gtk.HBox.do_realize(self)
-
-        # Offset view
-        self.tag_offset.set_property('weight', pango.WEIGHT_BOLD)
-
-        # Hex View
-        self.tag_hex.set_property(
-            'background-gdk',
-            self.style.mid[gtk.STATE_NORMAL]
-        )
-
-        # Selection tags
-        self.tag_sec_sel.set_property(
-            'background-gdk',
-            self.style.text_aa[gtk.STATE_NORMAL]
-        )
-
+        Gtk.Box.do_realize(self)
         # set font
         self.modify_font(self._font)
 
@@ -648,7 +650,7 @@ class HexView(gtk.HBox):
 
     def modify_font(self, val):
         try:
-            desc = pango.FontDescription(val)
+            desc = Pango.FontDescription(val)
             self._font = val
 
             for view in (self.offset_text, self.hex_text, self.ascii_text):
@@ -682,14 +684,13 @@ class HexView(gtk.HBox):
     bpl = property(get_bpl, set_bpl)
     base_addr = property(get_base_addr, set_base_addr)
 
-gobject.type_register(HexView)
-gobject.signal_new('char-changed', HexView, gobject.SIGNAL_RUN_LAST, gobject.TYPE_BOOLEAN, (int,int))
+GObject.type_register(HexView)
 
 if __name__ == "__main__":
     def char_changed_handler(hexview, offset, charval):
         print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
         return False
-    w = gtk.Window()
+    w = Gtk.Window()
     w.resize(500,500)
     view = HexView()
     view.payload = "Woo welcome this is a simple read/only HexView widget for PacketManipulator"*16
@@ -698,5 +699,5 @@ if __name__ == "__main__":
     view.editable = True
     w.add(view)
     w.show_all()
-    w.connect('delete-event', lambda *w: gtk.main_quit())
-    gtk.main()
+    w.connect('delete-event', lambda *w: Gtk.main_quit())
+    Gtk.main()
