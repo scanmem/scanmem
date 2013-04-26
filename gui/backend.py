@@ -57,7 +57,6 @@ class GameConquerorBackend():
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
                 self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
-                sys.stdout.flush()
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)

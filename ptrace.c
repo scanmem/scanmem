@@ -108,6 +108,7 @@ bool detach(pid_t target)
     return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
 }
 
+
 /*
  * peekdata - caches overlapping ptrace reads to improve performance.
  * 
@@ -134,8 +135,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
             (unsigned long) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
-
-        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        memcpy(&result->int64_value, &peekbuf.cache[reqaddr - peekbuf.base], sizeof(result->int64_value));
         return true;
     } else if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
@@ -194,11 +194,11 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
                     /* Cache it with the appropriate offset */
                     if(peekbuf.size >= j)
                     {
-                        *((long *)&peekbuf.cache[peekbuf.size - j]) = ptraced_long;
+                        memcpy(&peekbuf.cache[peekbuf.size - j], &ptraced_long, sizeof(long));
                     }
                     else
                     {
-                        *((long *)&peekbuf.cache[0]) = ptraced_long;
+                        memcpy(&peekbuf.cache[0], &ptraced_long, sizeof(long));
                         peekbuf.base -= j;
                     }
                     peekbuf.size += sizeof(long) - j;
@@ -214,7 +214,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         }
         
         /* Otherwise, ptrace() worked - cache the data, increase the size */
-        *((long *)&peekbuf.cache[peekbuf.size]) = ptraced_long;
+        memcpy(&peekbuf.cache[peekbuf.size], &ptraced_long, sizeof(long));
         peekbuf.size += sizeof(long);
         last_address_gathered = ptrace_address + sizeof(long);
     }
@@ -225,7 +225,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     if (reqaddr + sizeof(int64_t) <= last_address_gathered)
     {
         /* The values are fine - read away */
-        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        memcpy(&result->int64_value, &peekbuf.cache[reqaddr - peekbuf.base], sizeof(result->int64_value));
     }
     else
     {
