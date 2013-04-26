@@ -506,7 +506,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 #endif
         /* print a progress meter so user knows we havent crashed */
         /* cannot use show_info here because it'll append a '\n' */
-        show_info("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
+        show_user("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 

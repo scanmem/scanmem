@@ -887,8 +887,8 @@ class GameConqueror():
         self.command_lock.acquire()
         self.backend.send_command(cmd)
 
-        Gdk.threads_enter()
         GObject.source_remove(self.progress_watcher_id)
+        Gdk.threads_enter()
 
         self.main_window.set_sensitive(True)
         self.memoryeditor_window.set_sensitive(True)
@@ -941,6 +941,8 @@ class GameConqueror():
     # read/write data periodically
     def data_worker(self):
         if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking
+            Gdk.threads_enter()
+
             self.is_data_worker_working = True
             rows = self.get_visible_rows(self.scanresult_tv)
             if rows is not None:
@@ -971,8 +973,11 @@ class GameConqueror():
                         self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
                     elif newvalue != value and not locked and not self.cheatlist_editing:
                         self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, str(newvalue), valid)
-            self.command_lock.release()           
             self.is_data_worker_working = False 
+
+            Gdk.flush()
+            Gdk.threads_leave()
+            self.command_lock.release()           
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):
