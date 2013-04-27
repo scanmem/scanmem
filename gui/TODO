@@ -1,17 +1,14 @@
 TODOs
 =====
 
-- error handling (target process quitted) for data_worker --> error codes
+- show error messages
 - different color for different addresses (heap, stack, module etc)
 - limit size of bytes read for memory editor
 - processlist sortable
 - popup in memory editor -- like `add entry for this address`
 - manually add cheat
 - icon in processlist
-- Documentation
-- logging
 - custom address region scan
-- real-time update cheatlist/scanlist -- add a 'set' column
 - different types of locking ('+' & '-')
 - plugin-like system to support different datatypes (or actually representations)
 - different representation (dec, hex ...) for cheatlist

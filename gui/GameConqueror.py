@@ -45,30 +45,11 @@ WORK_DIR = os.path.dirname(sys.argv[0])
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 
-SCAN_VALUE_TYPES = misc.build_simple_str_liststore(['int'
-                                              ,'int8'
-                                              ,'int16'
-                                              ,'int32'
-                                              ,'int64'
-                                              ,'float'
-                                              ,'float32'
-                                              ,'float64'
-                                              ,'number'
-                                              ,'bytearray'
-                                              ,'string'
-                                              ])
+SCAN_VALUE_TYPES = misc.build_simple_str_liststore(['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string' ])
 
 LOCK_FLAG_TYPES = misc.build_simple_str_liststore(['=', '+', '-'])
 
-LOCK_VALUE_TYPES = misc.build_simple_str_liststore(['int8' 
-                                            ,'int16'
-                                            ,'int32'
-                                            ,'int64' 
-                                            ,'float32'
-                                            ,'float64'
-                                            ,'bytearray'
-                                            ,'string'
-                                            ])
+LOCK_VALUE_TYPES = misc.build_simple_str_liststore(['int8', 'int16', 'int32', 'int64', 'float32', 'float64', 'bytearray', 'string' ])
 
 SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
 
@@ -273,34 +254,16 @@ class GameConqueror():
         
         # init popup menu for scanresult
         self.scanresult_popup = Gtk.Menu()
-        misc.menu_append_item(self.scanresult_popup
-                             ,'Add to cheat list'
-                             ,self.scanresult_popup_cb
-                             ,'add_to_cheat_list')
-        misc.menu_append_item(self.scanresult_popup
-                             ,'Browse this address'
-                             ,self.scanresult_popup_cb
-                             ,'browse_this_address')
-        misc.menu_append_item(self.scanresult_popup
-                             ,'Scan for this address'
-                             ,self.scanresult_popup_cb
-                             ,'scan_for_this_address')
+        misc.menu_append_item(self.scanresult_popup, 'Add to cheat list', self.scanresult_popup_cb, 'add_to_cheat_list')
+        misc.menu_append_item(self.scanresult_popup, 'Browse this address', self.scanresult_popup_cb, 'browse_this_address')
+        misc.menu_append_item(self.scanresult_popup, 'Scan for this address', self.scanresult_popup_cb, 'scan_for_this_address')
         self.scanresult_popup.show_all()
 
         # init popup menu for cheatlist
         self.cheatlist_popup = Gtk.Menu()
-        misc.menu_append_item(self.cheatlist_popup
-                             ,'Browse this address'
-                             ,self.cheatlist_popup_cb
-                             ,'browse_this_address')
-        misc.menu_append_item(self.cheatlist_popup
-                             ,'Copy address'
-                             ,self.cheatlist_popup_cb
-                             ,'copy_address')
-        misc.menu_append_item(self.cheatlist_popup
-                             ,'Remove this entry'
-                             ,self.cheatlist_popup_cb
-                             ,'remove_entry')
+        misc.menu_append_item(self.cheatlist_popup, 'Browse this address', self.cheatlist_popup_cb, 'browse_this_address')
+        misc.menu_append_item(self.cheatlist_popup, 'Copy address', self.cheatlist_popup_cb, 'copy_address')
+        misc.menu_append_item(self.cheatlist_popup, 'Remove this entry', self.cheatlist_popup_cb, 'remove_entry')
         self.cheatlist_popup.show_all()
 
         self.builder.connect_signals(self)
