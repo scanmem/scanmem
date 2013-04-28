@@ -108,7 +108,6 @@ AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
 
 AC_CONFIG_FILES([ 
                 Makefile 
-                test/Makefile
                 ])
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],

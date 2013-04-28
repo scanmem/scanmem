@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = test
+SUBDIRS = 
 if ENABLE_GUI
   SUBDIRS += gui
 endif
