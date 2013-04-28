@@ -77,11 +77,3 @@ class GameConquerorBackend():
     def reset_scan_progress(self):
         self.lib.reset_scan_progress()
 
-    # for test only
-    def run(self):
-        while True:
-            l = sys.stdin.readline()
-            self.backend.stdin.write(l)
-
-
-
