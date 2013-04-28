@@ -1,0 +1,13 @@
+#!/bin/bash
+
+DATADIR=/usr/local/share/gameconqueror
+
+if [[ "$(id -u)" != "0" ]]; then
+    if [ -e "/usr/bin/gksu" ]; then
+        exec gksu --sudo-mode --preserve-env --description "GameConqueror" "python -OO $DATADIR/GameConqueror.py"
+    else
+        exec beesu - "python -OO $DATADIR/GameConqueror.py"
+    fi
+else
+    exec python -OO "$DATADIR/GameConqueror.py"
+fi
