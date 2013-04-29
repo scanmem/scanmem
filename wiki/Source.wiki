@@ -1,7 +1,7 @@
-Release repo:
+Release repo (SVN):
 
 [http://scanmem.googlecode.com/svn/]
 
-Developement repo:
+Developement repo (Git):
 
 [https://github.com/coolwanglu/scanmem]
