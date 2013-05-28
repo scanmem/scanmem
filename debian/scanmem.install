@@ -1,2 +1,2 @@
 usr/bin/scanmem
-usr/lib/libscanmem.so.*
+usr/lib/libscanmem.so*
