@@ -5,8 +5,14 @@ Dirty script for building package for PPA
 by WangLu
 2011.01.13
 
-modified for git
-2013.04.25
+modified for pdf2htmlEX
+2012.08.28
+
+modified for general git repo
+2013.05.30
+
+modified for scanmem
+2013.05.30
 """
 
 
@@ -15,7 +21,19 @@ import sys
 import re
 import time
 
+package='scanmem'
+ppa_name='scanmem'
+supported_distributions=('precise', 'quantal', 'raring')
+dist_pattern=re.compile('|'.join(['\\) '+i for i in supported_distributions]))
+archive_cmd='./configure --enable-gui && make dist'
+archive_suffix='.tar.gz'
+
 print 'Generating version...'
+try:
+    version = re.findall(r'AC_INIT\(\[[^]]+\],\s*\[([^]]+)\]', open('configure.ac').read())[0]
+except:
+    print 'Cannot get package name and version number'
+    sys.exit(-1)
 
 try:
     rev = open('.git/refs/heads/master').read()[:5]
@@ -23,42 +41,45 @@ except:
     print 'Cannot get revision number'
     sys.exit(-1)
 
+projectdir=os.getcwd()
 today_timestr = time.strftime('%Y%m%d%H%M')
-package='scanmem'
-projectname='scanmem'
-try:
-    package,version = re.findall(r'AC_INIT\(\[([^]]+)\],\s*\[([^]]+)\]', open('configure.ac').read())[0]
-except:
-    print 'Cannot get package name and version number'
-    sys.exit(-1)
-
 deb_version = version+'-1~git'+today_timestr+'r'+rev
 full_deb_version = deb_version+'-0ubuntu1'
 
 #check if we need to update debian/changelog
-if re.findall(r'\(([^)]+)\)', open('debian/changelog').readline())[0] == full_deb_version:
-    print
-    print 'No need to update debian/changelog, skipping'
-else:
-    print
-    print 'Writing debian/changelog'
-    if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
-        print 'Failed when updating debian/changelog'
+with open('debian/changelog') as f:
+    if re.findall(r'\(([^)]+)\)', f.readline())[0] == full_deb_version:
+        print
+        print 'No need to update debian/changelog, skipping'
+    else:
+        print
+        print 'Writing debian/changelog'
+        if os.system('dch -v "%s"' % (full_deb_version,)) != 0:
+            print 'Failed when updating debian/changelog'
+            sys.exit(-1)
+
+# changelog may have been updated, reopen it
+with open('debian/changelog') as f:
+    #check dist mark of changelog
+    changelog = f.read()
+    m = dist_pattern.search(changelog)
+    if m is None or m.pos >= changelog.find('\n'):
+        print 'Cannot locate the dist name in the first line of changelog'
         sys.exit(-1)
 
 print
-print 'Building...'
+print 'Preparing build ...'
 # handling files
-if os.system('./configure --enable-gui && make dist') != 0:
+if os.system(archive_cmd) != 0:
     print 'Failed in creating tarball'
     sys.exit(-1)
 
-orig_tar_filename = package+'-'+version+'.tar.gz'
-if os.system('test -e %s && cp %s ../build-area' % (orig_tar_filename, orig_tar_filename)) != 0:
+orig_tar_filename = package+'-'+version+archive_suffix
+if os.system('test -e %s && cp %s ../build-area/' % (orig_tar_filename, orig_tar_filename)) != 0:
     print 'Cannot copy tarball file to build area'
     sys.exit(-1)
 
-deb_orig_tar_filename = package+'_'+deb_version+'.orig.tar.gz'
+deb_orig_tar_filename = package+'_'+deb_version+'.orig'+archive_suffix
 
 try:
     os.chdir('../build-area')
@@ -79,28 +100,38 @@ except:
     print 'Cannot enter project dir'
     sys.exit(-1)
 
-os.system('cp -r ../../%s/debian .' % (package,))
+os.system('cp -r %s/debian .' % (projectdir,))
 
-# building
-if os.system('debuild -S -sa') != 0:
-    print 'Failed in debuild'
-    sys.exit(-1)
+for cur_dist in supported_distributions:
+    print
+    print 'Building for ' + cur_dist + ' ...'
+    # substitute distribution name 
+    with open('debian/changelog', 'w') as f:
+        f.write(dist_pattern.sub('~%s1) %s' % (cur_dist, cur_dist), changelog, 1))
 
-print
-sys.stdout.write('Everything seems to be good so far, upload?(y/n)')
-sys.stdout.flush()
-ans = raw_input().lower()
-while ans not in ['y', 'n']:
-    sys.stdout.write('I don\'t understand, enter \'y\' or \'n\':')
+    # building
+    if os.system('debuild -S -sa') != 0:
+        print 'Failed in debuild'
+        sys.exit(-1)
+
+    """
+    print
+    sys.stdout.write('Everything seems to be good so far, upload?(y/n)')
+    sys.stdout.flush()
     ans = raw_input().lower()
+    while ans not in ['y', 'n']:
+        sys.stdout.write('I don\'t understand, enter \'y\' or \'n\':')
+        ans = raw_input().lower()
 
-if ans == 'n':
-    print 'Skipped.'
-    sys.exit(0)
-   
-if os.system('dput ppa:coolwanglu/%s ../%s' % (package, package+'_'+full_deb_version+'_source.changes')) != 0:
-    print 'Failed in uploading by dput'
-    sys.exit(-1)
+    if ans == 'n':
+        print 'Skipped.'
+        sys.exit(0)
+    """
+
+    print 'Uploading'   
+    if os.system('dput %s ../%s' % (ppa_name, package+'_'+full_deb_version+'~'+cur_dist+'1_source.changes')) != 0:
+        print 'Failed in uploading by dput'
+        sys.exit(-1)
 
 print 'Build area not cleaned.'
 print 'All done. Cool!'
