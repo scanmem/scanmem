@@ -513,7 +513,7 @@ class GameConqueror():
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
+        addr = model.get(model.get_iter(pathlist[0]), 0)[0]
         if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
@@ -547,17 +547,19 @@ class GameConqueror():
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
-        row = int(path)
-        if self.cheatlist_liststore[row][6]: # valid
-            locked = self.cheatlist_liststore[row][1]
-            locked = not locked
-            self.cheatlist_liststore[row][1] = locked
-        if locked:
-            #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
-            pass
-        else:
-            #TODO: update its value?
-            pass
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            if self.cheatlist_liststore[row][6]: # valid
+                locked = self.cheatlist_liststore[row][1]
+                locked = not locked
+                self.cheatlist_liststore[row][1] = locked
+            if locked:
+                #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
+                pass
+            else:
+                #TODO: update its value?
+                pass
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
@@ -571,8 +573,10 @@ class GameConqueror():
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        self.cheatlist_liststore[row][2] = new_text
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            self.cheatlist_liststore[row][2] = new_text
         return True
 
     def cheatlist_edit_value_cb(self, cell, path, new_text, data=None):
@@ -580,28 +584,29 @@ class GameConqueror():
         # ignore empty value
         if new_text == '':
             return True
-        row = int(path)
-        if not self.cheatlist_liststore[row][6]: #not valid
-            return True
-        self.cheatlist_liststore[row][5] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # data_worker will handle this
-            pass
-        else:
-            # write it for once
-            (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
-            self.cheatlist_updates.append(row)
-            self.write_value(addr, typestr, value)
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            if not self.cheatlist_liststore[row][6]: #not valid
+                continue
+            self.cheatlist_liststore[row][5] = new_text
+            if self.cheatlist_liststore[row][1]: # locked
+                # data_worker will handle this
+                pass
+            else:
+                # write it for once
+                (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
+                self.cheatlist_updates.append(row)
+                self.write_value(addr, typestr, value)
         return True
 
     def cheatlist_edit_type_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        row = int(path)
-        self.cheatlist_liststore[row][4] = new_text
-        if self.cheatlist_liststore[row][1]: # locked
-            # false unlock it
-            self.cheatlist_liststore[row][1] = False
-            pass
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        for path in pathlist:
+            row = path[0]
+            self.cheatlist_liststore[row][4] = new_text
+            self.cheatlist_liststore[row][1] = False # unlock
         return True
 
     def processlist_filter_func(self, model, iter, data=None):
