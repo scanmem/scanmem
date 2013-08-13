@@ -149,6 +149,7 @@ class GameConqueror():
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
         self.scanresult_liststore = Gtk.ListStore(str, str, str, bool) #addr, value, type, valid
         self.scanresult_tv.set_model(self.scanresult_liststore)
+        self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -157,6 +158,7 @@ class GameConqueror():
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
+        self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
@@ -375,42 +377,42 @@ class GameConqueror():
 
     def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.scanresult_tv.get_selection().get_selected()
-            if iter is not None:
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            if len(pathlist):
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
-            self.scanresult_popup.popup(None, None, None, 0, 0)
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        if len(pathlist):
+            self.scanresult_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
     def ScanResult_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
         # add to cheat list
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        if iter is not None:
-            (addr, value, typestr) = model.get(iter, 0, 1, 2)
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        for path in pathlist:
+            (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
             self.add_to_cheat_list(addr, value, typestr)
             return True
         return False
 
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is not None:
+            (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+            if len(pathlist):
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
                 return True
             return False
         return False
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        if iter is not None:
-            self.cheatlist_popup.popup(None, None, None, 0, 0)
+        (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+        if len(pathlist):
+            self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
         return False
 
@@ -505,42 +507,41 @@ class GameConqueror():
         self.cheatlist_editing = False
 
     def scanresult_popup_cb(self, menuitem, data=None):
-        (model, iter) = self.scanresult_tv.get_selection().get_selected()
-        (addr, value, typestr) = model.get(iter, 0, 1, 2)
-        if iter is None:
-            return False
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
-            self.add_to_cheat_list(addr, value, typestr)
+            for path in pathlist:
+                (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'scan_for_this_address':
+        if data == 'scan_for_this_address':
             self.scan_for_addr(int(addr,16))
             return True
         return False
-        
+
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Delete':
-            (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-            if iter is None: return
-            self.cheatlist_liststore.remove(iter) 
+            (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+            for path in reversed(pathlist):
+                self.cheatlist_liststore.remove(model.get_iter(path))
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
-        (model, iter) = self.cheatlist_tv.get_selection().get_selected()
-        addr = model.get(iter, 3)[0]
-        if iter is None:
-            return False
+        (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
         if data == 'remove_entry':
-            self.cheatlist_liststore.remove(iter) 
+            for path in reversed(pathlist):
+                self.cheatlist_liststore.remove(model.get_iter(path)) 
             return True
-        elif data == 'browse_this_address':
+        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
+        if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        elif data == 'copy_address':
+        if data == 'copy_address':
             CLIPBOARD.set_text(addr, len(addr))
             return True
         return False
