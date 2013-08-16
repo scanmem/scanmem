@@ -391,14 +391,13 @@ class GameConqueror():
             return True
         return False
 
-    def ScanResult_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
+    def ScanResult_TreeView_button_press_event_cb(self, widget, event, data=None):
         # add to cheat list
-        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-        for path in pathlist:
-            (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
-            self.add_to_cheat_list(addr, value, typestr)
-            return True
-        return False
+        if event.get_click_count()[1] > 1:
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            for path in pathlist:
+                (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
 
     def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
