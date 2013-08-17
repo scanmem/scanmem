@@ -887,15 +887,16 @@ class GameConqueror():
     # return (r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
     # return (0, 0) if no row visible
     def get_visible_rows(self, treeview):
-        therange = treeview.get_visible_range()
+        _range = treeview.get_visible_range()
         try:
-            r1 = therange[0][0]
+            r1 = _range[0][0]
         except:
             r1 = 0
         try:
-            r2 = therange[1][0] + 1
+            r2 = _range[1][0] + 1
         except:
-            r2 = min(20 + r1, len(treeview.get_model()))
+            max_rows = 20
+            r2 = min(max_rows + r1, len(treeview.get_model()))
         return (r1, r2)
 
     # read/write data periodically
