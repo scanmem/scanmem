@@ -512,13 +512,14 @@ class GameConqueror():
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        addr = model.get(model.get_iter(pathlist[0]), 0)[0]
-        if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
-            return True
-        if data == 'scan_for_this_address':
-            self.scan_for_addr(int(addr,16))
-            return True
+        for path in reversed(pathlist):
+            addr = model.get(model.get_iter(path), 0)[0]
+            if data == 'browse_this_address':
+                self.browse_memory(int(addr,16))
+                return True
+            if data == 'scan_for_this_address':
+                self.scan_for_addr(int(addr,16))
+                return True
         return False
 
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
@@ -536,13 +537,14 @@ class GameConqueror():
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path)) 
             return True
-        addr = model.get(model.get_iter(pathlist[0]), 3)[0]
-        if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
-            return True
-        if data == 'copy_address':
-            CLIPBOARD.set_text(addr, len(addr))
-            return True
+        for path in reversed(pathlist):
+            addr = model.get(model.get_iter(path), 3)[0]
+            if data == 'browse_this_address':
+                self.browse_memory(int(addr,16))
+                return True
+            if data == 'copy_address':
+                CLIPBOARD.set_text(addr, len(addr))
+                return True
         return False
 
     def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
