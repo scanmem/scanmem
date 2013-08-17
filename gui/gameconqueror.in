@@ -5,6 +5,8 @@ DATADIR=@PKGDATADIR@
 if [[ "$(id -u)" != "0" ]]; then
     if [ -e "/usr/bin/gksu" ]; then
         exec gksu --sudo-mode --preserve-env --description "GameConqueror" "python -OO $DATADIR/GameConqueror.py"
+    elif [ -e "/usr/bin/kdesu" ]; then
+        exec kdesu -c "python -OO $DATADIR/GameConqueror.py"
     else
         exec beesu - "python -OO $DATADIR/GameConqueror.py"
     fi
