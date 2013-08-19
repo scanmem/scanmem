@@ -917,13 +917,15 @@ class GameConqueror():
                         row[1] = '??'
                         row[3] = False
             # write locked values in cheat list and read unlocked values
+            for i in self.cheatlist_liststore:
+                addr, typestr, value, valid = i[3:]
+                if locked and valid:
+                    self.write_value(addr, typestr, value)
             rows = self.get_visible_rows(self.cheatlist_tv)
             for i in rows:
                 (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
-                if not valid:
+                if not valid or locked:
                     continue
-                if locked:
-                    self.write_value(addr, typestr, value)
                 elif i in self.cheatlist_updates:
                     self.write_value(addr, typestr, value)
                     self.cheatlist_updates.remove(i)
