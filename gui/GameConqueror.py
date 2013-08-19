@@ -884,8 +884,8 @@ class GameConqueror():
                 self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
-    # return (r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
-    # return (0, 0) if no row visible
+    # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
+    # return range(0, 0) if no row visible
     def get_visible_rows(self, treeview):
         _range = treeview.get_visible_range()
         try:
@@ -897,7 +897,7 @@ class GameConqueror():
         except:
             max_rows = 20
             r2 = min(max_rows + r1, len(treeview.get_model()))
-        return (r1, r2)
+        return range(r1, r2)
 
     # read/write data periodically
     def data_worker(self):
@@ -905,8 +905,8 @@ class GameConqueror():
             Gdk.threads_enter()
 
             self.is_data_worker_working = True
-            (r1, r2) = self.get_visible_rows(self.scanresult_tv) # [r1, r2] rows are visible
-            for i in range(r1, r2):
+            rows = self.get_visible_rows(self.scanresult_tv)
+            for i in rows:
                 row = self.scanresult_liststore[i]
                 addr, cur_value, scanmem_type, valid = row
                 if valid:
@@ -917,7 +917,8 @@ class GameConqueror():
                         row[1] = '??'
                         row[3] = False
             # write locked values in cheat list and read unlocked values
-            for i in range(len(self.cheatlist_liststore)):
+            rows = self.get_visible_rows(self.cheatlist_tv)
+            for i in rows:
                 (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
                 if not valid:
                     continue
