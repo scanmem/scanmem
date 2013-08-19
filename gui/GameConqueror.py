@@ -586,7 +586,7 @@ class GameConqueror():
         if self.cheatlist_liststore[row][1]: # locked
             # data_worker will handle this
             pass
-        else:
+        elif row not in self.cheatlist_updates:
             # write it for once
             (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
             self.cheatlist_updates.append(row)
