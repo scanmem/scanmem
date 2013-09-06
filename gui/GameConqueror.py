@@ -42,7 +42,7 @@ import misc
 
 import locale
 # In some locale, ',' is used in float numbers
-locale.setlocale(local.LC_NUMERIC, 'C')
+locale.setlocale(locale.LC_NUMERIC, 'C')
 
 CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
