@@ -60,11 +60,16 @@ def check_scan_command (data_type, cmd, is_first_scan):
 
         # evaluating the command
         if cmd[:2] in ['+ ', '- ', '> ', '< ']:
-            num = eval_operand(cmd[2:])
-            cmd = cmd[:2] + str(num)
+            num = cmd[2:]
+            cmd = cmd[:2]
+        elif cmd[:3] ==  '!= ':
+            num = cmd[3:]
+            cmd = cmd[:3]
         else:
-            num = eval_operand(cmd)
-            cmd = str(num)
+            num = cmd
+            cmd = ''
+        num = eval_operand(num)
+        cmd += str(num)
 
         if data_type.startswith('int'):
             if not (isinstance(num, int) or isinstance(num, long)):
