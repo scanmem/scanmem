@@ -40,6 +40,10 @@ from hexview import HexView
 from backend import GameConquerorBackend
 import misc
 
+import locale
+# In some locale, ',' is used in float numbers
+locale.setlocale(local.LC_NUMERIC, 'C')
+
 CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
