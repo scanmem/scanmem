@@ -42,7 +42,7 @@ import misc
 
 import locale
 # In some locale, ',' is used in float numbers
-locale.setlocale(local.LC_NUMERIC, 'C')
+locale.setlocale(locale.LC_NUMERIC, 'C')
 
 CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
@@ -383,15 +383,6 @@ class GameConqueror():
         self.do_scan()
         return True
 
-    def ScanResult_TreeView_button_release_event_cb(self, widget, event, data=None):
-        if event.button == 3: # right click
-            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-            if len(pathlist):
-                self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
-                return True
-            return False
-        return False
-
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if len(pathlist):
@@ -401,11 +392,17 @@ class GameConqueror():
 
     def ScanResult_TreeView_button_press_event_cb(self, widget, event, data=None):
         # add to cheat list
-        if event.get_click_count()[1] > 1:
-            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        if event.get_click_count()[1] > 1: # double click
             for path in pathlist:
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
+        elif event.button == 3: # right click
+            if len(pathlist):
+                self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
+                return True
+            return False
+        return False
 
     def ScanResult_TreeSelection_changed_cb(self, treeselection, data=None):
         self.selection_changed(treeselection, self.scanresult_pl)
@@ -413,7 +410,7 @@ class GameConqueror():
     def CheatList_TreeSelection_changed_cb(self, treeselection, data=None):
         self.selection_changed(treeselection, self.cheatlist_pl)
 
-    def CheatList_TreeView_button_release_event_cb(self, widget, event, data=None):
+    def CheatList_TreeView_button_press_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
             if len(pathlist):
@@ -521,7 +518,6 @@ class GameConqueror():
         for path in pathlist:
             if not path in pl:
                 pl.append(path)
-                break
 
     def cheatlist_edit_start(self, a, b, c):
         self.cheatlist_editing = True
