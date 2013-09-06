@@ -170,7 +170,8 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     if (INTERRUPTABLE()) {
         
         /* control returns here when interrupted */
-        free(settings);
+// settings is allocated with alloca, do not free it
+//        free(settings);
         detach(vars->target);
         ENDINTERRUPTABLE();
         return true;
@@ -1084,12 +1085,14 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 
     /* finally execute command */
     if (system(command) == -1) {
-        free(command);
+// command is allocated with alloca, do not free it
+//        free(command);
         show_error("system() failed, command was not executed.\n");
         return false;
     }
 
-    free(command);
+// command is allocated with alloca, do not free it
+//    free(command);
     return true;
 }
 

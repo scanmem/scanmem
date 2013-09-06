@@ -4,6 +4,6 @@ Comment=A game hacking tool. A GUI front-end for scanmem.
 Exec=gameconqueror
 Terminal=false
 Type=Application
-Icon=GameConqueror_128x128.png
+Icon=GameConqueror
 Categories=GNOME;Application;Game;
 StartupNotify=true
