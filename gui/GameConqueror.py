@@ -4,7 +4,8 @@
     
     Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
-
+    Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
+    
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -42,7 +43,7 @@ import misc
 
 import locale
 # In some locale, ',' is used in float numbers
-locale.setlocale(local.LC_NUMERIC, 'C')
+locale.setlocale(locale.LC_NUMERIC, 'C')
 
 CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])

@@ -1009,6 +1009,7 @@ Public License instead of this License.  But first, please read
  &lt;b&gt;&amp;lt; N&lt;/b&gt;       Less than N
  &lt;b&gt;+ N&lt;/b&gt;       Increased by N
  &lt;b&gt;- N&lt;/b&gt;       Decreased by N
+ &lt;b&gt;!= N&lt;/b&gt;       Other than N
 &lt;/span&gt;
  where N could be a number of a simple math expression embraced by (), e.g.
  12
