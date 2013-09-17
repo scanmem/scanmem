@@ -607,6 +607,9 @@ class GameConqueror():
         pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
         for path in pathlist:
             row = path[0]
+            (addr, typestr, value) = self.cheatlist_liststore[row][3:6]
+            if new_text in ['bytearray', 'string']:
+                self.cheatlist_liststore[row][5] = str(self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value))))
             self.cheatlist_liststore[row][4] = new_text
             self.cheatlist_liststore[row][1] = False # unlock
         return True
