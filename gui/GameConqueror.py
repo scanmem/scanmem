@@ -155,6 +155,7 @@ class GameConqueror():
         self.scanresult_liststore = Gtk.ListStore(str, str, str, bool) #addr, value, type, valid
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.scanresult_last_clicked = 0
         # init columns
         misc.treeview_append_column(self.scanresult_tv, 'Address', attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, 'Value', attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -164,6 +165,7 @@ class GameConqueror():
         self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
+        self.cheatlist_last_clicked = 0
         self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_updates = []
         self.cheatlist_editing = False
@@ -398,7 +400,7 @@ class GameConqueror():
             path = self.scanresult_tv.get_path_at_pos(int(event.x),int(event.y))
             if path is not None:
                 self.scanresult_popup.popup(None, None, None, None, event.button, event.get_time())
-                self.scanresult_click = path[0]
+                self.scanresult_last_clicked = path[0]
                 return path[0] in pathlist
         return False
 
@@ -408,7 +410,7 @@ class GameConqueror():
             path = self.cheatlist_tv.get_path_at_pos(int(event.x),int(event.y))
             if path is not None:
                 self.cheatlist_popup.popup(None, None, None, None, event.button, event.get_time())
-                self.cheatlist_click = path[0]
+                self.cheatlist_last_clicked = path[0]
                 return path[0] in pathlist
         return False
 
@@ -515,11 +517,11 @@ class GameConqueror():
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        addr = model.get(model.get_iter(self.scanresult_click), 0)[0]
+        addr = model.get(model.get_iter(self.scanresult_last_clicked), 0)[0]
         if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        if data == 'scan_for_this_address':
+        elif data == 'scan_for_this_address':
             self.scan_for_addr(int(addr,16))
             return True
         return False
@@ -539,11 +541,11 @@ class GameConqueror():
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path)) 
             return True
-        addr = model.get(model.get_iter(self.cheatlist_click), 3)[0]
+        addr = model.get(model.get_iter(self.cheatlist_last_clicked), 3)[0]
         if data == 'browse_this_address':
             self.browse_memory(int(addr,16))
             return True
-        if data == 'copy_address':
+        elif data == 'copy_address':
             CLIPBOARD.set_text(addr, len(addr))
             return True
         return False
