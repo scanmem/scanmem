@@ -1,4 +1,4 @@
-# ![](https://raw.github.com/coolwanglu/scanmem/master/gui/GameConqueror_72x72.png) scanmem & Gameconqueror
+# ![](https://raw.github.com/coolwanglu/scanmem/master/gui/GameConqueror_72x72.png)scanmem & Gameconqueror
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
