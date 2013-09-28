@@ -892,13 +892,9 @@ class GameConqueror():
         _range = treeview.get_visible_range()
         try:
             r1 = _range[0][0]
-        except:
-            r1 = 0
-        try:
             r2 = _range[1][0] + 1
         except:
-            max_rows = 20
-            r2 = min(max_rows + r1, len(treeview.get_model()))
+            r1 = r2 = 0
         return range(r1, r2)
 
     # read/write data periodically
