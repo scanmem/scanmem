@@ -163,7 +163,6 @@ class GameConqueror():
         self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_tv.set_reorderable(True)
-        self.cheatlist_updates = []
         self.cheatlist_editing = False
         self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
@@ -592,9 +591,7 @@ class GameConqueror():
             # data_worker will handle this
             pass
         else:
-            # write it for once
-            (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[row]
-            self.cheatlist_updates.append(row)
+            (addr, typestr, value) = self.cheatlist_liststore[row][3:6]
             self.write_value(addr, typestr, value)
         return True
 
@@ -889,23 +886,17 @@ class GameConqueror():
                 self.scanresult_liststore.append([a, v, t, True])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
-    # return (r1, r2) where all rows between r1 and r2 (INCLUSIVE) are visible
-    # return None if no row visible
+    # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
+    # return range(0, 0) if no row visible
     def get_visible_rows(self, treeview):
-        rect = treeview.get_visible_rect()
-        (x1,y1) = treeview.convert_tree_to_widget_coords(rect.x,rect.y)
-        (x2,y2) = treeview.convert_tree_to_widget_coords(rect.x+rect.width,rect.y+rect.height)
-        tup = treeview.get_path_at_pos(x1, y1)
-        if tup is None:
-            return None
-        r1 = tup[0][0]
-        tup = treeview.get_path_at_pos(x2, y2)
-        if tup is None:
-            r2 = len(treeview.get_model()) - 1    
-        else:
-            r2 = tup[0][0]
-        return (r1, r2)
- 
+        _range = treeview.get_visible_range()
+        try:
+            r1 = _range[0][0]
+            r2 = _range[1][0] + 1
+        except:
+            r1 = r2 = 0
+        return range(r1, r2)
+
     # read/write data periodically
     def data_worker(self):
         if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking
@@ -913,39 +904,34 @@ class GameConqueror():
 
             self.is_data_worker_working = True
             rows = self.get_visible_rows(self.scanresult_tv)
-            if rows is not None:
-                (r1, r2) = rows # [r1, r2] rows are visible
-                for i in range(r1, r2+1):
-                    row = self.scanresult_liststore[i]
-                    addr, cur_value, scanmem_type, valid = row
-                    if valid:
-                        new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
-                        if new_value is not None:
-                            row[1] = str(new_value)
-                        else:
-                            row[1] = '??'
-                            row[3] = False
+            for i in rows:
+                row = self.scanresult_liststore[i]
+                addr, cur_value, scanmem_type, valid = row
+                if valid:
+                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                    if new_value is not None:
+                        row[1] = str(new_value)
+                    else:
+                        row[1] = '??'
+                        row[3] = False
             # write locked values in cheat list and read unlocked values
-            for i in range(len(self.cheatlist_liststore)):
-                (lockflag, locked, desc, addr, typestr, value, valid) = self.cheatlist_liststore[i]
-                if not valid:
-                    continue
-                if locked:
-                    self.write_value(addr, typestr, value)
-                elif i in self.cheatlist_updates:
-                    self.write_value(addr, typestr, value)
-                    self.cheatlist_updates.remove(i)
-                else:
+            for i in self.cheatlist_liststore:
+                if i[1] and i[6]: # locked and valid
+                    self.write_value(i[3], i[4], i[5]) # addr, typestr, value
+            rows = self.get_visible_rows(self.cheatlist_tv)
+            for i in rows:
+                lockflag, locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[i]
+                if valid and not locked:
                     newvalue = self.read_value(addr, typestr, value)
                     if newvalue is None:
                         self.cheatlist_liststore[i] = (lockflag, False, desc, addr, typestr, '??', False)
-                    elif newvalue != value and not locked and not self.cheatlist_editing:
+                    elif newvalue != value and not self.cheatlist_editing:
                         self.cheatlist_liststore[i] = (lockflag, locked, desc, addr, typestr, str(newvalue), valid)
-            self.is_data_worker_working = False 
+            self.is_data_worker_working = False
 
             Gdk.flush()
             Gdk.threads_leave()
-            self.command_lock.release()           
+            self.command_lock.release()
         return not self.exit_flag
 
     def read_value(self, addr, typestr, prev_value):
