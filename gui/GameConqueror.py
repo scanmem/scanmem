@@ -265,6 +265,7 @@ class GameConqueror():
         misc.menu_append_item(self.scanresult_popup, 'Add to cheat list', self.scanresult_popup_cb, 'add_to_cheat_list')
         misc.menu_append_item(self.scanresult_popup, 'Browse this address', self.scanresult_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.scanresult_popup, 'Scan for this address', self.scanresult_popup_cb, 'scan_for_this_address')
+        self.scanresult_popup.connect('button-press-event', self.check_for_leftclick)
         self.scanresult_popup.show_all()
 
         # init popup menu for cheatlist
@@ -272,6 +273,7 @@ class GameConqueror():
         misc.menu_append_item(self.cheatlist_popup, 'Browse this address', self.cheatlist_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.cheatlist_popup, 'Copy address', self.cheatlist_popup_cb, 'copy_address')
         misc.menu_append_item(self.cheatlist_popup, 'Remove this entry', self.cheatlist_popup_cb, 'remove_entry')
+        self.cheatlist_popup.connect('button-press-event', self.check_for_leftclick)
         self.cheatlist_popup.show_all()
 
         self.builder.connect_signals(self)
@@ -382,7 +384,7 @@ class GameConqueror():
         return True
 
     def ScanResult_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        pathlist = self.scanresult_tv.get_selection().get_selected_rows()[1]
         if len(pathlist):
             self.scanresult_popup.popup(None, None, None, None, 0, 0)
             return True
@@ -391,7 +393,7 @@ class GameConqueror():
     def ScanResult_TreeView_button_press_event_cb(self, widget, event, data=None):
         # add to cheat list
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-        if event.get_click_count()[1] > 1: # double click
+        if event.button == 1 and event.get_click_count()[1] > 1: # left double click
             for path in pathlist:
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
@@ -402,6 +404,10 @@ class GameConqueror():
                 self.scanresult_last_clicked = path[0]
                 return path[0] in pathlist
         return False
+
+    def check_for_leftclick(self, widget, event, data=None):
+        if event.button != 1:
+            widget.deactivate()
 
     def CheatList_TreeView_button_press_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
@@ -414,7 +420,7 @@ class GameConqueror():
         return False
 
     def CheatList_TreeView_popup_menu_cb(self, widget, data=None):
-        (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
+        pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
         if len(pathlist):
             self.cheatlist_popup.popup(None, None, None, None, 0, 0)
             return True
@@ -607,8 +613,10 @@ class GameConqueror():
         for path in pathlist:
             row = path[0]
             (addr, typestr, value) = self.cheatlist_liststore[row][3:6]
+            if new_text == typestr:
+                continue
             if new_text in ['bytearray', 'string']:
-                self.cheatlist_liststore[row][5] = str(self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value))))
+                self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value)))
             self.cheatlist_liststore[row][4] = new_text
             self.cheatlist_liststore[row][1] = False # unlock
         return True
