@@ -7,6 +7,9 @@ the process, and the value of the variable at several different times.
 After several scans of the process, scanmem isolates the position of the
 variable and allows you to modify it's value.
 
+GameConqueror is a GUI of scanmem and more than that, it provides flexible syntax for searching,
+multiple memory locking and a memory editor.
+
 ## Requirements
 
 scanmem requires libreadline to read commands interactively, and /proc must be
@@ -41,18 +44,9 @@ GameConqueror is a GUI front-end for scanmem, providing more features, such as:
 See gui/README for more detail.
 
 
-## Known Issues
+## License: 
 
-* some hardened systems have unusable maps files, where all entries are zeroed.
-* the snapshot command uses too much memory on large processes.
-* performance is currently very poor.
-
-
-Author: Tavis Ormandy <taviso(a)sdf.lonestar.org>
-        Eli   Dupree  <elidupree(a)charter.net>
-        WANG  Lu      <coolwanglu(a)gmail.com>
-
-License: GPLv3
+GPLv3
 
 ## Resources
 

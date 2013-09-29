@@ -23,9 +23,6 @@ You are supposed to be familiar with cheating tools like CheatEngine
 - Add a candidate address to the list below by double-click on it or use the context-menu
 - There you can edit description, value, and lock it.
 
-!! Currently only '=' locking is supported, which means the '>' and '<' flags are useless
-!! Pay attention to the output of GameConqueror, you'll see error messages from scanmem -- so GameConqueror is recommended to be executed in a shell
-
 Author
 ======
 WANG Lu  <coolwanglu(a)gmail.com>
