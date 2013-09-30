@@ -915,8 +915,7 @@ Public License instead of this License.  But first, please read
                       <object class="GtkTreeView" id="ScanResult_TreeView">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <signal name="row-activated" handler="ScanResult_TreeView_row_activated_cb" swapped="no"/>
-                        <signal name="button-release-event" handler="ScanResult_TreeView_button_release_event_cb" swapped="no"/>
+                        <signal name="button-press-event" handler="ScanResult_TreeView_button_press_event_cb" swapped="no"/>
                         <signal name="popup-menu" handler="ScanResult_TreeView_popup_menu_cb" swapped="no"/>
                         <child internal-child="selection">
                           <object class="GtkTreeSelection" id="treeview-selection1"/>
@@ -1313,7 +1312,7 @@ Public License instead of this License.  But first, please read
                 <property name="height_request">100</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <signal name="button-release-event" handler="CheatList_TreeView_button_release_event_cb" swapped="no"/>
+                <signal name="button-press-event" handler="CheatList_TreeView_button_press_event_cb" swapped="no"/>
                 <signal name="popup-menu" handler="CheatList_TreeView_popup_menu_cb" swapped="no"/>
                 <child internal-child="selection">
                   <object class="GtkTreeSelection" id="treeview-selection2"/>
