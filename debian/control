@@ -2,7 +2,7 @@ Source: scanmem
 Section: utils
 Priority: extra
 Maintainer: WANG Lu <coolwanglu@gmail.com>
-Build-Depends: debhelper (>= 8), autotools-dev, libreadline-dev, libtool
+Build-Depends: debhelper (>= 8), autotools-dev, libreadline-dev, libtool, intltool
 Standards-Version: 3.9.3
 Homepage: http://code.google.com/p/scanmem/
 

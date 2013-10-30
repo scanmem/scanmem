@@ -1,0 +1,140 @@
+# Japanese translations for scanmem package.
+# Copyright (C) 2013 THE scanmem'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the scanmem package.
+#  <kuinanein@gmail.com>, 2013.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: scanmem 0.14\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2013-10-30 01:33+0900\n"
+"PO-Revision-Date: 2013-10-30 02:13+0900\n"
+"Last-Translator:  <kuinanein@gmail.com>\n"
+"Language-Team: Japanese\n"
+"Language: ja\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../gui/GameConqueror.xml.h:1
+msgid ""
+"Copyright (C) 2009-2013 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2010 Bryan Cain\n"
+"\n"
+"Special thanks: Zhang Zhe"
+msgstr ""
+
+#: ../gui/GameConqueror.xml.h:5
+msgid "A graphical frontend of scanmem"
+msgstr "scanmem GUI フロントエンド"
+
+#: ../gui/GameConqueror.xml.h:6
+msgid "Homepage"
+msgstr "ホームページ"
+
+#: ../gui/GameConqueror.xml.h:7
+msgid "Manually add an entry"
+msgstr "手動入力"
+
+#: ../gui/GameConqueror.xml.h:8
+msgid "Specify type of target data"
+msgstr "データ型を指定します"
+
+#: ../gui/GameConqueror.xml.h:9
+msgid "Type:"
+msgstr "データ型:"
+
+#: ../gui/GameConqueror.xml.h:10
+msgid "Memory address of the value"
+msgstr "メモリアドレスを入力します"
+
+#: ../gui/GameConqueror.xml.h:11
+msgid "Address:"
+msgstr "アドレス:"
+
+#: ../gui/GameConqueror.xml.h:12
+msgid "Give a brief description of the value"
+msgstr "変数の簡単な説明をメモできます"
+
+#: ../gui/GameConqueror.xml.h:13
+msgid "Description:"
+msgstr "概要:"
+
+#: ../gui/GameConqueror.xml.h:14
+msgid "GameConqueror"
+msgstr ""
+
+#: ../gui/GameConqueror.xml.h:15
+msgid "Found: 0"
+msgstr "0件見つかりました"
+
+#: ../gui/GameConqueror.xml.h:16
+msgid "Select a process"
+msgstr "プロセスを選択してください"
+
+#: ../gui/GameConqueror.xml.h:17
+msgid "Scan"
+msgstr "スキャン"
+
+#: ../gui/GameConqueror.xml.h:18
+msgid "Value: <span color=\"blue\"><u>?</u></span>"
+msgstr "値: <span color=\"blue\"><u>?</u></span>"
+
+#: ../gui/GameConqueror.xml.h:19
+msgid "No process selected"
+msgstr "プロセスが選択されていません"
+
+#: ../gui/GameConqueror.xml.h:20
+msgid "Reset"
+msgstr "リセット"
+
+#: ../gui/GameConqueror.xml.h:21
+msgid "Data Type:"
+msgstr "データ型:"
+
+#: ../gui/GameConqueror.xml.h:22
+msgid "Search Scope:"
+msgstr "検索範囲:"
+
+#: ../gui/GameConqueror.xml.h:23
+msgid ""
+"Specify how float numbers should be rounded. Not avaiable in this version"
+msgstr ""
+"浮動小数点数の丸め方を指定します。(このバージョンでは利用できません)"
+
+#: ../gui/GameConqueror.xml.h:24
+msgid "Round Type:"
+msgstr "数値の丸め方:"
+
+#: ../gui/GameConqueror.xml.h:25
+msgid "Remove all entries"
+msgstr "全ての項目を削除"
+
+#: ../gui/GameConqueror.xml.h:26
+msgid "Load address list from file"
+msgstr "アドレス一覧をファイルから読み込み"
+
+#: ../gui/GameConqueror.xml.h:27
+msgid "Save address list to file"
+msgstr "アドレス一覧をファイルへ保存"
+
+#: ../gui/GameConqueror.xml.h:28
+msgid "Memory Editor"
+msgstr "メモリエディタ"
+
+#: ../gui/GameConqueror.xml.h:29
+msgid "Press Ctrl+F to search for a process"
+msgstr "Ctrl+Fキーでプロセスを検索できます"
+
+#: ../gui/GameConqueror.xml.h:30
+msgid "Process:"
+msgstr "プロセス:"
+
+#: ../gui/GameConqueror.xml.h:31
+msgid "User:"
+msgstr "ユーザー:"
+
+#: ../gui/GameConqueror.xml.h:32
+msgid "Filter"
+msgstr "フィルタ"

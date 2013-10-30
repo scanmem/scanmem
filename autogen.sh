@@ -1,2 +1,3 @@
 #!/bin/sh
-libtoolize && aclocal -I m4 && automake --add-missing && autoconf
+rm -f po/Makefile.in.in
+libtoolize && aclocal -I m4 && automake --add-missing && autoconf && intltoolize

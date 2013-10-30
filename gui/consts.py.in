@@ -3,6 +3,7 @@
 
 VERSION = '@VERSION@'
 DATA_DIR = '@PKGDATADIR@'
+GETTEXT_PACKAGE = '@GETTEXT_PACKAGE@'
 
 SETTINGS = {'scan_data_type':'int32'
            ,'lock_data_type':'int32'
