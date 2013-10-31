@@ -10,10 +10,6 @@ AC_HEADER_STDBOOL
 LT_INIT
 
 IT_PROG_INTLTOOL
-GETTEXT_PACKAGE=$PACKAGE_NAME
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
-                   [The domain to use with gettext])
 
 AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
 
@@ -111,6 +107,12 @@ AC_DEFUN([AS_AC_EXPAND],
 # end copy
 
 AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
+
+GETTEXT_PACKAGE=$PACKAGE_NAME
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
+                   [The domain to use with gettext])
+AS_AC_EXPAND(LOCALEDIR, $localedir)
 
 AC_CONFIG_FILES([ 
                 Makefile
