@@ -2,4 +2,4 @@ usr/bin/gameconqueror
 usr/share/applications/GameConqueror.desktop
 usr/share/pixmaps/GameConqueror*
 usr/share/gameconqueror/*
-usr/share/locale/*/LC_MESSAGES/scanmem.mo
+usr/share/locale/*/LC_MESSAGES/GameConqueror.mo
