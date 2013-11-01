@@ -1,7 +1,7 @@
-# Japanese translations for scanmem package.
-# Copyright (C) 2013 THE scanmem'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the scanmem package.
-#  <kuinanein@gmail.com>, 2013.
+# Japanese translations for Game Conqueror.
+# Copyright (C) 2009-2013 Wang Lu <coolwanglu(a)gmail.com>
+# This file is distributed under the same license as Game Conqueror.
+# Kuina <kuinanein(a)gmail.com>, 2013.
 #
 msgid ""
 msgstr ""
@@ -9,7 +9,7 @@ msgstr ""
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-10-31 22:40+0900\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
-"Last-Translator:  <kuinanein@gmail.com>\n"
+"Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
 "Language: ja\n"
 "MIME-Version: 1.0\n"
@@ -125,7 +125,7 @@ msgstr ""
 " <b>- N</b>       前回スキャン時より N 減少した\n"
 " <b>!= N</b>       N と異なる\n"
 "</span>\n"
-" 数値の代わりに、()で囲った簡単な数式を入力することもできます。例.\n"
+" 数値の代わりに、()で囲った簡単な数式を入力することもできます。例:\n"
 " 12\n"
 " 0x34\n"
 " 5.67\n"
@@ -134,7 +134,7 @@ msgstr ""
 " バイト列を検索する場合: 16進表記を用い、1バイトずつ半角スペースで区切ってく"
 "ださい\n"
 "<span font_family=\"monospace\">\n"
-" 例. FE DC BA 98 76 54 32 10\n"
+" 例: FE DC BA 98 76 54 32 10\n"
 "</span>\n"
 " 文字列を検索する場合: 検索したい文字列をそのまま入力してください\n"
 "\n"
