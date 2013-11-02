@@ -994,7 +994,7 @@ class GameConqueror():
 
     def check_backend_version(self):
         if self.backend.get_version() != VERSION:
-            self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of Gamconqueror as scanmem.')
+            self.show_error('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of GameConqueror as scanmem.')
 
     
 

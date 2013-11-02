@@ -119,7 +119,7 @@ def combobox_set_active_item(combobox, name, col=0):
             break
         iter = model.iter_next(iter)
     if iter is None:
-        raise ValueError('Cannot locate the item for %s'%(name,))
+        raise ValueError('Cannot locate item: %s'%(name,))
     combobox.set_active_iter(iter)
 
 # append a column to `treeview`, with given `title`
