@@ -9,6 +9,8 @@ AC_HEADER_STDBOOL
 
 LT_INIT
 
+IT_PROG_INTLTOOL
+
 AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
@@ -106,8 +108,15 @@ AC_DEFUN([AS_AC_EXPAND],
 
 AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
 
+GETTEXT_PACKAGE=GameConqueror
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
+                   [The domain to use with gettext])
+AS_AC_EXPAND(LOCALEDIR, $localedir)
+
 AC_CONFIG_FILES([ 
-                Makefile 
+                Makefile
+                po/Makefile.in
                 ])
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
