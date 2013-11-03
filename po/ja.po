@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-10-31 22:40+0900\n"
+"POT-Creation-Date: 2013-11-03 01:50+0900\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -39,7 +39,7 @@ msgstr "手動入力"
 
 #: ../gui/GameConqueror.xml.h:8
 msgid "Specify type of target data"
-msgstr "データ型を指定してください"
+msgstr "データ型を指定します"
 
 #: ../gui/GameConqueror.xml.h:9
 msgid "Type:"
@@ -47,7 +47,7 @@ msgstr "データ型:"
 
 #: ../gui/GameConqueror.xml.h:10
 msgid "Memory address of the value"
-msgstr "メモリアドレスを入力してください"
+msgstr "メモリアドレスを入力します"
 
 #: ../gui/GameConqueror.xml.h:11
 msgid "Address:"
@@ -55,7 +55,7 @@ msgstr "アドレス:"
 
 #: ../gui/GameConqueror.xml.h:12
 msgid "Give a brief description of the value"
-msgstr "変数の簡単な説明を入力してください"
+msgstr "変数の簡単な説明を入力します"
 
 #: ../gui/GameConqueror.xml.h:13
 msgid "Description:"
@@ -157,7 +157,7 @@ msgstr "データ型:"
 
 #: ../gui/GameConqueror.xml.h:51
 msgid ""
-"<b>Basic:</b>      Fastest but may miss values\n"
+"<b>Basic:</b>      Fastest but may miss some values\n"
 "<b>Normal:</b>  Works for most cases\n"
 "<b>Full:</b>         Never miss values but slowest"
 msgstr ""
@@ -253,7 +253,7 @@ msgstr "チートリストに追加"
 
 #: ../gui/GameConqueror.py:271 ../gui/GameConqueror.py:278
 msgid "Browse this address"
-msgstr "このアドレスを表示"
+msgstr "このアドレスのメモリ内容を表示"
 
 #: ../gui/GameConqueror.py:272
 msgid "Scan for this address"
@@ -331,7 +331,7 @@ msgstr "%d 件見つかりました"
 #: ../gui/GameConqueror.py:1002
 msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
-"you are using the same version of Gamconqueror as scanmem."
+"you are using the same version of GameConqueror as scanmem."
 msgstr ""
 "scanmem のバージョンが違います。何らかの問題が発生している可能性があります。"
 "scanmem 本体と同じバージョンの Game Conqueror を使用しているか確認してくださ"
@@ -363,5 +363,5 @@ msgstr "%s は %s で表現できる範囲を超えています"
 
 #: ../gui/misc.py:122
 #, python-format
-msgid "Cannot locate the item for %s"
+msgid "Cannot locate item: %s"
 msgstr "%s という項目は見つかりません"
