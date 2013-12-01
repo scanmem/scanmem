@@ -127,6 +127,7 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
                  gui/icons/Makefile
                  gui/consts.py
                  gui/gameconqueror
+                 gui/org.freedesktop.gameconqueror.policy
                  ])],
                  [enable_gui=false]
                  )
