@@ -6,5 +6,5 @@ Exec=gameconqueror
 Terminal=false
 Type=Application
 Icon=GameConqueror
-Categories=GNOME;Application;Game;
+Categories=Game;
 StartupNotify=true
