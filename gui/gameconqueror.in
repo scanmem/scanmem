@@ -5,5 +5,5 @@ DATADIR=@PKGDATADIR@
 if [ -e "/usr/bin/pkexec" ]; then
     exec /usr/bin/pkexec $DATADIR/GameConqueror.py
 else
-    echo "install polkit!"
+    echo "install policykit!"
 fi
