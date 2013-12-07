@@ -2,6 +2,7 @@
 Name=Game Conqueror
 Comment=A game hacking tool. A GUI front-end for scanmem.
 Comment[ja]=ゲーム向けプロセスメモリエディタ(scanmem GUI フロントエンド)
+Comment[ru]=Инструмент для взлома игр (графический интерфейс к scanmem)
 Exec=gameconqueror
 Terminal=false
 Type=Application
