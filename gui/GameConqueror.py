@@ -699,6 +699,7 @@ class GameConqueror():
             self.read_maps()
         except:
             self.show_error(_('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
+            return
         selected_region = None
         if addr:
             for m in self.maps:
