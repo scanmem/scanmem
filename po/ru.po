@@ -8,9 +8,9 @@ msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2013-11-03 01:50+0900\n"
-"PO-Revision-Date: 2013-12-07 18:03+0400\n"
+"PO-Revision-Date: 2013-12-08 02:16+0400\n"
 "Last-Translator: Igor Gnatenko <i.gnatenko.brain@gmail.com>\n"
-"Language-Team: Russian\n"
+"Language-Team: Russian Fedora\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -35,11 +35,11 @@ msgstr "Домашняя страница"
 
 #: ../gui/GameConqueror.xml.h:7
 msgid "Manually add an entry"
-msgstr ""
+msgstr "Добавить элемент вручную"
 
 #: ../gui/GameConqueror.xml.h:8
 msgid "Specify type of target data"
-msgstr ""
+msgstr "Укажите тип целевых данных"
 
 #: ../gui/GameConqueror.xml.h:9
 msgid "Type:"
@@ -47,7 +47,7 @@ msgstr "Тип:"
 
 #: ../gui/GameConqueror.xml.h:10
 msgid "Memory address of the value"
-msgstr ""
+msgstr "Адрес значения в памяти"
 
 #: ../gui/GameConqueror.xml.h:11
 msgid "Address:"
@@ -55,7 +55,7 @@ msgstr "Адрес:"
 
 #: ../gui/GameConqueror.xml.h:12
 msgid "Give a brief description of the value"
-msgstr ""
+msgstr "Дайте краткое описание значения"
 
 #: ../gui/GameConqueror.xml.h:13
 msgid "Description:"
@@ -109,6 +109,35 @@ msgid ""
 " For string: enter the string directly\n"
 "\n"
 msgstr ""
+"Синтаксис:\n"
+"\n"
+" Для численных типов: \n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Равные N\n"
+" <b>?</b>         Неизвестное начальное значение\n"
+" <b>&gt; или +</b>    Увеличившиеся значения\n"
+" <b>&lt; или -</b>    Уменьшившиеся значения\n"
+" <b>=</b>         Не изменившиеся значения\n"
+" <b>!=</b>        Изменившиеся значения\n"
+" <b>&gt; N</b>       Больше чем N\n"
+" <b>&lt; N</b>       Меньше чем N\n"
+" <b>+ N</b>       Увеличились на N\n"
+" <b>- N</b>       Уменьшились by N\n"
+" <b>!= N</b>       Отличные от N\n"
+"</span>\n"
+" где N может быть число или простое математическое выражение, выделеннок в (), напр.\n"
+" 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)\n"
+"\n"
+" Для массива байтов: используйте 2-разрядный шестнадцатеричный формат для каждого байта, разделённые "
+"пробелами\n"
+"<span font_family=\"monospace\">\n"
+" напр. FE DC BA 98 76 54 32 10\n"
+"</span>\n"
+" Для строк: вводите искомую строку\n"
+"\n"
 
 #: ../gui/GameConqueror.xml.h:47
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
@@ -138,12 +167,13 @@ msgstr ""
 
 #: ../gui/GameConqueror.xml.h:54
 msgid "Search Scope:"
-msgstr ""
+msgstr "Область Поиска:"
 
 #: ../gui/GameConqueror.xml.h:55
 msgid ""
 "Specify how float numbers should be rounded. Not avaiable in this version"
 msgstr ""
+"Укажите, как числа с плавающей точкой будут округляться. Недоступно в этой версии"
 
 #: ../gui/GameConqueror.xml.h:56
 msgid "Round Type:"
@@ -219,15 +249,15 @@ msgstr "Процесс"
 
 #: ../gui/GameConqueror.py:270
 msgid "Add to cheat list"
-msgstr ""
+msgstr "Добавить в чит-лист"
 
 #: ../gui/GameConqueror.py:271 ../gui/GameConqueror.py:278
 msgid "Browse this address"
-msgstr ""
+msgstr "Просмотреть этот адрес"
 
 #: ../gui/GameConqueror.py:272
 msgid "Scan for this address"
-msgstr ""
+msgstr "Искать по этому адресу"
 
 #: ../gui/GameConqueror.py:279
 msgid "Copy address"
@@ -240,7 +270,7 @@ msgstr "Удалить этот элемент"
 #: ../gui/GameConqueror.py:312 ../gui/GameConqueror.py:461
 #: ../gui/GameConqueror.py:845
 msgid "Please select a process"
-msgstr ""
+msgstr "Пожалуйста выберите процесс"
 
 #: ../gui/GameConqueror.py:325 ../gui/GameConqueror.py:335
 msgid "Invalid address"
@@ -264,13 +294,15 @@ msgstr "Нет Описания"
 
 #: ../gui/GameConqueror.py:689
 msgid "Unknown architecture, you may report to developers"
-msgstr ""
+msgstr "Неизвестная архитектура, сообщите разработчикам"
 
 #: ../gui/GameConqueror.py:701 ../gui/GameConqueror.py:779
 msgid ""
 "Cannot retieve memory maps of that process, maybe it has exited (crashed), "
 "or you don't have enough privilege"
 msgstr ""
+"Невозможно получить маппинги памяти для этого процесса, возможно он больше не существует "
+"или у вас не хватает прав"
 
 #. not readable
 #: ../gui/GameConqueror.py:710
@@ -301,6 +333,8 @@ msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
 "you are using the same version of GameConqueror as scanmem."
 msgstr ""
+"Используемпя версия scanmem несовместима, могут быть проблемы. Убедитесь, "
+"что вы используете одинаковые версии GameConqueror и scanmem."
 
 #: ../gui/misc.py:30
 msgid "No value provided"
@@ -324,7 +358,7 @@ msgstr "%s не целочисленное"
 #: ../gui/misc.py:82
 #, python-format
 msgid "%s is too bulky for %s"
-msgstr ""
+msgstr "%s слишком большой для %s"
 
 #: ../gui/misc.py:122
 #, python-format
