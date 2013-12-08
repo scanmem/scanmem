@@ -472,6 +472,7 @@ class GameConqueror():
     def ConfirmAddCheat_Button_clicked_cb(self, button, data=None):
         try:
             addr = self.addcheat_address_input.get_text()
+            int(addr,16)
         except ValueError:
             self.show_error(_('Please enter a valid address.'))
             return False
