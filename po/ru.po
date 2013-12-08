@@ -364,3 +364,7 @@ msgstr "%s слишком большой для %s"
 #, python-format
 msgid "Cannot locate item: %s"
 msgstr "Невозможно найти запись: %s"
+
+#: gui/GameConqueror.desktop.in:4
+msgid "A game hacking tool. A GUI front-end for scanmem."
+msgstr "Инструмент для взлома игр (графический интерфейс к scanmem)"

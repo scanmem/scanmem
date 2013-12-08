@@ -365,3 +365,7 @@ msgstr "%s は %s で表現できる範囲を超えています"
 #, python-format
 msgid "Cannot locate item: %s"
 msgstr "%s という項目は見つかりません"
+
+#: gui/GameConqueror.desktop.in:4
+msgid "A game hacking tool. A GUI front-end for scanmem."
+msgstr "ゲーム向けプロセスメモリエディタ(scanmem GUI フロントエンド)"

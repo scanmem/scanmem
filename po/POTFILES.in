@@ -1,3 +1,4 @@
 [type: gettext/glade]gui/GameConqueror.xml
 gui/GameConqueror.py
 gui/misc.py
+gui/GameConqueror.desktop.in
