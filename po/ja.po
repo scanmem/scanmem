@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-11-03 01:50+0900\n"
+"POT-Creation-Date: 2013-12-08 04:45+0400\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -366,6 +366,10 @@ msgstr "%s は %s で表現できる範囲を超えています"
 msgid "Cannot locate item: %s"
 msgstr "%s という項目は見つかりません"
 
-#: gui/GameConqueror.desktop.in:4
+#: ../gui/GameConqueror.desktop.in.h:1
+msgid "Game Conqueror"
+msgstr ""
+
+#: ../gui/GameConqueror.desktop.in.h:2
 msgid "A game hacking tool. A GUI front-end for scanmem."
 msgstr "ゲーム向けプロセスメモリエディタ(scanmem GUI フロントエンド)"
