@@ -6,8 +6,8 @@
  <vendor>Scanmem</vendor>
  <vendor_url>http://code.google.com/p/scanmem/</vendor_url>
  <action id="org.freedesktop.gameconqueror.pkexec.run">
-    <description>Run Game Conqueror</description>
-    <message>Authentication is required to run Game Conqueror</message>
+    <_description>Run Game Conqueror</_description>
+    <_message>Authentication is required to run Game Conqueror</_message>
     <icon_name>GameConqueror</icon_name>
     <defaults>
      <allow_any>auth_admin_keep</allow_any>
