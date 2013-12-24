@@ -687,7 +687,7 @@ class GameConqueror():
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
         if bits is None:
-            show_error(_('Unknown architecture, you may report to developers'))
+            self.show_error(_('Unknown architecture, you may report to developers'))
             return
         self.reset_scan()
         self.value_input.set_text('%#x'%(addr,))
@@ -699,7 +699,8 @@ class GameConqueror():
         try:
             self.read_maps()
         except:
-            show_error(_('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
+            self.show_error(_('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
+            return
         selected_region = None
         if addr:
             for m in self.maps:
@@ -708,10 +709,10 @@ class GameConqueror():
                     break
             if selected_region:
                 if selected_region['flags'][0] != 'r': # not readable
-                    show_error(_('Address %x is not readable') % (addr,))
+                    self.show_error(_('Address %x is not readable') % (addr,))
                     return
             else:
-                show_error(_('Address %x is not valid') % (addr,))
+                self.show_error(_('Address %x is not valid') % (addr,))
                 return
         else:
             # just select the first readable region
