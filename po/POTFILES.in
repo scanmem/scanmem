@@ -3,3 +3,4 @@ gui/GameConqueror.py
 gui/misc.py
 gui/GameConqueror.desktop.in
 gui/org.freedesktop.gameconqueror.policy.in.in
+gui/GameConqueror.appdata.xml.in

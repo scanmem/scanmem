@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2013-12-08 05:13+0400\n"
+"POT-Creation-Date: 2014-01-26 13:36+0400\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -69,7 +69,7 @@ msgstr ""
 msgid "Found: 0"
 msgstr "0 件見つかりました"
 
-#: ../gui/GameConqueror.xml.h:16 ../gui/GameConqueror.py:778
+#: ../gui/GameConqueror.xml.h:16 ../gui/GameConqueror.py:780
 msgid "Select a process"
 msgstr "プロセスを選択してください"
 
@@ -143,7 +143,7 @@ msgstr ""
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
 msgstr "値: <span color=\"blue\"><u>?</u></span>"
 
-#: ../gui/GameConqueror.xml.h:48 ../gui/GameConqueror.py:777
+#: ../gui/GameConqueror.xml.h:48 ../gui/GameConqueror.py:779
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
 
@@ -268,7 +268,7 @@ msgid "Remove this entry"
 msgstr "この項目を削除"
 
 #: ../gui/GameConqueror.py:312 ../gui/GameConqueror.py:461
-#: ../gui/GameConqueror.py:845
+#: ../gui/GameConqueror.py:847
 msgid "Please select a process"
 msgstr "プロセスを選択してください"
 
@@ -284,19 +284,19 @@ msgstr "開く.."
 msgid "Save.."
 msgstr "保存.."
 
-#: ../gui/GameConqueror.py:476
+#: ../gui/GameConqueror.py:477
 msgid "Please enter a valid address."
 msgstr "有効なメモリアドレスを入力してください."
 
-#: ../gui/GameConqueror.py:480 ../gui/GameConqueror.py:754
+#: ../gui/GameConqueror.py:481 ../gui/GameConqueror.py:756
 msgid "No Description"
 msgstr "説明なし"
 
-#: ../gui/GameConqueror.py:689
+#: ../gui/GameConqueror.py:690
 msgid "Unknown architecture, you may report to developers"
 msgstr "未知のアーキテクチャです。必要であれば開発者に報告してください。"
 
-#: ../gui/GameConqueror.py:701 ../gui/GameConqueror.py:779
+#: ../gui/GameConqueror.py:702 ../gui/GameConqueror.py:781
 msgid ""
 "Cannot retieve memory maps of that process, maybe it has exited (crashed), "
 "or you don't have enough privilege"
@@ -305,30 +305,30 @@ msgstr ""
 "したか、この操作に必要な権限がない可能性があります。"
 
 #. not readable
-#: ../gui/GameConqueror.py:710
+#: ../gui/GameConqueror.py:712
 #, python-format
 msgid "Address %x is not readable"
 msgstr "アドレス %x を読み込めません"
 
-#: ../gui/GameConqueror.py:713
+#: ../gui/GameConqueror.py:715
 #, python-format
 msgid "Address %x is not valid"
 msgstr "アドレス %x は無効です"
 
-#: ../gui/GameConqueror.py:722
+#: ../gui/GameConqueror.py:724
 msgid "Cannot find a readable region"
 msgstr "読み込み可能なメモリ範囲が見つかりません"
 
-#: ../gui/GameConqueror.py:733
+#: ../gui/GameConqueror.py:735
 msgid "Cannot read memory"
 msgstr "メモリを読み込めません"
 
-#: ../gui/GameConqueror.py:891
+#: ../gui/GameConqueror.py:893
 #, python-format
 msgid "Found: %d"
 msgstr "%d 件見つかりました"
 
-#: ../gui/GameConqueror.py:1002
+#: ../gui/GameConqueror.py:1004
 msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
 "you are using the same version of GameConqueror as scanmem."
@@ -366,7 +366,7 @@ msgstr "%s は %s で表現できる範囲を超えています"
 msgid "Cannot locate item: %s"
 msgstr "%s という項目は見つかりません"
 
-#: ../gui/GameConqueror.desktop.in.h:1
+#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
 msgid "Game Conqueror"
 msgstr ""
 
@@ -380,4 +380,36 @@ msgstr ""
 
 #: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:2
 msgid "Authentication is required to run Game Conqueror"
+msgstr ""
+
+#: ../gui/GameConqueror.appdata.xml.in.h:2
+#, fuzzy
+msgid "Game hacking tool. GUI front-end for scanmem."
+msgstr "ゲーム向けプロセスメモリエディタ(scanmem GUI フロントエンド)"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:3
+msgid ""
+"scanmem is a simple interactive debugging utility, used to locate the "
+"address of a variable in an executing process. This can be used for the "
+"analysis or modification of a hostile process on a compromised machine, "
+"reverse engineering, or as a \"pokefinder\" to cheat at video games. "
+"GameConqueror aims to provide a CheatEngline-alike interface for scanmem, "
+"it's user-friendly and easy to use."
+msgstr ""
+
+#: ../gui/GameConqueror.appdata.xml.in.h:4
+msgid "Features:"
+msgstr ""
+
+#: ../gui/GameConqueror.appdata.xml.in.h:5
+msgid "Locking on multiple variables"
+msgstr ""
+
+#: ../gui/GameConqueror.appdata.xml.in.h:6
+#, fuzzy
+msgid "Memory Viewer/Editor"
+msgstr "メモリエディタ"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:7
+msgid "... many to be done"
 msgstr ""
