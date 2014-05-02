@@ -5,5 +5,5 @@ Exec=gameconqueror
 Terminal=false
 Type=Application
 Icon=GameConqueror
-Categories=Development;Utility
+Categories=Development;Utility;
 StartupNotify=true
