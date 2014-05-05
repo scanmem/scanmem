@@ -157,13 +157,16 @@ class GameConqueror():
         # we may need a cell data func here
         # create model
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
-        self.scanresult_liststore = Gtk.ListStore(str, str, str, bool) #addr, value, type, valid
+        # liststore contents: addr, value, type, valid, offset, region type
+        self.scanresult_liststore = Gtk.ListStore(str, str, str, bool, str, str)
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
         # init columns
         misc.treeview_append_column(self.scanresult_tv, _('Address'), attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, _('Value'), attributes=(('text',1),), properties = (('family', 'monospace'),))
+        misc.treeview_append_column(self.scanresult_tv, _('Offset'), attributes=(('text',4),), properties = (('family', 'monospace'),))
+        misc.treeview_append_column(self.scanresult_tv, _('Region Type'), attributes=(('text',5),), properties = (('family', 'monospace'),))
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
@@ -903,10 +906,11 @@ class GameConqueror():
             self.scanresult_liststore.clear()
             for line in lines:
                 line = line[line.find(']')+1:]
-                (a, v, t) = list(map(str.strip, line.split(',')[:3]))
+                (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
                 a = '%x'%(int(a,16),)
+                o = '%x'%(int(o[5:],16),)
                 t = t[1:-1]
-                self.scanresult_liststore.append([a, v, t, True])
+                self.scanresult_liststore.append([a, v, t, True, o, rt])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
