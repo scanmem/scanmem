@@ -72,6 +72,18 @@
 
 #define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
+/* try to determine the size of a pointer */
+#ifndef ULONG_MAX
+#warning ULONG_MAX is not defined!
+#endif
+#if ULONG_MAX == 4294967295UL
+#define POINTER_FMT "%8lx"
+#elif ULONG_MAX == 18446744073709551615UL
+#define POINTER_FMT "%12lx"
+#else
+#define POINTER_FMT "%12lx"
+#endif
+
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
@@ -383,18 +395,12 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 break;
             }
 
-/* try to determine the size of a pointer */
-#if ULONGMAX == 4294967295UL
-#define POINTER_FMT "%10p"
-#elif ULONGMAX == 18446744073709551615UL
-#define POINTER_FMT "%20p"
-#else
-#define POINTER_FMT "%20p"
-#endif
-
-            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            void *address = remote_address_of_nth_element(reading_swath_index,
+                reading_iterator /* ,MATCHES_AND_VALUES */);
+            unsigned long address_ul = (unsigned long)address;
+            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, address_ul, v);
         }
-	
+
         /* Go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
@@ -700,7 +706,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %c%c%c, %s\n",
+        fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %c%c%c, %s\n",
                 region->id, (unsigned long)region->start, region->size,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
