@@ -72,6 +72,18 @@
 
 #define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
+/* try to determine the size of a pointer */
+#ifndef ULONG_MAX
+#warning ULONG_MAX is not defined!
+#endif
+#if ULONG_MAX == 4294967295UL
+#define POINTER_FMT "%8lx"
+#elif ULONG_MAX == 18446744073709551615UL
+#define POINTER_FMT "%12lx"
+#else
+#define POINTER_FMT "%12lx"
+#endif
+
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
@@ -318,6 +330,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
     int buf_len = 128; /* will be realloc later if necessary */
+    element_t *np = NULL;
     char *v = malloc(buf_len);
     if (v == NULL)
     {
@@ -331,6 +344,9 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     if(!(vars->matches))
         return true;
+
+    if (vars->regions)
+        np = vars->regions->head;
 
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     int reading_iterator = 0;
@@ -383,18 +399,32 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 break;
             }
 
-/* try to determine the size of a pointer */
-#if ULONGMAX == 4294967295UL
-#define POINTER_FMT "%10p"
-#elif ULONGMAX == 18446744073709551615UL
-#define POINTER_FMT "%20p"
-#else
-#define POINTER_FMT "%20p"
-#endif
-
-            fprintf(stdout, "[%2u] "POINTER_FMT", %s\n", i++, remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */), v);
+            void *address = remote_address_of_nth_element(reading_swath_index,
+                reading_iterator /* ,MATCHES_AND_VALUES */);
+            unsigned long address_ul = (unsigned long)address;
+            int region_id = 99;
+            unsigned long match_off = 0;
+            const char *region_type = "??";
+            /* get region info belonging to the match -
+             * note: we assume the regions list and matches to be sorted
+             */
+            while (np) {
+                region_t *region = np->data;
+                unsigned long region_start = (unsigned long)region->start;
+                if (address_ul < region_start + region->size &&
+                  address_ul >= region_start) {
+                    region_id = region->id;
+                    match_off = address_ul - region->load_addr;
+                    region_type = region_type_names[region->type];
+                    break;
+                }
+                np = np->next;
+            }
+            fprintf(stdout, "[%2u] "POINTER_FMT", %2u + "POINTER_FMT
+                ", %5s, %s\n", i++, address_ul, region_id, match_off,
+                region_type, v);
         }
-	
+
         /* Go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
@@ -700,8 +730,10 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] %#10lx, %7lu bytes, %c%c%c, %s\n",
-                region->id, (unsigned long)region->start, region->size,
+        fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "
+                POINTER_FMT", %c%c%c, %s\n", region->id,
+                (unsigned long)region->start, region->size,
+                region_type_names[region->type], region->load_addr,
                 region->flags.read ? 'r' : '-',
                 region->flags.write ? 'w' : '-',
                 region->flags.exec ? 'x' : '-',

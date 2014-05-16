@@ -32,10 +32,23 @@ typedef enum {
     REGION_HEAP_STACK_EXECUTABLE_BSS       /* heap, stack, executable, bss */
 } region_scan_level_t;
 
+typedef enum {
+    REGION_TYPE_MISC,
+    REGION_TYPE_CODE,
+    REGION_TYPE_EXE,
+    REGION_TYPE_HEAP,
+    REGION_TYPE_STACK
+} region_type_t;
+
+#define REGION_TYPE_NAMES { "misc", "code", "exe", "heap", "stack" }
+extern const char *region_type_names[];
+
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {
     void *start;             /* start address. Hack: If HAVE_PROCMEM, this is actually an (unsigned long) offset into /proc/{pid}/mem */
     unsigned long size;              /* size */
+    region_type_t type;
+    unsigned long load_addr;         /* e.g. load address of the executable */
     struct __attribute__((packed)) {
         unsigned read:1;
         unsigned write:1;
