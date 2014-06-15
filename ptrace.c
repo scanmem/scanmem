@@ -522,9 +522,13 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
             address = r->start + offset;
 
-#if HAVE_PROCMEM           
+#if HAVE_PROCMEM
+#ifdef __arm__
+            /* Don't dereference as this causes an alignment issue on ARM */
+            memcpy(&data_value.int64_value, &data[offset], sizeof(int64_t));
+#else
             data_value.int64_value    = *((int64_t *)(&data[offset]));
-            
+#endif
             /* Mark which values this can't be */
             if (EXPECT((nread - offset < sizeof(int64_t)), false))
             {
