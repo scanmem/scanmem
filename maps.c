@@ -55,6 +55,7 @@ bool readmaps(pid_t target, list_t * regions)
 #define MAX_LINKBUF_SIZE 256
     char linkbuf[MAX_LINKBUF_SIZE], *exename = linkbuf;
     int linkbuf_size;
+    char binname[MAX_LINKBUF_SIZE];
 
     /* check if target is valid */
     if (target == 0)
@@ -102,11 +103,32 @@ bool readmaps(pid_t target, list_t * regions)
             /* parse each line */
             if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
                     &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
-
-                /* get load address for consecutive code regions (.text, .rodata, .data) */
+                /*
+                 * get the load address for regions of the same ELF binary
+                 *
+                 * When a dynamic loader loads an executable or a library into
+                 * memory, there is one region per binary segment created:
+                 * .text (r-x), .rodata (r--), .data (rw-) and .bss (rw-). The
+                 * 'x' permission of .text is used to detect the load address
+                 * (region start) and the end of the binary in memory. All
+                 * these regions have the same filename. The only exception
+                 * is the .bss region. Its filename is empty and it is
+                 * consecutive with the .data region. But the regions .bss and
+                 * .rodata may not be present with some binaries. This is why
+                 * we can't rely on other regions to be consecutive in memory.
+                 * There should never be more than these four regions.
+                 * The data regions use their variables relative to the load
+                 * address. So determining it makes sense as we can get the
+                 * variable address used within the binariy with it.
+                 * References:
+                 * http://en.wikipedia.org/wiki/Executable_and_Linkable_Format
+                 * http://wiki.osdev.org/ELF
+                 * http://lwn.net/Articles/531148/
+                 */
                 if (code_regions > 0) {
-                    if (exec == 'x' || (read == 'r' && write == 'w' &&
-                      start != prev_end) || code_regions >= 4) {
+                    if (exec == 'x' || (strncmp(filename, binname,
+                      MAX_LINKBUF_SIZE) != 0 && (filename[0] != '\0' ||
+                      start != prev_end)) || code_regions >= 4) {
                         code_regions = 0;
                         is_exe = false;
                     } else {
@@ -118,6 +140,7 @@ bool readmaps(pid_t target, list_t * regions)
                         code_regions++;
                         if (strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                             is_exe = true;
+                        strncpy(binname, filename, MAX_LINKBUF_SIZE - 1);
                     }
                     load_addr = start;
                 }
