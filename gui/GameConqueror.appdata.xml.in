@@ -2,7 +2,8 @@
 <!-- Copyright 2014 Igor Gnatenko <i.gnatenko.brain@gmail.com> -->
 <application>
   <id type="desktop">GameConqueror.desktop</id>
-  <licence>CC-BY-SA</licence>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0+</project_license>
   <_name>Game Conqueror</_name>
   <_summary>Game hacking tool. GUI front-end for scanmem.</_summary>
   <description>
@@ -22,8 +23,7 @@
   </ul>
   </description>
   <screenshots>
-    <screenshot type="default" width="800" height="600">http://scanmem.googlecode.com/svn/wiki/GameConqueror%200.10.png</screenshot>
-    <screenshot width="800" height="600">http://scanmem.googlecode.com/svn/wiki/MemoryEditor.png</screenshot>
+    <screenshot type="default" width="627" height="457">https://raw.githubusercontent.com/coolwanglu/scanmem/master/gui/screenshot.png</screenshot>
   </screenshots>
   <url type="homepage">http://code.google.com/p/scanmem/</url>
   <updatecontact>i.gnatenko.brain@gmail.com</updatecontact>
