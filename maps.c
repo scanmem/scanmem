@@ -140,7 +140,8 @@ bool readmaps(pid_t target, list_t * regions)
                         code_regions++;
                         if (strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                             is_exe = true;
-                        strncpy(binname, filename, MAX_LINKBUF_SIZE - 1);
+                        strncpy(binname, filename, MAX_LINKBUF_SIZE);
+                        binname[MAX_LINKBUF_SIZE - 1] = '\0';  /* just to be sure */
                     }
                     load_addr = start;
                 }
