@@ -59,6 +59,7 @@
 #endif
 
 #include "value.h"
+#include "endianness.h"
 #include "scanroutines.h"
 #include "scanmem.h"
 #include "show_message.h"
@@ -314,6 +315,8 @@ bool checkmatches(globals_t * vars,
             truncval_to_flags(&old_val, flags);
             truncval_to_flags(&data_value, flags);
 
+            fix_endianness(vars, &data_value);
+
             memset(&checkflags, 0, sizeof(checkflags));
 
             match_length = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags, address);
@@ -551,6 +554,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                 break;
             }
 #endif
+
+            fix_endianness(vars, &data_value);
 
             memset(&checkflags, 0, sizeof(checkflags));
 

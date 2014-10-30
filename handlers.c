@@ -47,6 +47,7 @@
 #include <readline/readline.h>
 
 #include "commands.h"
+#include "endianness.h"
 #include "handlers.h"
 #include "interrupt.h"
 #include "show_message.h"
@@ -254,6 +255,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value); 
 
                         /* set the value specified */
+                        fix_endianness(vars, &v);
                         if (setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
@@ -287,6 +289,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
                         show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
 
+                        fix_endianness(vars, &v);
                         if (setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
@@ -1497,6 +1500,9 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
             ret = false;
             goto retl;
         }
+        if (1 < data_width && vars->options.reverse_endianness) {
+            swap_bytes_var(buf, data_width);
+        }
         break;
     case 1: // bytearray
         ; /* cheat gcc */
@@ -1623,6 +1629,20 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         else
         {
             show_error("bad value for dump_with_ascii, see `help option`.\n");
+            return false;
+        }
+    }
+    else if (strcasecmp(argv[1], "endianness") == 0)
+    {
+        // data is host endian: don't swap
+        if (strcmp(argv[2], "0") == 0) {vars->options.reverse_endianness = 0; }
+        // data is little endian: swap if host is big endian
+        else if (strcmp(argv[2], "1") == 0) {vars->options.reverse_endianness = big_endian; }
+        // data is big endian: swap if host is little endian
+        else if (strcmp(argv[2], "2") == 0) {vars->options.reverse_endianness = !big_endian; }
+        else
+        {
+            show_error("bad value for endianness, see `help option`.\n");
             return false;
         }
     }
