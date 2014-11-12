@@ -297,6 +297,14 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "\t0:\tdisabled\n" \
                  "\t1:\tenabled\n" \
                  "\n" \
+                 "endianness\tendianness of data (used by: set, write and comparisons)\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\n" \
+                 "\tpossible values:\n" \
+                 "\t0:\thost endian\n" \
+                 "\t1:\tlittle endian\n" \
+                 "\t2:\tbig endian\n" \
+                 "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
 
