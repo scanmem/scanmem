@@ -164,6 +164,9 @@ int main(int argc, char **argv)
         }
 
         free(line);
+
+        fflush(stdout);
+        fflush(stderr);
     }
 
   end:

@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = test
+SUBDIRS = po
 if ENABLE_GUI
   SUBDIRS += gui
 endif
@@ -11,6 +11,7 @@ lib_LTLIBRARIES = libscanmem.la
 
 libscanmem_la_SOURCES = commands.h \
     commands.c \
+    endianness.c \
     ptrace.c \
     menu.c \
     handlers.h \

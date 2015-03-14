@@ -27,7 +27,7 @@ from gi.repository import Gtk
 # else msg is error message
 def check_scan_command (data_type, cmd, is_first_scan):
     if cmd == '':
-        raise ValueError('No value provided')
+        raise ValueError(_('No value provided'))
     if data_type == 'string':
         return '" ' + cmd
     elif data_type == 'bytearray':
@@ -37,13 +37,13 @@ def check_scan_command (data_type, cmd, is_first_scan):
             if byte.strip() == '':
                 continue
             if len(byte) != 2:
-                raise ValueError('Bad value: %s' % (byte, ))
+                raise ValueError(_('Bad value: %s') % (byte, ))
             if byte == '??':
                 continue
             try:
-               _ = int(byte,16)
+               _tmp = int(byte,16)
             except:
-                raise ValueError('Bad value: %s' % (byte, ))
+                raise ValueError(_('Bad value: %s') % (byte, ))
         return cmd
     else: # for numbers
         cmd = cmd.strip()
@@ -56,25 +56,30 @@ def check_scan_command (data_type, cmd, is_first_scan):
             return cmd
 
         if is_first_scan and (is_operator_cmd or cmd[:2] in ['+ ', '- ']):
-            raise ValueError('Command \"%s\" is not valid for the first scan' % (cmd[:2],))
+            raise ValueError(_('Command \"%s\" is not valid for the first scan') % (cmd[:2],))
 
         # evaluating the command
         if cmd[:2] in ['+ ', '- ', '> ', '< ']:
-            num = eval_operand(cmd[2:])
-            cmd = cmd[:2] + str(num)
+            num = cmd[2:]
+            cmd = cmd[:2]
+        elif cmd[:3] ==  '!= ':
+            num = cmd[3:]
+            cmd = cmd[:3]
         else:
-            num = eval_operand(cmd)
-            cmd = str(num)
+            num = cmd
+            cmd = ''
+        num = eval_operand(num)
+        cmd += str(num)
 
         if data_type.startswith('int'):
             if not (isinstance(num, int) or isinstance(num, long)):
-                raise ValueError('%s is not an integer' % (num,))
+                raise ValueError(_('%s is not an integer') % (num,))
             if data_type == 'int':
                 width = 64
             else:
                 width = int(data_type[len('int'):])
             if num > ((1<<width)-1) or num < -(1<<(width-1)):
-                raise ValueError('%s is too bulky for %s' % (num, data_type))
+                raise ValueError(_('%s is too bulky for %s') % (num, data_type))
 
         # finally
         return cmd
@@ -88,7 +93,7 @@ def eval_operand(s):
     except:
         pass
 
-    raise ValueError('Bad value: %s' % (s,))
+    raise ValueError(_('Bad value: %s') % (s,))
 
 # convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
 def build_simple_str_liststore(l):
@@ -114,7 +119,7 @@ def combobox_set_active_item(combobox, name, col=0):
             break
         iter = model.iter_next(iter)
     if iter is None:
-        raise ValueError('Cannot locate the item for %s'%(name,))
+        raise ValueError(_('Cannot locate item: %s')%(name,))
     combobox.set_active_iter(iter)
 
 # append a column to `treeview`, with given `title`

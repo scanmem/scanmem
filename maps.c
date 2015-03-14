@@ -40,16 +40,22 @@
 #include "scanmem.h"
 #include "show_message.h"
 
+const char *region_type_names[] = REGION_TYPE_NAMES;
+
 bool readmaps(pid_t target, list_t * regions)
 {
     FILE *maps;
     char name[128], *line = NULL;
-    char exename[128];
+    char exelink[128];
     size_t len = 0;
+    unsigned int code_regions = 0;
+    bool is_exe = false;
+    unsigned long prev_end = 0, load_addr = 0;
 
 #define MAX_LINKBUF_SIZE 256
-    char linkbuf[MAX_LINKBUF_SIZE];
+    char linkbuf[MAX_LINKBUF_SIZE], *exename = linkbuf;
     int linkbuf_size;
+    char binname[MAX_LINKBUF_SIZE];
 
     /* check if target is valid */
     if (target == 0)
@@ -66,12 +72,24 @@ bool readmaps(pid_t target, list_t * regions)
 
         show_info("maps file located at %s opened.\n", name);
 
+        /* get executable name */
+        snprintf(exelink, sizeof(exelink), "/proc/%u/exe", target);
+        if ((linkbuf_size = readlink(exelink, exename, MAX_LINKBUF_SIZE)) > 0)
+        {
+            exename[linkbuf_size] = 0;
+        } else {
+            /* readlink may fail for special processes, just treat as empty in
+               order not to miss those regions */
+            exename[0] = 0;
+        }
+
         /* read every line of the maps file */
         while (getline(&line, &len, maps) != -1) {
             unsigned long start, end;
             region_t *map = NULL;
             char read, write, exec, cow, *filename;
             int offset, dev_major, dev_minor, inode;
+            region_type_t type = REGION_TYPE_MISC;
 
             /* slight overallocation */
             if ((filename = alloca(len)) == NULL) {
@@ -85,12 +103,65 @@ bool readmaps(pid_t target, list_t * regions)
             /* parse each line */
             if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
                     &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
+                /*
+                 * get the load address for regions of the same ELF binary
+                 *
+                 * When a dynamic loader loads an executable or a library into
+                 * memory, there is one region per binary segment created:
+                 * .text (r-x), .rodata (r--), .data (rw-) and .bss (rw-). The
+                 * 'x' permission of .text is used to detect the load address
+                 * (region start) and the end of the binary in memory. All
+                 * these regions have the same filename. The only exception
+                 * is the .bss region. Its filename is empty and it is
+                 * consecutive with the .data region. But the regions .bss and
+                 * .rodata may not be present with some binaries. This is why
+                 * we can't rely on other regions to be consecutive in memory.
+                 * There should never be more than these four regions.
+                 * The data regions use their variables relative to the load
+                 * address. So determining it makes sense as we can get the
+                 * variable address used within the binariy with it.
+                 * References:
+                 * http://en.wikipedia.org/wiki/Executable_and_Linkable_Format
+                 * http://wiki.osdev.org/ELF
+                 * http://lwn.net/Articles/531148/
+                 */
+                if (code_regions > 0) {
+                    if (exec == 'x' || (strncmp(filename, binname,
+                      MAX_LINKBUF_SIZE) != 0 && (filename[0] != '\0' ||
+                      start != prev_end)) || code_regions >= 4) {
+                        code_regions = 0;
+                        is_exe = false;
+                    } else {
+                        code_regions++;
+                    }
+                }
+                if (code_regions == 0) {
+                    if (exec == 'x' && filename[0] != '\0') {
+                        code_regions++;
+                        if (strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
+                            is_exe = true;
+                        strncpy(binname, filename, MAX_LINKBUF_SIZE);
+                        binname[MAX_LINKBUF_SIZE - 1] = '\0';  /* just to be sure */
+                    }
+                    load_addr = start;
+                }
+                prev_end = end;
 
                 /* must have permissions to read and write, and be non-zero size */
                 if ((write == 'w') && (read == 'r') && ((end - start) > 0)) {
-                    
-                    /* determine if this region is useful */
                     bool useful = false;
+
+                    /* determine region type */
+                    if (is_exe)
+                        type = REGION_TYPE_EXE;
+                    else if (code_regions > 0)
+                        type = REGION_TYPE_CODE;
+                    else if (!strcmp(filename, "[heap]"))
+                        type = REGION_TYPE_HEAP;
+                    else if (!strcmp(filename, "[stack]"))
+                        type = REGION_TYPE_STACK;
+
+                    /* determine if this region is useful */
                     switch (globals.options.region_scan_level)
                     {
                         case REGION_ALL:
@@ -104,22 +175,14 @@ bool readmaps(pid_t target, list_t * regions)
                             } 
                             /* fall through */
                         case REGION_HEAP_STACK_EXECUTABLE:
-                            if ((!strcmp(filename, "[heap]")) || (!strcmp(filename, "[stack]")))
+                            if (type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK)
                             {
                                 useful = true;
                                 break;
                             }
                             /* test if the region is mapped to the executable */
-                            snprintf(exename, sizeof(exename), "/proc/%u/exe", target);
-                            if((linkbuf_size = readlink(exename, linkbuf, MAX_LINKBUF_SIZE)) > 0)
-                            {
-                                linkbuf[linkbuf_size] = 0;
-                            }
-                            else /* readlink may fail for special processes, just treat as empty in order not to miss those regions */
-                            {
-                                linkbuf[0] = 0;
-                            }
-                            if (strncmp(filename, linkbuf, MAX_LINKBUF_SIZE) == 0)
+                            if (type == REGION_TYPE_EXE ||
+                              strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                                 useful = true;
                         break;
                 }
@@ -138,6 +201,8 @@ bool readmaps(pid_t target, list_t * regions)
                 map->flags.write = true;
                 map->start = (void *) start;
                 map->size = (unsigned long) (end - start);
+                map->type = type;
+                map->load_addr = load_addr;
 
                 /* setup other permissions */
                 map->flags.exec = (exec == 'x');

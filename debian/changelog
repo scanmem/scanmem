@@ -1,3 +1,21 @@
+scanmem (0.14-1~git201305300049rd2c52-0ubuntu1) raring; urgency=low
+
+  * Upload for multiple distribution
+
+ -- WANG Lu <coolwanglu@gmail.com>  Thu, 30 May 2013 00:49:30 +0800
+
+scanmem (0.14-1~git201305290323rd2c52-0ubuntu1) raring; urgency=low
+
+  * Fix missing libscanmem.so 
+
+ -- WANG Lu <coolwanglu@gmail.com>  Tue, 28 May 2013 23:00:30 +0800
+
+scanmem (0.14-1~git201304260016ra0487-0ubuntu1) quantal; urgency=low
+
+  * Install libscanmem.so
+
+ -- WANG Lu <coolwanglu@gmail.com>  Fri, 26 Apr 2013 00:16:24 +0800
+
 scanmem (0.14-1~git20130426r7917a-0ubuntu1) quantal; urgency=low
 
   * Bump version

@@ -1,11 +1,8 @@
 Current
 ============
-* ask for root privilege
-* error code in show_messages
 * option: whether to search in readonly regions
 
 * optional float rounding method, eg floor(), ceil(), round(), rint(), etc?
-* performance
 * speedhack
 * bytearray flag check (truncval_to_flags, checkmatches, update command for bytearray&string)
 
@@ -13,19 +10,7 @@ Future
 ======
 * use PT_IO on freebsd, instead of PT_READ/WRITE_D
 * in target_memory_info_array.c, need check return value of allocate_enough_to_reach everywhere
-* save state to a file, so you can apply it to a different pid.
 * search for values in files? (eg saved state)
 * macro support
-* read symbol table, and print its name if we have a match.
-* support more esoteric number formats, such as bcd, ascii, etc.
-* pagination
-* some sort of regression testing, probably using dejagnu.
-    - test target that mmaps testfile, then dregions the rest using dejagnu
-    - then can test searching using tests.
 * automatically support zero and one based values.
-* show log
-    -> ring buffer of 512 debug messages, that may help on debug
-    -> eg push("a region was removed as it appears to have been umapped");
-    -> show log
-        - [xx:yy] a region.."
 * dont read the whole region at a time, read max 8M or something.

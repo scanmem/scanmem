@@ -2,7 +2,7 @@
 """
     GameConquerorBackend: communication with scanmem
     
-    Copyright (C) 2010,2011 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -35,6 +35,7 @@ class GameConquerorBackend():
         'get_scan_progress' : (ctypes.c_double, ),
         'reset_scan_progress' : (None,)
     }
+
     def __init__(self):
         self.lib = ctypes.CDLL('libscanmem.so')
         self.init_lib_functions()
@@ -57,7 +58,6 @@ class GameConquerorBackend():
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
                 self.lib.backend_exec_cmd(ctypes.c_char_p(cmd))
-                sys.stdout.flush()
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
@@ -77,12 +77,4 @@ class GameConquerorBackend():
 
     def reset_scan_progress(self):
         self.lib.reset_scan_progress()
-
-    # for test only
-    def run(self):
-        while True:
-            l = sys.stdin.readline()
-            self.backend.stdin.write(l)
-
-
 
