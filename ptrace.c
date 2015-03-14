@@ -59,6 +59,7 @@
 #endif
 
 #include "value.h"
+#include "endianness.h"
 #include "scanroutines.h"
 #include "scanmem.h"
 #include "show_message.h"
@@ -108,6 +109,7 @@ bool detach(pid_t target)
     return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
 }
 
+
 /*
  * peekdata - caches overlapping ptrace reads to improve performance.
  * 
@@ -134,8 +136,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
             (unsigned long) (reqaddr + sizeof(int64_t) - peekbuf.base) <= peekbuf.size) {
-
-        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        memcpy(&result->int64_value, &peekbuf.cache[reqaddr - peekbuf.base], sizeof(result->int64_value));
         return true;
     } else if (pid == peekbuf.pid &&
             reqaddr >= peekbuf.base &&
@@ -194,11 +195,11 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
                     /* Cache it with the appropriate offset */
                     if(peekbuf.size >= j)
                     {
-                        *((long *)&peekbuf.cache[peekbuf.size - j]) = ptraced_long;
+                        memcpy(&peekbuf.cache[peekbuf.size - j], &ptraced_long, sizeof(long));
                     }
                     else
                     {
-                        *((long *)&peekbuf.cache[0]) = ptraced_long;
+                        memcpy(&peekbuf.cache[0], &ptraced_long, sizeof(long));
                         peekbuf.base -= j;
                     }
                     peekbuf.size += sizeof(long) - j;
@@ -214,7 +215,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
         }
         
         /* Otherwise, ptrace() worked - cache the data, increase the size */
-        *((long *)&peekbuf.cache[peekbuf.size]) = ptraced_long;
+        memcpy(&peekbuf.cache[peekbuf.size], &ptraced_long, sizeof(long));
         peekbuf.size += sizeof(long);
         last_address_gathered = ptrace_address + sizeof(long);
     }
@@ -225,7 +226,7 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     if (reqaddr + sizeof(int64_t) <= last_address_gathered)
     {
         /* The values are fine - read away */
-        result->int64_value =    *((int64_t *)&peekbuf.cache[reqaddr - peekbuf.base]);  /*lint !e826 */
+        memcpy(&result->int64_value, &peekbuf.cache[reqaddr - peekbuf.base], sizeof(result->int64_value));
     }
     else
     {
@@ -313,6 +314,8 @@ bool checkmatches(globals_t * vars,
             /* these are not harmful for bytearray routine, since it will ignore flags of new_value & old_value */
             truncval_to_flags(&old_val, flags);
             truncval_to_flags(&data_value, flags);
+
+            fix_endianness(vars, &data_value);
 
             memset(&checkflags, 0, sizeof(checkflags));
 
@@ -506,7 +509,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 #endif
         /* print a progress meter so user knows we havent crashed */
         /* cannot use show_info here because it'll append a '\n' */
-        show_info("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
+        show_user("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
@@ -522,9 +525,11 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
             address = r->start + offset;
 
-#if HAVE_PROCMEM           
-            data_value.int64_value    = *((int64_t *)(&data[offset]));
-            
+#if HAVE_PROCMEM
+            /* Don't dereference as this causes an alignment issue e.g. on ARM.
+               GCC replaces memcpy() with dereferencing where possible. */
+            memcpy(&data_value.int64_value, &data[offset], sizeof(int64_t));
+
             /* Mark which values this can't be */
             if (EXPECT((nread - offset < sizeof(int64_t)), false))
             {
@@ -547,6 +552,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
                 break;
             }
 #endif
+
+            fix_endianness(vars, &data_value);
 
             memset(&checkflags, 0, sizeof(checkflags));
 

@@ -162,10 +162,11 @@ void set_backend()
     globals.options.backend = 1;
 }
 
-/* the front end does not know our globals */
 void backend_exec_cmd(const char * commandline)
 {
     execcommand(&globals, commandline);
+    fflush(stdout);
+    fflush(stderr);
 }
 
 long get_num_matches()

@@ -73,6 +73,7 @@ typedef struct {
         region_scan_level_t region_scan_level;
         unsigned short detect_reverse_change;
         unsigned short dump_with_ascii;
+        unsigned short reverse_endianness;
     } options;
 } globals_t;
 

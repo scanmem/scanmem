@@ -6,9 +6,10 @@ Game Conqueror is a graphical game cheating tool under Linux, as a frontend of s
 Requirements
 ===========
 scanmem (latest version)
-Python (2.x)
+Python (2.x / 3.x)
 PyGObject
 GTK+ 3
+policykit
 
 
 Usage
@@ -22,9 +23,6 @@ You are supposed to be familiar with cheating tools like CheatEngine
   * Results will be displayed in the left list if there are not too many 
 - Add a candidate address to the list below by double-click on it or use the context-menu
 - There you can edit description, value, and lock it.
-
-!! Currently only '=' locking is supported, which means the '>' and '<' flags are useless
-!! Pay attention to the output of GameConqueror, you'll see error messages from scanmem -- so GameConqueror is recommended to be executed in a shell
 
 Author
 ======

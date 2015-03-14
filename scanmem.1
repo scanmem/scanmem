@@ -165,6 +165,12 @@ As for
 .B >
 but indicates that the target variable has not changed since last scan.
 
+.B !=
+
+As for
+.B >
+but indicates that the target variable has changed since last scan.
+
 .B snapshot
 
 Save a snapshot of existing program state, for use with
@@ -172,8 +178,10 @@ Save a snapshot of existing program state, for use with
 ,
 .B <
 ,
-and 
 .B =
+,
+and 
+.B !=
 , although other commands can still be used.
 
 .B list

@@ -1,4 +1,4 @@
-# scanmem & Gameconqueror
+# ![](https://raw.github.com/coolwanglu/scanmem/master/gui/GameConqueror_72x72.png)scanmem & Gameconqueror
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
@@ -6,6 +6,9 @@ the process, and the value of the variable at several different times.
 
 After several scans of the process, scanmem isolates the position of the
 variable and allows you to modify it's value.
+
+GameConqueror is a GUI of scanmem and more than that, it provides flexible syntax for searching,
+multiple memory locking and a memory editor.
 
 ## Requirements
 
@@ -41,21 +44,14 @@ GameConqueror is a GUI front-end for scanmem, providing more features, such as:
 See gui/README for more detail.
 
 
-## Known Issues
+## License: 
 
-* some hardened systems have unusable maps files, where all entries are zeroed.
-* the snapshot command uses too much memory on large processes.
-* performance is currently very poor.
-
-
-Author: Tavis Ormandy <taviso(a)sdf.lonestar.org>
-        Eli   Dupree  <elidupree(a)charter.net>
-        WANG  Lu      <coolwanglu(a)gmail.com>
-
-License: GPLv3
+GPLv3
 
 ## Resources
 
 Official site: http://code.google.com/p/scanmem
 
 Development: https://github.com/coolwanglu/scanmem
+
+Bug reporting: http://code.google.com/p/scanmem/issues/list
