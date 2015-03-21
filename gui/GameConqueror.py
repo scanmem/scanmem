@@ -905,6 +905,7 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
+                line = str(line)
                 line = line[line.find(']')+1:]
                 (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
                 a = '%x'%(int(a,16),)
@@ -933,9 +934,9 @@ class GameConqueror():
             rows = self.get_visible_rows(self.scanresult_tv)
             for i in rows:
                 row = self.scanresult_liststore[i]
-                addr, cur_value, scanmem_type, valid = row
+                addr, cur_value, scanmem_type, valid, off, rtype = row
                 if valid:
-                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.split(' ', 1)[0]], cur_value)
                     if new_value is not None:
                         row[1] = str(new_value)
                     else:
