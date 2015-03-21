@@ -88,7 +88,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
 def eval_operand(s):
     try:
         v = eval(s)
-        if isinstance(v, (int,long,float)):
+        if isinstance(v, int) or isinstance(v, long) or isinstance(v, float):
             return v
     except:
         pass
