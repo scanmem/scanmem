@@ -936,7 +936,7 @@ class GameConqueror():
                 row = self.scanresult_liststore[i]
                 addr, cur_value, scanmem_type, valid, off, rtype = row
                 if valid:
-                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.strip()], cur_value)
+                    new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.split(' ', 1)[0]], cur_value)
                     if new_value is not None:
                         row[1] = str(new_value)
                     else:
