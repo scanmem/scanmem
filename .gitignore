@@ -20,6 +20,12 @@ ltmain.sh
 scanmem
 stamp-h1
 tags
+debian/files
+debian/*.debhelper
+debian/*.debhelper.log
+debian/*.substvars
+debian/gameconqueror
+debian/tmp
 gui/GameConqueror.appdata.xml
 gui/GameConqueror.desktop
 gui/consts.py
@@ -27,6 +33,7 @@ gui/gameconqueror
 gui/org.freedesktop.gameconqueror.policy
 gui/org.freedesktop.gameconqueror.policy.in
 po/.intltool-merge-cache
+po/GameConqueror.pot
 po/Makefile.in.in
 po/POTFILES
 po/ja.gmo
