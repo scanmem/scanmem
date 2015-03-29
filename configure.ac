@@ -33,6 +33,8 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 
+AC_C_BIGENDIAN
+
 
 # check if termcap is present, sometimes required by readline
 AC_CHECK_LIB([termcap], [tgetent], [], [])
