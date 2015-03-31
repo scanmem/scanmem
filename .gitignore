@@ -5,7 +5,7 @@
 .libs
 m4
 autom4te.cache
-config.h*
+/config.h*
 configure
 Makefile
 Makefile.in

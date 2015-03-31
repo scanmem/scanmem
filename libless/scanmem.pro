@@ -7,6 +7,7 @@ CONFIG += thread
 CONFIG += debug
 
 HEADERS += \
+  libreplacements.h \
   commands.h \
   interrupt.h \
   maps.h \
@@ -21,6 +22,7 @@ HEADERS += \
   value.h
 
 SOURCES += \
+  libreplacements.c \
   commands.c \
   list.c \
   menu.c \
