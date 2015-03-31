@@ -24,10 +24,14 @@
 
 #include "scanmem.h"
 #include "value.h"
+#include "config.h"
 
-static const union { short x; char y; } endiantest = { .x = 0xabcd };
-// True iff host is big endian
-static const bool big_endian = endiantest.y == 0xab;
+/* True if host is big endian */
+#ifdef WORDS_BIGENDIAN
+static const bool big_endian = true;
+#else
+static const bool big_endian = false;
+#endif
 
 void fix_endianness(globals_t *vars, value_t *data_value);
 void swap_bytes_var(void *p, size_t num);
