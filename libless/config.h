@@ -30,11 +30,11 @@
 
 /* Define to 1 if you have the `readline' library (-lreadline). */
 // Funmungus: libless
-// #define HAVE_LIBREADLINE 1
+#define HAVE_LIBREADLINE 0
 
 /* Define to 1 if you have the `termcap' library (-ltermcap). */
 // Funmungus: libless
-// #define HAVE_LIBTERMCAP 1
+#define HAVE_LIBTERMCAP 0
 
 /* Define to 1 if you have the <limits.h> header file. */
 #define HAVE_LIMITS_H 1
@@ -118,7 +118,7 @@
 #define PACKAGE_NAME "scanmem"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "scanmem 0.14"
+#define PACKAGE_STRING "scanmem 0.15"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "scanmem"
@@ -127,7 +127,7 @@
 #define PACKAGE_URL "http://github.com/scanmem/scanmem"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.14"
+#define PACKAGE_VERSION "0.15"
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -163,7 +163,7 @@
 
 
 /* Version number of package */
-#define VERSION "0.14"
+#define VERSION "0.15"
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE
