@@ -20,6 +20,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <strings.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "libreplacements.h"
 
@@ -35,8 +38,6 @@ rl_completion_matches (text, entry_function)
      const char *text;
      rl_compentry_func_t *entry_function;
 {
-  register int i;
-
   /* Number of slots in match_list. */
   int match_list_size;
 
@@ -54,15 +55,15 @@ rl_completion_matches (text, entry_function)
   match_list = (char **)xmalloc ((match_list_size + 1) * sizeof (char *));
   match_list[1] = (char *)NULL;
 
-  while (string = (*entry_function) (text, matches))
+  while ((string = (*entry_function) (text, matches)))
     {
-      if (0)
+      if (0) // RL_SIG_RECEIVED
 	{
 	  xfree (match_list);
 	  match_list = 0;
 	  match_list_size = 0;
 	  matches = 0;
-	  RL_CHECK_SIGNALS ();
+//	  RL_CHECK_SIGNALS ();
 	}
 
       if (matches + 1 >= match_list_size)
@@ -88,16 +89,27 @@ rl_completion_matches (text, entry_function)
   return (match_list);
 }
 
+int promptLen;
 char *
 readline(prompt)
      const char *prompt;
 {
-  return NULL;
+  printf("%s", prompt);
+  fflush(stdout); /* otherwise front-end may not receive this */
+  char *line = NULL; /* let getline malloc it */
+  size_t n;
+  ssize_t bytes_read = getline(&line, &n, stdin);
+  int success = (bytes_read > 0);
+  if (success)
+    line[bytes_read-1] = '\0'; /* remove the trialing newline */
+
+  return line;
 }
 
 void add_history(line)
      const char *line;
-{
+{ // Not using history yet.
+  (void) line;
 }
 
 // referenced functions
