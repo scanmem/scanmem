@@ -118,7 +118,7 @@
 #define PACKAGE_NAME "scanmem"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "scanmem 0.15"
+#define PACKAGE_STRING "scanmem 0.14"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "scanmem"
@@ -127,7 +127,7 @@
 #define PACKAGE_URL "http://github.com/scanmem/scanmem"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.15"
+#define PACKAGE_VERSION "0.14"
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
@@ -163,7 +163,7 @@
 
 
 /* Version number of package */
-#define VERSION "0.15"
+#define VERSION "0.14"
 
 /* Enable large inode numbers on Mac OS X 10.5.  */
 #ifndef _DARWIN_USE_64_BIT_INODE

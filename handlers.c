@@ -44,7 +44,7 @@
 #include <errno.h>
 #include <inttypes.h>
 
-#include <readline/readline.h>
+//#include <readline/readline.h>
 
 #include "commands.h"
 #include "endianness.h"
