@@ -45,6 +45,8 @@
 #include <inttypes.h>
 
 //#include <readline/readline.h>
+// isprint found in ctype, to not rely on readline
+#include <ctype.h>
 
 #include "commands.h"
 #include "endianness.h"
