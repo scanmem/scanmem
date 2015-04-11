@@ -1,5 +1,5 @@
 # $Id: configure.ac,v 1.1 2007/06/04 22:51:13 taviso Exp $
-AC_INIT([scanmem],[0.14],[http://code.google.com/p/scanmem/])
+AC_INIT([scanmem],[0.15],[http://code.google.com/p/scanmem/])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
 AC_CONFIG_SRCDIR([main.c])
@@ -33,6 +33,8 @@ AC_TYPE_PID_T
 AC_TYPE_SIZE_T
 AC_TYPE_SSIZE_T
 
+AC_C_BIGENDIAN
+
 
 # check if termcap is present, sometimes required by readline
 AC_CHECK_LIB([termcap], [tgetent], [], [
@@ -45,7 +47,6 @@ AC_CHECK_LIB([readline], [readline], [
     echo "libreadline has been found. It will be linked."
     echo "History and completion will be available."
     enable_libless=false
-    AC_DEFINE(HAVE_LIBREADLINE, [1], [Define to 1 if you have the readline library (-lreadline)])
 ], [
     echo "--libreplacements--"
     echo "libreadline could not be found."
@@ -53,7 +54,6 @@ AC_CHECK_LIB([readline], [readline], [
     echo "Substitute functions will be used, with less features."
     echo "----"
     enable_libless=true
-    AC_DEFINE(HAVE_LIBREADLINE, [0], [Define to 1 if you have the readline library (-lreadline)])
 ])
 
 # also need to check if the file is zero'ed (some hardened systems)

@@ -88,7 +88,7 @@ void valcpy(value_t * dst, const value_t * src)
     return;
 }
 
-/* dst.falgs must be set beforehand */
+/* dst.flags must be set beforehand */
 void uservalue2value(value_t *dst, const uservalue_t *src)
 {
     if(dst->flags.u8b) set_u8b(dst, get_u8b(src));
@@ -154,6 +154,7 @@ void valnowidth(value_t * val)
     return;
 }
 
+/* array must have been allocated, of size at least argc */
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t *val)
 {
     int i,j;
