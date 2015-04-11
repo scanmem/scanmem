@@ -42,20 +42,6 @@ AC_CHECK_LIB([termcap], [tgetent], [], [
     echo "libreadline may not work properly."
 ])
 
-# check for libreadline
-AC_CHECK_LIB([readline], [readline], [
-    echo "libreadline has been found. It will be linked."
-    echo "History and completion will be available."
-    enable_libless=false
-], [
-    echo "--libreplacements--"
-    echo "libreadline could not be found."
-    echo "The libreadline-dev package may be required for history and completion."
-    echo "Substitute functions will be used, with less features."
-    echo "----"
-    enable_libless=true
-])
-
 # also need to check if the file is zero'ed (some hardened systems)
 AC_CHECK_FILE([/proc/self/maps], [
     AC_DEFINE(HAVE_PROCMAPS, [1], [Enable /proc/self/maps assumption])
@@ -149,12 +135,17 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
 
 AC_ARG_ENABLE([libless], [AS_HELP_STRING([--enable-libless],
                             [enable bypassing libreadline, with less features])],
-                 [echo "Bypassing readline library (--enable-libless=true)"
-		 enable_libless=true
-		 AC_DEFINE(HAVE_LIBREADLINE, [0], [Define to 1 if you have the readline library (-lreadline)])
+                 [enable_libless=true
+		 echo "Bypassing readline library (--enable-libless)."
+		 AC_DEFINE(HAVE_LIBREADLINE, [0], [Define to 1 if you have the 'readline' library (-lreadline)])
 		 ],
-		 [echo "Using readline library, if available (--enable-libless=false)."
-		 enable_libless=false
+		 [enable_libless=false
+		 echo "Using readline library, if available."
+		 AC_CHECK_LIB([readline], [readline], [], [
+			 echo "libreadline could not be found, which is required to continue."
+			 echo "The libreadline-dev package may be required."
+			 exit 1
+		 	 ])
 		 ])
 
 AM_CONDITIONAL([ENABLE_GUI], [test x$enable_gui = xtrue])
