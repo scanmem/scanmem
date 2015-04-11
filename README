@@ -25,7 +25,12 @@ To build with gui:
     ./configure --prefix=/usr --enable-gui && make    
     sudo make install
 
-To build without gui:
+To build without readline features:
+
+    ./configure --prefix=/usr --enable-libless && make    
+    sudo make install
+
+To build without gui, and with readline features:
 
     ./configure --prefix=/usr && make
     sudo make install
