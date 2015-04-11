@@ -40,8 +40,4 @@ po/POTFILES
 po/ja.gmo
 po/ru.gmo
 po/stamp-it
-# libless development
-*.pro.user
-libless/scanmem
-libless/Makefile
 
