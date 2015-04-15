@@ -31,7 +31,12 @@ libscanmem_la_SOURCES = commands.h \
     target_memory_info_array.h \
     target_memory_info_array.c \
     value.h \
-    value.c 
+    value.c
+
+if ENABLE_LIBLESS
+  libscanmem_la_SOURCES += libreplacements.h \
+      libreplacements.c
+endif 
 
 libscanmem_la_LDFLAGS = -version-info 1:0:0
 
