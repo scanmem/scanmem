@@ -44,7 +44,12 @@
 #include <errno.h>
 #include <inttypes.h>
 
+// isprint without readline is in ctype
+#if defined (HAVE_LIBREADLINE) && (HAVE_LIBREADLINE != 0)
 #include <readline/readline.h>
+#else
+#include <ctype.h>
+#endif
 
 #include "commands.h"
 #include "endianness.h"

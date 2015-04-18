@@ -32,8 +32,12 @@
 #include <string.h>
 #include <stdbool.h>
 
+#if defined (HAVE_LIBREADLINE) && (HAVE_LIBREADLINE != 0)
 #include <readline/readline.h>
 #include <readline/history.h>
+#else
+#include "libreplacements.h"
+#endif
 
 #include "scanmem.h"
 #include "commands.h"

@@ -35,7 +35,9 @@
 #include <stdbool.h>
 #include <ctype.h>
 
+#if defined (HAVE_LIBREADLINE) && (HAVE_LIBREADLINE != 0)
 #include <readline/readline.h>
+#endif
 
 #include "commands.h"
 #include "show_message.h"
