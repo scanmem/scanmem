@@ -43,8 +43,7 @@
 #include <limits.h>            /* to determine the word width */
 #include <errno.h>
 #include <inttypes.h>
-
-#include <readline/readline.h>
+#include <ctype.h>
 
 #include "commands.h"
 #include "endianness.h"

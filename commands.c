@@ -35,8 +35,6 @@
 #include <stdbool.h>
 #include <ctype.h>
 
-#include <readline/readline.h>
-
 #include "commands.h"
 #include "show_message.h"
 
