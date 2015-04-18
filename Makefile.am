@@ -33,6 +33,11 @@ libscanmem_la_SOURCES = commands.h \
     value.h \
     value.c 
 
+if ENABLE_LIBLESS
+  libscanmem_la_SOURCES += libreplacements.h \
+      libreplacements.c
+endif
+
 libscanmem_la_LDFLAGS = -version-info 1:0:0
 
 bin_PROGRAMS = scanmem
