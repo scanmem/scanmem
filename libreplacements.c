@@ -38,12 +38,15 @@ char *
 readline(prompt)
     const char *prompt;
 {
-    printf("%s", prompt);
-    fflush(stdout); /* otherwise front-end may not receive this */
     char *line = NULL; /* let getline malloc it */
     size_t n = 0;
-    ssize_t bytes_read = getline(&line, &n, stdin);
-    int success = (bytes_read > 0);
+    ssize_t bytes_read ;
+    int success ;
+
+    printf("%s", prompt);
+    fflush(stdout); /* otherwise front-end may not receive this */
+    bytes_read = getline(&line, &n, stdin);
+    success = (bytes_read > 0);
     if (success)
         line[bytes_read-1] = '\0'; /* remove the trialing newline */
 
