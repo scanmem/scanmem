@@ -30,6 +30,11 @@ To build without gui:
     ./configure --prefix=/usr && make
     sudo make install
 
+To build without gui and without library features:
+
+    ./configure --prefix=/usr --enable-libless && make
+    sudo make install
+
 If you want to specify a prefix other than '/usr', make sure that <prefix>/lib is in the
 LD_LIBRARY_PATH for root
 
