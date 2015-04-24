@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <string.h>
 #include <sys/types.h>          /*lint !e537 */
 
 #include "scanroutines.h"
@@ -28,6 +29,28 @@
 # define eprintf(x, y...)
 #endif
 */
+
+/* provide replacements for GNU macros */
+#ifndef strdupa
+#define strdupa(s)                                                            \
+    ({                                                                        \
+      const char *__old = (s);                                                \
+      size_t __len = strlen(__old) + 1;                                       \
+      char *__new = (char *) alloca(__len);                                   \
+      (char *) memcpy(__new, __old, __len);                                   \
+    })
+#endif
+
+#ifndef strndupa
+#define strndupa(s, n)                                                        \
+    ({                                                                        \
+      const char *__old = (s);                                                \
+      size_t __len = strnlen(__old, (n));                                     \
+      char *__new = (char *) alloca(__len + 1);                               \
+      __new[__len] = '\0';                                                    \
+      (char *) memcpy(__new, __old, __len);                                   \
+    })
+#endif
 
 #ifdef _lint
 /*lint -save -e652 -e683 -e547 */
