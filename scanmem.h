@@ -30,7 +30,7 @@
 #endif
 */
 
-/* provide replacements for GNU macros */
+/* from string.h in glibc */
 #ifndef strdupa
 #define strdupa(s)                                                            \
     ({                                                                        \
