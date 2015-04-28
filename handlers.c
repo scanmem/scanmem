@@ -339,8 +339,8 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         show_error("memory allocation failed.\n");
         return false;
     }
-    char *bytearray_suffix = ", [bytearray]";
-    char *string_suffix = ", [string]";
+    char *bytearray_suffix = ", [bytearray ]";
+    char *string_suffix = ", [string ]";
 
     USEPARAMS();
 
