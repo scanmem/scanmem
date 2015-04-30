@@ -907,7 +907,7 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = str(line)
+                line = str(line.decode())
                 line = line[line.find(']')+1:]
                 (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
                 a = '%x'%(int(a,16),)
