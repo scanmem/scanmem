@@ -112,39 +112,30 @@ AC_CONFIG_FILES([
                 ])
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
-                            [enable gameconqueror, the gui front-end of scanmem])],
-                 [enable_gui=true
-                  AC_CONFIG_FILES([
-                 gui/Makefile
-                 gui/icons/Makefile
-                 gui/consts.py
-                 gui/gameconqueror
-                 gui/org.freedesktop.gameconqueror.policy.in
-                 ])],
-                 [enable_gui=false]
-                 )
+                            [enable gameconqueror, the gui front-end of scanmem])])
+AM_CONDITIONAL([ENABLE_GUI], [test "x$enable_gui" = "xyes"])
+AS_IF([test "x$enable_gui" = "xyes"], [
+  AC_CONFIG_FILES([
+    gui/Makefile
+    gui/icons/Makefile
+    gui/consts.py
+    gui/gameconqueror
+    gui/org.freedesktop.gameconqueror.policy.in
+  ])
+])
 
 # Check for termcap and readline or bypass checking for the libraries.
-AC_ARG_ENABLE([libless], [AS_HELP_STRING([--enable-libless],
-                            [use a libreadline replacement with less features])],
-                 [enable_libless=true
-                 echo "Bypassing library linking (--enable-libless)."
-                 AC_DEFINE(HAVE_LIBTERMCAP, [0],
-                     [Define to 1 if you have the 'termcap' library (-ltermcap)])
-                 AC_DEFINE(HAVE_LIBREADLINE, [0],
-                     [Define to 1 if you have the 'readline' library (-lreadline)])
-                 ],
-                 [enable_libless=false
-                 echo "Using libraries if available."
-                 # termcap is sometimes required by readline
-                 AC_CHECK_LIB([termcap], [tgetent], [], [])
-                 AC_CHECK_LIB([readline], [readline], [], [
-                     echo "libreadline could not be found, which is required to continue."
-                     echo "The libreadline-dev package may be required."
-                     exit 1
-                     ])
-                 ])
+AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
+                            [build without readline])])
+AM_CONDITIONAL([WITH_READLINE], [test "x$with_readline" != "xno"])
+AS_IF([test "x$with_readline" != "xno"], [
+  # termcap is sometimes required by readline
+  AC_CHECK_LIB([termcap], [tgetent], [], [])
+  AC_CHECK_LIB([readline], [readline], [], [
+    echo "libreadline could not be found, which is required to continue."
+    echo "The libreadline-dev package may be required."
+    exit 1
+  ])
+])
 
-AM_CONDITIONAL([ENABLE_GUI], [test x$enable_gui = xtrue])
-AM_CONDITIONAL([ENABLE_LIBLESS], [test x$enable_libless = xtrue])
 AC_OUTPUT

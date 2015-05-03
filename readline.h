@@ -1,5 +1,5 @@
 /*
- libreplacements.h  Minimal function replacements for libraries.
+ readline.h: replaces libreadline
 
  Copyright (C) 2015 Jonathan Pelletier <funmungus(a)gmail.com>
 
@@ -18,8 +18,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _LIBREPLACEMENTS_INC
-#define _LIBREPLACEMENTS_INC
+#ifndef _READLINE_INC
+#define _READLINE_INC
 
 typedef char *rl_compentry_func_t(const char *, int);
 typedef char **rl_completion_func_t(const char *, int, int);
@@ -33,4 +33,4 @@ char **rl_completion_matches(const char *text, rl_compentry_func_t
 char *readline(const char *prompt);
 void add_history(const char *line);
 
-#endif
+#endif /* _READLINE_INC */

@@ -1,5 +1,5 @@
 /*
- libreplacements.c  Minimal function replacements for libraries.
+ readline.c: replaces libreadline
 
  Copyright (C) 2015 Jonathan Pelletier <funmungus(a)gmail.com>
 
@@ -20,7 +20,7 @@
 
 #include <stdio.h>
 
-#include "libreplacements.h"
+#include "readline.h"
 
 int rl_attempted_completion_over = 0;
 const char *rl_readline_name = "scanmem";
