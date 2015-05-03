@@ -682,8 +682,10 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
         elif typename == 'string':
+            bytes = str(bytes.decode())
             return repr('%s'%(bytes,))[1:-1]
         elif typename == 'bytearray':
+            bytes = bytes.decode()
             return ' '.join(['%02x'%ord(i) for i in bytes])
         else:
             return bytes
