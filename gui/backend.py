@@ -70,7 +70,7 @@ class GameConquerorBackend():
         return self.lib.get_num_matches()
 
     def get_version(self):
-        return self.lib.get_version().decode("utf-8")
+        return self.lib.get_version().decode()
 
     def get_scan_progress(self):
         return self.lib.get_scan_progress()
