@@ -1,5 +1,0 @@
-version=3
-opts=downloadurlmangle=s#.*(scanmem-(.*)\.tar\.gz).*#http://scanmem.googlecode.com/files/$1#,\
-filenamemangle=s#.*(scanmem-(.*)\.tar\.gz).*#$1# \
-http://code.google.com/p/scanmem/downloads/list \
-.*detail\?name=scanmem-(.*)\.tar\.gz.*
