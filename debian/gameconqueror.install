@@ -1,6 +1,0 @@
-gui/GameConqueror_128x128.png usr/share/pixmaps/GameConqueror_128x128.png
-gui/GameConqueror_72x72.png usr/share/pixmaps/GameConqueror_72x72.png
-usr/bin/gameconqueror
-usr/share/applications/GameConqueror.desktop
-usr/share/gameconqueror/*
-usr/share/locale/*/LC_MESSAGES/GameConqueror.mo
