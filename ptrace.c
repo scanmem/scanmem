@@ -271,6 +271,8 @@ bool checkmatches(globals_t * vars,
         total_scan_bytes += tmp_swath_index->number_of_bytes;
         tmp_swath_index = (matches_and_old_values_swath *)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
     }
+    int num_dots = 0;
+    size_t next_dot = total_scan_bytes / 10;
 
     int reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
@@ -342,7 +344,9 @@ bool checkmatches(globals_t * vars,
             --required_extra_bytes_to_record;
         }
 
-        if (EXPECT((total_scan_bytes >= 110) && (bytes_scanned % ((total_scan_bytes) / 10) == 10), false)) {
+        if (bytes_scanned >= next_dot) {
+            num_dots++;
+            next_dot = ((double)total_scan_bytes / 10) * num_dots;
             /* for user, just print a dot */
             show_scan_progress(bytes_scanned, total_scan_bytes);
         }
@@ -484,6 +488,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
         /* load the next region */
         r = n->data;
+        int num_dots = 0;
+        size_t next_r_dot = r->size / 10;
 
 #if HAVE_PROCMEM        
         /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
@@ -581,7 +587,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 
             /* print a simple progress meter. */
-            if (EXPECT((r->size >= 110) && (offset % ((r->size) / 10) == 10), false)) {
+            if (offset >= next_r_dot) {
+                num_dots++;
+                next_r_dot = ((double)r->size / 10) * num_dots;
                 /* for user, just print a dot */
                 show_scan_progress(bytes_scanned+offset, total_scan_bytes);
             }
