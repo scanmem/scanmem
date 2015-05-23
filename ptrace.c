@@ -266,13 +266,14 @@ bool checkmatches(globals_t * vars,
     long bytes_scanned = 0;
     long total_scan_bytes = 0;
     matches_and_old_values_swath *tmp_swath_index = reading_swath_index;
+    int num_dots = 0;
+    size_t bytes_at_next_dot;
     while(tmp_swath_index->number_of_bytes)
     {
         total_scan_bytes += tmp_swath_index->number_of_bytes;
         tmp_swath_index = (matches_and_old_values_swath *)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
     }
-    int num_dots = 0;
-    size_t next_dot = total_scan_bytes / 10;
+    bytes_at_next_dot = total_scan_bytes / 10;
 
     int reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
@@ -344,9 +345,9 @@ bool checkmatches(globals_t * vars,
             --required_extra_bytes_to_record;
         }
 
-        if (bytes_scanned >= next_dot) {
+        if (EXPECT(bytes_scanned >= bytes_at_next_dot, false)) {
             num_dots++;
-            next_dot = ((double)total_scan_bytes / 10) * num_dots;
+            bytes_at_next_dot = ((double)total_scan_bytes / 10) * num_dots;
             /* for user, just print a dot */
             show_scan_progress(bytes_scanned, total_scan_bytes);
         }
@@ -485,11 +486,12 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     /* check every memory region */
     while (n) {
         unsigned offset, nread = 0;
+        int num_dots = 0;
+        size_t bytes_at_next_dot = r->size / 10;
 
         /* load the next region */
         r = n->data;
-        int num_dots = 0;
-        size_t next_r_dot = r->size / 10;
+        bytes_at_next_dot = r->size / 10;
 
 #if HAVE_PROCMEM        
         /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
@@ -587,9 +589,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             }
 
             /* print a simple progress meter. */
-            if (offset >= next_r_dot) {
+            if (EXPECT(offset >= bytes_at_next_dot, false)) {
                 num_dots++;
-                next_r_dot = ((double)r->size / 10) * num_dots;
+                bytes_at_next_dot = ((double)r->size / 10) * num_dots;
                 /* for user, just print a dot */
                 show_scan_progress(bytes_scanned+offset, total_scan_bytes);
             }
