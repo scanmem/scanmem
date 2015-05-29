@@ -68,6 +68,13 @@
 
 /* Progress handling */
 #define NUM_DOTS (10)
+#define NUM_SAMPLES (100)
+#define MAX_PROGRESS (1.0)  /* 100% */
+#if (!NUM_DOTS || !NUM_SAMPLES || NUM_SAMPLES % NUM_DOTS != 0)
+#error Invalid NUM_DOTS to NUM_SAMPLES proportion!
+#endif
+#define SAMPLES_PER_DOT (NUM_SAMPLES / NUM_DOTS)
+#define PROGRESS_PER_SAMPLE (MAX_PROGRESS / NUM_SAMPLES)
 
 /* ptrace peek buffer, used by peekdata() */
 /* make it larger in order to reduce shift */
@@ -257,6 +264,12 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     return true;
 }
 
+static inline void print_a_dot(void)
+{
+    fprintf(stderr, ".");
+    fflush(stderr);
+}
+
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
 bool checkmatches(globals_t * vars, 
@@ -269,19 +282,20 @@ bool checkmatches(globals_t * vars,
     long bytes_scanned = 0;
     long total_scan_bytes = 0;
     matches_and_old_values_swath *tmp_swath_index = reading_swath_index;
-    int num_dots = 0;
-    size_t bytes_at_next_dot;
-    size_t bytes_per_dot;
+    int samples_remaining = NUM_SAMPLES;
+    int samples_to_dot = SAMPLES_PER_DOT;
+    size_t bytes_at_next_sample;
+    size_t bytes_per_sample;
 
     while(tmp_swath_index->number_of_bytes)
     {
         total_scan_bytes += tmp_swath_index->number_of_bytes;
         tmp_swath_index = (matches_and_old_values_swath *)(&tmp_swath_index->data[tmp_swath_index->number_of_bytes]);
     }
-    bytes_per_dot = total_scan_bytes / NUM_DOTS;
-    bytes_at_next_dot = bytes_per_dot;
+    bytes_per_sample = total_scan_bytes / NUM_SAMPLES;
+    bytes_at_next_sample = bytes_per_sample;
     /* for user, just print the first dot */
-    show_scan_progress(0, total_scan_bytes);
+    print_a_dot();
 
     int reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
@@ -294,6 +308,7 @@ bool checkmatches(globals_t * vars,
 
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
+    vars->scan_progress = 0.0;
     
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
@@ -353,15 +368,20 @@ bool checkmatches(globals_t * vars,
             --required_extra_bytes_to_record;
         }
 
-        if (EXPECT(bytes_scanned >= bytes_at_next_dot, false)) {
-            bytes_at_next_dot += bytes_per_dot;
-            /* for user, handle rounding and just print a dot */
-            if (EXPECT(++num_dots < NUM_DOTS, true))
-                show_scan_progress(bytes_scanned, total_scan_bytes);
+        if (EXPECT(bytes_scanned >= bytes_at_next_sample, false)) {
+            bytes_at_next_sample += bytes_per_sample;
+            /* handle rounding */
+            if (EXPECT(--samples_remaining > 0, true)) {
+                /* for front-end, update percentage */
+                vars->scan_progress += PROGRESS_PER_SAMPLE;
+                if (EXPECT(--samples_to_dot == 0, false)) {
+                    samples_to_dot = SAMPLES_PER_DOT;
+                    /* for user, just print a dot */
+                    print_a_dot();
+                }
+            }
         }
-        if(total_scan_bytes > 0)
-            vars->scan_progress = ((double)bytes_scanned) / total_scan_bytes;
-        ++ bytes_scanned;
+        ++bytes_scanned;
         
         /* Go on to the next one... */
         ++reading_iterator;
@@ -385,9 +405,9 @@ bool checkmatches(globals_t * vars,
     /* TODO: we'll need progress for checkmatches too */
     if (vars->options.backend == 1)
     {
-        show_scan_progress(total_scan_bytes, total_scan_bytes);
+        print_a_dot();
     }
-    vars->scan_progress = 1.0;
+    vars->scan_progress = MAX_PROGRESS;
 
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
@@ -431,7 +451,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     element_t *n = vars->regions->head;
     region_t *r;
     unsigned long total_scan_bytes = 0;
-    unsigned long bytes_scanned = 0;
     void *address = NULL;
 
 #if HAVE_PROCMEM
@@ -489,19 +508,22 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     for(n = vars->regions->head; n; n = n->next)
         total_scan_bytes += ((region_t *)n->data)->size;
 
+    vars->scan_progress = 0.0;
     n = vars->regions->head;
 
     /* check every memory region */
     while (n) {
         unsigned offset, nread = 0;
-        int num_dots = 0;
+        int dots_remaining = NUM_DOTS;
         size_t bytes_at_next_dot;
         size_t bytes_per_dot;
+        double progress_per_dot;
 
         /* load the next region */
         r = n->data;
         bytes_per_dot = r->size / NUM_DOTS;
         bytes_at_next_dot = bytes_per_dot;
+        progress_per_dot = (double)bytes_per_dot / total_scan_bytes;
 
 #if HAVE_PROCMEM        
         /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
@@ -601,15 +623,17 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             /* print a simple progress meter. */
             if (EXPECT(offset >= bytes_at_next_dot, false)) {
                 bytes_at_next_dot += bytes_per_dot;
-                /* for user, handle rounding and just print a dot */
-                if (EXPECT(++num_dots < NUM_DOTS, true))
-                    show_scan_progress(bytes_scanned+offset, total_scan_bytes);
+                /* handle rounding */
+                if (EXPECT(--dots_remaining > 0, true)) {
+                    /* for user, just print a dot */
+                    print_a_dot();
+                    /* for front-end, update percentage */
+                    vars->scan_progress += progress_per_dot;
+                }
             }
-            if(total_scan_bytes > 0)
-                vars->scan_progress = ((double)bytes_scanned + offset) / total_scan_bytes;
         }
 
-        bytes_scanned += r->size;
+        vars->scan_progress += progress_per_dot;
         n = n->next;
         show_user("ok\n");
 #if HAVE_PROCMEM
@@ -618,9 +642,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     }
 
     /* tell front-end we've done */
-    if(vars->options.backend == 1)
-        show_scan_progress(total_scan_bytes, total_scan_bytes);
-    vars->scan_progress = 1.0;
+    if (vars->options.backend == 1)
+        print_a_dot();
+    vars->scan_progress = MAX_PROGRESS;
     
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
     {
