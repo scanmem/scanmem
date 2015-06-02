@@ -401,12 +401,7 @@ bool checkmatches(globals_t * vars,
         return false;
     }
 
-    /* hack for front-end, it needs this information */
-    /* TODO: we'll need progress for checkmatches too */
-    if (vars->options.backend == 1)
-    {
-        print_a_dot();
-    }
+    /* tell front-end we've done */
     vars->scan_progress = MAX_PROGRESS;
 
     show_info("we currently have %ld matches.\n", vars->num_matches);
@@ -642,8 +637,6 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     }
 
     /* tell front-end we've done */
-    if (vars->options.backend == 1)
-        print_a_dot();
     vars->scan_progress = MAX_PROGRESS;
     
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
