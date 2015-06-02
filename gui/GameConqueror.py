@@ -51,6 +51,7 @@ gettext.install(GETTEXT_PACKAGE, LOCALEDIR, names=('_'));
 
 CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
+PROGRESS_INTERVAL = 100 # for scan progress updates
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 
@@ -871,7 +872,8 @@ class GameConqueror():
         if self.search_count == 1:
             self.apply_scan_settings()
         self.backend.reset_scan_progress()
-        self.progress_watcher_id = GObject.idle_add(self.progress_watcher)
+        self.progress_watcher_id = GObject.timeout_add(PROGRESS_INTERVAL,
+            self.progress_watcher, priority=GObject.PRIORITY_DEFAULT_IDLE)
         threading.Thread(target=self.scan_thread_func, args=(cmd,)).start()
 
     def scan_thread_func(self, cmd):
