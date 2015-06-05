@@ -885,6 +885,7 @@ class GameConqueror():
         GObject.source_remove(self.progress_watcher_id)
         Gdk.threads_enter()
 
+        self.scanprogress_progressbar.set_fraction(1.0)
         self.main_window.set_sensitive(True)
         self.memoryeditor_window.set_sensitive(True)
         self.is_scanning = False
