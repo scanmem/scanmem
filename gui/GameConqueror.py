@@ -676,20 +676,20 @@ class GameConqueror():
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
-    def bytes2value(self, typename, bytes):
-        if bytes is None:
+    def bytes2value(self, typename, databytes):
+        if databytes is None:
             return None
         if typename in TYPENAMES_G2STRUCT:
-            return struct.unpack(TYPENAMES_G2STRUCT[typename], bytes)[0]
+            return struct.unpack(TYPENAMES_G2STRUCT[typename], databytes)[0]
         elif typename == 'string':
-            bytes = str(bytes.decode())
-            return repr('%s'%(bytes,))[1:-1]
+            databytes = str(databytes.decode())
+            return repr('%s'%(databytes,))[1:-1]
         elif typename == 'bytearray':
-            bytes = bytes.decode()
-            return ' '.join(['%02x'%ord(i) for i in bytes])
+            databytes = databytes.decode()
+            return ' '.join(['%02x'%ord(i) for i in databytes])
         else:
-            return bytes
-    
+            return databytes
+
     def scan_for_addr(self, addr):
         bits = self.get_pointer_width()
         if bits is None:
