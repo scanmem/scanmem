@@ -39,16 +39,17 @@
 #include "scanroutines.h"
 #include "scanmem.h"
 
-bool valtostr(const value_t * val, char *str, size_t n)
+void valtostr(const value_t *val, char *str, size_t n)
 {
     char buf[128];
+    int np = 0;
     int max_bytes = 0;
     bool print_as_unsigned = false;
 
 #define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? (string "u ") : (val->flags.s##bytes##b) ? (string "s ") : ""
     
     /* set the flags */
-    snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
+    np = snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
          FLAG_MACRO(64, "I64"),
          FLAG_MACRO(32, "I32"),
          FLAG_MACRO(16, "I16"),
@@ -56,6 +57,9 @@ bool valtostr(const value_t * val, char *str, size_t n)
          val->flags.f64b ? "F64 " : "",
          val->flags.f32b ? "F32 " : "",
          (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
+    /* handle having no type at all */
+    if (np <= 2)
+        goto err;
 
          if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
     else if (val->flags.s64b) { max_bytes = 8; print_as_unsigned = false; }
@@ -67,19 +71,22 @@ bool valtostr(const value_t * val, char *str, size_t n)
     else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
 
     /* find the right format, considering different integer size implementations */
-         if (max_bytes == sizeof(long long)) snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
-    else if (max_bytes == sizeof(long))      snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
-    else if (max_bytes == sizeof(int))       snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
-    else if (max_bytes == sizeof(short))     snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
-    else if (max_bytes == sizeof(char))      snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
-    else if (val->flags.f64b) snprintf(str, n, "%lf, %s", get_f64b(val), buf);
-    else if (val->flags.f32b) snprintf(str, n, "%f, %s", get_f32b(val), buf);
-    else {
-        snprintf(str, n, "%#llx?, %s", get_slonglong(val), buf);
-        return false;
-    }
- 
-    return true;
+         if (max_bytes == sizeof(long long)) np = snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
+    else if (max_bytes == sizeof(long))      np = snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
+    else if (max_bytes == sizeof(int))       np = snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
+    else if (max_bytes == sizeof(short))     np = snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
+    else if (max_bytes == sizeof(char))      np = snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
+    else if (val->flags.f64b) np = snprintf(str, n, "%lf, %s", get_f64b(val), buf);
+    else if (val->flags.f32b) np = snprintf(str, n, "%f, %s", get_f32b(val), buf);
+    else
+        goto err;
+    if (np <= 0 || np >= (n - 1))
+        goto err;
+
+    return;
+err:
+    /* always print a value and a type for not crashing the GUI */
+    strncpy(str, "unknown, [unknown]", n);
 }
 
 void valcpy(value_t * dst, const value_t * src)
