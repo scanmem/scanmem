@@ -39,6 +39,7 @@ from gi.repository import GObject
 from consts import *
 from hexview import HexView
 from backend import GameConquerorBackend
+from misc import u
 import misc
 
 import locale
@@ -741,7 +742,7 @@ class GameConqueror():
                 self.show_error(_('Cannot read memory'))
                 return
             self.last_hexedit_address = (start_addr, end_addr)
-            self.memoryeditor_hexview.payload=data
+            self.memoryeditor_hexview.payload = u(data)
             self.memoryeditor_hexview.base_addr = start_addr
         
         # set editable flag
