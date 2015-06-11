@@ -18,7 +18,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import sys
+import codecs
+
 from gi.repository import Gtk
+
+PY3K = sys.version_info >= (3, 0)
 
 # check syntax, data range etc.
 # translate if neccesary
@@ -154,3 +159,10 @@ def menu_append_item(menu, name, callback, data):
     item = Gtk.MenuItem(name)
     menu.append(item)
     item.connect('activate', callback, data)
+
+# for Python 3: convert to unicode just like Python 2 does
+def u(x):
+    if PY3K:
+        return codecs.unicode_escape_decode(x)[0]
+    else:
+        return x
