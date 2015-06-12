@@ -375,41 +375,35 @@ class HexText(BaseText):
         self.scroll_to_iter(insert_iter, 0, False, 0, 0)
 
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
-        if True: #step_size == Gtk.MovementStep.VISUAL_POSITIONS:
-            buffer = self.get_buffer()
-            insert_mark = buffer.get_insert()
-            insert_iter = buffer.get_iter_at_mark(insert_mark)
-            insert_off = insert_iter.get_offset()
-            if not extend_selection:
-                if insert_off % 3 == 2:
-                    if count > 0:
-                        # try to move forward
-                        if insert_iter.is_end():
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
-                        else:
-                            insert_iter.forward_char()
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                    elif count < 0:
-                        # try to move backward
-                        if insert_iter.is_start():
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                        else:
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
+        buffer = self.get_buffer()
+        insert_mark = buffer.get_insert()
+        insert_iter = buffer.get_iter_at_mark(insert_mark)
+        insert_off = insert_iter.get_offset()
+        if not extend_selection:
+            if count > 0:
+                # try to move forward
+                if insert_iter.is_end() or \
+                   step_size != Gtk.MovementStep.VISUAL_POSITIONS:
+                    # at end or line down: stay
+                    insert_iter.backward_char()
                 else:
-                    if insert_iter.is_end():
-                        end_iter = insert_iter.copy()
+                    # move forward
+                    if insert_off % 3 == 2:
+                        insert_iter.forward_char()
+            elif count < 0:
+                # try to move backward
+                if not insert_iter.is_start() and \
+                   step_size == Gtk.MovementStep.VISUAL_POSITIONS:
+                    # move backward (at start or line up: stay)
+                    if insert_off % 3 == 0:
                         insert_iter.backward_char()
-                    else:
-                        end_iter = insert_iter.copy()
-                        end_iter.forward_char()
-                # select one char
-                buffer.select_range(insert_iter, end_iter)
-            return True
-        return False
+                    insert_iter.backward_char()
+            # set end always to one char in front of start
+            end_iter = insert_iter.copy()
+            end_iter.forward_char()
+            # select one char
+            buffer.select_range(insert_iter, end_iter)
+        return True
 
     def __on_realize(self, widget):
         """
