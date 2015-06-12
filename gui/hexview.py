@@ -585,33 +585,9 @@ class HexView(Gtk.Box):
 
 
     def __on_hex_change(self, buffer, iter, mark):
-        if not buffer.get_selection_bounds():
-            self.ascii_text.select_blocks() # Deselect
-            return True
-
-        start, end = buffer.get_selection_bounds()
-
-        s_off = start.get_offset()
-        e_off = end.get_offset()
-
-        self.ascii_text.select_blocks((s_off+1) / 3, (e_off-1) / 3+1)
         return True
 
     def __on_ascii_change(self, buffer, iter, mark):
-        if not self.ascii_text.buffer.get_selection_bounds():
-            self.hex_text.select_blocks() # Deselect
-            return True
-
-        start_iter, end_iter = self.ascii_text.buffer.get_selection_bounds()
-
-        start_off = start_iter.get_offset()
-        end_off = end_iter.get_offset()
-        bpl = self._bpl
-
-        self.hex_text.select_blocks(
-            start_off - start_off / (bpl + 1),
-            end_off - end_off / (bpl + 1)
-        )
         return True
 
     def do_char_changed(self, offset, charval):
