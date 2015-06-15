@@ -164,7 +164,7 @@ class AsciiText(BaseText):
             else:
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
-                org_off = off - off / (self._parent.bpl + 1)
+                org_off = off - int(off / (self._parent.bpl + 1))
                 self._parent.emit('char-changed', org_off, c)
                 self.select_a_char(buffer.get_iter_at_offset(off+1))
             return True
@@ -324,7 +324,7 @@ class HexText(BaseText):
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
                 pos = off % 3
-                org_off = off / 3
+                org_off = int(off / 3)
                 txt = buffer.get_text(
                         buffer.get_iter_at_offset(org_off*3),
                         buffer.get_iter_at_offset(org_off*3+2),
