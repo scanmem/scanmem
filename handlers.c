@@ -395,9 +395,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
                 value_t val = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                 truncval_to_flags(&val, flags);
 
-                if (valtostr(&val, v, buf_len) != true) {
-                    strncpy(v, "unknown", buf_len);
-                }
+                valtostr(&val, v, buf_len);
                 break;
             }
 
@@ -1169,9 +1167,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     valcpy(&o, &old_val);
     valcpy(&n, &o);
 
-    if (valtostr(&o, buf, sizeof(buf)) == false) {
-        strncpy(buf, "unknown", sizeof(buf));
-    }
+    valtostr(&o, buf, sizeof(buf));
 
     if (INTERRUPTABLE()) {
         (void) detach(vars->target);
@@ -1205,9 +1201,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
             valcpy(&o, &n);
             truncval(&o, &old_val);
 
-            if (valtostr(&o, buf, sizeof(buf)) == false) {
-                strncpy(buf, "unknown", sizeof(buf));
-            }
+            valtostr(&o, buf, sizeof(buf));
 
             /* fetch new timestamp */
             t = time(NULL);

@@ -917,6 +917,8 @@ class GameConqueror():
                 a = '%x'%(int(a,16),)
                 o = '%x'%(int(o[5:],16),)
                 t = t[1:-1]
+                if t == 'unknown':
+                    continue
                 self.scanresult_liststore.append([a, v, t, True, o, rt])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
