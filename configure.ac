@@ -1,5 +1,5 @@
 # $Id: configure.ac,v 1.1 2007/06/04 22:51:13 taviso Exp $
-AC_INIT([scanmem],[0.15],[https://github.com/scanmem/scanmem])
+AC_INIT([scanmem],[0.15.2],[https://github.com/scanmem/scanmem])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
 AC_CONFIG_SRCDIR([main.c])
