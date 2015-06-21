@@ -122,40 +122,32 @@ class AsciiText(BaseText):
         )
         """
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
-        if True: #step_size == Gtk.MovementStep.VISUAL_POSITIONS:
-            buffer = self.get_buffer()
-            insert_mark = buffer.get_insert()
-            insert_iter = buffer.get_iter_at_mark(insert_mark)
-            insert_off = insert_iter.get_offset()
-            if not extend_selection:
-                if (insert_off+1) % (self._parent.bpl+1) == 0:
-                    if count > 0:
-                        # try to move forward
-                        if insert_iter.is_end():
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
-                        else:
-                            insert_iter.forward_char()
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                    elif count < 0:
-                        # try to move backward
-                        if insert_iter.is_start():
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                        else:
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
+        buffer = self.get_buffer()
+        insert_mark = buffer.get_insert()
+        insert_iter = buffer.get_iter_at_mark(insert_mark)
+        insert_off = insert_iter.get_offset()
+        if not extend_selection:
+            if count > 0:
+                # try to move forward
+                if insert_iter.is_end() or \
+                   step_size != Gtk.MovementStep.VISUAL_POSITIONS:
+                    # at end or line down: stay
+                    insert_iter.backward_char()
                 else:
-                    if insert_iter.is_end():
-                        end_iter = insert_iter.copy()
+                    # move forward
+                    if (insert_off+1) % (self._parent.bpl+1) == 0:
+                        insert_iter.forward_char()
+            elif count < 0:
+                # try to move backward
+                if not insert_iter.is_start() and \
+                   step_size == Gtk.MovementStep.VISUAL_POSITIONS:
+                    # move backward (at start or line up: stay)
+                    if (insert_off+1) % (self._parent.bpl+1) == 1:
                         insert_iter.backward_char()
-                    else:
-                        end_iter = insert_iter.copy()
-                        end_iter.forward_char()
-                # select one char
-                buffer.select_range(insert_iter, end_iter)
-            
+                    insert_iter.backward_char()
+            # set end always to one char in front of start
+            end_iter = insert_iter.copy()
+            end_iter.forward_char()
             # select one char
             buffer.select_range(insert_iter, end_iter)
         return True
@@ -172,7 +164,7 @@ class AsciiText(BaseText):
             else:
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
-                org_off = off - off / (self._parent.bpl + 1)
+                org_off = off - int(off / (self._parent.bpl + 1))
                 self._parent.emit('char-changed', org_off, c)
                 self.select_a_char(buffer.get_iter_at_offset(off+1))
             return True
@@ -210,7 +202,7 @@ class AsciiText(BaseText):
         self.buffer.set_text('')
 
         bpl = self._parent.bpl
-        tot_lines = len(txt) / bpl
+        tot_lines = int(len(txt) / bpl)
 
         if len(txt) % bpl != 0:
             tot_lines += 1
@@ -332,7 +324,7 @@ class HexText(BaseText):
                 iter = buffer.get_iter_at_mark(buffer.get_insert())
                 off = iter.get_offset()
                 pos = off % 3
-                org_off = off / 3
+                org_off = int(off / 3)
                 txt = buffer.get_text(
                         buffer.get_iter_at_offset(org_off*3),
                         buffer.get_iter_at_offset(org_off*3+2),
@@ -375,41 +367,35 @@ class HexText(BaseText):
         self.scroll_to_iter(insert_iter, 0, False, 0, 0)
 
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
-        if True: #step_size == Gtk.MovementStep.VISUAL_POSITIONS:
-            buffer = self.get_buffer()
-            insert_mark = buffer.get_insert()
-            insert_iter = buffer.get_iter_at_mark(insert_mark)
-            insert_off = insert_iter.get_offset()
-            if not extend_selection:
-                if insert_off % 3 == 2:
-                    if count > 0:
-                        # try to move forward
-                        if insert_iter.is_end():
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
-                        else:
-                            insert_iter.forward_char()
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                    elif count < 0:
-                        # try to move backward
-                        if insert_iter.is_start():
-                            end_iter = insert_iter.copy()
-                            end_iter.forward_char()
-                        else:
-                            end_iter = insert_iter.copy()
-                            insert_iter.backward_char()
+        buffer = self.get_buffer()
+        insert_mark = buffer.get_insert()
+        insert_iter = buffer.get_iter_at_mark(insert_mark)
+        insert_off = insert_iter.get_offset()
+        if not extend_selection:
+            if count > 0:
+                # try to move forward
+                if insert_iter.is_end() or \
+                   step_size != Gtk.MovementStep.VISUAL_POSITIONS:
+                    # at end or line down: stay
+                    insert_iter.backward_char()
                 else:
-                    if insert_iter.is_end():
-                        end_iter = insert_iter.copy()
+                    # move forward
+                    if insert_off % 3 == 2:
+                        insert_iter.forward_char()
+            elif count < 0:
+                # try to move backward
+                if not insert_iter.is_start() and \
+                   step_size == Gtk.MovementStep.VISUAL_POSITIONS:
+                    # move backward (at start or line up: stay)
+                    if insert_off % 3 == 0:
                         insert_iter.backward_char()
-                    else:
-                        end_iter = insert_iter.copy()
-                        end_iter.forward_char()
-                # select one char
-                buffer.select_range(insert_iter, end_iter)
-            return True
-        return False
+                    insert_iter.backward_char()
+            # set end always to one char in front of start
+            end_iter = insert_iter.copy()
+            end_iter.forward_char()
+            # select one char
+            buffer.select_range(insert_iter, end_iter)
+        return True
 
     def __on_realize(self, widget):
         """
@@ -585,33 +571,9 @@ class HexView(Gtk.Box):
 
 
     def __on_hex_change(self, buffer, iter, mark):
-        if not buffer.get_selection_bounds():
-            self.ascii_text.select_blocks() # Deselect
-            return True
-
-        start, end = buffer.get_selection_bounds()
-
-        s_off = start.get_offset()
-        e_off = end.get_offset()
-
-        self.ascii_text.select_blocks((s_off+1) / 3, (e_off-1) / 3+1)
         return True
 
     def __on_ascii_change(self, buffer, iter, mark):
-        if not self.ascii_text.buffer.get_selection_bounds():
-            self.hex_text.select_blocks() # Deselect
-            return True
-
-        start_iter, end_iter = self.ascii_text.buffer.get_selection_bounds()
-
-        start_off = start_iter.get_offset()
-        end_off = end_iter.get_offset()
-        bpl = self._bpl
-
-        self.hex_text.select_blocks(
-            start_off - start_off / (bpl + 1),
-            end_off - end_off / (bpl + 1)
-        )
         return True
 
     def do_char_changed(self, offset, charval):
