@@ -17,6 +17,7 @@ config.status
 config.sub
 libtool
 ltmain.sh
+py-compile
 scanmem
 stamp-h1
 tags
