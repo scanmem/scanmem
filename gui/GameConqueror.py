@@ -683,10 +683,10 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], databytes)[0]
         elif typename == 'string':
-            databytes = str(databytes.decode())
+            databytes = str(u(databytes))
             return repr('%s'%(databytes,))[1:-1]
         elif typename == 'bytearray':
-            databytes = databytes.decode()
+            databytes = u(databytes)
             return ' '.join(['%02x'%ord(i) for i in databytes])
         else:
             return databytes
@@ -911,7 +911,7 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = str(line.decode())
+                line = str(u(line))
                 line = line[line.find(']')+1:]
                 (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
                 a = '%x'%(int(a,16),)
