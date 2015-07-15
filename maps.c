@@ -212,11 +212,6 @@ bool readmaps(pid_t target, list_t * regions)
                 /* save pathname */
                 if (strlen(filename) != 0) {
                     /* the pathname is concatenated with the structure */
-                    if ((map = realloc(map, sizeof(*map) + strlen(filename))) == NULL) {
-                        show_error("failed to allocate memory.\n");
-                        goto error;
-                    }
-
                     strcpy(map->filename, filename);
                 }
 
