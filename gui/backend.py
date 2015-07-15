@@ -24,6 +24,7 @@ import ctypes
 import tempfile
 import re
 from gi.repository import GObject
+from misc import u
 
 class GameConquerorBackend():
     BACKEND_FUNCS = {
@@ -70,7 +71,7 @@ class GameConquerorBackend():
         return self.lib.get_num_matches()
 
     def get_version(self):
-        return self.lib.get_version().decode()
+        return u(self.lib.get_version())
 
     def get_scan_progress(self):
         return self.lib.get_scan_progress()

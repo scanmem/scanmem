@@ -115,6 +115,7 @@ AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
                             [enable gameconqueror, the gui front-end of scanmem])])
 AM_CONDITIONAL([ENABLE_GUI], [test "x$enable_gui" = "xyes"])
 AS_IF([test "x$enable_gui" = "xyes"], [
+  AM_PATH_PYTHON([2.7])
   AC_CONFIG_FILES([
     gui/Makefile
     gui/icons/Makefile
