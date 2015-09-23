@@ -19,8 +19,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _SEOIGROIYIOOBKOB_INC
-#define _SEOIGROIYIOOBKOB_INC            /* include guard */
+#ifndef TARGET_MEMORY_INFO_ARRAY_H
+#define TARGET_MEMORY_INFO_ARRAY_H
 
 #include <inttypes.h>
 
@@ -116,4 +116,4 @@ void * local_address_beyond_last_element(matches_and_old_values_swath *swath);
 match_location nth_match(matches_and_old_values_array *matches, unsigned n);
 matches_and_old_values_array * delete_by_region(matches_and_old_values_array *array, long *num_matches, region_t *which, bool invert);
 
-#endif
+#endif /* TARGET_MEMORY_INFO_ARRAY_H */

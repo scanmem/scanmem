@@ -4,8 +4,8 @@
 
 */
 
-#ifndef _INTERRUPT_INC
-#define _INTERRUPT_INC
+#ifndef INTERRUPT_H
+#define INTERRUPT_H
 
 /* small header file to manage interrupted commands */
 
@@ -23,4 +23,4 @@ static void interrupted(int n)
 #define INTERRUPTABLE() ((oldsig = signal(SIGINT, interrupted)), intused = 1, sigsetjmp(jmpbuf, 1))
 #define ENDINTERRUPTABLE() (intused ? ((void) signal(SIGINT, oldsig), intused = 0) : (intused = 0))
 
-#endif
+#endif /* INTERRUPT_H */

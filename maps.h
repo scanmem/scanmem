@@ -20,8 +20,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _MAPS_INC
-#define _MAPS_INC            /* include guard */
+#ifndef MAPS_H
+#define MAPS_H
 
 #include "list.h"
 
@@ -63,4 +63,4 @@ typedef struct {
 bool readmaps(pid_t target, list_t * regions);
 int compare_region_id(const region_t *a, const region_t *b);
 
-#endif /* _MAPS_INC */
+#endif /* MAPS_H */

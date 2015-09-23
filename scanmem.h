@@ -1,5 +1,5 @@
-#ifndef _SCANMEM_INC
-#define _SCANMEM_INC            /* include guard */
+#ifndef SCANMEM_H
+#define SCANMEM_H
 
 /*lint +libh(config.h) */
 #include "config.h"
@@ -129,4 +129,4 @@ bool write_array(pid_t target, void *addr, const void *data, int len);
 bool getcommand(globals_t * vars, char **line);
 void printversion();
 
-#endif
+#endif /* SCANMEM_H */

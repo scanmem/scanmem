@@ -2,8 +2,8 @@
  $Id: commands.h,v 1.5 2007-04-11 10:43:26+01 taviso Exp $
 */
 
-#ifndef _COMMANDS_INC
-#define _COMMANDS_INC           /* include guard */
+#ifndef COMMANDS_H
+#define COMMANDS_H
 
 #include <stdbool.h>
 
@@ -23,4 +23,4 @@ bool registercommand(const char *command, void *handler, list_t * commands,
                      char *shortdoc, char *longdoc);
 bool execcommand(globals_t * vars, const char *commandline);
 
-#endif
+#endif /* COMMANDS_H */

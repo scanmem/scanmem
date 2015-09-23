@@ -2,8 +2,8 @@
   $Id: handlers.h,v 1.13 2007-06-05 01:45:35+01 taviso Exp taviso $
 */
 
-#ifndef _INC_HANDLERS
-#define _INC_HANDLERS           /* include guard */
+#ifndef HANDLERS_H
+#define HANDLERS_H
 
 /*
  * SHRTDOC's are one line descriptions of the supported command (shown with `help`).
@@ -309,4 +309,5 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "\toption scan_data_type int32\n"
 
 bool handler__option(globals_t * vars, char **argv, unsigned argc);
-#endif
+
+#endif /* HANDLERS_H */

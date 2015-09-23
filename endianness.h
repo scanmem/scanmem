@@ -19,8 +19,8 @@
 */
 
 
-#ifndef _ENDIANNESS_INC
-#define _ENDIANNESS_INC
+#ifndef ENDIANNESS_H
+#define ENDIANNESS_H
 
 #include "scanmem.h"
 #include "value.h"
@@ -36,5 +36,4 @@ static const bool big_endian = false;
 void fix_endianness(globals_t *vars, value_t *data_value);
 void swap_bytes_var(void *p, size_t num);
 
-#endif
-
+#endif /* ENDIANNESS_H */

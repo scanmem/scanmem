@@ -16,8 +16,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef SCANROUTINES_H__
-#define SCANROUTINES_H__
+#ifndef SCANROUTINES_H
+#define SCANROUTINES_H
 
 #include <stdbool.h>
 
@@ -69,4 +69,5 @@ extern scan_routine_t g_scan_routine;
 bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
 
 scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
-#endif /* SCANROUTINES_H__ */
+
+#endif /* SCANROUTINES_H */

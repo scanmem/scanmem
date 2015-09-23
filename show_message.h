@@ -30,8 +30,8 @@
  *  To display message to user only, use show_user, nothing will be prepended, and the message will be ignore if scanmem is running as a backend
  */
 
-#ifndef SHOW_MESSAGE_H__
-#define SHOW_MESSAGE_H__
+#ifndef SHOW_MESSAGE_H
+#define SHOW_MESSAGE_H
 
 /* prepend 'info: ', output to stderr */
 void show_info(const char *fmt, ...);
@@ -49,4 +49,4 @@ void show_user(const char *fmt, ...);
 /* display progress of scan */
 void show_scan_progress(unsigned long cur, unsigned long total);
 
-#endif /* SHOW_MESSAGE_H__ */
+#endif /* SHOW_MESSAGE_H */

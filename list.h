@@ -5,8 +5,8 @@
 
 */
 
-#ifndef _LIST_INC
-#define _LIST_INC
+#ifndef LIST_H
+#define LIST_H
 
 typedef struct element {
     void *data;
@@ -37,4 +37,4 @@ void l_remove_nth(list_t * list, unsigned n, void **data);
 /* remove all elements from *src, and append to dst */
 int l_concat(list_t *dst, list_t **src);
 
-#endif
+#endif /* LIST_H */

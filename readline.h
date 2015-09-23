@@ -18,8 +18,8 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
 
-#ifndef _READLINE_INC
-#define _READLINE_INC
+#ifndef READLINE_H
+#define READLINE_H
 
 typedef char *rl_compentry_func_t(const char *, int);
 typedef char **rl_completion_func_t(const char *, int, int);
@@ -33,4 +33,4 @@ char **rl_completion_matches(const char *text, rl_compentry_func_t
 char *readline(const char *prompt);
 void add_history(const char *line);
 
-#endif /* _READLINE_INC */
+#endif /* READLINE_H */

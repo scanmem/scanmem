@@ -23,8 +23,8 @@
 */
 
 
-#ifndef _VALUE_INC
-#define _VALUE_INC
+#ifndef VALUE_H
+#define VALUE_H
 
 #include <stdint.h>
 #include <stddef.h>
@@ -144,5 +144,4 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
 
-
-#endif
+#endif /* VALUE_H */

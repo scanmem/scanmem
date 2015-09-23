@@ -4,8 +4,8 @@
 
 */
 
-#ifndef _INC_LICENCE
-#define _INC_LICENCE 
+#ifndef LICENCE_H
+#define LICENCE_H
 
 #define SM_WARRANTY \
         "15. Disclaimer of Warranty.\n\n" \
@@ -44,4 +44,4 @@
         "You should have received a copy of the GNU General Public License\n" \
         "along with this program; if not, see <http://www.gnu.org/licenses/>.\n" 
 
-#endif 
+#endif /* LICENCE_H */
