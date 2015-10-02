@@ -11,7 +11,6 @@ lib_LTLIBRARIES = libscanmem.la
 
 libscanmem_la_SOURCES = commands.h \
     commands.c \
-    endianness.c \
     ptrace.c \
     menu.c \
     handlers.h \
