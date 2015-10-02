@@ -1,8 +1,5 @@
 /*
-
- $Id: list.h,v 1.9 2007-06-05 01:45:35+01 taviso Exp $
- A very simple linked list implementation.
-
+    A very simple linked list implementation.
 */
 
 #ifndef LIST_H

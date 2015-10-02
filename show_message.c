@@ -1,5 +1,5 @@
 /*
-    show_message.c
+    Message printing helper functions.
 
     Copyright (C) 2010 WANG Lu  <coolwanglu(a)gmail.com>
 
@@ -81,4 +81,3 @@ void show_scan_progress(unsigned long cur, unsigned long total)
     fprintf(stderr, ".");
     fflush(stderr);
 }
-

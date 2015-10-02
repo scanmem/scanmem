@@ -1,7 +1,5 @@
 /*
-
- $Id: interrupt.h,v 1.5 2007-04-11 10:43:26+01 taviso Exp $
-
+    Interrupt handling to stop watching or locking variables.
 */
 
 #ifndef INTERRUPT_H

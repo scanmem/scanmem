@@ -1,5 +1,6 @@
 /*
-    scanroutines.c  Routines of scanning for different data types
+    Routines of scanning for different data types.
+
     Copyright (C) 2009,2010 WANG Lu  <coolwanglu(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -430,5 +431,3 @@ scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 
     return NULL;
 }
-
-

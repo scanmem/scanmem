@@ -1,5 +1,5 @@
 /*
-  $Id: handlers.h,v 1.13 2007-06-05 01:45:35+01 taviso Exp taviso $
+    Specific command handling with help texts.
 */
 
 #ifndef HANDLERS_H

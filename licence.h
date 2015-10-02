@@ -1,7 +1,5 @@
 /*
-
- $Id: licence.h,v 1.2 2007-04-11 10:43:26+01 taviso Exp $
-
+    Just some license texts.
 */
 
 #ifndef LICENCE_H

@@ -1,5 +1,5 @@
 /*
- $Id: commands.h,v 1.5 2007-04-11 10:43:26+01 taviso Exp $
+    Registration and general execution of commands.
 */
 
 #ifndef COMMANDS_H

@@ -1,5 +1,5 @@
 /*
-    show_message.h
+    Message printing helper functions.
 
     Copyright (C) 2010 WANG Lu  <coolwanglu(a)gmail.com>
 
