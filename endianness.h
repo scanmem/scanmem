@@ -21,6 +21,11 @@
 #ifndef ENDIANNESS_H
 #define ENDIANNESS_H
 
+#include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "scanmem.h"
 #include "value.h"
 #include "config.h"
