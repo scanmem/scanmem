@@ -134,29 +134,6 @@ void truncval(value_t * dst, const value_t * src)
     truncval_to_flags(dst, src->flags);
 }
 
-/* set all possible width flags, if nothing is known about val */
-void valnowidth(value_t * val)
-{
-    assert(val);
-
-    val->flags.u64b = 1;
-    val->flags.s64b = 1;
-    val->flags.u32b = 1;
-    val->flags.s32b = 1;
-    val->flags.u16b = 1;
-    val->flags.s16b = 1;
-    val->flags.u8b  = 1;
-    val->flags.s8b  = 1;
-    val->flags.f64b = 1;
-    val->flags.f32b = 1;
-
-    val->flags.ineq_forwards = 1;
-    val->flags.ineq_reverse = 1;
-    
-    /* don't bother with bytearray_length and string_length */
-    return;
-}
-
 /* array must have been allocated, of size at least argc */
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t *val)
 {

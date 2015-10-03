@@ -25,6 +25,7 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include <assert.h>
 
 /* some routines for working with value_t structures */
 
@@ -105,7 +106,6 @@ void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
 void truncval_to_flags(value_t * dst, match_flags flags);
 void truncval(value_t * dst, const value_t * src);
-void valnowidth(value_t * val);
 int flags_to_max_width_in_bytes(match_flags flags);
 int val_max_width_in_bytes(value_t *val);
 
@@ -140,5 +140,28 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
+
+/* set all possible width flags, if nothing is known about val */
+static inline void valnowidth(value_t *val)
+{
+    assert(val);
+
+    val->flags.u64b = 1;
+    val->flags.s64b = 1;
+    val->flags.u32b = 1;
+    val->flags.s32b = 1;
+    val->flags.u16b = 1;
+    val->flags.s16b = 1;
+    val->flags.u8b  = 1;
+    val->flags.s8b  = 1;
+    val->flags.f64b = 1;
+    val->flags.f32b = 1;
+
+    val->flags.ineq_forwards = 1;
+    val->flags.ineq_reverse = 1;
+
+    /* don't bother with bytearray_length and string_length */
+    return;
+}
 
 #endif /* VALUE_H */
