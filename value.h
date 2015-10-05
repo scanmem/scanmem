@@ -104,8 +104,6 @@ bool parse_uservalue_int(const char *nptr, uservalue_t * val);
 bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
-void truncval_to_flags(value_t * dst, match_flags flags);
-void truncval(value_t * dst, const value_t * src);
 int flags_to_max_width_in_bytes(match_flags flags);
 int val_max_width_in_bytes(value_t *val);
 
@@ -140,6 +138,34 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
+
+static inline void truncval_to_flags(value_t *dst, match_flags flags)
+{
+    assert(dst != NULL);
+
+    dst->flags.u64b &= flags.u64b;
+    dst->flags.s64b &= flags.s64b;
+    dst->flags.f64b &= flags.f64b;
+    dst->flags.u32b &= flags.u32b;
+    dst->flags.s32b &= flags.s32b;
+    dst->flags.f32b &= flags.f32b;
+    dst->flags.u16b &= flags.u16b;
+    dst->flags.s16b &= flags.s16b;
+    dst->flags.u8b  &= flags.u8b;
+    dst->flags.s8b  &= flags.s8b;
+
+    /* Hack - simply overwrite the inequality flags (this should
+       have no effect except to make them display properly) */
+    dst->flags.ineq_forwards = flags.ineq_forwards;
+    dst->flags.ineq_reverse  = flags.ineq_reverse;
+}
+
+static inline void truncval(value_t *dst, const value_t *src)
+{
+    assert(src != NULL);
+
+    truncval_to_flags(dst, src->flags);
+}
 
 /* set all possible width flags, if nothing is known about val */
 static inline void valnowidth(value_t *val)

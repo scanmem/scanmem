@@ -107,33 +107,6 @@ void uservalue2value(value_t *dst, const uservalue_t *src)
     if(dst->flags.f64b) set_f64b(dst, get_f64b(src));
 }
 
-void truncval_to_flags(value_t * dst, match_flags flags)
-{
-    assert(dst != NULL);
-    
-    dst->flags.u64b &= flags.u64b;
-    dst->flags.s64b &= flags.s64b;
-    dst->flags.f64b &= flags.f64b;
-    dst->flags.u32b &= flags.u32b;
-    dst->flags.s32b &= flags.s32b;
-    dst->flags.f32b &= flags.f32b;
-    dst->flags.u16b &= flags.u16b;
-    dst->flags.s16b &= flags.s16b;
-    dst->flags.u8b  &= flags.u8b ;
-    dst->flags.s8b  &= flags.s8b ;
-    
-    /* Hack - simply overwrite the inequality flags (this should have no effect except to make them display properly) */
-    dst->flags.ineq_forwards = flags.ineq_forwards;
-    dst->flags.ineq_reverse  = flags.ineq_reverse ;
-}
-
-void truncval(value_t * dst, const value_t * src)
-{
-    assert(src != NULL);
-
-    truncval_to_flags(dst, src->flags);
-}
-
 /* array must have been allocated, of size at least argc */
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t *val)
 {
