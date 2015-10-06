@@ -552,10 +552,9 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             match_flags checkflags;
             value_t data_value;
            
-            /* initialise check */
-            memset(&data_value, 0x00, sizeof(data_value));
-            
-            valnowidth(&data_value);
+            /* initialise data_value */
+            data_value.int64_value = 0;   /* zero the whole union (memset() is slow) */
+            valnowidth(&data_value);      /* initialise the match_flags */
 
             address = r->start + offset;
 
@@ -589,7 +588,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
             fix_endianness(vars, &data_value);
 
-            memset(&checkflags, 0, sizeof(checkflags));
+            /* initialise checkflags */
+            checkflags.bytearray_length = 0;   /* zero the whole union (memset() is slow) */
 
             int match_length;
             /* check if we have a match */
