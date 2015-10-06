@@ -21,6 +21,8 @@
 #ifndef TARGET_MEMORY_INFO_ARRAY_H
 #define TARGET_MEMORY_INFO_ARRAY_H
 
+#include <assert.h>
+#include <string.h>
 #include <stdlib.h>
 #include <inttypes.h>
 
