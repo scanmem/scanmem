@@ -137,8 +137,8 @@ bool peekdata(pid_t pid, void *addr, value_t * result)
     assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
     assert(result != NULL);
 
-    memset(result, 0x00, sizeof(value_t));
-
+    /* initialise result */
+    zero_value(result);
     valnowidth(result);
 
     /* check if we have a cache hit */
@@ -303,7 +303,7 @@ bool checkmatches(globals_t * vars,
     
     /* used to fill in non-match regions */
     match_flags zero_flag;
-    memset(&zero_flag, 0, sizeof(zero_flag));
+    zero_match_flags(&zero_flag);
 
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
@@ -342,7 +342,7 @@ bool checkmatches(globals_t * vars,
 
             fix_endianness(vars, &data_value);
 
-            memset(&checkflags, 0, sizeof(checkflags));
+            zero_match_flags(&checkflags);
 
             match_length = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags, address);
         }
@@ -454,7 +454,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
     /* used to fill in non-match regions */
     match_flags zero_flag;
-    memset(&zero_flag, 0, sizeof(zero_flag));
+    zero_match_flags(&zero_flag);
     
     if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
@@ -553,8 +553,8 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             value_t data_value;
            
             /* initialise data_value */
-            data_value.int64_value = 0;   /* zero the whole union (memset() is slow) */
-            valnowidth(&data_value);      /* initialise the match_flags */
+            zero_value(&data_value);
+            valnowidth(&data_value);
 
             address = r->start + offset;
 
@@ -589,7 +589,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
             fix_endianness(vars, &data_value);
 
             /* initialise checkflags */
-            checkflags.bytearray_length = 0;   /* zero the whole union (memset() is slow) */
+            zero_match_flags(&checkflags);
 
             int match_length;
             /* check if we have a match */
