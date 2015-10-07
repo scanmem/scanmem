@@ -23,6 +23,7 @@
 #ifndef VALUE_H
 #define VALUE_H
 
+#include <string.h>
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
@@ -138,6 +139,19 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
+
+static inline void zero_match_flags(match_flags *flags)
+{
+    memset(flags, 0, sizeof(*flags));
+}
+
+static inline void zero_value(value_t *val)
+{
+    /* zero components separately -
+       10 bytes memset() is too slow */
+    val->int64_value = 0;               /* zero the whole union */
+    zero_match_flags(&val->flags);
+}
 
 static inline void truncval_to_flags(value_t *dst, match_flags flags)
 {
