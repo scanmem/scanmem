@@ -99,12 +99,9 @@ typedef struct {
 	long index;
 } match_location;
 
-matches_and_old_values_array * allocate_array(matches_and_old_values_array *array, unsigned long max_bytes);
-matches_and_old_values_array * null_terminate(matches_and_old_values_array *array, matches_and_old_values_swath *swath);
+matches_and_old_values_array *allocate_array(matches_and_old_values_array *array, unsigned long max_bytes);
+matches_and_old_values_array *null_terminate(matches_and_old_values_array *array, matches_and_old_values_swath *swath);
 
-/* only at most sizeof(int64_t) bytes will be readed, if more bytes needed (e.g. bytearray), read it separatedly (for performance) */
-value_t data_to_val_aux(matches_and_old_values_swath *swath, long index, long swath_length);
-value_t data_to_val(matches_and_old_values_swath *swath, long index);
 /* for printable text representation */
 void data_to_printable_string(char *buf, int buf_length, matches_and_old_values_swath *swath, long index, int string_length);
 /* for bytearray representation */
@@ -227,6 +224,43 @@ add_element(matches_and_old_values_array **array,
     ++swath->number_of_bytes;
 
     return swath;
+}
+
+/* only at most sizeof(int64_t) bytes will be read,
+   if more bytes are needed (e.g. bytearray),
+   read them separatedly (for performance) */
+static inline value_t
+data_to_val_aux(matches_and_old_values_swath *swath,
+                long index, long swath_length)
+{
+    int i;
+    value_t val;
+    int max_bytes = swath_length - index;
+
+    zero_value(&val);
+
+    if (max_bytes > 8) max_bytes = 8;
+
+    if (max_bytes >= 8) val.flags.u64b = val.flags.s64b = val.flags.f64b = 1;
+    if (max_bytes >= 4) val.flags.u32b = val.flags.s32b = val.flags.f32b = 1;
+    if (max_bytes >= 2) val.flags.u16b = val.flags.s16b                  = 1;
+    if (max_bytes >= 1) val.flags.u8b  = val.flags.s8b                   = 1;
+
+    for (i = 0; i < max_bytes; ++i)
+    {
+        uint8_t byte;
+        byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value;
+
+        *((uint8_t *)(&val.int64_value) + i) = byte;
+    }
+
+    return val;
+}
+
+static inline value_t
+data_to_val(matches_and_old_values_swath *swath, long index)
+{
+    return data_to_val_aux(swath, index, swath->number_of_bytes);
 }
 
 #endif /* TARGET_MEMORY_INFO_ARRAY_H */

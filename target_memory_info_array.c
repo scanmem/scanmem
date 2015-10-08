@@ -71,37 +71,6 @@ matches_and_old_values_array * null_terminate (matches_and_old_values_array *arr
     return array;
 }
 
-value_t data_to_val_aux(matches_and_old_values_swath *swath, long index, long swath_length )
-{
-    int i;
-    value_t val;
-    int max_bytes = swath_length - index;
-    
-    memset(&val, 0x00, sizeof(val));
-    
-    if (max_bytes > 8) max_bytes = 8;
-    
-    if (max_bytes >= 8) val.flags.u64b = val.flags.s64b = val.flags.f64b = 1;
-    if (max_bytes >= 4) val.flags.u32b = val.flags.s32b = val.flags.f32b = 1;
-    if (max_bytes >= 2) val.flags.u16b = val.flags.s16b                  = 1;
-    if (max_bytes >= 1) val.flags.u8b  = val.flags.s8b                   = 1;
-    
-    for (i = 0; i < max_bytes; ++i)
-    {
-        uint8_t byte;
-        byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value;
-        
-        *((uint8_t *)(&val.int64_value) + i) = byte;
-    }
-    
-    return val;
-}
-
-value_t data_to_val(matches_and_old_values_swath *swath, long index )
-{
-	return data_to_val_aux(swath, index, swath->number_of_bytes );
-}
-
 void data_to_printable_string(char *buf, int buf_length, matches_and_old_values_swath *swath, long index, int string_length)
 {
     long swath_length = swath->number_of_bytes - index;
