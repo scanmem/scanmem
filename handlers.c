@@ -462,8 +462,9 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
     
     if (loc.swath)
     {
-        /* It is not convenient to check whether anything else relies on this, so just mark it as not a REAL match */
-        memset(&(loc.swath->data[loc.index].match_info), 0, sizeof(match_flags));
+        /* It is not convenient to check whether anything else relies on this,
+           so just mark it as not a REAL match */
+        zero_match_flags(&loc.swath->data[loc.index].match_info);
         return true;
     }
     else
@@ -750,9 +751,9 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 
     USEPARAMS();
 
-    if(argc == 1)
+    if (argc == 1)
     {
-        memset(&val, 0x00, sizeof(val));
+        zero_uservalue(&val);
     }
     else if (argc > 2)
     {
@@ -1193,7 +1194,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
         /* check if the new value is different */
         match_flags tmpflags;
-        memset(&tmpflags, 0x00, sizeof(tmpflags));
+        zero_match_flags(&tmpflags);
         scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHCHANGED));
         if (valuecmp_routine(&o, &n, NULL, &tmpflags, address)) {
 

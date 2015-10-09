@@ -185,7 +185,7 @@ bool parse_uservalue_int(const char *nptr, uservalue_t * val)
     assert(nptr != NULL);
     assert(val != NULL);
 
-    memset(val, 0x00, sizeof(uservalue_t));
+    zero_uservalue(val);
 
     /* skip past any whitespace */
     while (isspace(*nptr))
@@ -217,7 +217,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     assert(nptr);
     assert(val);
 
-    memset(val, 0x00, sizeof(uservalue_t));
+    zero_uservalue(val);
     while (isspace(*nptr))
         ++nptr;
 
