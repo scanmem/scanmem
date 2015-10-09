@@ -153,6 +153,11 @@ static inline void zero_value(value_t *val)
     zero_match_flags(&val->flags);
 }
 
+static inline void zero_uservalue(uservalue_t *val)
+{
+    memset(val, 0, sizeof(*val));
+}
+
 static inline void truncval_to_flags(value_t *dst, match_flags flags)
 {
     assert(dst != NULL);
