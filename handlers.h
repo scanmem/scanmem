@@ -228,7 +228,8 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc);
 /*XXX: improve this */
 #define SHOW_SHRTDOC "display information about scanmem."
 #define SHOW_LONGDOC "usage: show <info>\n" \
-                "Display information relating to <info>.\n"
+                "Display information relating to <info>.\n" \
+                "Possible <info> values: `copying`, `warranty` or `version`\n"
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc);
 
