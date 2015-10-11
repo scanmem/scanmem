@@ -247,6 +247,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        zero_value(&v);
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
                         
@@ -282,6 +283,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                                     
                         value_t old = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
                         value_t v;
+                        zero_value(&v);
                         v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
                         uservalue2value(&v, &userval);
 
