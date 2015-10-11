@@ -251,7 +251,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
                         
-                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value); 
+                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
                         /* set the value specified */
                         fix_endianness(vars, &v);
@@ -287,7 +287,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
                         uservalue2value(&v, &userval);
 
-                        show_info("setting *%p to %"PRIx64"...\n", address, v.int64_value); 
+                        show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
                         fix_endianness(vars, &v);
                         if (setaddr(vars->target, address, &v) == false) {
