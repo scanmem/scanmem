@@ -1,5 +1,5 @@
 /*
-    Replace libreadline.
+    Replace libreadline
 
     Copyright (C) 2015 Jonathan Pelletier <funmungus(a)gmail.com>
 

@@ -31,7 +31,7 @@
 #include <string.h>
 #include <stdbool.h>
 
-#if WITH_READLINE
+#if HAVE_LIBREADLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #else
