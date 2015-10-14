@@ -10,7 +10,10 @@ LT_INIT
 
 IT_PROG_INTLTOOL
 
-AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
+AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul getline)
+
+AC_CHECK_FUNC(getline, [], [have_getline=0])
+AM_CONDITIONAL([HAVE_GETLINE], [test "x$have_getline" != "x0"])
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
 

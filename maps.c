@@ -35,6 +35,10 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+#ifndef HAVE_GETLINE
+#include "getline.h"
+#endif
+
 #include "list.h"
 #include "maps.h"
 #include "scanmem.h"

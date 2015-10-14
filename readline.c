@@ -17,9 +17,14 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include <stdio.h>
 
 #include "readline.h"
+
+#ifndef HAVE_GETLINE
+#include "getline.h"
+#endif
 
 int rl_attempted_completion_over = 0;
 const char *rl_readline_name = "scanmem";
