@@ -18,8 +18,6 @@ AM_CONDITIONAL([HAVE_GETLINE], [test "x$have_getline" != "x0"])
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
 
 AC_FUNC_ALLOCA
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_FUNC_STRTOD
 
 AC_TYPE_INT8_T
@@ -37,23 +35,33 @@ AC_TYPE_SSIZE_T
 
 AC_C_BIGENDIAN
 
-
-# also need to check if the file is zero'ed (some hardened systems)
-AC_CHECK_FILE([/proc/self/maps], [], [
+AM_CONDITIONAL([ANDROID_HOST],
+              [test "${ac_cv_env_host_alias_value/android//}" = "$ac_cv_env_host_alias_value"])
+AS_IF([test "${ac_cv_env_host_alias_value/android//}" = "$ac_cv_env_host_alias_value"], [
+  # also need to check if the file is zero'ed (some hardened systems)
+  AC_CHECK_FILE([/proc/self/maps], [], [
     echo "This system does not seem to have /proc/pid/maps files."
     exit 1
-])
+  ])
 
-# also need to check this file works
-AC_CHECK_FILE([/proc/self/mem], [
+  # also need to check this file works
+  AC_CHECK_FILE([/proc/self/mem], [
     # LARGEFILE support required for this to work
     AC_SYS_LARGEFILE
     AC_DEFINE(HAVE_PROCMEM, [1], [Enable /proc/pid/mem support])
-],[
+  ],[
     # This will hurt performance.
     echo "This system does not seem to have /proc/pid/mem files."
     echo "Falling back to ptrace() only support."
     AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
+  ])
+  # malloc optimizations without Android
+  AC_FUNC_MALLOC
+  AC_FUNC_REALLOC
+], [
+  # supported on Android
+  C_SYS_LARGEFILE
+  AC_DEFINE(HAVE_PROCMEM, [1], [Enable /proc/pid/mem support])
 ])
 
 # copied from ubuntu-tweak

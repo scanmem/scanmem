@@ -7,6 +7,12 @@ endif
 
 AM_CFLAGS = -O2 -g -Wall
 
+if ANDROID_HOST
+  # Android 5.0+ needs this
+  AM_CFLAGS += -fPIE
+  AM_LDFLAGS = -pie
+endif
+
 lib_LTLIBRARIES = libscanmem.la
 
 libscanmem_la_SOURCES = commands.h \
