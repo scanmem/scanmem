@@ -45,6 +45,10 @@ GameConqueror is a GUI front-end for scanmem, providing more features, such as:
 
 See gui/README for more detail.
 
+## Android
+You need a [standalone toolchain of Android NDK](https://developer.android.com/ndk/guides/standalone_toolchain.html#itc) (the Advanced method) to build interactive capabilities for Android.  For more information, run:
+
+  ./build_for_android.sh help
 
 ## License: 
 
