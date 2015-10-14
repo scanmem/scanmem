@@ -49,7 +49,9 @@ ANDROID_MK(){
   fi
 
   # TODO: Configuring without cross-compile may give bad values in config.h
-  if [ ! -f config.h ]; then
+  if [ -f config.h ]; then
+    sed -i '' 's,^#define HAVE_LIBREADLINE,//#define HAVE_LIBREADLINE/g' config.h
+  else
     ./configure --without-readline
   fi
   "${ndkhome}/ndk-build"
@@ -89,7 +91,7 @@ else
 fi
 
 # Processor count for make instructions
-procnum="$(cat /proc/cpuinfo | grep -e '^processor' | wc -l)"
+procnum="$(getconf _NPROCESSORS_ONLN)"
 if [ "x${procnum}" = "x" ] || [ $procnum -eq 0 ]; then
   procnum=1
 fi
@@ -155,5 +157,7 @@ LIBS="-lncurses -lm" ./configure --host="${HOST}" --prefix="${SYSROOT}/usr" --en
 make -j ${procnum} && make install
 # If NDK_HOME is defined, assume the user wishes to use the Android makefile
 if [ ! "x${NDK_HOME}" = "x" ] || [ ! "x${ANDROID_NDK_HOME}" = "x" ]; then
+  # libreadline not available for ndk-build
+  ./configure --without-readline --host="${HOST}" --prefix="${SYSROOT}/usr" --enable-static --disable-shared
   ANDROID_MK
 fi
