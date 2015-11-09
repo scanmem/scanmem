@@ -32,6 +32,11 @@ libscanmem_la_SOURCES = commands.h \
     value.h \
     value.c 
 
+if !HAVE_GETLINE
+  libscanmem_la_SOURCES += getline.h \
+      getline.c
+endif
+
 if !WITH_READLINE
   libscanmem_la_SOURCES += readline.h \
       readline.c
