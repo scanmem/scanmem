@@ -77,7 +77,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
         cmd += str(num)
 
         if data_type.startswith('int'):
-            if not (isinstance(num, int)):
+            py2_long = not PY3K and isinstance(num, long)
+            if not (isinstance(num, int) or py2_long):
                 raise ValueError(_('%s is not an integer') % (num,))
             if data_type == 'int':
                 width = 64
@@ -93,7 +94,8 @@ def check_scan_command (data_type, cmd, is_first_scan):
 def eval_operand(s):
     try:
         v = eval(s)
-        if isinstance(v, int) or isinstance(v, float):
+        py2_long = not PY3K and isinstance(v, long)
+        if isinstance(v, int) or isinstance(v, float) or py2_long:
             return v
     except:
         pass
