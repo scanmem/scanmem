@@ -915,7 +915,7 @@ class GameConqueror():
                 line = line[line.find(']')+1:]
                 (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
                 a = '%x'%(int(a,16),)
-                o = '%x'%(int(o[5:],16),)
+                o = '%x'%(int(o.split('+')[1],16),)
                 t = t[1:-1]
                 if t == 'unknown':
                     continue
