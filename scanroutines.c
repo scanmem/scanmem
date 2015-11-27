@@ -225,9 +225,50 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(INTEGER64, 64)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT64, 64)
 
-/*----------------*/
+/*-----------*/
+/* for RANGE */
+/*-----------*/
+
+#define DEFINE_INTEGER_RANGE_ROUTINE(DATATYPENAME, DATAWIDTH) \
+    int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
+    { \
+        int ret = 0; \
+        if ((new_value->flags.s##DATAWIDTH##b) \
+                && (user_value[0].flags.s##DATAWIDTH##b) && (user_value[1].flags.s##DATAWIDTH##b) \
+                && (get_s##DATAWIDTH##b(new_value) >= get_s##DATAWIDTH##b(&user_value[0])) \
+                && (get_s##DATAWIDTH##b(new_value) <= get_s##DATAWIDTH##b(&user_value[1]))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
+        if ((new_value->flags.u##DATAWIDTH##b) \
+                && (user_value[0].flags.u##DATAWIDTH##b) && (user_value[1].flags.u##DATAWIDTH##b) \
+                && (get_u##DATAWIDTH##b(new_value) >= get_u##DATAWIDTH##b(&user_value[0])) \
+                && (get_u##DATAWIDTH##b(new_value) <= get_u##DATAWIDTH##b(&user_value[1]))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
+        return ret; \
+    }
+
+DEFINE_INTEGER_RANGE_ROUTINE(INTEGER8, 8)
+DEFINE_INTEGER_RANGE_ROUTINE(INTEGER16, 16)
+DEFINE_INTEGER_RANGE_ROUTINE(INTEGER32, 32)
+DEFINE_INTEGER_RANGE_ROUTINE(INTEGER64, 64)
+
+#define DEFINE_FLOAT_RANGE_ROUTINE(DATATYPENAME, DATAWIDTH) \
+    int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
+    { \
+        int ret = 0; \
+        if ((new_value->flags.f##DATAWIDTH##b) \
+                && (user_value[0].flags.f##DATAWIDTH##b) && (user_value[1].flags.f##DATAWIDTH##b) \
+                && (get_f##DATAWIDTH##b(new_value) >= get_f##DATAWIDTH##b(&user_value[0])) \
+                && (get_f##DATAWIDTH##b(new_value) <= get_f##DATAWIDTH##b(&user_value[1]))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
+        return ret; \
+    }
+
+DEFINE_FLOAT_RANGE_ROUTINE(FLOAT32, 32)
+DEFINE_FLOAT_RANGE_ROUTINE(FLOAT64, 64)
+
+/*---------------*/
 /* for BYTEARRAY */
-/*----------------*/
+/*---------------*/
 int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
 {
    return saveflags->bytearray_length = ((old_value)->flags.bytearray_length); 
@@ -373,7 +414,7 @@ DEFINE_ANYTYPE_ROUTINE(INCREASED_WITH_REVERSE)
 DEFINE_ANYTYPE_ROUTINE(DECREASED_WITH_REVERSE)
 DEFINE_ANYTYPE_ROUTINE(INCREASEDBY)
 DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
-
+DEFINE_ANYTYPE_ROUTINE(RANGE)
 
 
 /***************************************************************/
@@ -425,6 +466,7 @@ scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASEDBY, DECREASEDBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHGREATERTHAN, GREATERTHAN)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHLESSTHAN, LESSTHAN)
+    CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHRANGE, RANGE)
 
     CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO) 
     CHOOSE_ROUTINE(STRING, STRING, MATCHEQUALTO, EQUALTO) 
