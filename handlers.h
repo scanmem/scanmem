@@ -68,10 +68,10 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc);
 bool handler__delete(globals_t * vars, char **argv, unsigned argc);
 
 #define RESET_SHRTDOC "forget all matches, and reinitialise regions"
-#define RESET_LONGDOC "usage: reset\n" \
+#define RESET_LONGDOC "usage: reset [keep-regions]\n" \
                 "Forget all matches and regions, and reread regions from the relevant\n" \
                 "maps file. Useful if you have made an error, or want to find a new\n" \
-                "variable.\n"
+                "variable. Supply <keep-regions> option to keep current region list.\n"
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc);
 
