@@ -30,7 +30,9 @@ libscanmem_la_SOURCES = commands.h \
     target_memory_info_array.h \
     target_memory_info_array.c \
     value.h \
-    value.c 
+    value.c \
+    vector.h \
+    vector.c
 
 if !WITH_READLINE
   libscanmem_la_SOURCES += readline.h \
