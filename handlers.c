@@ -593,7 +593,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
     np = vars->regions->tail;
     unsigned max_id = ((region_t *)np->data)->id;
 
-    const unsigned int parsed_regions_cap = max_id;
+    const unsigned int parsed_regions_cap = max_id+1;
     const unsigned int parsed_regions_count = 0;
 
     parsed_regions = vector_init(parsed_regions_count, parsed_regions_cap, sizeof(char));
@@ -603,7 +603,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         goto dregion_failed;
     }
 
-    memset( vector_at(parsed_regions, 0), (invert ? 1 : 0), max_id );
+    memset( vector_at(parsed_regions, 0), (invert ? 1 : 0), parsed_regions_cap );
 
     // create list of region ids, and then loop over it
     char * block_end = NULL;
@@ -628,7 +628,8 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
                 range_ids[current_token] = id;
                 current_token++;
                 if (current_token>1) {
-                    for (unsigned idx = range_ids[0]; idx <= range_ids[1]; ++idx) {
+                    unsigned idx;
+                    for ( idx = range_ids[0]; idx <= range_ids[1]; ++idx ) {
                         char * at = vector_at(parsed_regions, idx);
                         if (!at) {
                             show_error("no memory for parsed regions\n");
