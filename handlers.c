@@ -484,7 +484,11 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 
     bool keep_regions = false;
 
-    for ( unsigned idx = 0; idx < argc; ++idx ) {
+    if (argc == 1 && strcmp(argv[0], "mreset")==0)
+        keep_regions = true;
+
+    unsigned idx = 0;
+    for (; idx < argc; ++idx ) {
         if ( strcmp(argv[idx], "keep-regions")==0)
             keep_regions = true;
     }
@@ -909,6 +913,10 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     bytearray_element_t *array = NULL;
 
     USEPARAMS();
+
+    if (argc == 1 && strcmp(argv[0], "mreset")==0) {
+        return handler__reset(vars, argv, argc);
+    }
 
     switch(vars->options.scan_data_type)
     {
