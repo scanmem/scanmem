@@ -40,3 +40,13 @@ po/POTFILES
 po/ja.gmo
 po/ru.gmo
 po/stamp-it
+# Android builds
+obj/
+libs/
+# libreadline and ncurses downloads and links
+readline-6.3.tar.gz
+readline-6.3
+ncurses-6.0.tar.gz
+ncurses-6.0
+readline
+ncurses

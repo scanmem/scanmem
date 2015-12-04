@@ -1,6 +1,7 @@
 /*
-    Replace libreadline
+    Replace getline
 
+    Copyright (C) 2015 JianXiong Zhou <zhoujianxiong2@gmail.com>
     Copyright (C) 2015 Jonathan Pelletier <funmungus(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
@@ -17,19 +18,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef READLINE_H
-#define READLINE_H
+#ifndef GETLINE_H
+#define GETLINE_H
 
-typedef char *rl_compentry_func_t(const char *, int);
-typedef char **rl_completion_func_t(const char *, int, int);
+#include <stdio.h>
 
-extern int rl_attempted_completion_over;
-extern const char *rl_readline_name;
-extern rl_completion_func_t *rl_attempted_completion_function;
+ssize_t getline(char **lineptr, size_t *n, FILE *stream);
 
-char **rl_completion_matches(const char *text, rl_compentry_func_t
-                             *entry_function);
-char *readline(const char *prompt);
-void add_history(const char *line);
-
-#endif /* READLINE_H */
+#endif
