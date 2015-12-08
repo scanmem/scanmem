@@ -10,7 +10,17 @@ LT_INIT
 
 IT_PROG_INTLTOOL
 
-AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
+AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul getline)
+
+if test "x$ac_cv_func_getline" = "xno"; then
+  AC_CHECK_FUNCS(fgetln)
+  if test "x$ac_cv_func_fgetln" = "xno"; then
+    AC_MSG_ERROR([Cannot build without working getline().])
+  else
+    AC_MSG_NOTICE([Using the fgetln()-based getline() replacement.])
+  fi
+fi
+AM_CONDITIONAL([HAVE_GETLINE], [test "x$ac_cv_func_getline" != "xno"])
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
 
