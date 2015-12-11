@@ -44,6 +44,21 @@ AC_TYPE_SSIZE_T
 
 AC_C_BIGENDIAN
 
+# Detect the host OS
+android="no"
+AC_CANONICAL_HOST
+case "$host_os" in
+  *android*)
+    android="yes"
+    AC_MSG_NOTICE([Android detected])
+    ;;
+  linux*)
+    AC_MSG_NOTICE([Linux detected])
+    ;;
+  *)
+    AC_MSG_NOTICE([Your platform is not currently supported])
+    ;;
+esac
 
 # also need to check if the file is zero'ed (some hardened systems)
 AC_CHECK_FILE([/proc/self/maps], [], [
