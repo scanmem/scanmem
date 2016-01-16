@@ -4,7 +4,8 @@ gameconquerordir=$(datadir)/gameconqueror
 python_PYTHON = backend.py consts.py misc.py hexview.py GameConqueror.py
 pythondir = $(gameconquerordir)
 dist_bin_SCRIPTS = gameconqueror
-dist_gameconqueror_DATA = GameConqueror.xml GameConqueror_128x128.png GameConqueror_72x72.png
+dist_gameconqueror_DATA = GameConqueror.xml GameConqueror_128x128.png \
+                          GameConqueror_72x72.png GameConqueror_48x48.png
 dist_desktop_in_files = GameConqueror.desktop.in
 dist_desktop_DATA = $(dist_desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
