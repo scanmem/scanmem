@@ -37,6 +37,7 @@
 
 #include "list.h"
 #include "maps.h"
+#include "getline.h"
 #include "scanmem.h"
 #include "show_message.h"
 

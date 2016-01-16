@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "readline.h"
+#include "getline.h"
 
 int rl_attempted_completion_over = 0;
 const char *rl_readline_name = "scanmem";

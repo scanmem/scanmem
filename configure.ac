@@ -10,13 +10,21 @@ LT_INIT
 
 IT_PROG_INTLTOOL
 
-AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul)
+AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul getline)
+
+if test "x$ac_cv_func_getline" = "xno"; then
+  AC_CHECK_FUNCS(fgetln)
+  if test "x$ac_cv_func_fgetln" = "xno"; then
+    AC_MSG_ERROR([Cannot build without working getline().])
+  else
+    AC_MSG_NOTICE([Using the fgetln()-based getline() replacement.])
+  fi
+fi
+AM_CONDITIONAL([HAVE_GETLINE], [test "x$ac_cv_func_getline" != "xno"])
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
 
 AC_FUNC_ALLOCA
-AC_FUNC_MALLOC
-AC_FUNC_REALLOC
 AC_FUNC_STRTOD
 
 AC_TYPE_INT8_T
@@ -34,23 +42,48 @@ AC_TYPE_SSIZE_T
 
 AC_C_BIGENDIAN
 
+# Detect the host OS
+android="no"
+AC_CANONICAL_HOST
+case "$host_os" in
+  *android*)
+    android="yes"
+    AC_MSG_NOTICE([Android detected])
+    ;;
+  linux*)
+    AC_MSG_NOTICE([Linux detected])
+    ;;
+  *)
+    AC_MSG_NOTICE([Your platform is not currently supported])
+    ;;
+esac
 
-# also need to check if the file is zero'ed (some hardened systems)
-AC_CHECK_FILE([/proc/self/maps], [], [
+AS_IF([test "x$android" = "xno"], [
+  # also need to check if the file is zero'ed (some hardened systems)
+  AC_CHECK_FILE([/proc/self/maps], [], [
     echo "This system does not seem to have /proc/pid/maps files."
     exit 1
-])
+  ])
 
-# also need to check this file works
-AC_CHECK_FILE([/proc/self/mem], [
+  # also need to check this file works
+  AC_CHECK_FILE([/proc/self/mem], [
     # LARGEFILE support required for this to work
     AC_SYS_LARGEFILE
     AC_DEFINE(HAVE_PROCMEM, [1], [Enable /proc/pid/mem support])
-],[
+  ],[
     # This will hurt performance.
     echo "This system does not seem to have /proc/pid/mem files."
     echo "Falling back to ptrace() only support."
     AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
+  ])
+  # malloc optimizations without Android
+  AC_FUNC_MALLOC
+  AC_FUNC_REALLOC
+], [
+  # supported on Android
+  AC_SYS_LARGEFILE
+  # /proc/pid/mem is there but reading interesting data fails
+  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
 ])
 
 # copied from ubuntu-tweak

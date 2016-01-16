@@ -38,6 +38,7 @@
 #include "readline.h"
 #endif
 
+#include "getline.h"
 #include "scanmem.h"
 #include "commands.h"
 #include "show_message.h"
