@@ -114,8 +114,8 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc);
 
 #define GREATERTHAN_SHRTDOC "match values that have increased or greater than some number"
 #define LESSTHAN_SHRTDOC "match values that have decreased or less than some number"
-#define NOTCHANGED_SHRTDOC "match all variables that have changed since last scan"
-#define CHANGED_SHRTDOC "match all variables that have not changed since last scan"
+#define NOTCHANGED_SHRTDOC "match all variables that have not changed since last scan"
+#define CHANGED_SHRTDOC "match all variables that have changed since last scan"
 #define INCREASED_SHRTDOC "match values that have increased by some given number"
 #define DECREASED_SHRTDOC "match values that have decreased by some given number"
 
