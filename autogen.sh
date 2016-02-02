@@ -25,7 +25,7 @@ autoconf || {
     exit 1
 }
 echo "+ running intltoolize ..."
-intltoolize -f -c || {
+intltoolize -f -c --automake || {
     echo
     echo "intltoolize failed - check that it is present on system"
     exit 1
