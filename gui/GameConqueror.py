@@ -360,7 +360,7 @@ class GameConqueror():
                 with open(dialog.get_filename(), 'r') as f:
                     obj = json.load(f)
                     for row in obj['cheat_list']:
-                        self.add_to_cheat_list(row[3],row[5],row[4],row[2])
+                        self.add_to_cheat_list(row[3],row[5],row[4],row[2],True)
             except:
                 pass
         dialog.destroy()
@@ -759,7 +759,7 @@ class GameConqueror():
         Gdk.threads_leave()
         return True
 
-    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description')):
+    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False):
         # determine longest possible type
         types = typestr.split()
         vt = typestr
@@ -767,7 +767,10 @@ class GameConqueror():
             if t in TYPENAMES_S2G:
                 vt = TYPENAMES_S2G[t]
                 break
-        self.cheatlist_liststore.prepend(['=', False, description, addr, vt, str(value), True])
+        if at_end:
+            self.cheatlist_liststore.append(['=', False, description, addr, vt, str(value), True])
+        else:
+            self.cheatlist_liststore.prepend(['=', False, description, addr, vt, str(value), True])
 
     def get_process_list(self):
         return [list(map(str.strip, e.strip().split(' ',2))) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
