@@ -565,20 +565,38 @@ class GameConqueror():
             return True
         return False
 
-    def cheatlist_toggle_lock_cb(self, cellrenderertoggle, path, data=None):
+    def cheatlist_toggle_lock(self, row):
+        if self.cheatlist_liststore[row][6]: # valid
+            locked = self.cheatlist_liststore[row][1]
+            locked = not locked
+            self.cheatlist_liststore[row][1] = locked
+        if locked:
+            #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
+            pass
+        else:
+            #TODO: update its value?
+            pass
+        return True
+
+    def cheatlist_toggle_lock_cb(self, cellrenderertoggle, row_str, data=None):
         pathlist = self.cheatlist_tv.get_selection().get_selected_rows()[1]
+        if not row_str:
+            return True
+        cur_row = int(row_str)
+        # check if the current row is part of the selection
+        found = False
         for path in pathlist:
             row = path[0]
-            if self.cheatlist_liststore[row][6]: # valid
-                locked = self.cheatlist_liststore[row][1]
-                locked = not locked
-                self.cheatlist_liststore[row][1] = locked
-            if locked:
-                #TODO: check value(valid number & not overflow), if failed, unlock it and do nothing
-                pass
-            else:
-                #TODO: update its value?
-                pass
+            if row == cur_row:
+                found = True
+                break
+        if not found:
+            self.cheatlist_toggle_lock(cur_row)
+            return True
+        # the current row is part of the selection
+        for path in pathlist:
+            row = path[0]
+            self.cheatlist_toggle_lock(row)
         return True
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
