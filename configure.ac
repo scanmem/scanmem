@@ -1,4 +1,4 @@
-AC_INIT([scanmem],[0.15.5],[https://github.com/scanmem/scanmem])
+AC_INIT([scanmem],[0.15.6],[https://github.com/scanmem/scanmem])
 AC_CONFIG_MACRO_DIR([m4])
 AM_INIT_AUTOMAKE([-Wall -Werror -Wno-extra-portability foreign])
 AC_CONFIG_SRCDIR([main.c])
