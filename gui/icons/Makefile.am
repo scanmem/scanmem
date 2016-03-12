@@ -8,6 +8,4 @@ icon72dir = $(datadir)/icons/hicolor/72x72/apps
 icon128dir = $(datadir)/icons/hicolor/128x128/apps
 
 install-data-hook:
-	if [ -n "`which gtk-update-icon-cache`" ]; then \
-		gtk-update-icon-cache $(datadir)/icons/hicolor; \
-	fi
+	@echo "Remember to run gtk-update-icon-cache if icons don't show up."
