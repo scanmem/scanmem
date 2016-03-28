@@ -890,11 +890,25 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+static inline bool parse_uservalue_default(char *str, uservalue_t *val)
+{
+    bool ret = true;
+
+    if (!parse_uservalue_number(str, val)) {
+        show_error("unable to parse number `%s`\n", str);
+        ret = false;
+    }
+    return ret;
+}
+
 bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
-    uservalue_t val;
-    bool ret;
+    uservalue_t vals[2];
+    uservalue_t *val = &vals[0];
     bytearray_element_t *array = NULL;
+    scan_match_type_t m = MATCHEQUALTO;
+    char *ustr = argv[0];
+    bool ret = false;
 
     USEPARAMS();
 
@@ -913,14 +927,10 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         if (argc != 1)
         {
             show_error("unknown command\n");
-            ret = false;
             goto retl;
         }
-        if (!parse_uservalue_number(argv[0], &val)) {
-            show_error("unable to parse command `%s`\n", argv[0]);
-            ret = false;
+        if (!parse_uservalue_default(ustr, val))
             goto retl;
-        }
         break;
     case BYTEARRAY:
         /* attempt to parse command as a bytearray */
@@ -929,18 +939,16 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         if (array == NULL)
         {
             show_error("there's a memory allocation error.\n");
-            ret = false;
             goto retl;
         }
-        if (!parse_uservalue_bytearray(argv, argc, array, &val)) {
-            show_error("unable to parse command `%s`\n", argv[0]);
-            ret = false;
+        if (!parse_uservalue_bytearray(argv, argc, array, val)) {
+            show_error("unable to parse command `%s`\n", ustr);
             goto retl;
         }
         break;
     case STRING:
-        show_error("unable to parse command `%s`\nIf you want to scan for a string, use command `\"`.\n", argv[0]);
-        ret = false;
+        show_error("unable to parse command `%s`\nIf you want to scan"
+                   " for a string, use command `\"`.\n", ustr);
         goto retl;
         break;
     default:
@@ -950,23 +958,20 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {
-        ret = false;
         goto retl;
     }
 
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
+        if (checkmatches(vars, m, val) != true) {
             show_error("failed to search target address space.\n");
-            ret = false;
             goto retl;
         }
     } else {
         /* initial search */
-        if (searchregions(vars, MATCHEQUALTO, &val) != true) {
+        if (searchregions(vars, m, val) != true) {
             show_error("failed to search target address space.\n");
-            ret = false;
             goto retl;
         }
     }
