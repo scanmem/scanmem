@@ -169,8 +169,9 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc);
 
 #define DEFAULT_SHRTDOC NULL
 #define DEFAULT_LONGDOC "When searching for a number, use any notation in standard C language (leading 0x for\n" \
-                "hexadecimal, leading 0 for octal, everything else is assumed to be decimal)\n" \
-                "float numbers are also acceptable, but will be rounded if scanning integers\n" \
+                "hexadecimal, leading 0 for octal, everything else is assumed to be decimal).\n" \
+                "Float numbers are also acceptable, but will be rounded if scanning integers.\n" \
+                "Use \'..\' for a range, e.g. \'1..3\' searches between 1 and 3 inclusive.\n" \
                 "\n" \
                 "When searching for an array of byte, use 2-byte hexadecimal notation, \n" \
                 "separated by spaces, wildcard '?\?' is also supported. E.g. FF ?\? EE ?\? 02 01\n" \
