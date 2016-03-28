@@ -908,6 +908,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     bytearray_element_t *array = NULL;
     scan_match_type_t m = MATCHEQUALTO;
     char *ustr = argv[0];
+    char *pos;
     bool ret = false;
 
     USEPARAMS();
@@ -929,8 +930,20 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
             show_error("unknown command\n");
             goto retl;
         }
-        if (!parse_uservalue_default(ustr, val))
-            goto retl;
+	/* detect a range */
+	pos = strstr(ustr, "..");
+	if (pos) {
+            *pos = '\0';
+            if (!parse_uservalue_default(ustr, &vals[0]))
+                goto retl;
+            ustr = pos + 2;
+            if (!parse_uservalue_default(ustr, &vals[1]))
+                goto retl;
+            m = MATCHRANGE;
+        } else {
+            if (!parse_uservalue_default(ustr, val))
+                goto retl;
+        }
         break;
     case BYTEARRAY:
         /* attempt to parse command as a bytearray */
