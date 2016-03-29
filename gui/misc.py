@@ -75,17 +75,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             cmd = ''
         num = eval_operand(num)
         cmd += str(num)
-
-        if data_type.startswith('int'):
-            py2_long = not PY3K and isinstance(num, long)
-            if not (isinstance(num, int) or py2_long):
-                raise ValueError(_('%s is not an integer') % (num,))
-            if data_type == 'int':
-                width = 64
-            else:
-                width = int(data_type[len('int'):])
-            if num > ((1<<width)-1) or num < -(1<<(width-1)):
-                raise ValueError(_('%s is too bulky for %s') % (num, data_type))
+        check_int(data_type, num)
 
         # finally
         return cmd
@@ -101,6 +91,21 @@ def eval_operand(s):
         pass
 
     raise ValueError(_('Bad value: %s') % (s,))
+
+# check if a number is a valid integer
+# raise an exception if not
+def check_int (data_type, num):
+    if data_type.startswith('int'):
+        py2_long = not PY3K and isinstance(num, long)
+        if not (isinstance(num, int) or py2_long):
+            raise ValueError(_('%s is not an integer') % (num,))
+        if data_type == 'int':
+            width = 64
+        else:
+            width = int(data_type[len('int'):])
+        if num > ((1<<width)-1) or num < -(1<<(width-1)):
+            raise ValueError(_('%s is too bulky for %s') % (num, data_type))
+    return
 
 # convert [a,b,c] into a liststore that [[a],[b],[c]], where a,b,c are strings
 def build_simple_str_liststore(l):
