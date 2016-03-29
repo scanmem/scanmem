@@ -745,6 +745,81 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+static bool do_search(scan_match_type_t m, globals_t *vars, uservalue_t *pval, char **argv, unsigned argc)
+{
+    if (vars->matches) {
+        if (checkmatches(vars, m, pval) == false) {
+            show_error("failed to search target address space.\n");
+            return false;
+        }
+    } else {
+        /* < > = != cannot be the initial scan */
+        if (argc == 1 && m != MATCHRANGE) {
+            show_error("cannot use that search without matches\n");
+            return false;
+        } else {
+            if (searchregions(vars, m, pval) != true) {
+                show_error("failed to search target address space.\n");
+                return false;
+            }
+        }
+    }
+
+    if (vars->num_matches == 1) {
+        show_info("match identified, use \"set\" to modify value.\n");
+        show_info("enter \"help\" for other commands.\n");
+    }
+    return true;
+}
+
+static bool do_search_range(globals_t *vars, uservalue_t *pval, char **argv, unsigned argc)
+{
+    bool retval = do_search(MATCHRANGE, vars, pval, argv, argc);
+    free(pval);
+    return retval;
+}
+
+static uservalue_t *try_get_range_values(const char *arg)
+{
+
+    // copy the argument
+    char *argv_copy = strdupa(arg);
+    if (!argv_copy) {
+        show_error("memory allocation failure\n");
+        return NULL;
+    }
+    // first we need to get `from` argument
+    char *range_from_ends = strstr(argv_copy, "..");
+    if (!range_from_ends)
+        return NULL; // this is not range, aborting!
+
+    *range_from_ends = 0;
+    char *range_to_starts = range_from_ends + 2;
+
+    // now allocate uservalue_t structures
+
+    uservalue_t *pval = malloc(sizeof(uservalue_t) * 2);
+    if (!pval) {
+        show_error("memory allocation failure\n");
+        return NULL;
+    }
+
+    zero_uservalue(&pval[0]);
+    if (!parse_uservalue_number(argv_copy, &pval[0])) {
+        free(pval);
+        show_error("bad value (from) specified in range");
+        return NULL;
+    }
+
+    zero_uservalue(&pval[1]);
+    if (!parse_uservalue_number(range_to_starts, &pval[1])) {
+        free(pval);
+        show_error("bad value (to) specified in range");
+        return NULL;
+    }
+    return pval;
+}
+
 /* the name of the function is for history reason, now GREATERTHAN & LESSTHAN are also handled by this function */
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
@@ -755,6 +830,9 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 
     if (argc == 1)
     {
+        uservalue_t * pval = try_get_range_values(argv[0]);
+        if (pval)
+            return do_search_range(vars, pval, argv, argc);
         zero_uservalue(&val);
     }
     else if (argc > 2)
@@ -801,34 +879,10 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    if (vars->matches) {
-        if (checkmatches(vars, m, &val) == false) {
-            show_error("failed to search target address space.\n");
-            return false;
-        }
-    } else {
-        /* < > = != cannot be the initial scan */
-        if (argc == 1)
-        {
-            show_error("cannot use that search without matches\n");
-            return false;
-        }
-        else
-        {
-            if (searchregions(vars, m, &val) != true) {
-                show_error("failed to search target address space.\n");
-                return false;
-            }
-        }
-    }
-
-    if (vars->num_matches == 1) {
-        show_info("match identified, use \"set\" to modify value.\n");
-        show_info("enter \"help\" for other commands.\n");
-    }
-
-    return true;
+    return do_search ( m, vars, &val, argv, argc );
 }
+
+
 
 bool handler__version(globals_t * vars, char **argv, unsigned argc)
 {
@@ -916,6 +970,11 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
             ret = false;
             goto retl;
         }
+
+        uservalue_t * pval = try_get_range_values(argv[0]);
+        if (pval)
+            return do_search_range(vars, pval, argv, argc);
+
         if (!parse_uservalue_number(argv[0], &val)) {
             show_error("unable to parse command `%s`\n", argv[0]);
             ret = false;
