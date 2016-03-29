@@ -45,6 +45,7 @@ typedef enum {
     MATCHNOTEQUALTO,          
     MATCHGREATERTHAN,
     MATCHLESSTHAN,
+    MATCHRANGE,
     /* following: compare with the old value */
     MATCHNOTCHANGED,
     MATCHCHANGED,
