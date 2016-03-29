@@ -64,18 +64,28 @@ def check_scan_command (data_type, cmd, is_first_scan):
             raise ValueError(_('Command \"%s\" is not valid for the first scan') % (cmd[:2],))
 
         # evaluating the command
-        if cmd[:2] in ['+ ', '- ', '> ', '< ']:
-            num = cmd[2:]
-            cmd = cmd[:2]
-        elif cmd[:3] ==  '!= ':
-            num = cmd[3:]
-            cmd = cmd[:3]
+        range_nums = cmd.split("..")
+        if len(range_nums) == 2:
+            # range detected
+            num_1 = eval_operand(range_nums[0])
+            num_2 = eval_operand(range_nums[1])
+            cmd = str(num_1) + ".." + str(num_2)
+            check_int(data_type, num_1)
+            check_int(data_type, num_2)
         else:
-            num = cmd
-            cmd = ''
-        num = eval_operand(num)
-        cmd += str(num)
-        check_int(data_type, num)
+            # regular command processing
+            if cmd[:2] in ['+ ', '- ', '> ', '< ']:
+                num = cmd[2:]
+                cmd = cmd[:2]
+            elif cmd[:3] ==  '!= ':
+                num = cmd[3:]
+                cmd = cmd[:3]
+            else:
+                num = cmd
+                cmd = ''
+            num = eval_operand(num)
+            cmd += str(num)
+            check_int(data_type, num)
 
         # finally
         return cmd
