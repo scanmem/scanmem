@@ -999,6 +999,7 @@ Public License instead of this License.  But first, please read
  For number types: 
 &lt;span font_family="monospace"&gt;
  &lt;b&gt;N&lt;/b&gt;         Exactly this number
+ &lt;b&gt;N..N&lt;/b&gt;      Range between two numbers
  &lt;b&gt;?&lt;/b&gt;         Unknown initial value
  &lt;b&gt;&amp;gt; or +&lt;/b&gt;    Increased values
  &lt;b&gt;&amp;lt; or -&lt;/b&gt;    Decreased values
