@@ -132,13 +132,12 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(LESSTHAN, <, user_value)
 /*-----------------------------------*/
 /* special EQUALTO for float numbers */
 /*-----------------------------------*/
-/* currently we round both of them to integers and compare them */
-/* TODO: let user specify a float number */
 #define DEFINE_FLOAT_EQUALTO_ROUTINE(FLOATTYPENAME, WIDTH) \
     int scan_routine_##FLOATTYPENAME##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
-        if((new_value->flags.f##WIDTH##b) && (user_value->flags.f##WIDTH##b) && ((int##WIDTH##_t)get_f##WIDTH##b(new_value) == (int##WIDTH##_t)get_f##WIDTH##b(user_value))) \
+        if ((new_value->flags.f##WIDTH##b) && (user_value->flags.f##WIDTH##b) \
+            && (get_f##WIDTH##b(new_value) == get_f##WIDTH##b(user_value))) \
         { \
             SET_FLAG(saveflags, f##WIDTH##b); \
             ret = (WIDTH)/8; \
