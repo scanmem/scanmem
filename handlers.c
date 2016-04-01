@@ -1138,9 +1138,14 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     match_location loc;
     value_t old_val;
     void *address;
+    scan_data_type_t data_type = vars->options.scan_data_type;
 
     if (argc != 2) {
         show_error("was expecting one argument, see `help watch`.\n");
+        return false;
+    }
+    if ((data_type == BYTEARRAY) || (data_type == STRING)) {
+        show_error("`watch` is not supported for bytearray or string.\n");
         return false;
     }
 
@@ -1166,6 +1171,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
     
     old_val = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+    old_val.flags = loc.swath->data[loc.index].match_info;
     valcpy(&o, &old_val);
     valcpy(&n, &o);
 
