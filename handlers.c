@@ -49,6 +49,7 @@
 #include "handlers.h"
 #include "interrupt.h"
 #include "show_message.h"
+#include "vector.h"
 
 #define USEPARAMS() ((void) vars, (void) argv, (void) argc)     /* macro to hide gcc unused warnings */
 
@@ -550,15 +551,16 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+
 /* dregion [!][x][,x,...] */
 bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned id;
     bool invert = false;
+    bool retval = false;
     char *end = NULL, *idstr = NULL, *block = NULL;
     element_t *np, *pp;
-    list_t *keep = NULL;
-    region_t *save;
+    struct vector_t * parsed_regions = NULL;
 
     /* need an argument */
     if (argc < 2) {
@@ -581,135 +583,113 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
         /* check for lone '!' */
         if (*block == '\0') {
             show_error("inverting an empty set, maybe try `reset` instead?\n");
-            return false;
+            goto dregion_failed;
         }
-        
-        /* create a list to keep the specified regions */
-        if ((keep = l_init()) == NULL) {
-            show_error("memory allocation error.\n");
-            return false;
-        }
-        
     } else {
         invert = false;
         block = strdupa(argv[1]);
     }
 
-    /* loop for every number specified, eg "1,2,3,4,5" */
-    while ((idstr = strtok(block, ",")) != NULL) {
-        region_t *r = NULL;
-        
+    np = vars->regions->tail;
+    unsigned max_id = ((region_t *)np->data)->id;
+
+    const unsigned int parsed_regions_cap = max_id+1;
+    const unsigned int parsed_regions_count = 0;
+
+    parsed_regions = vector_init(parsed_regions_count, parsed_regions_cap, sizeof(char));
+
+    if (!parsed_regions) {
+        show_error("no memory for parsed regions\n");
+        goto dregion_failed;
+    }
+
+    memset( vector_at(parsed_regions, 0), (invert ? 1 : 0), parsed_regions_cap );
+
+    // create list of region ids, and then loop over it
+    char * block_end = NULL;
+    char * idstr_copy = NULL;
+    while ((idstr = strtok_r(block, ",", &block_end)) != NULL) {
         /* set block to NULL for strtok() */
         block = NULL;
-        
+
+        char * range_block_end = NULL, * range_idstr;
+        unsigned range_ids[2], current_token = 0;
+
+        idstr_copy = strdupa(idstr);
+
+        if (!idstr_copy)
+            goto dregion_failed;
+
+        while ((range_idstr = strtok_r(idstr_copy, "..", &range_block_end)) != NULL ) {
+            idstr_copy = NULL;
+
+            id = strtoul(range_idstr, &end, 0x00);
+            if (*end == '\0' && *idstr != '\0') {
+                range_ids[current_token] = id;
+                current_token++;
+                if (current_token>1) {
+                    unsigned idx;
+                    for ( idx = range_ids[0]; idx <= range_ids[1]; ++idx ) {
+                        char * at = vector_at(parsed_regions, idx);
+                        if (!at) {
+                            show_error("no memory for parsed regions\n");
+                            goto dregion_failed;
+                        }
+                        *at = (invert ? 0 : 1);
+                    }
+                    break;
+                }
+            }
+        }
+
         /* attempt to parse as a regionid */
         id = strtoul(idstr, &end, 0x00);
 
-        /* check that worked, "1,abc,4,,5,6foo" */
-        if (*end != '\0' || *idstr == '\0') {
-            show_error("could not parse argument %s.\n", idstr);
-            if (invert) {
-                if (l_concat(vars->regions, &keep) == -1) {
-                    show_error("there was a problem restoring saved regions.\n");
-                    l_destroy(vars->regions);
-                    l_destroy(keep);
-                    return false;
-                }
+        /* good region */
+        if (*end == '\0' && *idstr != '\0') {
+            char * at = vector_at(parsed_regions, id);
+            if (!at) {
+                show_error("no memory for parsed regions\n");
+                goto dregion_failed;
             }
-            assert(keep == NULL);
-            return false;
+            *at = (invert ? 0 : 1);
         }
-        
-        /* initialise list pointers */
-        np = vars->regions->head;
-        pp = NULL;
-        
-        /* find the correct region node */
-        while (np) {
-            r = np->data;
-            
-            /* compare the node id to the id the user specified */
-            if (r->id == id)
-                break;
-            
-            pp = np; /* keep track of prev for l_remove() */
-            np = np->next;
+    }
+
+    /* initialise list pointers */
+    np = vars->regions->head;
+    pp = NULL;
+    /* find the correct region node */
+    while (np) {
+        region_t * r = np->data;
+
+        char * at = vector_at(parsed_regions, r->id);
+        if (!at) {
+            show_error("no memory for parsed regions\n");
+            goto dregion_failed;
         }
 
-        /* check if a match was found */
-        if (np == NULL) {
-            show_error("no region matching %u, or already moved.\n", id);
-            if (invert) {
-                if (l_concat(vars->regions, &keep) == -1) {
-                    show_error("there was a problem restoring saved regions.\n");
-                    l_destroy(vars->regions);
-                    l_destroy(keep);
-                    return false;
-                }
+        if (*at) {
+            l_remove(vars->regions, pp, NULL);
+            if (!pp) {
+                np = vars->regions->head;
+                continue;
             }
-            if (keep)
-                l_destroy(keep);
-            return false;
-        }
-        
-        np = pp;
-        
-        /* save this region if the match is inverted */
-        if (invert) {
-            
-            assert(keep != NULL);
-            
-            l_remove(vars->regions, np, (void *) &save);
-            if (l_append(keep, keep->tail, save) == -1) {
-                show_error("sorry, there was an internal memory error.\n");
-                free(save);
-                return false;
-            }
+            np = pp->next;
             continue;
         }
-        
-        /* check for any affected matches before removing it */
-        if(vars->num_matches > 0)
-        {
-            region_t *s;
 
-            /* determine the correct pointer we're supposed to be checking */
-            if (np) {
-                assert(np->next);
-                s = np->next->data;
-            } else {
-                /* head of list */
-                s = vars->regions->head->data;
-            }
-            
-            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, false)))
-            {
-                show_error("memory allocation error while deleting matches\n");
-            }
-        }
-
-        l_remove(vars->regions, np, NULL);
+        pp = np; /* keep track of prev for l_remove() */
+        np = np->next;
     }
 
-    if (invert) {
-        region_t *s = keep->head->data;
-        
-        if (vars->num_matches > 0)
-        {
-            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
-            {
-                show_error("memory allocation error while deleting matches\n");
-            }
-        }
-            
-        /* okay, done with the regions list */
-        l_destroy(vars->regions);
-        
-        /* and switch to the keep list */
-        vars->regions = keep;
-    }
+    retval = true;
+    dregion_failed:
 
-    return true;
+    if (parsed_regions)
+        vector_destroy(parsed_regions);
+
+    return retval;
 }
 
 bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
