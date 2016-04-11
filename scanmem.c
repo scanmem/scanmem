@@ -4,7 +4,6 @@
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
-    Copyright (C) 2016           Sebastian Parschauer <s.parschauer@gmx.de>
  
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,9 +27,6 @@
 
 #include <unistd.h>
 #include <stdio.h>
-#include <limits.h>
-#include <fcntl.h>
-#include <sys/select.h>
 #include <sys/types.h>
 #include <stdlib.h>
 #include <signal.h>
@@ -63,148 +59,15 @@ globals_t globals = {
     }
 };
 
-/* pipe fds for communication between signal handler and event handler */
-enum {
-    CPIPE_IN,
-    CPIPE_OUT,
-    PPIPE_IN,
-    PPIPE_OUT,
-    NUM_PIPE_FDS
-};
-static int pipe_fds[NUM_PIPE_FDS] = {-1};
-
-/* sleep given seconds count unless there is input on given fd */
-static inline void sleep_sec_unless_input(unsigned int sec, int fd)
-{
-    fd_set fs;
-    struct timeval tv;
-    int nfds = fd + 1;
-
-    FD_ZERO(&fs);
-    tv.tv_sec = sec;
-    tv.tv_usec = 0;
-
-    FD_SET(fd, &fs);
-
-    select(nfds, &fs, NULL, NULL, &tv);
-}
-
-/* signal handler - Use async-signal-safe functions ONLY! */
 static void sighandler(int n)
 {
-    char buf[PIPE_BUF] = {0};
-    ssize_t wbytes, rbytes;
+    show_error("\nKilled by signal %d.\n", n);
 
-    /* communicate with event handler */
-    wbytes = write(pipe_fds[CPIPE_OUT], &n, sizeof(n));
-    if (wbytes != sizeof(n))
-        goto out;
-    sleep_sec_unless_input(1, pipe_fds[PPIPE_IN]);
-    rbytes = read(pipe_fds[PPIPE_IN], buf, sizeof(buf));
-    if (rbytes <= 0)
-        goto out;
-out:
-    _exit(EXIT_FAILURE);   /* also detaches from tracee */
-}
-
-/* Call async-signal-unsafe functions for sighandler() */
-static void event_loop(pid_t ppid_expected)
-{
-    ssize_t rbytes, wbytes;
-    char buf[PIPE_BUF] = {0};
-    pid_t ppid;
-
-    while (true) {
-        /* orphan detection */
-        ppid = getppid();
-        if (ppid != ppid_expected)
-            exit(EXIT_FAILURE);
-        /* event polling */
-        sleep_sec_unless_input(1, pipe_fds[CPIPE_IN]);
-        rbytes = read(pipe_fds[CPIPE_IN], buf, sizeof(buf) - 1);
-        if (rbytes <= 0) {
-            continue;
-        } else if (rbytes >= sizeof(int)) {
-            int n;
-            memcpy(&n, buf, sizeof(n));
-            show_error("\nKilled by signal %d.\n", n);
-            wbytes = write(pipe_fds[PPIPE_OUT], "done", sizeof("done"));
-            if (wbytes <= 0)
-                ;  /* ignore this, the parent has a timeout */
-            exit(EXIT_SUCCESS);
-        }
-        memset(buf, 0, rbytes);
+    if (globals.target) {
+        (void) detach(globals.target);
     }
-}
 
-static inline void register_sighandler()
-{
-    (void) signal(SIGHUP, sighandler);
-    (void) signal(SIGINT, sighandler);
-    (void) signal(SIGSEGV, sighandler);
-    (void) signal(SIGABRT, sighandler);
-    (void) signal(SIGILL, sighandler);
-    (void) signal(SIGFPE, sighandler);
-    (void) signal(SIGTERM, sighandler);
-}
-
-static inline void ignore_sighandler_signals()
-{
-    (void) sigignore(SIGHUP);
-    (void) sigignore(SIGINT);
-    (void) sigignore(SIGSEGV);
-    (void) sigignore(SIGABRT);
-    (void) sigignore(SIGILL);
-    (void) sigignore(SIGFPE);
-    (void) sigignore(SIGTERM);
-}
-
-/* set up event handler process with non-blocking pipes */
-static bool init_event_handler()
-{
-    int i;
-    pid_t pid = -1;
-    pid_t main_pid = getpid();
-
-    if (pipe(&pipe_fds[CPIPE_IN]) < 0) {
-        show_error("Failed to create child event pipe.\n");
-        goto err;
-    }
-    if (pipe(&pipe_fds[PPIPE_IN]) < 0) {
-        show_error("Failed to create parent event pipe.\n");
-        goto err_close;
-    }
-    /* set pipe fds non-blocking as pipe2() is not portable */
-    for (i = 0; i < NUM_PIPE_FDS; i++) {
-        if (fcntl(pipe_fds[i], F_SETFL, O_NONBLOCK) < 0) {
-            show_error("Failed to set pipe fds non-blocking.\n");
-            goto err_close_all;
-        }
-    }
-    pid = fork();
-    if (pid < 0) {
-        show_error("Failed to fork event handler.\n");
-        goto err_close_all;
-    } else if (pid == 0) {
-        ignore_sighandler_signals();
-        close(STDIN_FILENO);
-        close(pipe_fds[CPIPE_OUT]);
-        close(pipe_fds[PPIPE_IN]);
-        event_loop(main_pid);
-    } else {
-        close(pipe_fds[CPIPE_IN]);
-        close(pipe_fds[PPIPE_OUT]);
-    }
-    return true;
-
-err_close_all:
-    close(pipe_fds[PPIPE_IN]);
-    close(pipe_fds[PPIPE_OUT]);
-err_close:
-    close(pipe_fds[CPIPE_IN]);
-    close(pipe_fds[CPIPE_OUT]);
-err:
-    return false;
+    exit(EXIT_FAILURE);
 }
 
 
@@ -215,9 +78,13 @@ bool init()
     /* before attaching to target, install signal handler to detach on error */
     if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
     {
-        if (!init_event_handler())
-            return false;
-        register_sighandler();
+        (void) signal(SIGHUP, sighandler);
+        (void) signal(SIGINT, sighandler);
+        (void) signal(SIGSEGV, sighandler);
+        (void) signal(SIGABRT, sighandler);
+        (void) signal(SIGILL, sighandler);
+        (void) signal(SIGFPE, sighandler);
+        (void) signal(SIGTERM, sighandler);
     }
 
     /* linked list of commands, and function pointers to their handlers */
