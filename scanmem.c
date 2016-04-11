@@ -59,15 +59,37 @@ globals_t globals = {
     }
 };
 
+/* signal handler - Use async-signal-safe functions ONLY! */
 static void sighandler(int n)
 {
-    show_error("\nKilled by signal %d.\n", n);
+    const char err_msg[] = "error: \nKilled by signal ";
+    const char msg_end[] = ".\n";
+    char num_str[4] = {0};
+    ssize_t num_size;
+    ssize_t wbytes;
 
-    if (globals.target) {
-        (void) detach(globals.target);
+    wbytes = write(STDERR_FILENO, err_msg, sizeof(err_msg) - 1);
+    if (wbytes != sizeof(err_msg) - 1)
+        goto out;
+    /* manual int to str conversion */
+    if (n < 10) {
+        num_str[0] = (char) (0x30 + n);
+        num_size = 1;
+    } else if (n >= 100) {
+        goto out;
+    } else {
+        num_str[0] = (char) (0x30 + n / 10);
+        num_str[1] = (char) (0x30 + n % 10);
+        num_size = 2;
     }
-
-    exit(EXIT_FAILURE);
+    wbytes = write(STDERR_FILENO, num_str, num_size);
+    if (wbytes != num_size)
+        goto out;
+    wbytes = write(STDERR_FILENO, msg_end, sizeof(msg_end) - 1);
+    if (wbytes != sizeof(msg_end) - 1)
+        goto out;
+out:
+    _exit(EXIT_FAILURE);   /* also detaches from tracee */
 }
 
 
