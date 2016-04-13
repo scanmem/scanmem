@@ -664,6 +664,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
             if (l_append(keep, keep->tail, save) == -1) {
                 show_error("sorry, there was an internal memory error.\n");
                 free(save);
+                l_destroy(keep);
                 return false;
             }
             continue;
