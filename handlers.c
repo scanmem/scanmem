@@ -345,8 +345,8 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
 
     USEPARAMS();
 
-    if(!(vars->matches))
-        return true;
+    if (!vars->matches)
+        goto out_free;
 
     if (vars->regions)
         np = vars->regions->head;
@@ -435,6 +435,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         }
     }
 
+out_free:
     free(v);
     return true;
 }
