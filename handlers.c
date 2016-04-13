@@ -1317,12 +1317,16 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     buf = malloc(len + sizeof(long));
     if (buf == NULL)
     {
+        if (dump_f)
+            fclose(dump_f);
         show_error("memory allocation failed.\n");
         return false;
     }
 
     if (!read_array(vars->target, addr, buf, len))
     {
+        if (dump_f)
+            fclose(dump_f);
         show_error("read memory failed.\n");
         free(buf);
         return false;
