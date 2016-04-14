@@ -386,8 +386,8 @@ bool checkmatches(globals_t * vars,
         ++reading_iterator;
         if (reading_iterator >= reading_swath.number_of_bytes)
         {
-            assert(((matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]))->number_of_bytes >= 0);
-            reading_swath_index = (matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]);
+            reading_swath_index = (matches_and_old_values_swath *)
+                (&reading_swath_index->data[reading_swath.number_of_bytes]);
             reading_swath = *reading_swath_index;
             reading_iterator = 0;
             required_extra_bytes_to_record = 0; /* just in case */

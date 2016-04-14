@@ -429,8 +429,8 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
-            assert(((matches_and_old_values_swath *)(local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */)))->number_of_bytes >= 0);
-            reading_swath_index = local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */);
+            reading_swath_index = local_address_beyond_last_element(
+                reading_swath_index /* ,MATCHES_AND_VALUES */);
             reading_iterator = 0;
         }
     }
