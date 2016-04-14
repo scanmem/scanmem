@@ -167,8 +167,8 @@ matches_and_old_values_array * delete_by_region(matches_and_old_values_array *ma
         ++reading_iterator;
         if (reading_iterator >= reading_swath.number_of_bytes)
         {
-            assert(((matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]))->number_of_bytes >= 0);
-            reading_swath_index = (matches_and_old_values_swath *)(&reading_swath_index->data[reading_swath.number_of_bytes]);
+            reading_swath_index = (matches_and_old_values_swath *)
+                (&reading_swath_index->data[reading_swath.number_of_bytes]);
             reading_swath = *reading_swath_index;
             reading_iterator = 0;
         }
