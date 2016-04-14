@@ -75,7 +75,8 @@ bool readmaps(pid_t target, list_t * regions)
 
         /* get executable name */
         snprintf(exelink, sizeof(exelink), "/proc/%u/exe", target);
-        if ((linkbuf_size = readlink(exelink, exename, MAX_LINKBUF_SIZE)) > 0)
+        linkbuf_size = readlink(exelink, exename, MAX_LINKBUF_SIZE - 1);
+        if (linkbuf_size > 0)
         {
             exename[linkbuf_size] = 0;
         } else {
