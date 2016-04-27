@@ -11,7 +11,7 @@ Copyright (C) 2010 Bryan Cain
 
 Special thanks: Zhang Zhe</property>
     <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
-    <property name="website">http://code.google.com/p/scanmem/</property>
+    <property name="website">https://github.com/scanmem/scanmem</property>
     <property name="website_label" translatable="yes">Homepage</property>
     <property name="license">                    GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007

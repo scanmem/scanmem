@@ -25,6 +25,6 @@
   <screenshots>
     <screenshot type="default" width="627" height="457">https://raw.githubusercontent.com/coolwanglu/scanmem/master/gui/screenshot.png</screenshot>
   </screenshots>
-  <url type="homepage">http://code.google.com/p/scanmem/</url>
+  <url type="homepage">https://github.com/scanmem/scanmem</url>
   <updatecontact>i.gnatenko.brain@gmail.com</updatecontact>
 </application>
