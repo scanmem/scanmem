@@ -266,6 +266,7 @@ class GameConqueror():
         self.addcheat_type_combobox = self.builder.get_object('Type_ComboBox')
         misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
+        self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
         
         
         
