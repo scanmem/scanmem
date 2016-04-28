@@ -15,8 +15,11 @@ config.guess
 config.log
 config.status
 config.sub
+depcomp
+install-sh
 libtool
 ltmain.sh
+missing
 py-compile
 scanmem
 stamp-h1
