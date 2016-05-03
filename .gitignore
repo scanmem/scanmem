@@ -1,3 +1,4 @@
+# Auto-generated files
 *.o
 *.lo
 *.la
@@ -24,18 +25,26 @@ py-compile
 scanmem
 stamp-h1
 tags
+
+# Debian files
 debian/files
 debian/*.debhelper
 debian/*.debhelper.log
 debian/*.substvars
 debian/gameconqueror
 debian/tmp
+
+# GameConqueror
 gui/GameConqueror.appdata.xml
 gui/GameConqueror.desktop
 gui/consts.py
+gui/*.pyc
+gui/*.pyo
 gui/gameconqueror
 gui/org.freedesktop.gameconqueror.policy
 gui/org.freedesktop.gameconqueror.policy.in
+
+# Translations
 po/.intltool-merge-cache
 po/GameConqueror.pot
 po/Makefile.in.in
@@ -43,6 +52,7 @@ po/POTFILES
 po/ja.gmo
 po/ru.gmo
 po/stamp-it
+
 # Android builds
 # libreadline and ncurses downloads and links
 readline-*
