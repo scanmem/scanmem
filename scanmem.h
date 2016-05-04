@@ -127,6 +127,6 @@ bool write_array(pid_t target, void *addr, const void *data, int len);
 
 /* menu.c */
 bool getcommand(globals_t * vars, char **line);
-void printversion();
+void printversion(FILE *outfd);
 
 #endif /* SCANMEM_H */
