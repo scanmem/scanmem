@@ -18,6 +18,12 @@ aclocal -I m4 || {
          "are present on system"
     exit 1
 }
+echo "+ running autoheader ... "
+autoheader || {
+    echo
+    echo "autoheader failed"
+    exit 1
+}
 echo "+ running autoconf ... "
 autoconf || {
     echo
