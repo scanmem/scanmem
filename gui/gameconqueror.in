@@ -2,8 +2,9 @@
 
 DATADIR=@PKGDATADIR@
 
-if [ -e "/usr/bin/pkexec" ]; then
-    /usr/bin/pkexec env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY \
+PKEXEC=$(command -v "pkexec")
+if [ -n "$PKEXEC" ]; then
+    $PKEXEC env DISPLAY=$DISPLAY XAUTHORITY=$XAUTHORITY \
         $DATADIR/GameConqueror.py
 else
     echo "install policykit!"
