@@ -1,14 +1,11 @@
-.TH scanmem 1 "April 28, 2016" "version 0.15.8"
+.TH scanmem 1 "May 10, 2016" "version 0.15.8"
 .SH NAME
 scanmem - locate and modify a variable in an executing process.
 
 .SH SYNOPSIS
 .B scanmem
-.RB [\-\-version]
-.RB [\-\-help] 
-.RB [\-\-debug]
-.RB [\-\-backend] 
-.IR target-program-pid
+.RB [options]
+.IR [target-program-pid]
 
 
 .SH DESCRIPTION
@@ -35,11 +32,9 @@ can monitor the variable, or change it to a user specified value, either once, o
 over a period of time.
 
 .B scanmem
-works similarly to the "
-.I pokefinders
-" once commonly used to cheat at video games, this function is a good demonstration of how to use
-.B scanmem
-, and is used in the documentation.
+.RI "works similarly to the \(dq" pokefinders "\(dq once commonly used to cheat at video games,"
+this function is a good demonstration of how to use
+.BR scanmem ", and is used in the documentation."
 
 .SH USAGE
 .B scanmem
@@ -52,35 +47,36 @@ prompt will allow you to access
 .B scanmem's
 online documentation.
 
-The 
+The
 .IR target-program-pid
 can be specified in decimal, hexadecimal, or octal using the standard C language notation
 (leading 0x for hexadecimal, leading 0 for octal, anything else is assumed to be decimal).
 
-.B "\-\-version"
+.BI "\-p, \-\-pid=" pid
+
+Set the
+.IR "target-program-pid".
+
+.B "\-v, \-\-version"
 
 Print version and exit.
 
-.B "\-\-help"
+.B "\-h, \-\-help"
 
 Print a short description of command line options then exit.
 
-.B "\-\-debug"
+.B "\-d, \-\-debug"
 
 Run in debug mode, more information will be outputted.
-
-.B "\-\-backend"
-
-Work as backend, normal users should not use this parameter.
 
 .SH COMMANDS
 
 While in interactive mode,
-.B scanmem
-prints a decimal number followed by
-.B >
-, the number is the current number of possible candidates for the target variable that
-are known. 0 indicates that no possible variables have been eliminated yet.
+.BR scanmem " prints a decimal number followed by " > ", the number is the current number of"
+possible candidates for the target variable that are known. 0 indicates that no possible variables
+have been eliminated yet.
+The default scan data type is "int".
+.RB "It can be changed with the " option " command."
 
 .B n
 
@@ -89,75 +85,37 @@ Where
 represents any number in decimal, octal or hexadecimal, this command tells
 .B scanmem
 that the current value of the target variable is exactly
-.B n.
+.BR n "."
 .B scanmem
 will begin a search of the entire address space, or the existing known matches (if any),
 eliminating any variable that does not have this value.
 
-.B set 
-.I [match-id][,match-id,...]=]value[/delay] [...]
-
-Set the value 
-.I value
-into the match numbers
-.I match-id
-, or if just
-.I value
-is specified, all known matches.
-.I value
-can be specified in standard C language notation. All known matches, along with their
-match-id's can be displayed using the
-.B list
-command. Multiple
-.I match-id's
-can be specified, separated with commas and terminated with an 
-.I =
-sign. To set a value continually,  suffix the command with
-.I /
-followed by the number of seconds to wait between sets. You can interrupt the set command
-with ^C to return to the
-.B scanmem
-prompt. This can be used to sustain the value of a variable which decreases overtime, for
-example a timer that is decremented every second can be set to 100 every 10 seconds to
-prevent some property from ever changing.
-
-This command is used to change the value of the variable(s) once found by elimination.
-Please note, some applications will store values in multiple locations.
-
-.B dump
-.I <address> <length> [<filename>]
-
-Dump the memory region starting from 
-.I <address>
-of length
-.I <length>
-into a human-readable format.
-
-If 
-.I <filename>
-is given, data will be saved into the file, otherwise data will be displayed into stdout in a human readable format
-
-.B write
-.I <value_type> <address> <value>
-
-Manually set the value of the variable at the specified address.
-
-Names of value_type are subject to change in different versions of scanmem, see more info using the `help write' command.
-
-.B >
+.BI "> " [n]
 
 Tells
 .B scanmem
 that it should eliminate all matched variables that have not increased since the last search.
 For example, if the value of a variable is known to be zero when a program is executed, but increases
 over time, this command can be used several times to eliminate variables that have decreased or not
-changed.
+changed. If
+.IR n " is given, then values that are greater than " n " are matched.
 
-.B <
+.BI "< " [n]
 
 As for
 .B >
-but indicates that the target variable has decreased since the last scan.
+but indicates that the target variable has decreased since the last scan. If
+.IR n " is given, then values that are less than " n " are matched."
+
+.BI "+ " [n]
+
+.RI "If " n " is given, match values that have been increased by " n "."
+.RB "Otherwise match all values that have increased (same as " > ")."
+
+.BI "- " [n]
+
+.RI "If " n " is given, match values that have been decreased by " n "."
+.RB "Otherwise match all values that have decreased (same as " < ")."
 
 .B =
 
@@ -174,29 +132,38 @@ but indicates that the target variable has changed since last scan.
 .B snapshot
 
 Save a snapshot of existing program state, for use with
-.B >
-,
-.B <
-,
-.B =
-,
-and 
-.B !=
-, although other commands can still be used.
+.BR > ", " < ", " + ", " - ", " = ", and " != ", although other commands can still be used."
+
+.BI "\(dq " text
+
+Search for the provided
+.I text
+in memory if the scan data type is set to "string".
+
+.B update
+
+Scans the current process, getting the current values of all matches. These values can be viewed with
+.BR list ", and are also the old values that scanmem compares to when using"
+.BR > ", " < ", or " = "."
+This command is equivalent to a search command that all current results match.
 
 .B list
 
-List all the possible candidates currently known, including their address, last known value and
-possible types. The value in the first column is the match id, and can be used in conjunction with the
+List all the possible candidates currently known, including their address, region id, match offset,
+region type, last known value and possible value types.
+The value in the first column is the match id, and can be used in conjunction with the
 .B delete
-command to eliminate matches. 
+command to eliminate matches.
+
+For experts: The match offset is determined by subtracting the load address of the associated
+ELF file or region from the address. It can be used to bypass Address Space Layout Randomization
+(ASLR).
 
 .B delete
-.I [match-id]
+.I match-id
 
 Delete match
-.I match-id
-, which can be found from the output of the
+.IR match-id ", which can be found from the output of the"
 .B list
 command. To delete all matches, see the
 .B reset
@@ -206,63 +173,121 @@ command, which also removes any associated matches. Please note that match-ids m
 recalculated after matches are removed or added.
 
 .B watch
-.I [match-id]
+.I match-id
 
 Monitor the value of
-.I match-id
-, and print its value as it changes. Every change is printed along with a timestamp, you can
-interrupt this command with ^C to stop monitoring. 
+.IR match-id ", and print its value as it changes. Every change is printed along with a timestamp,"
+you can interrupt this command with ^C to stop monitoring.
+
+.B set
+.I [match-id][,match-id,...]=]value[/delay] [...]
+
+Set the value
+.IR value " into the match numbers " match-id ", or if just "
+.IR value " is specified, all known matches."
+.I value
+can be specified in standard C language notation. All known matches, along with their
+match-id's can be displayed using the
+.B list
+command. Multiple
+.IR match-id's " can be specified, separated with commas and terminated with an "
+.IR = " sign. To set a value continually, suffix the command with " /
+followed by the number of seconds to wait between sets. You can interrupt the set command
+with ^C to return to the
+.B scanmem
+prompt. This can be used to sustain the value of a variable which decreases overtime, for
+example a timer that is decremented every second can be set to 100 every 10 seconds to
+prevent some property from ever changing.
+
+This command is used to change the value of the variable(s) once found by elimination.
+Please note, some applications will store values in multiple locations.
+
+.B write
+.I value_type address value
+
+Manually set the value of the variable at the specified address.
+
+Names of
+.I value_type
+are subject to change in different versions of scanmem, see more info using the `help write` command.
+
+.B dump
+.I address length [filename]
+
+Dump the memory region starting from
+.I address
+of length
+.I length
+in a human-readable format.
+
+If
+.I filename
+is given, data will be saved into the file, otherwise data will be displayed on stdout.
 
 .B pid
 .I [new-pid]
 
 Print out the process id of the current target program, or change the target to
-.I new-pid
-, which will reset existing regions and matches.
+.IR new-pid ", which will reset existing regions and matches."
+
+.B reset
+
+Forget all known regions and matches and start again.
 
 .B lregions
 
-List all the known regions, this can be used in combination with the 
+List all the known regions, this can be used in combination with the
 .B dregion
 command to eliminate regions that the user believes are not related to the variable in question,
-thus reducing the address space required to search. The value in the first column is the
+thus reducing the address space required to search in. The value in the first column is the
 .I region-id
-which must be passed to the 
+which must be passed to the
 .B dregion
-command. The size and path (if applicable) is also printed. This can be used to eliminate regions
-located in shared libraries that are unlikely to be relevant to the variable required.
+command. Besides the start address, the size and path (if applicable) are also printed. This can be
+used to eliminate regions located in shared libraries that are unlikely to be relevant to the
+variable required.
+
+For experts: Also the region type and the load address are displayed. The types are "exe" (executable)
+"code" (library), "heap", "stack" or "misc" (everything else). The load address is the memory location
+where an ELF file (exe/lib) has been loaded to. This helps to convert between the addresses in memory
+and in the associated ELF file. If the region does not belong to an ELF file, then it is the same as
+the start address.
 
 .B dregion
-.I [!][region-id][,region-id][,...]
+.I [!]region-id[,region-id][,...]
 
-Delete the region 
+Delete the region
+.IR region-id ", along with any matches from the match list. The"
 .I region-id
-, along with any matches from the match list. The
-.I region-id
-can be found in the output of the 
+can be found in the output of the
 .B lregions
 command. A leading
 .I !
 indicates the list should be inverted.
 
-.B reset
+.B option
+.I name value
 
-Forget all known matches and start again.
+Change options at runtime. E.g. the scan data type can be changed.
+See `help option` for all possible names/values.
 
 .B shell
-.I [shell-command]
+.I shell-command
 
 Execute
 .I shell-command
 using /bin/sh, then return.
 
-.B option <name> <value>
+.B show
+.I info
 
-Change options in runtime. See `help option` for all possible names/values.
+Display information relating to
+.I info
+- see `help show` for details.
 
 .B version
 
-Print the version of 
+Print the version of
 .B scanmem
 in use.
 
@@ -270,7 +295,7 @@ in use.
 
 Print a short summary of available commands.
 
-.B exit
+.BR exit
 
 Detach from the target program and exit immediately.
 
@@ -286,7 +311,7 @@ Please enter current value, or "help" for other commands.
 0>
 .fi
 
-The 0 in the 
+The 0 in the
 .B scanmem
 prompt indicates we currently have no candidates, so I enter how much gold I
 currently have (91 pieces) and let scanmem find the potential candidates.
@@ -333,7 +358,7 @@ info: we currently have 16 matches.
 .fi
 
 16 potential matches were found, many of them are clearly unrelated, as they're part
-of unrelated libraries (libnss_nis.so). We could make 
+of unrelated libraries (libnss_nis.so). We could make
 .B scanmem
 eliminate these manually using the
 .B delete
