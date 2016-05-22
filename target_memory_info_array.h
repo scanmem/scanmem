@@ -213,7 +213,18 @@ add_element(matches_and_old_values_array **array,
             /* It is most memory-efficient to write over the intervening space with null values */
             *array = allocate_enough_to_reach(*array, local_address_beyond_last_element(swath) +
                                               local_address_excess, &swath);
-            memset(local_address_beyond_last_element(swath), 0, local_address_excess);
+            switch (local_address_excess) {
+            case 4:
+                memset(local_address_beyond_last_element(swath), 0, 4);
+                break;
+            case 8:
+                memset(local_address_beyond_last_element(swath), 0, 8);
+                break;
+            default:
+                /* slow due to unknown size to be zeroed */
+                memset(local_address_beyond_last_element(swath), 0, local_address_excess);
+                break;
+            }
             swath->number_of_bytes += local_index_excess - 1;
         }
     }
