@@ -1586,46 +1586,46 @@ Public License instead of this License.  But first, please read
   <object class="GtkImage" id="add_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-add</property>
+    <property name="icon-name">list-add</property>
   </object>
   <object class="GtkImage" id="delete_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-delete</property>
+    <property name="icon-name">edit-delete</property>
   </object>
   <object class="GtkImage" id="edit_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-edit</property>
+    <property name="icon-name">gtk-edit</property>
   </object>
   <object class="GtkImage" id="load_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-open</property>
+    <property name="icon-name">document-open</property>
   </object>
   <object class="GtkImage" id="save_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-save</property>
+    <property name="icon-name">document-save</property>
   </object>
   <object class="GtkImage" id="find_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-find</property>
+    <property name="icon-name">edit-find</property>
   </object>
   <object class="GtkImage" id="jumpto_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-jump-to</property>
+    <property name="icon-name">gtk-jump-to</property>
   </object>
   <object class="GtkImage" id="refresh_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="stock">gtk-refresh</property>
+    <property name="icon-name">view-refresh</property>
   </object>
   <object class="GtkImage" id="system_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="icon_name">system</property>
+    <property name="icon_name">computer</property>
   </object>
 </interface>
