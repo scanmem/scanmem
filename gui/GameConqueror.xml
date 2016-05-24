@@ -733,11 +733,11 @@ Public License instead of this License.  But first, please read
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="CloseAddCheat_Button">
-                <property name="label">gtk-close</property>
+                <property name="label" translatable="yes">_Close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
                 <signal name="clicked" handler="CloseAddCheat_Button_clicked_cb" swapped="no"/>
               </object>
               <packing>
@@ -748,11 +748,11 @@ Public License instead of this License.  But first, please read
             </child>
             <child>
               <object class="GtkButton" id="ConfirmAddCheat_Button">
-                <property name="label">gtk-add</property>
+                <property name="label" translatable="yes">_Add</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
                 <signal name="clicked" handler="ConfirmAddCheat_Button_clicked_cb" swapped="no"/>
               </object>
               <packing>
@@ -1542,11 +1542,11 @@ Public License instead of this License.  But first, please read
             <property name="layout_style">end</property>
             <child>
               <object class="GtkButton" id="ProcessListDialog_OK_Button">
-                <property name="label">gtk-ok</property>
+                <property name="label" translatable="yes">_OK</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -1556,11 +1556,11 @@ Public License instead of this License.  But first, please read
             </child>
             <child>
               <object class="GtkButton" id="ProcessListDialog_Cancel_Button">
-                <property name="label">gtk-cancel</property>
+                <property name="label" translatable="yes">_Cancel</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_stock">True</property>
+                <property name="use_underline">True</property>
               </object>
               <packing>
                 <property name="expand">False</property>
