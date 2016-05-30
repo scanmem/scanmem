@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-03-29 22:03+0200\n"
+"POT-Creation-Date: 2016-05-30 23:24+0200\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -38,46 +38,54 @@ msgid "Manually add an entry"
 msgstr "手動入力"
 
 #: ../gui/GameConqueror.xml.h:8
+msgid "_Close"
+msgstr "閉じる(_C)"
+
+#: ../gui/GameConqueror.xml.h:9
+msgid "_Add"
+msgstr "追加(_A)"
+
+#: ../gui/GameConqueror.xml.h:10
 msgid "Specify type of target data"
 msgstr "データ型を指定します"
 
-#: ../gui/GameConqueror.xml.h:9
+#: ../gui/GameConqueror.xml.h:11
 msgid "Type:"
 msgstr "データ型:"
 
-#: ../gui/GameConqueror.xml.h:10
+#: ../gui/GameConqueror.xml.h:12
 msgid "Memory address of the value"
 msgstr "メモリアドレスを入力します"
 
-#: ../gui/GameConqueror.xml.h:11
+#: ../gui/GameConqueror.xml.h:13
 msgid "Address:"
 msgstr "アドレス:"
 
-#: ../gui/GameConqueror.xml.h:12
+#: ../gui/GameConqueror.xml.h:14
 msgid "Give a brief description of the value"
 msgstr "変数の簡単な説明を入力します"
 
-#: ../gui/GameConqueror.xml.h:13
+#: ../gui/GameConqueror.xml.h:15
 msgid "Description:"
 msgstr "概要:"
 
-#: ../gui/GameConqueror.xml.h:14
+#: ../gui/GameConqueror.xml.h:16
 msgid "GameConqueror"
 msgstr ""
 
-#: ../gui/GameConqueror.xml.h:15
+#: ../gui/GameConqueror.xml.h:17
 msgid "Found: 0"
 msgstr "0 件見つかりました"
 
-#: ../gui/GameConqueror.xml.h:16 ../gui/GameConqueror.py:807
+#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:809
 msgid "Select a process"
 msgstr "プロセスを選択してください"
 
-#: ../gui/GameConqueror.xml.h:17
+#: ../gui/GameConqueror.xml.h:19
 msgid "Scan"
 msgstr "スキャン"
 
-#: ../gui/GameConqueror.xml.h:18
+#: ../gui/GameConqueror.xml.h:20
 msgid ""
 "Syntax:\n"
 "\n"
@@ -141,23 +149,23 @@ msgstr ""
 " 文字列を検索する場合: 検索したい文字列をそのまま入力してください\n"
 "\n"
 
-#: ../gui/GameConqueror.xml.h:48
+#: ../gui/GameConqueror.xml.h:50
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
 msgstr "値: <span color=\"blue\"><u>?</u></span>"
 
-#: ../gui/GameConqueror.xml.h:49 ../gui/GameConqueror.py:806
+#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:808
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
 
-#: ../gui/GameConqueror.xml.h:50
+#: ../gui/GameConqueror.xml.h:52
 msgid "Reset"
 msgstr "リセット"
 
-#: ../gui/GameConqueror.xml.h:51
+#: ../gui/GameConqueror.xml.h:53
 msgid "Data Type:"
 msgstr "データ型:"
 
-#: ../gui/GameConqueror.xml.h:52
+#: ../gui/GameConqueror.xml.h:54
 msgid ""
 "<b>Basic:</b>      Fastest but may miss some values\n"
 "<b>Normal:</b>  Works for most cases\n"
@@ -168,145 +176,153 @@ msgstr ""
 "<b>Normal:</b>  通常はこれで充分です\n"
 "<b>Full:</b>         値が存在すれば必ずそのアドレスを取得できますが、遅いです"
 
-#: ../gui/GameConqueror.xml.h:55
+#: ../gui/GameConqueror.xml.h:57
 msgid "Search Scope:"
 msgstr "検索範囲:"
 
-#: ../gui/GameConqueror.xml.h:56
+#: ../gui/GameConqueror.xml.h:58
 msgid ""
 "Specify how float numbers should be rounded. Not avaiable in this version"
 msgstr "浮動小数点数の丸め方を指定します。(このバージョンでは利用できません)"
 
-#: ../gui/GameConqueror.xml.h:57
+#: ../gui/GameConqueror.xml.h:59
 msgid "Round Type:"
 msgstr "数値の丸め方:"
 
-#: ../gui/GameConqueror.xml.h:58
+#: ../gui/GameConqueror.xml.h:60
 msgid "Remove all entries"
 msgstr "全ての項目を削除"
 
-#: ../gui/GameConqueror.xml.h:59
+#: ../gui/GameConqueror.xml.h:61
 msgid "Load address list from file"
 msgstr "アドレス一覧をファイルから読み込み"
 
-#: ../gui/GameConqueror.xml.h:60
+#: ../gui/GameConqueror.xml.h:62
 msgid "Save address list to file"
 msgstr "アドレス一覧をファイルへ保存"
 
-#: ../gui/GameConqueror.xml.h:61
+#: ../gui/GameConqueror.xml.h:63
 msgid "Memory Editor"
 msgstr "メモリエディタ"
 
-#: ../gui/GameConqueror.xml.h:62
+#: ../gui/GameConqueror.xml.h:64
 msgid "Press Ctrl+F to search for a process"
 msgstr "Ctrl+Fキーでプロセスを検索できます"
 
-#: ../gui/GameConqueror.xml.h:63
+#: ../gui/GameConqueror.xml.h:65
 msgid "Process:"
 msgstr "プロセス:"
 
-#: ../gui/GameConqueror.xml.h:64
+#: ../gui/GameConqueror.xml.h:66
 msgid "User:"
 msgstr "ユーザー:"
 
-#: ../gui/GameConqueror.xml.h:65
+#: ../gui/GameConqueror.xml.h:67
 msgid "Filter"
 msgstr "フィルタ"
 
+#: ../gui/GameConqueror.xml.h:68
+msgid "_OK"
+msgstr "OK(_O)"
+
+#: ../gui/GameConqueror.xml.h:69
+msgid "_Cancel"
+msgstr "キャンセル(_C)"
+
 #. init columns
 #. Address
-#: ../gui/GameConqueror.py:167 ../gui/GameConqueror.py:212
+#: ../gui/GameConqueror.py:168 ../gui/GameConqueror.py:213
 msgid "Address"
 msgstr "アドレス"
 
 #. Value
-#: ../gui/GameConqueror.py:168 ../gui/GameConqueror.py:229
+#: ../gui/GameConqueror.py:169 ../gui/GameConqueror.py:230
 msgid "Value"
 msgstr "値"
 
-#: ../gui/GameConqueror.py:169
+#: ../gui/GameConqueror.py:170
 msgid "Offset"
 msgstr "オフセット"
 
-#: ../gui/GameConqueror.py:170
+#: ../gui/GameConqueror.py:171
 msgid "Region Type"
 msgstr "地域のタイプ"
 
 #. Lock
-#: ../gui/GameConqueror.py:195
+#: ../gui/GameConqueror.py:196
 msgid "Lock"
 msgstr "ロック"
 
 #. Description
-#: ../gui/GameConqueror.py:204
+#: ../gui/GameConqueror.py:205
 msgid "Description"
 msgstr "概要"
 
 #. Type
-#: ../gui/GameConqueror.py:217
+#: ../gui/GameConqueror.py:218
 msgid "Type"
 msgstr "型"
 
 #. second col
-#: ../gui/GameConqueror.py:255
+#: ../gui/GameConqueror.py:256
 msgid "User"
 msgstr "ユーザー"
 
 #. third col
-#: ../gui/GameConqueror.py:260
+#: ../gui/GameConqueror.py:261
 msgid "Process"
 msgstr "プロセス"
 
-#: ../gui/GameConqueror.py:274
+#: ../gui/GameConqueror.py:276
 msgid "Add to cheat list"
 msgstr "チートリストに追加"
 
-#: ../gui/GameConqueror.py:275 ../gui/GameConqueror.py:282
+#: ../gui/GameConqueror.py:277 ../gui/GameConqueror.py:284
 msgid "Browse this address"
 msgstr "このアドレスのメモリ内容を表示"
 
-#: ../gui/GameConqueror.py:276
+#: ../gui/GameConqueror.py:278
 msgid "Scan for this address"
 msgstr "このアドレスを指すポインタをスキャン"
 
-#: ../gui/GameConqueror.py:283
+#: ../gui/GameConqueror.py:285
 msgid "Copy address"
 msgstr "アドレスをコピー"
 
-#: ../gui/GameConqueror.py:284
+#: ../gui/GameConqueror.py:286
 msgid "Remove this entry"
 msgstr "この項目を削除"
 
-#: ../gui/GameConqueror.py:316 ../gui/GameConqueror.py:465
-#: ../gui/GameConqueror.py:874
+#: ../gui/GameConqueror.py:318 ../gui/GameConqueror.py:467
+#: ../gui/GameConqueror.py:876
 msgid "Please select a process"
 msgstr "プロセスを選択してください"
 
-#: ../gui/GameConqueror.py:329 ../gui/GameConqueror.py:339
+#: ../gui/GameConqueror.py:331 ../gui/GameConqueror.py:341
 msgid "Invalid address"
 msgstr "無効なアドレスです"
 
-#: ../gui/GameConqueror.py:350
+#: ../gui/GameConqueror.py:352
 msgid "Open.."
 msgstr "開く.."
 
-#: ../gui/GameConqueror.py:370
+#: ../gui/GameConqueror.py:372
 msgid "Save.."
 msgstr "保存.."
 
-#: ../gui/GameConqueror.py:481
+#: ../gui/GameConqueror.py:483
 msgid "Please enter a valid address."
 msgstr "有効なメモリアドレスを入力してください."
 
-#: ../gui/GameConqueror.py:485 ../gui/GameConqueror.py:780
+#: ../gui/GameConqueror.py:487 ../gui/GameConqueror.py:782
 msgid "No Description"
 msgstr "説明なし"
 
-#: ../gui/GameConqueror.py:714
+#: ../gui/GameConqueror.py:716
 msgid "Unknown architecture, you may report to developers"
 msgstr "未知のアーキテクチャです。必要であれば開発者に報告してください。"
 
-#: ../gui/GameConqueror.py:726 ../gui/GameConqueror.py:808
+#: ../gui/GameConqueror.py:728 ../gui/GameConqueror.py:810
 msgid ""
 "Cannot retieve memory maps of that process, maybe it has exited (crashed), "
 "or you don't have enough privilege"
@@ -315,30 +331,30 @@ msgstr ""
 "したか、この操作に必要な権限がない可能性があります。"
 
 #. not readable
-#: ../gui/GameConqueror.py:736
+#: ../gui/GameConqueror.py:738
 #, python-format
 msgid "Address %x is not readable"
 msgstr "アドレス %x を読み込めません"
 
-#: ../gui/GameConqueror.py:739
+#: ../gui/GameConqueror.py:741
 #, python-format
 msgid "Address %x is not valid"
 msgstr "アドレス %x は無効です"
 
-#: ../gui/GameConqueror.py:748
+#: ../gui/GameConqueror.py:750
 msgid "Cannot find a readable region"
 msgstr "読み込み可能なメモリ範囲が見つかりません"
 
-#: ../gui/GameConqueror.py:759
+#: ../gui/GameConqueror.py:761
 msgid "Cannot read memory"
 msgstr "メモリを読み込めません"
 
-#: ../gui/GameConqueror.py:922
+#: ../gui/GameConqueror.py:924
 #, python-format
 msgid "Found: %d"
 msgstr "%d 件見つかりました"
 
-#: ../gui/GameConqueror.py:1037
+#: ../gui/GameConqueror.py:1039
 msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
 "you are using the same version of GameConqueror as scanmem."
