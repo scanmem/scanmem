@@ -715,6 +715,7 @@ Public License instead of this License.  But first, please read
   </object>
   <object class="GtkDialog" id="AddCheatDialog">
     <property name="can_focus">False</property>
+    <property name="transient_for">MainWindow</property>
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Manually add an entry</property>
     <property name="resizable">False</property>
@@ -1393,6 +1394,7 @@ Public License instead of this License.  But first, please read
     <property name="width_request">350</property>
     <property name="height_request">500</property>
     <property name="can_focus">False</property>
+    <property name="transient_for">MainWindow</property>
     <property name="title" translatable="yes">Press Ctrl+F to search for a process</property>
     <property name="modal">True</property>
     <property name="icon">GameConqueror_128x128.png</property>

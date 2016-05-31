@@ -663,7 +663,7 @@ class GameConqueror():
     ############################
     # core functions
     def show_error(self, msg):
-        dialog = Gtk.MessageDialog(None
+        dialog = Gtk.MessageDialog(self.main_window
                                  ,Gtk.DialogFlags.MODAL
                                  ,Gtk.MessageType.ERROR
                                  ,Gtk.ButtonsType.OK
