@@ -663,7 +663,7 @@ class GameConqueror():
     ############################
     # core functions
     def show_error(self, msg):
-        dialog = Gtk.MessageDialog(None
+        dialog = Gtk.MessageDialog(self.main_window
                                  ,Gtk.DialogFlags.MODAL
                                  ,Gtk.MessageType.ERROR
                                  ,Gtk.ButtonsType.OK
@@ -725,7 +725,7 @@ class GameConqueror():
         try:
             self.read_maps()
         except:
-            self.show_error(_('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
+            self.show_error(_('Cannot retrieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
             return
         selected_region = None
         if addr:
@@ -807,7 +807,7 @@ class GameConqueror():
             self.pid = 0
             self.process_label.set_text(_('No process selected'))
             self.process_label.set_property('tooltip-text', _('Select a process'))
-            self.show_error(_('Cannot retieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
+            self.show_error(_('Cannot retrieve memory maps of that process, maybe it has exited (crashed), or you don\'t have enough privilege'))
         self.process_label.set_text('%d - %s' % (pid, process_name))
         self.process_label.set_property('tooltip-text', process_name)
 
