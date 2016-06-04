@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-30 23:24+0200\n"
+"POT-Creation-Date: 2016-06-04 18:37+0200\n"
 "PO-Revision-Date: 2014-01-26 13:38+0400\n"
 "Last-Translator: Igor Gnatenko <i.gnatenko.brain@gmail.com>\n"
 "Language-Team: Russian Fedora\n"
@@ -77,7 +77,7 @@ msgstr ""
 msgid "Found: 0"
 msgstr "Найдено: 0"
 
-#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:809
+#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:810
 msgid "Select a process"
 msgstr "Выбрать процесс"
 
@@ -154,7 +154,7 @@ msgstr ""
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
 msgstr "Значение: <span color=\"blue\"><u>?</u></span>"
 
-#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:808
+#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:809
 msgid "No process selected"
 msgstr "Процесс не выбран"
 
@@ -296,7 +296,7 @@ msgid "Remove this entry"
 msgstr "Удалить этот элемент"
 
 #: ../gui/GameConqueror.py:318 ../gui/GameConqueror.py:467
-#: ../gui/GameConqueror.py:876
+#: ../gui/GameConqueror.py:878
 msgid "Please select a process"
 msgstr "Пожалуйста выберите процесс"
 
@@ -316,7 +316,7 @@ msgstr "Сохранить.."
 msgid "Please enter a valid address."
 msgstr "Пожалуйста введите корректный адрес."
 
-#: ../gui/GameConqueror.py:487 ../gui/GameConqueror.py:782
+#: ../gui/GameConqueror.py:487 ../gui/GameConqueror.py:783
 msgid "No Description"
 msgstr "Нет Описания"
 
@@ -324,39 +324,39 @@ msgstr "Нет Описания"
 msgid "Unknown architecture, you may report to developers"
 msgstr "Неизвестная архитектура, сообщите разработчикам"
 
-#: ../gui/GameConqueror.py:728 ../gui/GameConqueror.py:810
+#: ../gui/GameConqueror.py:728 ../gui/GameConqueror.py:811
 msgid ""
-"Cannot retieve memory maps of that process, maybe it has exited (crashed), "
-"or you don't have enough privilege"
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
 msgstr ""
 "Невозможно получить маппинги памяти для этого процесса, возможно он больше "
 "не существует или у вас не хватает прав"
 
 #. not readable
-#: ../gui/GameConqueror.py:738
+#: ../gui/GameConqueror.py:739
 #, python-format
 msgid "Address %x is not readable"
 msgstr "Адрес %x не доступен для чтения"
 
-#: ../gui/GameConqueror.py:741
+#: ../gui/GameConqueror.py:742
 #, python-format
 msgid "Address %x is not valid"
 msgstr "Адрес %x не корректен"
 
-#: ../gui/GameConqueror.py:750
+#: ../gui/GameConqueror.py:751
 msgid "Cannot find a readable region"
 msgstr "Невозможно найти область для чтения"
 
-#: ../gui/GameConqueror.py:761
+#: ../gui/GameConqueror.py:762
 msgid "Cannot read memory"
 msgstr "Невозможно прочитать память"
 
-#: ../gui/GameConqueror.py:924
+#: ../gui/GameConqueror.py:926
 #, python-format
 msgid "Found: %d"
 msgstr "Найдено: %d"
 
-#: ../gui/GameConqueror.py:1039
+#: ../gui/GameConqueror.py:1041
 msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
 "you are using the same version of GameConqueror as scanmem."

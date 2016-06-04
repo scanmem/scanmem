@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-05-30 23:24+0200\n"
+"POT-Creation-Date: 2016-06-04 18:37+0200\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -77,7 +77,7 @@ msgstr ""
 msgid "Found: 0"
 msgstr "0 件見つかりました"
 
-#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:809
+#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:810
 msgid "Select a process"
 msgstr "プロセスを選択してください"
 
@@ -153,7 +153,7 @@ msgstr ""
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
 msgstr "値: <span color=\"blue\"><u>?</u></span>"
 
-#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:808
+#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:809
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
 
@@ -294,7 +294,7 @@ msgid "Remove this entry"
 msgstr "この項目を削除"
 
 #: ../gui/GameConqueror.py:318 ../gui/GameConqueror.py:467
-#: ../gui/GameConqueror.py:876
+#: ../gui/GameConqueror.py:878
 msgid "Please select a process"
 msgstr "プロセスを選択してください"
 
@@ -314,7 +314,7 @@ msgstr "保存.."
 msgid "Please enter a valid address."
 msgstr "有効なメモリアドレスを入力してください."
 
-#: ../gui/GameConqueror.py:487 ../gui/GameConqueror.py:782
+#: ../gui/GameConqueror.py:487 ../gui/GameConqueror.py:783
 msgid "No Description"
 msgstr "説明なし"
 
@@ -322,39 +322,39 @@ msgstr "説明なし"
 msgid "Unknown architecture, you may report to developers"
 msgstr "未知のアーキテクチャです。必要であれば開発者に報告してください。"
 
-#: ../gui/GameConqueror.py:728 ../gui/GameConqueror.py:810
+#: ../gui/GameConqueror.py:728 ../gui/GameConqueror.py:811
 msgid ""
-"Cannot retieve memory maps of that process, maybe it has exited (crashed), "
-"or you don't have enough privilege"
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
 msgstr ""
 "指定されたプロセスのメモリマップを読み込めません。既に終了あるいはクラッシュ"
 "したか、この操作に必要な権限がない可能性があります。"
 
 #. not readable
-#: ../gui/GameConqueror.py:738
+#: ../gui/GameConqueror.py:739
 #, python-format
 msgid "Address %x is not readable"
 msgstr "アドレス %x を読み込めません"
 
-#: ../gui/GameConqueror.py:741
+#: ../gui/GameConqueror.py:742
 #, python-format
 msgid "Address %x is not valid"
 msgstr "アドレス %x は無効です"
 
-#: ../gui/GameConqueror.py:750
+#: ../gui/GameConqueror.py:751
 msgid "Cannot find a readable region"
 msgstr "読み込み可能なメモリ範囲が見つかりません"
 
-#: ../gui/GameConqueror.py:761
+#: ../gui/GameConqueror.py:762
 msgid "Cannot read memory"
 msgstr "メモリを読み込めません"
 
-#: ../gui/GameConqueror.py:924
+#: ../gui/GameConqueror.py:926
 #, python-format
 msgid "Found: %d"
 msgstr "%d 件見つかりました"
 
-#: ../gui/GameConqueror.py:1039
+#: ../gui/GameConqueror.py:1041
 msgid ""
 "Version of scanmem mismatched, you may encounter problems. Please make sure "
 "you are using the same version of GameConqueror as scanmem."
@@ -409,7 +409,6 @@ msgid "Authentication is required to run Game Conqueror"
 msgstr ""
 
 #: ../gui/GameConqueror.appdata.xml.in.h:2
-#, fuzzy
 msgid "Game hacking tool. GUI front-end for scanmem."
 msgstr "ゲーム向けプロセスメモリエディタ(scanmem GUI フロントエンド)"
 
@@ -432,7 +431,6 @@ msgid "Locking on multiple variables"
 msgstr ""
 
 #: ../gui/GameConqueror.appdata.xml.in.h:6
-#, fuzzy
 msgid "Memory Viewer/Editor"
 msgstr "メモリエディタ"
 
