@@ -63,8 +63,6 @@
 #include "scanmem.h"
 #include "show_message.h"
 
-#define min(a,b) (((a)<(b))?(a):(b))
-
 /* Progress handling */
 #define NUM_DOTS (10)
 #define NUM_SAMPLES (100)
