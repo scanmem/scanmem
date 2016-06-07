@@ -103,7 +103,7 @@ bool readmaps(pid_t target, list_t * regions)
             memset(filename, '\0', len);
 
             /* parse each line */
-            if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %s", &start, &end, &read,
+            if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %[^\n]", &start, &end, &read,
                     &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
                 /*
                  * get the load address for regions of the same ELF file
