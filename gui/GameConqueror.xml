@@ -3,6 +3,7 @@
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkAboutDialog" id="AboutDialog">
     <property name="can_focus">False</property>
+    <property name="transient_for">MainWindow</property>
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <property name="program_name">GameConqueror</property>
