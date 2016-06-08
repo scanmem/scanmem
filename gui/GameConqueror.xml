@@ -7,10 +7,11 @@
     <property name="border_width">5</property>
     <property name="type_hint">normal</property>
     <property name="program_name">GameConqueror</property>
-    <property name="copyright" translatable="yes">Copyright (C) 2009-2013 WANG Lu  &lt;coolwanglu@gmail.com&gt;
+    <property name="copyright" translatable="yes">Copyright (C) 2009-2014 WANG Lu  &lt;coolwanglu@gmail.com&gt;
 Copyright (C) 2010 Bryan Cain
+Copyright (C) 2015-2016 Sebastian Parschauer  &lt;s.parschauer@gmx.de&gt;
 
-Special thanks: Zhang Zhe</property>
+Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</property>
     <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
     <property name="website">https://github.com/scanmem/scanmem</property>
     <property name="website_label" translatable="yes">Homepage</property>

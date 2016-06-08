@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2016-06-04 18:37+0200\n"
+"POT-Creation-Date: 2016-06-08 08:45+0200\n"
 "PO-Revision-Date: 2013-10-30 02:13+0900\n"
 "Last-Translator: Kuina <kuinanein(a)gmail.com>\n"
 "Language-Team: Japanese\n"
@@ -19,73 +19,75 @@ msgstr ""
 
 #: ../gui/GameConqueror.xml.h:1
 msgid ""
-"Copyright (C) 2009-2013 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
 "Copyright (C) 2010 Bryan Cain\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
 "\n"
-"Special thanks: Zhang Zhe"
+"Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang "
+"Zhe"
 msgstr ""
 
-#: ../gui/GameConqueror.xml.h:5
+#: ../gui/GameConqueror.xml.h:6
 msgid "A graphical frontend of scanmem"
 msgstr "scanmem GUI フロントエンド"
 
-#: ../gui/GameConqueror.xml.h:6
+#: ../gui/GameConqueror.xml.h:7
 msgid "Homepage"
 msgstr "ホームページ"
 
-#: ../gui/GameConqueror.xml.h:7
+#: ../gui/GameConqueror.xml.h:8
 msgid "Manually add an entry"
 msgstr "手動入力"
 
-#: ../gui/GameConqueror.xml.h:8
+#: ../gui/GameConqueror.xml.h:9
 msgid "_Close"
 msgstr "閉じる(_C)"
 
-#: ../gui/GameConqueror.xml.h:9
+#: ../gui/GameConqueror.xml.h:10
 msgid "_Add"
 msgstr "追加(_A)"
 
-#: ../gui/GameConqueror.xml.h:10
+#: ../gui/GameConqueror.xml.h:11
 msgid "Specify type of target data"
 msgstr "データ型を指定します"
 
-#: ../gui/GameConqueror.xml.h:11
+#: ../gui/GameConqueror.xml.h:12
 msgid "Type:"
 msgstr "データ型:"
 
-#: ../gui/GameConqueror.xml.h:12
+#: ../gui/GameConqueror.xml.h:13
 msgid "Memory address of the value"
 msgstr "メモリアドレスを入力します"
 
-#: ../gui/GameConqueror.xml.h:13
+#: ../gui/GameConqueror.xml.h:14
 msgid "Address:"
 msgstr "アドレス:"
 
-#: ../gui/GameConqueror.xml.h:14
+#: ../gui/GameConqueror.xml.h:15
 msgid "Give a brief description of the value"
 msgstr "変数の簡単な説明を入力します"
 
-#: ../gui/GameConqueror.xml.h:15
+#: ../gui/GameConqueror.xml.h:16
 msgid "Description:"
 msgstr "概要:"
 
-#: ../gui/GameConqueror.xml.h:16
+#: ../gui/GameConqueror.xml.h:17
 msgid "GameConqueror"
 msgstr ""
 
-#: ../gui/GameConqueror.xml.h:17
+#: ../gui/GameConqueror.xml.h:18
 msgid "Found: 0"
 msgstr "0 件見つかりました"
 
-#: ../gui/GameConqueror.xml.h:18 ../gui/GameConqueror.py:810
+#: ../gui/GameConqueror.xml.h:19 ../gui/GameConqueror.py:810
 msgid "Select a process"
 msgstr "プロセスを選択してください"
 
-#: ../gui/GameConqueror.xml.h:19
+#: ../gui/GameConqueror.xml.h:20
 msgid "Scan"
 msgstr "スキャン"
 
-#: ../gui/GameConqueror.xml.h:20
+#: ../gui/GameConqueror.xml.h:21
 msgid ""
 "Syntax:\n"
 "\n"
@@ -149,23 +151,23 @@ msgstr ""
 " 文字列を検索する場合: 検索したい文字列をそのまま入力してください\n"
 "\n"
 
-#: ../gui/GameConqueror.xml.h:50
+#: ../gui/GameConqueror.xml.h:51
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
 msgstr "値: <span color=\"blue\"><u>?</u></span>"
 
-#: ../gui/GameConqueror.xml.h:51 ../gui/GameConqueror.py:809
+#: ../gui/GameConqueror.xml.h:52 ../gui/GameConqueror.py:809
 msgid "No process selected"
 msgstr "プロセスが選択されていません"
 
-#: ../gui/GameConqueror.xml.h:52
+#: ../gui/GameConqueror.xml.h:53
 msgid "Reset"
 msgstr "リセット"
 
-#: ../gui/GameConqueror.xml.h:53
+#: ../gui/GameConqueror.xml.h:54
 msgid "Data Type:"
 msgstr "データ型:"
 
-#: ../gui/GameConqueror.xml.h:54
+#: ../gui/GameConqueror.xml.h:55
 msgid ""
 "<b>Basic:</b>      Fastest but may miss some values\n"
 "<b>Normal:</b>  Works for most cases\n"
@@ -176,56 +178,56 @@ msgstr ""
 "<b>Normal:</b>  通常はこれで充分です\n"
 "<b>Full:</b>         値が存在すれば必ずそのアドレスを取得できますが、遅いです"
 
-#: ../gui/GameConqueror.xml.h:57
+#: ../gui/GameConqueror.xml.h:58
 msgid "Search Scope:"
 msgstr "検索範囲:"
 
-#: ../gui/GameConqueror.xml.h:58
+#: ../gui/GameConqueror.xml.h:59
 msgid ""
 "Specify how float numbers should be rounded. Not avaiable in this version"
 msgstr "浮動小数点数の丸め方を指定します。(このバージョンでは利用できません)"
 
-#: ../gui/GameConqueror.xml.h:59
+#: ../gui/GameConqueror.xml.h:60
 msgid "Round Type:"
 msgstr "数値の丸め方:"
 
-#: ../gui/GameConqueror.xml.h:60
+#: ../gui/GameConqueror.xml.h:61
 msgid "Remove all entries"
 msgstr "全ての項目を削除"
 
-#: ../gui/GameConqueror.xml.h:61
+#: ../gui/GameConqueror.xml.h:62
 msgid "Load address list from file"
 msgstr "アドレス一覧をファイルから読み込み"
 
-#: ../gui/GameConqueror.xml.h:62
+#: ../gui/GameConqueror.xml.h:63
 msgid "Save address list to file"
 msgstr "アドレス一覧をファイルへ保存"
 
-#: ../gui/GameConqueror.xml.h:63
+#: ../gui/GameConqueror.xml.h:64
 msgid "Memory Editor"
 msgstr "メモリエディタ"
 
-#: ../gui/GameConqueror.xml.h:64
+#: ../gui/GameConqueror.xml.h:65
 msgid "Press Ctrl+F to search for a process"
 msgstr "Ctrl+Fキーでプロセスを検索できます"
 
-#: ../gui/GameConqueror.xml.h:65
+#: ../gui/GameConqueror.xml.h:66
 msgid "Process:"
 msgstr "プロセス:"
 
-#: ../gui/GameConqueror.xml.h:66
+#: ../gui/GameConqueror.xml.h:67
 msgid "User:"
 msgstr "ユーザー:"
 
-#: ../gui/GameConqueror.xml.h:67
+#: ../gui/GameConqueror.xml.h:68
 msgid "Filter"
 msgstr "フィルタ"
 
-#: ../gui/GameConqueror.xml.h:68
+#: ../gui/GameConqueror.xml.h:69
 msgid "_OK"
 msgstr "OK(_O)"
 
-#: ../gui/GameConqueror.xml.h:69
+#: ../gui/GameConqueror.xml.h:70
 msgid "_Cancel"
 msgstr "キャンセル(_C)"
 
