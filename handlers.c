@@ -30,6 +30,8 @@
 
 #include <stdio.h>
 #include <sys/types.h>
+#include <sys/wait.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -87,6 +89,88 @@
 #else
 #define POINTER_FMT "%12lx"
 #endif
+
+/* pager support */
+FILE *get_pager(void)
+{
+    const char *pager;
+    pid_t pgpid;
+    int pgret;
+    int pgpipe[2];
+    bool pgcmdfail = false;
+    FILE *retfd = NULL;
+    char *const emptyvec[1] = { NULL };
+
+    if ((pager = getenv("PAGER")) == NULL || *pager == '\0') {
+        show_warn("get_pager(): couldn't get $PAGER, falling back to `more`\n");
+        pager = "more";
+    }
+
+    if (pipe2(pgpipe, O_NONBLOCK) == -1) {
+        show_error("get_pager(): pipe2() error `%s`. falling back to normal output\n", strerror(errno));
+        return stderr;
+    }
+    /*
+     * we write here to ensure we will always
+     * have something to read() into pgcmdfail.
+     */
+    write(pgpipe[1], "", 1);
+
+    /* XXX: is $PATH modified prior? */
+retry:
+    switch ((pgpid = fork())) {
+    case -1:
+        show_warn("get_pager(): fork() failed. falling back to normal output\n");
+        return stderr;
+    case 0:
+        execvp(pager, emptyvec);
+        /*
+         * if we got here, it means execvp() failed.
+         * errno contains the error, so pass it back
+         * up to parent. we use a pipe here to let
+         * the parent know that we are indeed returning
+         * the return value of the failed execvp().
+         */
+        char nullbuf;
+        /* read() to empty pipe */
+        read(pgpipe[0], &nullbuf, 1);
+        write(pgpipe[1], "1", 2);
+        exit(errno);
+        /* NOTREACHED */
+    default:
+        if (waitpid(pgpid, &pgret, 0) == -1) {
+            show_debug("pager: waitpid() error `%s`\n", strerror(errno));
+            show_warn("pager: waitpid() error. falling back to normal output\n");
+            return stderr;
+        } else {
+            pgret = WEXITSTATUS(pgret);
+            if (read(pgpipe[0], &pgcmdfail, 1) == -1) {
+                show_error("pager: pipe read() error `%s`. falling back to normal output\n", strerror(errno));
+                return stderr;
+            }
+            if (pgcmdfail) {
+                show_debug("pager: execvp(pg=%s) ret -> %d (%s)\n", pager, pgret, strerror(pgret));
+                if (!strcmp(pager, "more")) {
+                    show_warn("pager: sh failed to execute more. falling back to normal output\n");
+                    return stderr;
+                } else {
+                    show_warn("pager: sh failed to execute `%s`. trying `more`...\n", pager);
+                    pager = "more";
+                    goto retry;
+                }
+            }
+        }
+    }
+
+    if ((retfd = popen(pager, "w")) == NULL) {
+        show_warn("pager: couldn't popen() pager, falling back to normal output\n");
+        return stderr;
+    }
+
+    assert(retfd != NULL);
+
+    return retfd;
+}
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
@@ -1006,18 +1090,13 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
     list_t *commands = vars->commands;
     element_t *np = NULL;
     command_t *def = NULL;
+    FILE *outfd;
     assert(commands != NULL);
     assert(argc >= 1);
 
     np = commands->head;
 
-    /* pager support, dirty ugly hardcoded */
-    FILE *outfd = popen("more", "w"); 
-    if (outfd == NULL)
-    {
-        show_warn("Cannot execute pager, fall back to normal output\n");
-        outfd = stderr;
-    }
+    outfd = get_pager();
 
     /* print version information for generic help */
     if (argv[1] == NULL) {
