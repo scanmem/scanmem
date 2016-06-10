@@ -110,12 +110,12 @@ static void parse_parameter(int argc, char ** argv)
 
 int main(int argc, char **argv)
 {
+    parse_parameter(argc, argv);
+
     if (getuid() != 0)
     {
-        show_error("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
+        show_warn("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
     }
-    
-    parse_parameter(argc, argv);
 
     int ret = EXIT_SUCCESS;
     globals_t *vars = &globals;
