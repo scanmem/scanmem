@@ -216,7 +216,7 @@
                         <property name="can_focus">False</property>
                         <property name="tooltip_markup" translatable="yes">Syntax:
 
- For number types: 
+ For numeric types:
 &lt;span font_family="monospace"&gt;
  &lt;b&gt;N&lt;/b&gt;         Exactly this number
  &lt;b&gt;N..M&lt;/b&gt;      Range between two numbers
@@ -232,18 +232,15 @@
  &lt;b&gt;!= N&lt;/b&gt;      Other than N
 &lt;/span&gt;
  where N could be a number of a simple math expression embraced by (), e.g.
- 12
+&lt;span font_family="monospace"&gt; 12
  0x34
  5.67
- (- 8 * 9)
+ (- 8 * 9)&lt;/span&gt;
 
  For bytearray: use 2-byte hexadecimal notation for each byte, separated by spaces
-&lt;span font_family="monospace"&gt;
- e.g. FE DC BA 98 76 54 32 10
-&lt;/span&gt;
- For string: enter the string directly
+ e.g. &lt;span font_family="monospace"&gt;FE DC BA 98 76 54 32 10&lt;/span&gt;
 
-</property>
+ For string: enter the string directly</property>
                         <property name="label" translatable="yes">Value: &lt;span color="blue"&gt;&lt;u&gt;?&lt;/u&gt;&lt;/span&gt;</property>
                         <property name="use_markup">True</property>
                         <property name="single_line_mode">True</property>
