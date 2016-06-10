@@ -261,6 +261,18 @@ class GameConqueror():
         misc.treeview_append_column(self.processlist_tv, _('Process')
                                         ,attributes = (('text',2),)
                                    )
+
+
+        # get list of things to be disabled during scan
+        self.disablelist = []
+        self.disablelist.append(self.cheatlist_tv)
+        self.disablelist.append(self.scanresult_tv)
+        self.disablelist.append(self.builder.get_object('processGrid'))
+        self.disablelist.append(self.builder.get_object('searchGrid'))
+        self.disablelist.append(self.builder.get_object('buttonGrid'))
+        self.disablelist.append(self.memoryeditor_window)
+
+
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
@@ -268,7 +280,6 @@ class GameConqueror():
         misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
-        
         
         
         # init popup menu for scanresult
@@ -893,8 +904,11 @@ class GameConqueror():
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.search_count +=1 
         self.scanoption_frame.set_sensitive(False) # no need to check search_count here
-        self.main_window.set_sensitive(False)
-        self.memoryeditor_window.set_sensitive(False)
+
+        # disable set of widgets interfering with the scan
+        for wid in self.disablelist:
+            wid.set_sensitive(False)
+
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
         if self.search_count == 1:
@@ -912,8 +926,11 @@ class GameConqueror():
         Gdk.threads_enter()
 
         self.scanprogress_progressbar.set_fraction(1.0)
-        self.main_window.set_sensitive(True)
-        self.memoryeditor_window.set_sensitive(True)
+
+        # enable set of widgets interfering with the scan
+        for wid in self.disablelist:
+            wid.set_sensitive(True)
+
         self.is_scanning = False
         self.update_scan_result()
         self.is_first_scan = False
