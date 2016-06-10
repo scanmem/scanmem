@@ -80,10 +80,10 @@ static void parse_parameter(int argc, char ** argv)
                 break;
             case 'v':
                 printversion(stdout);
-                exit(EXIT_FAILURE);
+                exit(EXIT_SUCCESS);
             case 'h':
                 printhelp();
-                exit(EXIT_FAILURE);
+                exit(EXIT_SUCCESS);
             case 'd':
                 globals.options.debug = 1;
                 break;
