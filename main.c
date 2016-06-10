@@ -47,6 +47,7 @@ static void printhelp()
             "-p, --pid=pid\t\tset the target process pid\n"
             "-h, --help\t\tprint this message\n"
             "-v, --version\t\tprint version information\n"
+            "-d, --debug\t\tenable debug mode\n"
             "\n"
             "scanmem is an interactive debugging utility, enter `help` at the prompt\n"
             "for further assistance.\n"
