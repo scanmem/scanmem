@@ -23,7 +23,7 @@
 
 import sys
 import os
-import re
+import argparse
 import struct
 import tempfile
 import platform
@@ -1041,9 +1041,25 @@ class GameConqueror():
         if self.backend.get_version() != VERSION:
             self.show_error(_('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of GameConqueror as scanmem.'))
 
-    
 
 if __name__ == '__main__':
     GObject.threads_init()
     Gdk.threads_init()
-    GameConqueror().main()
+    gc_instance = GameConqueror()
+    
+    # Parse cmdline arguments
+    parser = argparse.ArgumentParser(prog='GameConqueror',
+                                     description="A GUI for scanmem, a game hacking tool"
+
+                                    )
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument("pid", nargs='?', type=int, help="PID of the process")
+    args = parser.parse_args()
+
+    # Attach to given pid (if any)
+    if (args.pid is not None) :
+        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read()
+        gc_instance.select_process(args.pid, process_name)
+    
+    # Start
+    gc_instance.main()
