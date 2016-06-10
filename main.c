@@ -79,7 +79,7 @@ static void parse_parameter(int argc, char ** argv)
                 }
                 break;
             case 'v':
-                printversion(stderr);
+                printversion(stdout);
                 exit(EXIT_FAILURE);
             case 'h':
                 printhelp();
