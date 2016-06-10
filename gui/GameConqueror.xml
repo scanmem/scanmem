@@ -1002,7 +1002,7 @@ Public License instead of this License.  But first, please read
  For number types: 
 &lt;span font_family="monospace"&gt;
  &lt;b&gt;N&lt;/b&gt;         Exactly this number
- &lt;b&gt;N..N&lt;/b&gt;      Range between two numbers
+ &lt;b&gt;N..M&lt;/b&gt;      Range between two numbers
  &lt;b&gt;?&lt;/b&gt;         Unknown initial value
  &lt;b&gt;&amp;gt; or +&lt;/b&gt;    Increased values
  &lt;b&gt;&amp;lt; or -&lt;/b&gt;    Decreased values
@@ -1012,7 +1012,7 @@ Public License instead of this License.  But first, please read
  &lt;b&gt;&amp;lt; N&lt;/b&gt;       Less than N
  &lt;b&gt;+ N&lt;/b&gt;       Increased by N
  &lt;b&gt;- N&lt;/b&gt;       Decreased by N
- &lt;b&gt;!= N&lt;/b&gt;       Other than N
+ &lt;b&gt;!= N&lt;/b&gt;      Other than N
 &lt;/span&gt;
  where N could be a number of a simple math expression embraced by (), e.g.
  12
@@ -1166,7 +1166,7 @@ Public License instead of this License.  But first, please read
                                 <property name="height_request">28</property>
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Not avaiable in this version</property>
+                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Not available in this version</property>
                                 <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Round Type:</property>
                               </object>
