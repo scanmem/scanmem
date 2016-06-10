@@ -133,6 +133,7 @@ class GameConqueror():
         
         self.scanoption_frame = self.builder.get_object('ScanOption_Frame')
         self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
+        self.input_box = self.builder.get_object('Value_Input')
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
@@ -1053,6 +1054,7 @@ if __name__ == '__main__':
                                      epilog='Report bugs to <%s>.' %(PACKAGE_BUGREPORT,)
                                     )
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('-s', '--search', metavar='val', dest='search_value', help='prefill the search box')
     parser.add_argument("pid", nargs='?', type=int, help="PID of the process")
     args = parser.parse_args()
 
@@ -1060,6 +1062,10 @@ if __name__ == '__main__':
     if (args.pid is not None) :
         process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
         gc_instance.select_process(args.pid, process_name)
-    
+
+    # Prefill the search box (if asked)
+    if (args.search_value is not None) :
+        gc_instance.input_box.set_text(args.search_value)
+
     # Start
     gc_instance.main()
