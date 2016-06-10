@@ -261,6 +261,19 @@ class GameConqueror():
         misc.treeview_append_column(self.processlist_tv, _('Process')
                                         ,attributes = (('text',2),)
                                    )
+        
+        
+        ###
+        # Get list of things that we'll lock during scan
+        self.locklist = []
+        self.locklist.append(self.cheatlist_tv)
+        self.locklist.append(self.scanresult_tv)
+        self.locklist.append(self.builder.get_object('processGrid'))
+        self.locklist.append(self.builder.get_object('searchGrid'))
+        self.locklist.append(self.builder.get_object('buttonGrid'))
+        self.locklist.append(self.memoryeditor_window)
+
+        
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
@@ -268,7 +281,6 @@ class GameConqueror():
         misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
-        
         
         
         # init popup menu for scanresult
@@ -893,8 +905,11 @@ class GameConqueror():
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.search_count +=1 
         self.scanoption_frame.set_sensitive(False) # no need to check search_count here
-        self.main_window.set_sensitive(False)
-        self.memoryeditor_window.set_sensitive(False)
+
+        # Lock set of widget that would mess with the scan
+        for wid in self.locklist :
+            wid.set_sensitive(False)
+
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
         if self.search_count == 1:
@@ -912,8 +927,11 @@ class GameConqueror():
         Gdk.threads_enter()
 
         self.scanprogress_progressbar.set_fraction(1.0)
-        self.main_window.set_sensitive(True)
-        self.memoryeditor_window.set_sensitive(True)
+
+        # Unlock set of widget that would mess with the scan
+        for wid in self.locklist :
+            wid.set_sensitive(True)
+
         self.is_scanning = False
         self.update_scan_result()
         self.is_first_scan = False
