@@ -1058,7 +1058,7 @@ if __name__ == '__main__':
 
     # Attach to given pid (if any)
     if (args.pid is not None) :
-        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read()
+        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
         gc_instance.select_process(args.pid, process_name)
     
     # Start
