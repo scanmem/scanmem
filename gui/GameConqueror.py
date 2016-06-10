@@ -853,6 +853,7 @@ class GameConqueror():
         self.update_scan_result()
         self.command_lock.release()
 
+        self.scanprogress_progressbar.set_fraction(0.0)
         self.scanoption_frame.set_sensitive(True)
         self.is_first_scan = True
 
