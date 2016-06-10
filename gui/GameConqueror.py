@@ -1049,8 +1049,8 @@ if __name__ == '__main__':
     
     # Parse cmdline arguments
     parser = argparse.ArgumentParser(prog='GameConqueror',
-                                     description="A GUI for scanmem, a game hacking tool"
-
+                                     description="A GUI for scanmem, a game hacking tool",
+                                     epilog='Report bugs to <%s>.' %(PACKAGE_BUGREPORT,)
                                     )
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
     parser.add_argument("pid", nargs='?', type=int, help="PID of the process")
