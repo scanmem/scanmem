@@ -809,8 +809,9 @@ class GameConqueror():
             self.process_label.set_property('tooltip-text', _('Select a process'))
             self.show_error(_('Cannot retrieve memory maps of that process, maybe it has '
                               'exited (crashed), or you don\'t have enough privileges'))
-        self.process_label.set_text('%d - %s' % (pid, process_name))
-        self.process_label.set_property('tooltip-text', process_name)
+        else:
+            self.process_label.set_text('%d - %s' % (pid, process_name))
+            self.process_label.set_property('tooltip-text', process_name)
 
         self.command_lock.acquire()
         self.backend.send_command('pid %d' % (pid,))
