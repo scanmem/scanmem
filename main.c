@@ -68,7 +68,7 @@ static void parse_parameter(int argc, char ** argv)
     bool done = false;
     /* process command line */
     while (!done) {
-        switch (getopt_long(argc, argv, "vhbdp:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhdp:", longopts, &optindex)) {
             case 'p':
                 globals.target = (pid_t) strtoul(optarg, &end, 0);
 
