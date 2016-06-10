@@ -1,202 +1,111 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.20.0 -->
 <interface>
-  <!-- interface-requires gtk+ 3.0 -->
-  <object class="GtkAboutDialog" id="AboutDialog">
+  <requires lib="gtk+" version="3.0"/>
+  <object class="GtkImage" id="add_image">
+    <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="transient_for">MainWindow</property>
-    <property name="border_width">5</property>
-    <property name="type_hint">normal</property>
-    <property name="program_name">GameConqueror</property>
-    <property name="copyright" translatable="yes">Copyright (C) 2009-2014 WANG Lu  &lt;coolwanglu@gmail.com&gt;
-Copyright (C) 2010 Bryan Cain
-Copyright (C) 2015-2016 Sebastian Parschauer  &lt;s.parschauer@gmx.de&gt;
-
-Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</property>
-    <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
-    <property name="website">https://github.com/scanmem/scanmem</property>
-    <property name="website_label" translatable="yes">Homepage</property>
-    <property name="authors">Wang Lu &lt;coolwanglu(a)gmail.com&gt;</property>
-    <property name="logo">GameConqueror_128x128.png</property>
-    <property name="license_type">gpl-3-0</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox1">
+    <property name="icon_name">list-add</property>
+  </object>
+  <object class="GtkImage" id="delete_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-delete</property>
+  </object>
+  <object class="GtkImage" id="edit_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">gtk-edit</property>
+  </object>
+  <object class="GtkImage" id="find_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">edit-find</property>
+  </object>
+  <object class="GtkImage" id="jumpto_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">gtk-jump-to</property>
+  </object>
+  <object class="GtkWindow" id="MemoryEditor_Window">
+    <property name="height_request">280</property>
+    <property name="can_focus">False</property>
+    <property name="resizable">False</property>
+    <property name="icon">GameConqueror_128x128.png</property>
+    <signal name="delete-event" handler="MemoryEditor_Window_delete_event_cb" swapped="no"/>
+    <child>
+      <object class="GtkVBox" id="vbox2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area1">
+        <child>
+          <object class="GtkFixed" id="fixed2">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkLabel" id="label6">
+                <property name="width_request">70</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="label" translatable="yes">Address:</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkEntry" id="MemoryEditor_Address_Entry">
+                <property name="width_request">140</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">●</property>
+                <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
+              </object>
+              <packing>
+                <property name="x">70</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="MemoryEditor_JumpTo_Button">
+                <property name="width_request">28</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="image">jumpto_image</property>
+                <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb" swapped="no"/>
+              </object>
+              <packing>
+                <property name="x">210</property>
+              </packing>
+            </child>
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
+            <property name="fill">False</property>
             <property name="position">0</property>
           </packing>
-        </child>
-        <child>
-          <placeholder/>
         </child>
       </object>
     </child>
   </object>
-  <object class="GtkDialog" id="AddCheatDialog">
+  <object class="GtkImage" id="load_image">
+    <property name="visible">True</property>
     <property name="can_focus">False</property>
-    <property name="transient_for">MainWindow</property>
-    <property name="border_width">5</property>
-    <property name="title" translatable="yes">Manually add an entry</property>
-    <property name="resizable">False</property>
-    <property name="modal">True</property>
-    <property name="icon">GameConqueror_128x128.png</property>
-    <property name="type_hint">normal</property>
-    <child internal-child="vbox">
-      <object class="GtkBox" id="dialog-vbox3">
-        <property name="visible">True</property>
-        <property name="can_focus">False</property>
-        <property name="spacing">2</property>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area3">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton" id="CloseAddCheat_Button">
-                <property name="label" translatable="yes">_Close</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-                <signal name="clicked" handler="CloseAddCheat_Button_clicked_cb" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="ConfirmAddCheat_Button">
-                <property name="label" translatable="yes">_Add</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-                <signal name="clicked" handler="ConfirmAddCheat_Button_clicked_cb" swapped="no"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">0</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkAlignment" id="alignment2">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="left_padding">12</property>
-            <child>
-              <object class="GtkFixed" id="fixed3">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <child>
-                  <object class="GtkLabel" id="Type_Label">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Specify type of target data</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Type:</property>
-                  </object>
-                  <packing>
-                    <property name="y">56</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="Address_Label">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Memory address of the value</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Address:</property>
-                  </object>
-                </child>
-                <child>
-                  <object class="GtkEntry" id="Address_Input">
-                    <property name="width_request">150</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                  </object>
-                  <packing>
-                    <property name="x">98</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkComboBox" id="Type_ComboBox">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                  </object>
-                  <packing>
-                    <property name="x">98</property>
-                    <property name="y">56</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkLabel" id="Description_Label">
-                    <property name="width_request">100</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="tooltip_text" translatable="yes">Give a brief description of the value</property>
-                    <property name="xalign">0</property>
-                    <property name="label" translatable="yes">Description:</property>
-                  </object>
-                  <packing>
-                    <property name="y">28</property>
-                  </packing>
-                </child>
-                <child>
-                  <object class="GtkEntry" id="Description_Input">
-                    <property name="width_request">150</property>
-                    <property name="height_request">28</property>
-                    <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                  </object>
-                  <packing>
-                    <property name="x">98</property>
-                    <property name="y">28</property>
-                  </packing>
-                </child>
-              </object>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">1</property>
-          </packing>
-        </child>
-      </object>
-    </child>
-    <action-widgets>
-      <action-widget response="0">CloseAddCheat_Button</action-widget>
-      <action-widget response="0">ConfirmAddCheat_Button</action-widget>
-    </action-widgets>
+    <property name="icon_name">document-open</property>
+  </object>
+  <object class="GtkImage" id="refresh_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">view-refresh</property>
+  </object>
+  <object class="GtkImage" id="save_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">document-save</property>
+  </object>
+  <object class="GtkImage" id="system_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">computer</property>
   </object>
   <object class="GtkWindow" id="MainWindow">
     <property name="visible">True</property>
@@ -228,8 +137,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                     <property name="height_request">28</property>
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="xalign">0.05000000074505806</property>
                     <property name="label" translatable="yes">Found: 0</property>
+                    <property name="xalign">0.05000000074505806</property>
                   </object>
                   <packing>
                     <property name="expand">False</property>
@@ -354,10 +263,10 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
  For string: enter the string directly
 
 </property>
-                    <property name="xalign">1</property>
                     <property name="label" translatable="yes">Value: &lt;span color="blue"&gt;&lt;u&gt;?&lt;/u&gt;&lt;/span&gt;</property>
                     <property name="use_markup">True</property>
                     <property name="single_line_mode">True</property>
+                    <property name="xalign">1</property>
                   </object>
                   <packing>
                     <property name="x">14</property>
@@ -371,8 +280,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="tooltip_text" translatable="yes">Select a process</property>
-                    <property name="xalign">0</property>
                     <property name="label" translatable="yes">No process selected</property>
+                    <property name="xalign">0</property>
                   </object>
                   <packing>
                     <property name="x">56</property>
@@ -441,8 +350,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">Specify type of target data</property>
-                                <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Data Type:</property>
+                                <property name="xalign">0</property>
                               </object>
                             </child>
                             <child>
@@ -469,8 +378,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                                 <property name="tooltip_markup" translatable="yes">&lt;b&gt;Basic:&lt;/b&gt;      Fastest but may miss some values
 &lt;b&gt;Normal:&lt;/b&gt;  Works for most cases
 &lt;b&gt;Full:&lt;/b&gt;         Never miss values but slowest</property>
-                                <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Search Scope:</property>
+                                <property name="xalign">0</property>
                               </object>
                               <packing>
                                 <property name="y">56</property>
@@ -494,8 +403,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Not available in this version</property>
-                                <property name="xalign">0</property>
                                 <property name="label" translatable="yes">Round Type:</property>
+                                <property name="xalign">0</property>
                               </object>
                               <packing>
                                 <property name="y">28</property>
@@ -659,80 +568,258 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
       </object>
     </child>
   </object>
-  <object class="GtkWindow" id="MemoryEditor_Window">
-    <property name="height_request">280</property>
+  <object class="GtkAboutDialog" id="AboutDialog">
     <property name="can_focus">False</property>
-    <property name="resizable">False</property>
-    <property name="icon">GameConqueror_128x128.png</property>
-    <signal name="delete-event" handler="MemoryEditor_Window_delete_event_cb" swapped="no"/>
-    <child>
-      <object class="GtkVBox" id="vbox2">
+    <property name="border_width">5</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">MainWindow</property>
+    <property name="program_name">GameConqueror</property>
+    <property name="copyright" translatable="yes">Copyright (C) 2009-2014 WANG Lu  &lt;coolwanglu@gmail.com&gt;
+Copyright (C) 2010 Bryan Cain
+Copyright (C) 2015-2016 Sebastian Parschauer  &lt;s.parschauer@gmx.de&gt;
+
+Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</property>
+    <property name="comments" translatable="yes">A graphical frontend of scanmem</property>
+    <property name="website">https://github.com/scanmem/scanmem</property>
+    <property name="website_label" translatable="yes">Homepage</property>
+    <property name="authors">Wang Lu &lt;coolwanglu(a)gmail.com&gt;</property>
+    <property name="logo">GameConqueror_128x128.png</property>
+    <property name="license_type">gpl-3-0</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox1">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
-        <child>
-          <object class="GtkFixed" id="fixed2">
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area1">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <placeholder/>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkDialog" id="AddCheatDialog">
+    <property name="can_focus">False</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Manually add an entry</property>
+    <property name="resizable">False</property>
+    <property name="modal">True</property>
+    <property name="icon">GameConqueror_128x128.png</property>
+    <property name="type_hint">normal</property>
+    <property name="transient_for">MainWindow</property>
+    <child internal-child="vbox">
+      <object class="GtkBox" id="dialog-vbox3">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area3">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
             <child>
-              <object class="GtkLabel" id="label6">
-                <property name="width_request">70</property>
-                <property name="height_request">28</property>
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="label" translatable="yes">Address:</property>
-              </object>
-            </child>
-            <child>
-              <object class="GtkEntry" id="MemoryEditor_Address_Entry">
-                <property name="width_request">140</property>
-                <property name="height_request">28</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="invisible_char">●</property>
-                <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
-              </object>
-              <packing>
-                <property name="x">70</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="MemoryEditor_JumpTo_Button">
-                <property name="width_request">28</property>
-                <property name="height_request">28</property>
+              <object class="GtkButton" id="CloseAddCheat_Button">
+                <property name="label" translatable="yes">_Close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="image">jumpto_image</property>
-                <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb" swapped="no"/>
+                <property name="use_underline">True</property>
+                <signal name="clicked" handler="CloseAddCheat_Button_clicked_cb" swapped="no"/>
               </object>
               <packing>
-                <property name="x">210</property>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="ConfirmAddCheat_Button">
+                <property name="label" translatable="yes">_Add</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
+                <signal name="clicked" handler="ConfirmAddCheat_Button_clicked_cb" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
               </packing>
             </child>
           </object>
           <packing>
             <property name="expand">False</property>
-            <property name="fill">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
             <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkAlignment" id="alignment2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="left_padding">12</property>
+            <child>
+              <object class="GtkFixed" id="fixed3">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <child>
+                  <object class="GtkLabel" id="Type_Label">
+                    <property name="width_request">100</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">Specify type of target data</property>
+                    <property name="label" translatable="yes">Type:</property>
+                    <property name="xalign">0</property>
+                  </object>
+                  <packing>
+                    <property name="y">56</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="Address_Label">
+                    <property name="width_request">100</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">Memory address of the value</property>
+                    <property name="label" translatable="yes">Address:</property>
+                    <property name="xalign">0</property>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="Address_Input">
+                    <property name="width_request">150</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                  </object>
+                  <packing>
+                    <property name="x">98</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkComboBox" id="Type_ComboBox">
+                    <property name="width_request">100</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                  </object>
+                  <packing>
+                    <property name="x">98</property>
+                    <property name="y">56</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="Description_Label">
+                    <property name="width_request">100</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="tooltip_text" translatable="yes">Give a brief description of the value</property>
+                    <property name="label" translatable="yes">Description:</property>
+                    <property name="xalign">0</property>
+                  </object>
+                  <packing>
+                    <property name="y">28</property>
+                  </packing>
+                </child>
+                <child>
+                  <object class="GtkEntry" id="Description_Input">
+                    <property name="width_request">150</property>
+                    <property name="height_request">28</property>
+                    <property name="visible">True</property>
+                    <property name="can_focus">True</property>
+                  </object>
+                  <packing>
+                    <property name="x">98</property>
+                    <property name="y">28</property>
+                  </packing>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
           </packing>
         </child>
       </object>
     </child>
+    <action-widgets>
+      <action-widget response="0">CloseAddCheat_Button</action-widget>
+      <action-widget response="0">ConfirmAddCheat_Button</action-widget>
+    </action-widgets>
   </object>
   <object class="GtkDialog" id="ProcessListDialog">
     <property name="width_request">350</property>
     <property name="height_request">500</property>
     <property name="can_focus">False</property>
-    <property name="transient_for">MainWindow</property>
     <property name="title" translatable="yes">Press Ctrl+F to search for a process</property>
     <property name="modal">True</property>
     <property name="icon">GameConqueror_128x128.png</property>
     <property name="type_hint">normal</property>
+    <property name="transient_for">MainWindow</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox2">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="spacing">2</property>
+        <child internal-child="action_area">
+          <object class="GtkButtonBox" id="dialog-action_area2">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="layout_style">end</property>
+            <child>
+              <object class="GtkButton" id="ProcessListDialog_OK_Button">
+                <property name="label" translatable="yes">_OK</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="ProcessListDialog_Cancel_Button">
+                <property name="label" translatable="yes">_Cancel</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_underline">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="pack_type">end</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
         <child>
           <object class="GtkFrame" id="frame3">
             <property name="visible">True</property>
@@ -757,8 +844,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">Process:</property>
+                            <property name="xalign">0</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -796,8 +883,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                             <property name="width_request">100</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
-                            <property name="xalign">0</property>
                             <property name="label" translatable="yes">User:</property>
+                            <property name="xalign">0</property>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -866,97 +953,11 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
             <property name="position">1</property>
           </packing>
         </child>
-        <child internal-child="action_area">
-          <object class="GtkButtonBox" id="dialog-action_area2">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="layout_style">end</property>
-            <child>
-              <object class="GtkButton" id="ProcessListDialog_OK_Button">
-                <property name="label" translatable="yes">_OK</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="ProcessListDialog_Cancel_Button">
-                <property name="label" translatable="yes">_Cancel</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_underline">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">False</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="pack_type">end</property>
-            <property name="position">2</property>
-          </packing>
-        </child>
       </object>
     </child>
     <action-widgets>
       <action-widget response="-5">ProcessListDialog_OK_Button</action-widget>
       <action-widget response="-6">ProcessListDialog_Cancel_Button</action-widget>
     </action-widgets>
-  </object>
-  <object class="GtkImage" id="add_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">list-add</property>
-  </object>
-  <object class="GtkImage" id="delete_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">edit-delete</property>
-  </object>
-  <object class="GtkImage" id="edit_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">gtk-edit</property>
-  </object>
-  <object class="GtkImage" id="load_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">document-open</property>
-  </object>
-  <object class="GtkImage" id="save_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">document-save</property>
-  </object>
-  <object class="GtkImage" id="find_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">edit-find</property>
-  </object>
-  <object class="GtkImage" id="jumpto_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">gtk-jump-to</property>
-  </object>
-  <object class="GtkImage" id="refresh_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon-name">view-refresh</property>
-  </object>
-  <object class="GtkImage" id="system_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">computer</property>
   </object>
 </interface>
