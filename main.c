@@ -39,8 +39,6 @@
 /* print quick usage message to stderr */
 static void printhelp()
 {
-    printversion(stderr);
-
     show_user("Usage: scanmem [OPTION]... [PID]\n"
             "Interactively locate and modify variables in an executing process.\n"
             "\n"
