@@ -692,7 +692,7 @@ class GameConqueror():
         elif typename == 'bytearray':
             return (len(value.strip())+1)/3
         elif typename == 'string':
-            return len(eval('\''+value+'\''))
+            return len(value)
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
@@ -702,8 +702,7 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], databytes)[0]
         elif typename == 'string':
-            databytes = str(u(databytes))
-            return repr('%s'%(databytes,))[1:-1]
+            return str(u(databytes))
         elif typename == 'bytearray':
             databytes = u(databytes)
             return ' '.join(['%02x'%ord(i) for i in databytes])
