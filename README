@@ -1,59 +1,75 @@
-# ![](https://raw.github.com/coolwanglu/scanmem/master/gui/GameConqueror_72x72.png)scanmem & Gameconqueror
+# ![](https://raw.githubusercontent.com/scanmem/scanmem/master/gui/GameConqueror_72x72.png)scanmem & GameConqueror
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
-the process, and the value of the variable at several different times.
+the process and the value of the variable at several different times.
 
 After several scans of the process, scanmem isolates the position of the
-variable and allows you to modify it's value.
-
-GameConqueror is a GUI of scanmem and more than that, it provides flexible syntax for searching,
-multiple memory locking and a memory editor.
+variable and allows you to modify its value.
 
 ## Requirements
 
-scanmem requires libreadline to read commands interactively, and /proc must be
-mounted.
+scanmem requires libreadline to read commands interactively, and `/proc` must be
+mounted. GameConqueror requirements are documented in [gui/README](gui/README).
 
+## Documentation
 
-## Install
-If you obtained the source from the source repository (instead of a archive), run:
+To read documentation:
+  * `man scanmem`
+  * `man gameconqueror`
+  * `scanmem --help`
+  * enter `help` at the scanmem prompt
+  * use the interactive help of GameConqueror
+
+## Build Requirements
+
+The build requires autotools-dev (autoconf, automake, etc.), libtool, libreadline-dev,
+intltool and python.
+
+## Build and Install
+
+To generate files required for the build:
+
     ./autogen.sh
 
-To build with gui:
+To build with GUI:
 
-    ./configure --prefix=/usr --enable-gui && make    
+    ./configure --prefix=/usr --enable-gui && make
     sudo make install
 
-To build without gui:
+To build without GUI:
 
     ./configure --prefix=/usr && make
     sudo make install
 
-If you want to specify a prefix other than '/usr', make sure that <prefix>/lib is in the
-LD_LIBRARY_PATH for root
+If you want to specify a prefix other than `/usr`, make sure that `<prefix>/lib` and
+`<prefix>/lib64` are in an ld.so config file (`<name>.conf`) in `/etc/ld.so.conf.d/`.
+See `man ld.so`.
+
+Run `sudo ldconfig` after the first install to update the ld.so cache. Otherwise, libscanmem
+can't be found.
 
 Run `./configure --help` for more details.
 
 ## GUI
 
 GameConqueror is a GUI front-end for scanmem, providing more features, such as:
-  * Easier variable locking
+  * Flexible syntax for searching
+  * Easier and multiple variable locking
   * Better process finder
   * Memory browser/editor
-  * Expression evaluation for searching
 
-See gui/README for more detail.
+See [gui/README](gui/README) for more details.
 
-## Android
+## Android Build
+
 You need a [standalone toolchain of Android NDK]
 (https://developer.android.com/ndk/guides/standalone_toolchain.html#itc) (Advanced method)
 to build interactive capabilities for Android.
 For more information, run:
 
-  ./build_for_android.sh help
+    ./build_for_android.sh help
 
 ## License: 
 
 GPLv3
-
