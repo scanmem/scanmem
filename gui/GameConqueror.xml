@@ -358,11 +358,12 @@
                         </child>
                         <child>
                           <object class="GtkProgressBar" id="ScanProgress_ProgressBar">
-                            <property name="height_request">20</property>
                             <property name="visible">True</property>
                             <property name="can_focus">False</property>
                             <property name="margin_right">5</property>
+                            <property name="margin_top">5</property>
                             <property name="hexpand">True</property>
+                            <property name="show_text">True</property>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
