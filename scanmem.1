@@ -314,8 +314,13 @@ Detach from the target program and exit immediately.
 .SH EXAMPLES
 Cheat at nethack, on systems where nethack is not installed sgid.
 
+.B ATTENTION: scanmem
+usually requires root privileges. See
+.B BUGS
+for details.
+
 .nf
-$ sudo scanmem `pidof nethack.tty`
+$ sudo scanmem `pgrep nethack`
 info: maps file located at /proc/14658/maps opened.
 info: 9 suitable regions found.
 Please enter current value, or "help" for other commands.
@@ -442,6 +447,22 @@ be loaded to different memory addresses at every game start. Advanced game train
 ugtrain are required to periodically refill variables is such memory regions.
 
 .SH BUGS
+
+.B scanmem
+usually requires root privileges for
+.BR ptrace (2)
+because security modules control ptrace() capabilities. On x86 and x86_64 there is usually
+the
+.B Yama
+security module providing the file
+.IR /proc/sys/kernel/yama/ptrace_scope "."
+It is available since Linux 3.4. If this file contains "1", then only parents may ptrace()
+their children without root privileges. This means that
+.B scanmem
+would have to run the game. This is not possible as this would require major design
+changes. So we run
+.B scanmem
+as root.
 
 The first scan can be very slow on large programs, this is not a problem for subsequent 
 scans as huge portions of the address space are usually eliminated. This could be improved
