@@ -1,4 +1,4 @@
-.TH scanmem 1 "May 10, 2016" "version 0.16"
+.TH scanmem 1 "Jun 18, 2016" "version 0.16"
 .SH NAME
 scanmem - locate and modify a variable in an executing process.
 
@@ -315,10 +315,9 @@ Detach from the target program and exit immediately.
 Cheat at nethack, on systems where nethack is not installed sgid.
 
 .nf
-$ scanmem `pidof nethack`
-info: attaching to pid 13070.
-info: maps file located at /proc/13070/maps opened.
-info: 17 suitable regions found.
+$ sudo scanmem `pidof nethack.tty`
+info: maps file located at /proc/14658/maps opened.
+info: 9 suitable regions found.
 Please enter current value, or "help" for other commands.
 0>
 .fi
@@ -326,74 +325,67 @@ Please enter current value, or "help" for other commands.
 The 0 in the
 .B scanmem
 prompt indicates we currently have no candidates, so I enter how much gold I
-currently have (91 pieces) and let scanmem find the potential candidates.
+currently have (58 pieces) and let scanmem find the potential candidates.
 
 
 .nf
-0> 91
-info: searching 0xbfffa000 - 0xc0000000...........ok
-info: searching 0x401c2000 - 0x401e3000...........ok
-info: searching 0x401c1000 - 0x401c2000...........ok
-info: searching 0x401b6000 - 0x401b8000...........ok
-info: searching 0x401b5000 - 0x401b6000...........ok
-info: searching 0x40189000 - 0x4018a000...........ok
-info: searching 0x40188000 - 0x40189000...........ok
-info: searching 0x40181000 - 0x40183000...........ok
-info: searching 0x4017f000 - 0x40181000...........ok
-info: searching 0x40070000 - 0x40071000...........ok
-info: searching 0x40068000 - 0x40070000...........ok
-info: searching 0x40030000 - 0x40031000...........ok
-info: searching 0x40029000 - 0x4002a000...........ok
-info: searching 0x4001f000 - 0x40020000...........ok
-info: searching 0x40016000 - 0x40017000...........ok
-info: searching 0x081d4000 - 0x0820a000...........ok
-info: searching 0x081b7000 - 0x081d4000...........ok
+0> 58
+01/09 searching   0x79f000 -   0x7b0000..........ok
+02/09 searching   0x7b0000 -   0x7cc000..........ok
+03/09 searching  0x24d2000 -  0x24f3000..........ok
+04/09 searching 0x7fcc04baa000 - 0x7fcc04bae000..........ok
+05/09 searching 0x7fcc04de1000 - 0x7fcc04de2000..........ok
+06/09 searching 0x7fcc051f7000 - 0x7fcc051fb000..........ok
+07/09 searching 0x7fcc05227000 - 0x7fcc0522a000..........ok
+08/09 searching 0x7fcc0522c000 - 0x7fcc0522d000..........ok
+09/09 searching 0x7ffc8c113000 - 0x7ffc8c134000..........ok
 info: we currently have 16 matches.
 16> list
-[ 0] 0x081c1f34 {        91} (/usr/share/games/nethack/nethack)
-[ 1] 0x081c1780 {        91} (/usr/share/games/nethack/nethack)
-[ 2] 0x081be436 {        91} (/usr/share/games/nethack/nethack)
-[ 3] 0x081eeffc {        91} (unassociated, typically .bss)
-[ 4] 0x081ee0c0 {        91} (unassociated, typically .bss)
-[ 5] 0x081eddb8 {        91} (unassociated, typically .bss)
-[ 6] 0x081d6d88 {        91} (unassociated, typically .bss)
-[ 7] 0x4001fcd3 {        91} (/lib/libnss_compat-2.3.5.so)
-[ 8] 0x40029fe3 {        91} (/lib/libnss_nis-2.3.5.so)
-[ 9] 0x40029f8b {        91} (/lib/libnss_nis-2.3.5.so)
-[10] 0x40029efb {        91} (/lib/libnss_nis-2.3.5.so)
-[11] 0x40029bff {        91} (/lib/libnss_nis-2.3.5.so)
-[12] 0x401d18d3 {        91} (unassociated, typically .bss)
-[13] 0x401d156f {        91} (unassociated, typically .bss)
-[14] 0x401d120b {        91} (unassociated, typically .bss)
-[15] 0xbfffd76c {        91} (unassociated, typically .bss)
+[ 0]       7b09e0,  1 +       3b09e0,   exe, 58, [I64 I32 I16 I8 ]
+[ 1]       7b907a,  1 +       3b907a,   exe, 58, [I8 ]
+[ 2]      24d4b6c,  2 +         2b6c,  heap, 58, [I16 I8 ]
+[ 3]      24d567e,  2 +         367e,  heap, 58, [I16 I8 ]
+[ 4]      24d5740,  2 +         3740,  heap, 58, [I8 ]
+[ 5] 7fcc05229951,  6 +         2951,  misc, 58, [I8 ]
+[ 6] 7ffc8c12ee28,  8 +        1be28, stack, 58, [I16 I8 ]
+[ 7] 7ffc8c132381,  8 +        1f381, stack, 58, [I8 ]
+[ 8] 7ffc8c132389,  8 +        1f389, stack, 58, [I8 ]
+[ 9] 7ffc8c132391,  8 +        1f391, stack, 58, [I8 ]
+[10] 7ffc8c132399,  8 +        1f399, stack, 58, [I8 ]
+[11] 7ffc8c1323a1,  8 +        1f3a1, stack, 58, [I8 ]
+[12] 7ffc8c1323a9,  8 +        1f3a9, stack, 58, [I8 ]
+[13] 7ffc8c1331a3,  8 +        201a3, stack, 58, [I8 ]
+[14] 7ffc8c13325f,  8 +        2025f, stack, 58, [I8 ]
+[15] 7ffc8c133264,  8 +        20264, stack, 58, [I8 ]
 16>
 .fi
 
-16 potential matches were found, many of them are clearly unrelated, as they're part
-of unrelated libraries (libnss_nis.so). We could make
+16 potential matches were found, many of them are quite unrelated, as they are part of
+the stack, belong to libraries or miscellaneous memory-mapped files. Even the heap is
+unlikely for a very old command line game. We could make
 .B scanmem
 eliminate these manually using the
 .B delete
 command, however just waiting until the amount of gold changes and telling scanmem the
 new value should be enough. I find some more gold, and tell
 .B scanmem
-the new value, 112.
+the new value, 83.
 
 .nf
-16> 112
-info: we currently have 1 matches.
+16> 83
+..........info: we currently have 1 matches.
 info: match identified, use "set" to modify value.
 info: enter "help" for other commands.
 1> list
-[ 0] 0x081d6d88 {       112} (unassociated, typically .bss)
+[ 0]       7b09e0,  1 +       3b09e0,   exe, 83, [I64 I32 I16 I8 ]
 .fi
 
-Only one of the 16 original candidates now have the value 112, so this must be where the
+Only one of the 16 original candidates now has the value 83, so this must be where the
 amount of gold is stored. I'll try setting it to 10,000 pieces.
 
 .nf
 1> set 10000
-info: setting *0x081d6d88 to 10000...
+info: setting *0x7b09e0 to 0x2710...
 1> 
 .fi
 
@@ -403,10 +395,38 @@ The resulting nethack status:
 Dlvl:1  $:10000 HP:15(15) Pw:2(2) AC:7  Exp:1
 .fi
 
+Conclusion: We've found and modified the gold value as I32 in static memory of the executable
+at virtual memory address 0x7b09e0. This address belongs to the region with id 1.
+
+Now it is important to know if this is a position-independent executable (PIE). We list the
+regions for this and check the load address of the executable.
+
+.nf
+1> lregions
+[ 0]       79f000,   69632 bytes,   exe,       400000, rw-, /usr/lib/nethack/nethack.tty
+[ 1]       7b0000,  114688 bytes,   exe,       400000, rw-, unassociated
+[ 2]      24d2000,  135168 bytes,  heap,      24d2000, rw-, [heap]
+[ 3] 7fcc04baa000,   16384 bytes,  misc, 7fcc04baa000, rw-, unassociated
+[ 4] 7fcc04de1000,    4096 bytes,  misc, 7fcc04de1000, rw-, unassociated
+[ 5] 7fcc051f7000,   16384 bytes,  misc, 7fcc051f7000, rw-, unassociated
+[ 6] 7fcc05227000,   12288 bytes,  misc, 7fcc05227000, rw-, unassociated
+[ 7] 7fcc0522c000,    4096 bytes,  misc, 7fcc0522c000, rw-, unassociated
+[ 8] 7ffc8c113000,  135168 bytes, stack, 7ffc8c113000, rw-, [stack]
+.fi
+
+We are on x86_64 and 0x400000 is the static load adress for executables there. This means
+that this is not a PIE and the gold is always stored at 0x7b09e0. This makes it easy to
+use a game trainer like GameConqueror which refills the gold value periodically.
+
+With a PIE we have to use the match offset (0x3b09e0 here) instead and an advanced game trainer
+with PIE support has to determine and add the current load address to it to get the current
+memory address of the gold value of the current game run.
+
 .SH NOTES
 
 .B scanmem
 has been tested on multiple large programs, including the 3d shoot-em-up quake3 linux.
+Scanmem is also tested on ARM platforms and comes with Android support since version 0.16.
 
 Obviously,
 .B scanmem
@@ -415,6 +435,11 @@ can crash your program if used incorrectly.
 Some programs store values in multiple locations, this is why
 .B set
 will change all known matches.
+
+Address Space Layout Randomization (ASLR) together with position-independent executables
+(PIE), position-independent code (PIC) or dynamic memory on the heap causes variables to
+be loaded to different memory addresses at every game start. Advanced game trainers like
+ugtrain are required to periodically refill variables is such memory regions.
 
 .SH BUGS
 
@@ -438,10 +463,13 @@ Tavis Ormandy <taviso(a)sdf.lonestar.org> http://taviso.decsystem.org/
 Eli   Dupree  <elidupree(a)charter.net> 
 .br 
 WANG  Lu      <coolwanglu(a)gmail.com>
+.br
+Sebastian Parschauer <s.parschauer(a)gmx.de>
 
 All bug reports, suggestions or feedback welcome.
 
 .SH SEE ALSO
+gameconqueror(1)
 gdb(1)
 ptrace(2)
 nethack(6)
