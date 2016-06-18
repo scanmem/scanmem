@@ -39,12 +39,14 @@ this function is a good demonstration of how to use
 .SH USAGE
 .B scanmem
 should be invoked with the process id of the program you wish to debug as an argument. Once
-started, scanmem accepts interactive commands. These are described below, however entering
+started,
+.B scanmem
+accepts interactive commands. These are described below, however entering
 .IR help
 at the
 .B >
 prompt will allow you to access
-.B scanmem's
+.BR scanmem "'s"
 online documentation.
 
 The
@@ -155,7 +157,7 @@ in memory if the scan data type is set to "string".
 .B update
 
 Scans the current process, getting the current values of all matches. These values can be viewed with
-.BR list ", and are also the old values that scanmem compares to when using"
+.BR list ", and are also the old values that " scanmem " compares to when using"
 .BR > ", " < ", or " = "."
 This command is equivalent to a search command that all current results match.
 
@@ -221,7 +223,9 @@ Manually set the value of the variable at the specified address.
 
 Names of
 .I value_type
-are subject to change in different versions of scanmem, see more info using the `help write` command.
+are subject to change in different versions of
+.BR scanmem ","
+see more info using the `help write` command.
 
 .B dump
 .I address length [filename]
@@ -330,7 +334,9 @@ Please enter current value, or "help" for other commands.
 The 0 in the
 .B scanmem
 prompt indicates we currently have no candidates, so I enter how much gold I
-currently have (58 pieces) and let scanmem find the potential candidates.
+currently have (58 pieces) and let
+.B scanmem
+find the potential candidates.
 
 
 .nf
@@ -371,8 +377,9 @@ unlikely for a very old command line game. We could make
 .B scanmem
 eliminate these manually using the
 .B delete
-command, however just waiting until the amount of gold changes and telling scanmem the
-new value should be enough. I find some more gold, and tell
+command, however just waiting until the amount of gold changes and telling
+.B scanmem
+the new value should be enough. I find some more gold, and tell
 .B scanmem
 the new value, 83.
 
@@ -431,7 +438,8 @@ memory address of the gold value of the current game run.
 
 .B scanmem
 has been tested on multiple large programs, including the 3d shoot-em-up quake3 linux.
-Scanmem is also tested on ARM platforms and comes with Android support since version 0.16.
+.B scanmem
+is also tested on ARM platforms and comes with Android support since version 0.16.
 
 Obviously,
 .B scanmem
