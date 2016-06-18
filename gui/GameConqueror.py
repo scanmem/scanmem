@@ -164,6 +164,7 @@ class GameConqueror():
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
+        self.scanresult_tv.connect('key-press-event', self.scanresult_keypressed)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, _('Address'), attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, _('Value'), attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -542,7 +543,7 @@ class GameConqueror():
     def scanresult_popup_cb(self, menuitem, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
-            for path in pathlist:
+            for path in reversed(pathlist):
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
@@ -554,6 +555,15 @@ class GameConqueror():
             self.scan_for_addr(int(addr,16))
             return True
         return False
+
+    def scanresult_keypressed(self, scanresult_tv, event, selection=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey == 'Return':
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            for path in reversed(pathlist):
+                (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
 
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
