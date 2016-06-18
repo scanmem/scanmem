@@ -182,6 +182,7 @@
                       <object class="GtkTreeView" id="ScanResult_TreeView">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="rubber_banding">True</property>
                         <signal name="button-press-event" handler="ScanResult_TreeView_button_press_event_cb" swapped="no"/>
                         <signal name="popup-menu" handler="ScanResult_TreeView_popup_menu_cb" swapped="no"/>
                         <child internal-child="selection">
