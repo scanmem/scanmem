@@ -33,6 +33,7 @@
     <property name="title" translatable="yes">GameConqueror - Memory Editor</property>
     <property name="resizable">False</property>
     <property name="icon">GameConqueror_128x128.png</property>
+    <property name="type_hint">utility</property>
     <signal name="delete-event" handler="MemoryEditor_Window_delete_event_cb" swapped="no"/>
     <child>
       <object class="GtkBox" id="vbox2">
@@ -677,7 +678,7 @@
   <object class="GtkAboutDialog" id="AboutDialog">
     <property name="can_focus">False</property>
     <property name="border_width">5</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="transient_for">MainWindow</property>
     <property name="program_name">GameConqueror</property>
     <property name="copyright" translatable="yes">Copyright (C) 2009-2014 WANG Lu  &lt;coolwanglu@gmail.com&gt;
@@ -722,7 +723,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
     <property name="resizable">False</property>
     <property name="modal">True</property>
     <property name="icon">GameConqueror_128x128.png</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="transient_for">MainWindow</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox3">
@@ -871,7 +872,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
     <property name="title" translatable="yes">Press Ctrl+F to search for a process</property>
     <property name="modal">True</property>
     <property name="icon">GameConqueror_128x128.png</property>
-    <property name="type_hint">normal</property>
+    <property name="type_hint">dialog</property>
     <property name="transient_for">MainWindow</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox2">
