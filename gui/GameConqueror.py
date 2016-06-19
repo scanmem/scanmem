@@ -567,7 +567,7 @@ class GameConqueror():
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
-        if pressedkey == 'Delete':
+        if pressedkey in ('Delete', 'BackSpace'):
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path))
