@@ -5,6 +5,7 @@ VERSION = '@VERSION@'
 DATA_DIR = '@PKGDATADIR@'
 LOCALEDIR = '@LOCALEDIR@'
 GETTEXT_PACKAGE = '@GETTEXT_PACKAGE@'
+PACKAGE_BUGREPORT = '@PACKAGE_BUGREPORT@'
 
 SETTINGS = {'scan_data_type':'int32'
            ,'lock_data_type':'int32'

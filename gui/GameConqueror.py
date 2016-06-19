@@ -23,7 +23,7 @@
 
 import sys
 import os
-import re
+import argparse
 import struct
 import tempfile
 import platform
@@ -133,6 +133,7 @@ class GameConqueror():
         
         self.scanoption_frame = self.builder.get_object('ScanOption_Frame')
         self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
+        self.input_box = self.builder.get_object('Value_Input')
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
@@ -809,8 +810,9 @@ class GameConqueror():
             self.process_label.set_property('tooltip-text', _('Select a process'))
             self.show_error(_('Cannot retrieve memory maps of that process, maybe it has '
                               'exited (crashed), or you don\'t have enough privileges'))
-        self.process_label.set_text('%d - %s' % (pid, process_name))
-        self.process_label.set_property('tooltip-text', process_name)
+        else:
+            self.process_label.set_text('%d - %s' % (pid, process_name))
+            self.process_label.set_property('tooltip-text', process_name)
 
         self.command_lock.acquire()
         self.backend.send_command('pid %d' % (pid,))
@@ -1039,9 +1041,30 @@ class GameConqueror():
         if self.backend.get_version() != VERSION:
             self.show_error(_('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of GameConqueror as scanmem.'))
 
-    
 
 if __name__ == '__main__':
     GObject.threads_init()
     Gdk.threads_init()
-    GameConqueror().main()
+    gc_instance = GameConqueror()
+    
+    # Parse cmdline arguments
+    parser = argparse.ArgumentParser(prog='GameConqueror',
+                                     description="A GUI for scanmem, a game hacking tool",
+                                     epilog='Report bugs to <%s>.' %(PACKAGE_BUGREPORT,)
+                                    )
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('-s', '--search', metavar='val', dest='search_value', help='prefill the search box')
+    parser.add_argument("pid", nargs='?', type=int, help="PID of the process")
+    args = parser.parse_args()
+
+    # Attach to given pid (if any)
+    if (args.pid is not None) :
+        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
+        gc_instance.select_process(args.pid, process_name)
+
+    # Prefill the search box (if asked)
+    if (args.search_value is not None) :
+        gc_instance.input_box.set_text(args.search_value)
+
+    # Start
+    gc_instance.main()
