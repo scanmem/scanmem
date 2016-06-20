@@ -113,7 +113,7 @@ typedef struct {
 /* global settings */
 extern globals_t globals;
 
-bool init();
+bool init(void);
 
 /* ptrace.c */
 bool detach(pid_t target);
