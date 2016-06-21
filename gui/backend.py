@@ -22,8 +22,6 @@ import sys
 import os
 import ctypes
 import tempfile
-import re
-from gi.repository import GObject
 from misc import u
 
 class GameConquerorBackend():
