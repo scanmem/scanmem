@@ -1,3 +1,6 @@
+# Compiled program
+/scanmem
+
 # Auto-generated files
 *.o
 *.lo
@@ -22,17 +25,8 @@ libtool
 ltmain.sh
 missing
 py-compile
-scanmem
 stamp-h1
 tags
-
-# Debian files
-debian/files
-debian/*.debhelper
-debian/*.debhelper.log
-debian/*.substvars
-debian/gameconqueror
-debian/tmp
 
 # GameConqueror
 gui/GameConqueror.appdata.xml
@@ -40,6 +34,7 @@ gui/GameConqueror.desktop
 gui/consts.py
 gui/*.pyc
 gui/*.pyo
+gui/__pycache__
 gui/gameconqueror
 gui/org.freedesktop.gameconqueror.policy
 gui/org.freedesktop.gameconqueror.policy.in
