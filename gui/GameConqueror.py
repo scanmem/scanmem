@@ -1073,12 +1073,12 @@ class GameConqueror():
 if __name__ == '__main__':
     # Parse cmdline arguments
     parser = argparse.ArgumentParser(prog='GameConqueror',
-                                     description="A GUI for scanmem, a game hacking tool",
-                                     epilog='Report bugs to <%s>.' %(PACKAGE_BUGREPORT,)
+                                     description=_('A GUI for scanmem, a game hacking tool'),
+                                     epilog=_('Report bugs to <%s>.') %(PACKAGE_BUGREPORT,)
                                     )
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
-    parser.add_argument('-s', '--search', metavar='val', dest='search_value', help='prefill the search box')
-    parser.add_argument("pid", nargs='?', type=int, help="PID of the process")
+    parser.add_argument('-s', '--search', metavar='val', dest='search_value', help=_('prefill the search box'))
+    parser.add_argument("pid", nargs='?', type=int, help=_('PID of the process'))
     args = parser.parse_args()
 
     # Init application
