@@ -137,16 +137,14 @@
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">GameConqueror</property>
     <property name="window_position">center</property>
-    <property name="default_width">600</property>
-    <property name="default_height">600</property>
+    <property name="default_width">550</property>
+    <property name="default_height">550</property>
     <property name="icon">GameConqueror_128x128.png</property>
     <child>
       <object class="GtkPaned" id="vpaned1">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
         <property name="orientation">vertical</property>
-        <property name="position">300</property>
-        <property name="position_set">True</property>
         <child>
           <object class="GtkPaned" id="hpaned1">
             <property name="visible">True</property>
@@ -437,59 +435,6 @@
                               </packing>
                             </child>
                             <child>
-                              <object class="GtkComboBox" id="RoundType_ComboBox">
-                                <property name="visible">True</property>
-                                <property name="sensitive">False</property>
-                                <property name="can_focus">False</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="searchLabel">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_markup" translatable="yes">&lt;b&gt;Basic:&lt;/b&gt;      Fastest but may miss some values
-&lt;b&gt;Normal:&lt;/b&gt;  Works for most cases
-&lt;b&gt;Full:&lt;/b&gt;         Never miss values but slowest</property>
-                                <property name="halign">start</property>
-                                <property name="label" translatable="yes">Search Scope:</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkScale" id="SearchScope_Scale">
-                                <property name="width_request">120</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="digits">0</property>
-                                <property name="value_pos">bottom</property>
-                                <signal name="format-value" handler="SearchScope_Scale_format_value_cb" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">2</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="roundLabel">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Specify how float numbers should be rounded. Not available in this version</property>
-                                <property name="halign">start</property>
-                                <property name="label" translatable="yes">Round Type:</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">1</property>
-                              </packing>
-                            </child>
-                            <child>
                               <object class="GtkLabel" id="dataLabel">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
@@ -514,7 +459,36 @@
                               <packing>
                                 <property name="left_attach">2</property>
                                 <property name="top_attach">0</property>
-                                <property name="height">3</property>
+                                <property name="height">2</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="searchLabel">
+                                <property name="visible">True</property>
+                                <property name="can_focus">False</property>
+                                <property name="tooltip_markup" translatable="yes">&lt;b&gt;Basic:&lt;/b&gt;      Fastest but may miss some values
+&lt;b&gt;Normal:&lt;/b&gt;  Works for most cases
+&lt;b&gt;Full:&lt;/b&gt;         Never miss values but slowest</property>
+                                <property name="halign">start</property>
+                                <property name="label" translatable="yes">Search Scope:</property>
+                              </object>
+                              <packing>
+                                <property name="left_attach">0</property>
+                                <property name="top_attach">1</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkScale" id="SearchScope_Scale">
+                                <property name="width_request">120</property>
+                                <property name="visible">True</property>
+                                <property name="can_focus">True</property>
+                                <property name="digits">0</property>
+                                <property name="value_pos">bottom</property>
+                                <signal name="format-value" handler="SearchScope_Scale_format_value_cb" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="left_attach">1</property>
+                                <property name="top_attach">1</property>
                               </packing>
                             </child>
                           </object>
