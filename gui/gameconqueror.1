@@ -1,9 +1,12 @@
-.TH gameconqueror 1 "2016-05-04" "" ""
+.TH gameconqueror 1 "2016-06-24" "" ""
 .SH NAME
 gameconqueror \- A GUI for scanmem, a game hacking tool.
+
 .SH SYNOPSIS
 .B gameconqueror
-has no options.
+.RB [options]
+.IR [target-program-pid]
+
 .SH DESCRIPTION
 .PP
 Scanmem is a simple interactive debugging utility for Linux, used to locate the
@@ -14,13 +17,27 @@ engineering, or as a "pokefinder" to cheat at video games.
 GameConqueror is a GUI for scanmem, aims to provide more features than scanmem,
 and CheatEngine-alike user-friendly interface.
 .PP
-.SH USAGE
-gameconqueror
-.SH SEE ALSO
+
+.SH OPTIONS
+
+.B "\-v, \-\-version"
+Print version and exit.
+
+.B "\-h, \-\-help"
+Print a short description of command line options then exit.
+
+.B "\-s, \-\-search"
+Fill the search box with the given value.
+
+.SH HOMEPAGE
 Website: <https://github.com/scanmem/scanmem>
+
 .SH AUTHOR
 gameconqueror was written by WANG Lu <coolwanglu@gmail.com>. See copyright file
 for full list of authors.
 .PP
 This manual page was written by Kartik Mistry <kartik@debian.org>, for the
 Debian project (but may be used by others).
+
+.SH SEE ALSO
+scanmem(1)
