@@ -1,0 +1,498 @@
+# Italian translations for GameConqueror.
+# Copyright (C) 2009-2014 Wang Lu <coolwanglu(a)gmail.com>
+# This file is distributed under the same license as GameConqueror.
+# Andrea Stacchiotti <andreastacchiotti@gmail.com>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: scanmem 0.16~pre\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-08-10 03:19+0200\n"
+"PO-Revision-Date: 2016-08-10 03:25+0200\n"
+"Last-Translator: Andrea Stacchiotti <andreastacchiotti@gmail.com>\n"
+"Language-Team: Italiano <>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../gui/GameConqueror.xml.h:1
+msgid "GameConqueror - Memory Editor"
+msgstr "GameConqueror - Editor di memoria"
+
+#: ../gui/GameConqueror.xml.h:2
+msgid "Address:"
+msgstr "Indirizzo:"
+
+#: ../gui/GameConqueror.xml.h:3
+msgid "GameConqueror"
+msgstr "GameConqueror"
+
+#: ../gui/GameConqueror.xml.h:4
+msgid "Found: 0"
+msgstr "Trovati: 0"
+
+#: ../gui/GameConqueror.xml.h:5
+msgid ""
+"Syntax:\n"
+"\n"
+" For numeric types:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Exactly this number\n"
+" <b>N..M</b>      Range between two numbers\n"
+" <b>?</b>         Unknown initial value\n"
+" <b>&gt; or +</b>    Increased values\n"
+" <b>&lt; or -</b>    Decreased values\n"
+" <b>=</b>         Unchanged values\n"
+" <b>!=</b>        Changed values\n"
+" <b>&gt; N</b>       Greater than N\n"
+" <b>&lt; N</b>       Less than N\n"
+" <b>+ N</b>       Increased by N\n"
+" <b>- N</b>       Decreased by N\n"
+" <b>!= N</b>      Other than N\n"
+"</span>\n"
+" where N could be a number of a simple math expression embraced by (), e.g.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+" For bytearray: use 2-char hexadecimal notation for each byte, separated by "
+"spaces\n"
+" e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
+"\n"
+" For string: enter the string directly"
+msgstr ""
+"Sintassi:\n"
+"\n"
+" Per i tipi numerici:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Esattamente questo numero\n"
+" <b>N..M</b>      Intervallo tra due numeri\n"
+" <b>?</b>         Valore iniziale sconosciuto\n"
+" <b>&gt; or +</b>    Valori aumentati\n"
+" <b>&lt; or -</b>    Valori diminuiti\n"
+" <b>=</b>         Valori non cambiati\n"
+" <b>!=</b>        Valori cambiati\n"
+" <b>&gt; N</b>       Più grande di N\n"
+" <b>&lt; N</b>       Più piccolo di N\n"
+" <b>+ N</b>       Aumentato di N\n"
+" <b>- N</b>       Diminuito di N\n"
+" <b>!= N</b>      Diverso da N\n"
+"</span>\n"
+" dove N può essere un numero o una semplice espressione matematica racchiusa "
+"da (), e.g.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+" Per i bytearray: usa notazione esadecimale a 2 caratteri per ogni byte, "
+"separati da spazi\n"
+" e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> può essere usato per indicare "
+"qualsiasi valore\n"
+"\n"
+"\n"
+" Per le stringhe: inserisci la stringa direttamente"
+
+#: ../gui/GameConqueror.xml.h:33
+msgid "Value: <span color=\"blue\"><u>?</u></span>"
+msgstr "Valore: <span color=\"blue\"><u>?</u></span>"
+
+#: ../gui/GameConqueror.xml.h:34
+msgid "Insert value to search for"
+msgstr "Inserisci il valore da cercare"
+
+#: ../gui/GameConqueror.xml.h:35
+msgid "Scan"
+msgstr "Cerca"
+
+#: ../gui/GameConqueror.xml.h:36
+msgid "Reset"
+msgstr "Reset"
+
+#: ../gui/GameConqueror.xml.h:37
+msgid "About"
+msgstr "Informazioni"
+
+#: ../gui/GameConqueror.xml.h:38 ../gui/GameConqueror.py:896
+msgid "Select a process"
+msgstr "Seleziona un processo"
+
+#: ../gui/GameConqueror.xml.h:39 ../gui/GameConqueror.py:895
+msgid "No process selected"
+msgstr "Nessun processo selezionato"
+
+#: ../gui/GameConqueror.xml.h:40
+msgid "Specify type of target data"
+msgstr "Specifica il tipo di dato da cercare"
+
+#: ../gui/GameConqueror.xml.h:41
+msgid "Data Type:"
+msgstr "Tipo di dato:"
+
+#: ../gui/GameConqueror.xml.h:42
+msgid ""
+"<b>Basic:</b>      Fastest but may miss some values\n"
+"<b>Normal:</b>  Works for most cases\n"
+"<b>Full:</b>         Never miss values but slowest"
+msgstr ""
+"<b>Base:</b>          Il più veloce, ma potrebbe non trovare alcuni valori\n"
+"<b>Normale:</b>    Funziona per la maggior parte dei casi\n"
+"<b>Completo:</b>  Trova sempre i valori, ma è il più lento"
+
+#: ../gui/GameConqueror.xml.h:45
+msgid "Search Scope:"
+msgstr "Area di ricerca:"
+
+#: ../gui/GameConqueror.xml.h:46
+msgid "Memory Editor"
+msgstr "Editor di memoria"
+
+#: ../gui/GameConqueror.xml.h:47
+msgid "Save address list to file"
+msgstr "Salva la lista di indirizzi in un file"
+
+#: ../gui/GameConqueror.xml.h:48
+msgid "Load address list from file"
+msgstr "Carica la lista di indirizzi da un file"
+
+#: ../gui/GameConqueror.xml.h:49
+msgid "Remove all entries"
+msgstr "Rimuovi tutti gli indirizzi"
+
+#: ../gui/GameConqueror.xml.h:50
+msgid "Manually add an entry"
+msgstr "Aggiungi un indirizzo manualmente"
+
+#: ../gui/GameConqueror.xml.h:51
+msgid ""
+"Copyright (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2010 Bryan Cain\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
+"\n"
+"Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang "
+"Zhe"
+msgstr ""
+"Copyright (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2010 Bryan Cain\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
+"\n"
+"Si ringrazia: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe"
+
+#: ../gui/GameConqueror.xml.h:56
+msgid "A graphical frontend of scanmem"
+msgstr "Un'interfaccia grafica per scanmem"
+
+#: ../gui/GameConqueror.xml.h:57
+msgid "Homepage"
+msgstr "Homepage"
+
+#: ../gui/GameConqueror.xml.h:58
+msgid "_Close"
+msgstr "_Chiudi"
+
+#: ../gui/GameConqueror.xml.h:59
+msgid "_Add"
+msgstr "_Aggiungi"
+
+#: ../gui/GameConqueror.xml.h:60
+msgid "Memory address of the value"
+msgstr "Indirizzo del valore"
+
+#: ../gui/GameConqueror.xml.h:61
+msgid "Give a brief description of the value"
+msgstr "Breve descrizione del valore"
+
+#: ../gui/GameConqueror.xml.h:62
+msgid "Description:"
+msgstr "Descrizione:"
+
+#: ../gui/GameConqueror.xml.h:63
+msgid "Type:"
+msgstr "Tipo:"
+
+#: ../gui/GameConqueror.xml.h:64
+msgid "Specify data length (string/bytearray only)"
+msgstr "Specifica la lunghezza (solo per string/bytearray)"
+
+#: ../gui/GameConqueror.xml.h:65
+msgid "Length:"
+msgstr "Lunghezza:"
+
+#: ../gui/GameConqueror.xml.h:66
+msgid "Type to search for a process"
+msgstr "Digita per cercare un processo"
+
+#: ../gui/GameConqueror.xml.h:67
+msgid "_OK"
+msgstr "_OK"
+
+#: ../gui/GameConqueror.xml.h:68
+msgid "_Cancel"
+msgstr "_Annulla"
+
+#: ../gui/GameConqueror.xml.h:69
+msgid "User:"
+msgstr "Utente:"
+
+#: ../gui/GameConqueror.xml.h:70
+msgid "Process:"
+msgstr "Processo:"
+
+#: ../gui/GameConqueror.xml.h:71
+msgid "Filter"
+msgstr "Filtro"
+
+#: ../gui/GameConqueror.py:70
+msgid "Basic"
+msgstr "Base"
+
+#: ../gui/GameConqueror.py:70
+msgid "Normal"
+msgstr "Normale"
+
+#: ../gui/GameConqueror.py:70
+msgid "Full"
+msgstr "Completo"
+
+#. init columns
+#. Address
+#: ../gui/GameConqueror.py:179 ../gui/GameConqueror.py:234
+msgid "Address"
+msgstr "Indirizzo"
+
+#. Value
+#: ../gui/GameConqueror.py:183 ../gui/GameConqueror.py:251
+msgid "Value"
+msgstr "Valore"
+
+#: ../gui/GameConqueror.py:187
+msgid "Offset"
+msgstr "Offset"
+
+#: ../gui/GameConqueror.py:191
+msgid "Region Type"
+msgstr "Tipo di regione"
+
+#. Lock
+#: ../gui/GameConqueror.py:217
+msgid "Lock"
+msgstr "Blocco"
+
+#. Description
+#: ../gui/GameConqueror.py:226
+msgid "Description"
+msgstr "Descrizione"
+
+#. Type
+#: ../gui/GameConqueror.py:239
+msgid "Type"
+msgstr "Tipo"
+
+#. second col
+#: ../gui/GameConqueror.py:275
+msgid "User"
+msgstr "Utente"
+
+#. third col
+#: ../gui/GameConqueror.py:280
+msgid "Process"
+msgstr "Processo"
+
+#: ../gui/GameConqueror.py:311
+msgid "Add to cheat list"
+msgstr "Aggiungi alla lista dei trucchi"
+
+#: ../gui/GameConqueror.py:312 ../gui/GameConqueror.py:319
+msgid "Browse this address"
+msgstr "Visualizza questo indirizzo"
+
+#: ../gui/GameConqueror.py:313
+msgid "Scan for this address"
+msgstr "Cerca questo indirizzo"
+
+#: ../gui/GameConqueror.py:314
+msgid "Remove this match"
+msgstr "Rimuovi questo indirizzo"
+
+#: ../gui/GameConqueror.py:320
+msgid "Copy address"
+msgstr "Copia indirizzo"
+
+#: ../gui/GameConqueror.py:321
+msgid "Remove this entry"
+msgstr "Rimuovi questo indirizzo"
+
+#: ../gui/GameConqueror.py:350 ../gui/GameConqueror.py:541
+#: ../gui/GameConqueror.py:969
+msgid "Please select a process"
+msgstr "Seleziona un processo"
+
+#: ../gui/GameConqueror.py:363 ../gui/GameConqueror.py:373
+msgid "Invalid address"
+msgstr "Indirizzo non valido"
+
+#: ../gui/GameConqueror.py:382
+msgid "Please enter a valid address."
+msgstr "Inserisci un indirizzo valido."
+
+#: ../gui/GameConqueror.py:386 ../gui/GameConqueror.py:865
+msgid "No Description"
+msgstr "Nessuna descrizione"
+
+#: ../gui/GameConqueror.py:415
+msgid "Open.."
+msgstr "Apri"
+
+#: ../gui/GameConqueror.py:435
+msgid "Save.."
+msgstr "Salva"
+
+#: ../gui/GameConqueror.py:534
+msgid "<unknown>"
+msgstr "<sconosciuto>"
+
+#: ../gui/GameConqueror.py:798
+msgid "Unknown architecture, you may report to developers"
+msgstr "Architettura sconosciuta, potresti riportarlo agli sviluppatori"
+
+#: ../gui/GameConqueror.py:810 ../gui/GameConqueror.py:897
+msgid ""
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
+msgstr ""
+"Impossibile recuperare la mappa di memoria del processo, forse è terminato "
+"(crashato) o non hai i permessi"
+
+#. not readable
+#: ../gui/GameConqueror.py:821
+#, python-format
+msgid "Address %x is not readable"
+msgstr "L'indirizzo %x non è leggibile"
+
+#: ../gui/GameConqueror.py:824
+#, python-format
+msgid "Address %x is not valid"
+msgstr "L'indirizzo %x non è valido"
+
+#: ../gui/GameConqueror.py:833
+msgid "Cannot find a readable region"
+msgstr "Impossibile trovare una regione leggibile"
+
+#: ../gui/GameConqueror.py:844
+msgid "Cannot read memory"
+msgstr "Impossibile leggere la memoria"
+
+#: ../gui/GameConqueror.py:1022
+#, python-format
+msgid "Found: %d"
+msgstr "Trovati: %d"
+
+#: ../gui/GameConqueror.py:1140
+msgid ""
+"Version of scanmem mismatched, you may encounter problems. Please make sure "
+"you are using the same version of GameConqueror as scanmem."
+msgstr ""
+"Versione di scanmem non corrispondente, potresti incontrare problemi. "
+"Assicurati di usare la stessa vesione di GameConqueror e scanmem."
+
+#: ../gui/GameConqueror.py:1146
+msgid "A GUI for scanmem, a game hacking tool"
+msgstr "Una GUI per scanmem, uno strumento per barare ai videogiochi"
+
+#: ../gui/GameConqueror.py:1147
+msgid "Report bugs to "
+msgstr "Riporta bug a "
+
+#: ../gui/GameConqueror.py:1149
+msgid "prefill the search box"
+msgstr "riempi la barra di ricerca"
+
+#: ../gui/GameConqueror.py:1151
+msgid "PID of the process"
+msgstr "PID del processo"
+
+#: ../gui/misc.py:35
+msgid "No value provided"
+msgstr "Nessun valore fornito"
+
+#: ../gui/misc.py:45 ../gui/misc.py:51 ../gui/misc.py:106
+#, python-format
+msgid "Bad value: %s"
+msgstr "Valore non valido: %s"
+
+#: ../gui/misc.py:67
+#, python-format
+msgid "Command \"%s\" is not valid for the first scan"
+msgstr "Il comando \"%s\" non è valido per la prima ricerca"
+
+#: ../gui/misc.py:114
+#, python-format
+msgid "%s is not an integer"
+msgstr "%s non è un intero"
+
+#: ../gui/misc.py:120
+#, python-format
+msgid "%s is too bulky for %s"
+msgstr "%s è troppo grande per %s"
+
+#: ../gui/misc.py:140
+#, python-format
+msgid "Cannot locate item: %s"
+msgstr "Impossibile trovare: %s"
+
+#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
+msgid "Game Conqueror"
+msgstr "Game Conqueror"
+
+#: ../gui/GameConqueror.desktop.in.h:2
+msgid "A game hacking tool. A GUI front-end for scanmem."
+msgstr "Uno strumento per barare ai videogiochi. Una GUI per scanmem."
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:1
+msgid "Run Game Conqueror"
+msgstr "Avvia Game Conqueror"
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:2
+msgid "Authentication is required to run Game Conqueror"
+msgstr "È necessario autenticarsi per avviare Game Conqueror"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:2
+msgid "Game hacking tool. GUI front-end for scanmem."
+msgstr "Uno strumento per barare ai videogiochi. GUI per scanmem."
+
+#: ../gui/GameConqueror.appdata.xml.in.h:3
+msgid ""
+"scanmem is a simple interactive debugging utility, used to locate the "
+"address of a variable in an executing process. This can be used for the "
+"analysis or modification of a hostile process on a compromised machine, "
+"reverse engineering, or as a \"pokefinder\" to cheat at video games. "
+"GameConqueror aims to provide a CheatEngine-alike interface for scanmem, "
+"it's user-friendly and easy to use."
+msgstr ""
+"scanmem è un semplice programma di debug, utile per trovare l'indirizzo di "
+"una variabile in un processo in esecuzione. Questo può essere usato per "
+"l'analisi o la modifica di un processo sospetto in una macchina compromessa, "
+"ingegneria inversa, o come un \"pokefinder\" per barare ai videogiochi. "
+"GameConqueror mira a fornire un'interfaccia per scanmem, simile a "
+"CheatEngine, è user-friendly e semplice da usare."
+
+#: ../gui/GameConqueror.appdata.xml.in.h:4
+msgid "Features:"
+msgstr "Caratteristiche:"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:5
+msgid "Locking on multiple variables"
+msgstr "Blocco di multiple variabili"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:6
+msgid "Memory Viewer/Editor"
+msgstr "Editor di memoria"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:7
+msgid "... many to be done"
+msgstr "... e molto altro"
