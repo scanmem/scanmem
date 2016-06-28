@@ -69,7 +69,7 @@ MEMORY_TYPES = ['int8', 'uint8',
                 'float32', 'float64',
                 'bytearray', 'string']
 
-SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
+SEARCH_SCOPE_NAMES = [_('Basic'), _('Normal'), _('Full')]
 
 # convert type names used by scanmem into ours
 TYPENAMES_S2G = {'I64':'int64'
@@ -528,8 +528,7 @@ class GameConqueror():
         self.processlist_liststore.clear()
         pl = self.get_process_list()
         for p in pl:
-           # self.processlist_liststore.append([p[0], (p[1][:50] if len(p) > 1 else '<unknown>')]) # limit the length here, otherwise it may crash (why?)
-            self.processlist_liststore.append([p[0], (p[1] if len(p) > 1 else '<unknown>'),(p[2] if len(p) > 2 else '<unknown>')])
+            self.processlist_liststore.append([p[0], (p[1] if len(p) > 1 else _('<unknown>')), (p[2] if len(p) > 2 else _('<unknown>'))])
         self.process_list_dialog.show()
         while True:
             res = self.process_list_dialog.run()
