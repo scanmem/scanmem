@@ -147,6 +147,10 @@ def combobox_set_active_item(combobox, name, col=0):
         raise ValueError(_('Cannot locate item: %s')%(name,))
     combobox.set_active_iter(iter)
 
+# format number in base16 (callback for TreeView)
+def format16(col, cell, model, iter, hex_col) :
+    cell.set_property("text", "%x" % model.get_value(iter, hex_col))
+
 # append a column to `treeview`, with given `title`
 # keyword parameters
 #   renderer_class -- default: Gtk.CellRendererText
@@ -154,7 +158,7 @@ def combobox_set_active_item(combobox, name, col=0):
 #   properties -- if not None, will be applied to renderer
 #   signals -- if not None, will be connected to renderer
 # the latter two should be a list of tuples, i.e.  ((name1, value1), (name2, value2))
-def treeview_append_column(treeview, title, sort_id=None, resizable=True, **kwargs):
+def treeview_append_column(treeview, title, sort_id=None, resizable=True, hex_col=None, **kwargs):
     renderer_class = kwargs.get('renderer_class', Gtk.CellRendererText)
     attributes = kwargs.get('attributes')
     properties = kwargs.get('properties')
@@ -167,6 +171,8 @@ def treeview_append_column(treeview, title, sort_id=None, resizable=True, **kwar
     column.set_resizable(resizable)
     renderer = renderer_class()
     column.pack_start(renderer, True)
+    if hex_col is not None :
+        column.set_cell_data_func(renderer, format16, hex_col)
     if attributes:
         for k,v in attributes:
             column.add_attribute(renderer, k, v)
