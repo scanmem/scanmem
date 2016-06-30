@@ -154,7 +154,7 @@ def combobox_set_active_item(combobox, name, col=0):
 #   properties -- if not None, will be applied to renderer
 #   signals -- if not None, will be connected to renderer
 # the latter two should be a list of tuples, i.e.  ((name1, value1), (name2, value2))
-def treeview_append_column(treeview, title, **kwargs):
+def treeview_append_column(treeview, title, sort_id=None, resizable=True, **kwargs):
     renderer_class = kwargs.get('renderer_class', Gtk.CellRendererText)
     attributes = kwargs.get('attributes')
     properties = kwargs.get('properties')
@@ -162,6 +162,9 @@ def treeview_append_column(treeview, title, **kwargs):
 
     column = Gtk.TreeViewColumn(title)
     treeview.append_column(column)
+    if sort_id is not None:
+        column.set_sort_column_id(sort_id)
+    column.set_resizable(resizable)
     renderer = renderer_class()
     column.pack_start(renderer, True)
     if attributes:

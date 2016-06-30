@@ -168,10 +168,22 @@ class GameConqueror():
         self.scanresult_last_clicked = 0
         self.scanresult_tv.connect('key-press-event', self.scanresult_keypressed)
         # init columns
-        misc.treeview_append_column(self.scanresult_tv, _('Address'), attributes=(('text',0),), properties = (('family', 'monospace'),))
-        misc.treeview_append_column(self.scanresult_tv, _('Value'), attributes=(('text',1),), properties = (('family', 'monospace'),))
-        misc.treeview_append_column(self.scanresult_tv, _('Offset'), attributes=(('text',4),), properties = (('family', 'monospace'),))
-        misc.treeview_append_column(self.scanresult_tv, _('Region Type'), attributes=(('text',5),), properties = (('family', 'monospace'),))
+        misc.treeview_append_column(self.scanresult_tv, _('Address'), 0,
+                                    attributes=(('text',0),),
+                                    properties = (('family', 'monospace'),)
+                                   )
+        misc.treeview_append_column(self.scanresult_tv, _('Value'), 1,
+                                    attributes=(('text',1),),
+                                    properties = (('family', 'monospace'),)
+                                   )
+        misc.treeview_append_column(self.scanresult_tv, _('Offset'), 4,
+                                    attributes=(('text',4),),
+                                    properties = (('family', 'monospace'),)
+                                   )
+        misc.treeview_append_column(self.scanresult_tv, _('Region Type'), 5,
+                                    attributes=(('text',5),),
+                                    properties = (('family', 'monospace'),)
+                                   )
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
@@ -183,7 +195,7 @@ class GameConqueror():
         self.cheatlist_editing = False
         self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
-        misc.treeview_append_column(self.cheatlist_tv, '' 
+        misc.treeview_append_column(self.cheatlist_tv, '', 0
                                         ,renderer_class = Gtk.CellRendererCombo
                                         ,attributes = (('text',0),)
                                         ,properties = (('editable', True)
@@ -196,7 +208,7 @@ class GameConqueror():
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Lock
-        misc.treeview_append_column(self.cheatlist_tv, _('Lock')
+        misc.treeview_append_column(self.cheatlist_tv, _('Lock'), 1
                                         ,renderer_class = Gtk.CellRendererToggle
                                         ,attributes = (('active',1),)
                                         ,properties = (('activatable', True)
@@ -205,7 +217,7 @@ class GameConqueror():
                                         ,signals = (('toggled', self.cheatlist_toggle_lock_cb),)
                                    )
         # Description
-        misc.treeview_append_column(self.cheatlist_tv, _('Description')
+        misc.treeview_append_column(self.cheatlist_tv, _('Description'), 2
                                         ,attributes = (('text',2),)
                                         ,properties = (('editable', True),)
                                         ,signals = (('edited', self.cheatlist_edit_description_cb),
@@ -213,12 +225,12 @@ class GameConqueror():
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Address
-        misc.treeview_append_column(self.cheatlist_tv, _('Address')
+        misc.treeview_append_column(self.cheatlist_tv, _('Address'), 3
                                         ,attributes = (('text',3),)
                                         ,properties = (('family', 'monospace'),)
                                    )
         # Type
-        misc.treeview_append_column(self.cheatlist_tv, _('Type')
+        misc.treeview_append_column(self.cheatlist_tv, _('Type'), 4
                                         ,renderer_class = Gtk.CellRendererCombo
                                         ,attributes = (('text',4),)
                                         ,properties = (('editable', True)
@@ -230,7 +242,7 @@ class GameConqueror():
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Value 
-        misc.treeview_append_column(self.cheatlist_tv, _('Value')
+        misc.treeview_append_column(self.cheatlist_tv, _('Value'), 5
                                         ,attributes = (('text',5),)
                                         ,properties = (('editable', True)
                                                       ,('family', 'monospace'))
@@ -248,20 +260,20 @@ class GameConqueror():
         self.processlist_liststore = Gtk.ListStore(int, str, str)
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
-        self.processlist_tv.set_model(self.processlist_filter)
+        self.processlist_tv.set_model(Gtk.TreeModelSort(self.processlist_filter))
         self.processlist_tv.set_enable_search(True)
         self.processlist_tv.set_search_column(1)
         # first col
-        misc.treeview_append_column(self.processlist_tv, 'PID'
+        misc.treeview_append_column(self.processlist_tv, 'PID', 0
                                         ,attributes = (('text',0),)
                                    )
         # second col
-        misc.treeview_append_column(self.processlist_tv, _('User')
+        misc.treeview_append_column(self.processlist_tv, _('User'), 1
                                         ,attributes = (('text',1),)
                                    )
 
         # third col
-        misc.treeview_append_column(self.processlist_tv, _('Process')
+        misc.treeview_append_column(self.processlist_tv, _('Process'), 2
                                         ,attributes = (('text',2),)
                                    )
 
