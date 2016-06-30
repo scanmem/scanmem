@@ -161,14 +161,14 @@ class GameConqueror():
         # we may need a cell data func here
         # create model
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
-        # liststore contents: addr, value, type, valid, offset, region type
-        self.scanresult_liststore = Gtk.ListStore(str, str, str, bool, str, str)
+        # liststore contents:                     addr,                value, type, valid, offset,              region type
+        self.scanresult_liststore = Gtk.ListStore(GObject.TYPE_UINT64, str,   str,  bool,  GObject.TYPE_UINT64, str)
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
         self.scanresult_tv.connect('key-press-event', self.scanresult_keypressed)
         # init columns
-        misc.treeview_append_column(self.scanresult_tv, _('Address'), 0,
+        misc.treeview_append_column(self.scanresult_tv, _('Address'), 0, hex_col=0,
                                     attributes=(('text',0),),
                                     properties = (('family', 'monospace'),)
                                    )
@@ -176,7 +176,7 @@ class GameConqueror():
                                     attributes=(('text',1),),
                                     properties = (('family', 'monospace'),)
                                    )
-        misc.treeview_append_column(self.scanresult_tv, _('Offset'), 4,
+        misc.treeview_append_column(self.scanresult_tv, _('Offset'), 4, hex_col=4,
                                     attributes=(('text',4),),
                                     properties = (('family', 'monospace'),)
                                    )
@@ -187,7 +187,8 @@ class GameConqueror():
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
-        self.cheatlist_liststore = Gtk.ListStore(str, bool, str, str, str, str, bool) #lockflag, locked, description, addr, type, value, valid
+        # cheatlist contents:                    lockflag, locked, description, addr,                type, value, valid
+        self.cheatlist_liststore = Gtk.ListStore(str,      bool,   str,         GObject.TYPE_UINT64, str,  str,   bool)
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.cheatlist_last_clicked = 0
@@ -225,7 +226,7 @@ class GameConqueror():
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Address
-        misc.treeview_append_column(self.cheatlist_tv, _('Address'), 3
+        misc.treeview_append_column(self.cheatlist_tv, _('Address'), 3, hex_col=3
                                         ,attributes = (('text',3),)
                                         ,properties = (('family', 'monospace'),)
                                    )
@@ -497,9 +498,9 @@ class GameConqueror():
         return True
 
     def ConfirmAddCheat_Button_clicked_cb(self, button, data=None):
+        addr = self.addcheat_address_input.get_text()
         try:
-            addr = self.addcheat_address_input.get_text()
-            int(addr,16)
+            addr = int(addr, 16)
         except ValueError:
             self.show_error(_('Please enter a valid address.'))
             return False
@@ -557,10 +558,10 @@ class GameConqueror():
             return True
         addr = model.get(model.get_iter(self.scanresult_last_clicked), 0)[0]
         if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
+            self.browse_memory(addr)
             return True
         elif data == 'scan_for_this_address':
-            self.scan_for_addr(int(addr,16))
+            self.scan_for_addr(addr)
             return True
         return False
 
@@ -590,9 +591,10 @@ class GameConqueror():
             return True
         addr = model.get(model.get_iter(self.cheatlist_last_clicked), 3)[0]
         if data == 'browse_this_address':
-            self.browse_memory(int(addr,16))
+            self.browse_memory(addr)
             return True
         elif data == 'copy_address':
+            addr = '%x' %(addr,)
             CLIPBOARD.set_text(addr, len(addr))
             return True
         return False
@@ -978,13 +980,13 @@ class GameConqueror():
             for line in lines:
                 line = str(u(line))
                 line = line[line.find(']')+1:]
-                (a, o, rt, v, t) = list(map(str.strip, line.split(',')[:5]))
-                a = '%x'%(int(a,16),)
-                o = '%x'%(int(o.split('+')[1],16),)
-                t = t[1:-1]
+                (addr, off, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
+                addr = int(addr, 16)
+                off = int(off.split('+')[1], 16)
+                t = t.strip(' []')
                 if t == 'unknown':
                     continue
-                self.scanresult_liststore.append([a, v, t, True, o, rt])
+                self.scanresult_liststore.append([addr, val, t, True, off, rt])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
