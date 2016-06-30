@@ -245,7 +245,7 @@ class GameConqueror():
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
         self.processlist_tv.get_selection().set_mode(Gtk.SelectionMode.SINGLE)
-        self.processlist_liststore = Gtk.ListStore(str, str, str)
+        self.processlist_liststore = Gtk.ListStore(int, str, str)
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
         self.processlist_tv.set_model(self.processlist_filter)
@@ -456,7 +456,7 @@ class GameConqueror():
         (model, iter) = self.processlist_tv.get_selection().get_selected()
         if iter is not None:
             (pid, user, process) = model.get(iter, 0, 1, 2)
-            self.select_process(int(pid), process)
+            self.select_process(pid, process)
             self.process_list_dialog.response(Gtk.ResponseType.CANCEL)
             return True
         return False
@@ -477,7 +477,7 @@ class GameConqueror():
                     continue
                 else:
                     (pid, process) = model.get(iter, 0, 1)
-                    self.select_process(int(pid), process)
+                    self.select_process(pid, process)
                     break
             else: # for None and Cancel
                 break
@@ -811,7 +811,11 @@ class GameConqueror():
             self.cheatlist_liststore.prepend(['=', False, description, addr, vt, str(value), True])
 
     def get_process_list(self):
-        return [list(map(str.strip, e.strip().split(' ',2))) for e in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines()]
+        plist = []
+        for proc in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines():
+            (pid, user, pname) = [tok.strip() for tok in proc.strip().split(' ', 2)]
+            plist.append((int(pid), user, pname))
+        return plist
 
     def select_process(self, pid, process_name):
         # ask backend for attaching the target process
