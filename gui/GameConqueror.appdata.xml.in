@@ -12,7 +12,7 @@
     of a variable in an executing process. This can be used for the analysis or
     modification of a hostile process on a compromised machine, reverse
     engineering, or as a "pokefinder" to cheat at video games.
-    GameConqueror aims to provide a CheatEngline-alike interface for scanmem,
+    GameConqueror aims to provide a CheatEngine-alike interface for scanmem,
     it's user-friendly and easy to use.
   </_p>
   <_p>Features:</_p>
@@ -23,7 +23,7 @@
   </ul>
   </description>
   <screenshots>
-    <screenshot type="default" width="627" height="457">https://raw.githubusercontent.com/coolwanglu/scanmem/master/gui/screenshot.png</screenshot>
+    <screenshot type="default" width="627" height="457">https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png</screenshot>
   </screenshots>
   <url type="homepage">https://github.com/scanmem/scanmem</url>
   <updatecontact>i.gnatenko.brain@gmail.com</updatecontact>

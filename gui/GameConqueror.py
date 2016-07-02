@@ -23,12 +23,11 @@
 
 import sys
 import os
-import re
+import argparse
 import struct
 import tempfile
 import platform
 import threading
-import time
 import json
 
 import gi
@@ -133,6 +132,7 @@ class GameConqueror():
         
         self.scanoption_frame = self.builder.get_object('ScanOption_Frame')
         self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
+        self.input_box = self.builder.get_object('Value_Input')
 
         self.scan_button = self.builder.get_object('Scan_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
@@ -164,6 +164,7 @@ class GameConqueror():
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
+        self.scanresult_tv.connect('key-press-event', self.scanresult_keypressed)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, _('Address'), attributes=(('text',0),), properties = (('family', 'monospace'),))
         misc.treeview_append_column(self.scanresult_tv, _('Value'), attributes=(('text',1),), properties = (('family', 'monospace'),))
@@ -261,6 +262,19 @@ class GameConqueror():
         misc.treeview_append_column(self.processlist_tv, _('Process')
                                         ,attributes = (('text',2),)
                                    )
+        
+        
+        ###
+        # Get list of things that we'll lock during scan
+        self.locklist = []
+        self.locklist.append(self.cheatlist_tv)
+        self.locklist.append(self.scanresult_tv)
+        self.locklist.append(self.builder.get_object('processGrid'))
+        self.locklist.append(self.builder.get_object('searchGrid'))
+        self.locklist.append(self.builder.get_object('buttonGrid'))
+        self.locklist.append(self.memoryeditor_window)
+
+        
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
@@ -268,7 +282,6 @@ class GameConqueror():
         misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
-        
         
         
         # init popup menu for scanresult
@@ -530,7 +543,7 @@ class GameConqueror():
     def scanresult_popup_cb(self, menuitem, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
-            for path in pathlist:
+            for path in reversed(pathlist):
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
@@ -543,10 +556,19 @@ class GameConqueror():
             return True
         return False
 
+    def scanresult_keypressed(self, scanresult_tv, event, selection=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey == 'Return':
+            (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+            for path in reversed(pathlist):
+                (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
+                self.add_to_cheat_list(addr, value, typestr)
+
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
-        if pressedkey == 'Delete':
+        if pressedkey in ('Delete', 'BackSpace'):
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path))
@@ -853,6 +875,7 @@ class GameConqueror():
         self.update_scan_result()
         self.command_lock.release()
 
+        self.scanprogress_progressbar.set_fraction(0.0)
         self.scanoption_frame.set_sensitive(True)
         self.is_first_scan = True
 
@@ -892,8 +915,11 @@ class GameConqueror():
         # disable the window before perform scanning, such that if result come so fast, we won't mess it up
         self.search_count +=1 
         self.scanoption_frame.set_sensitive(False) # no need to check search_count here
-        self.main_window.set_sensitive(False)
-        self.memoryeditor_window.set_sensitive(False)
+
+        # Lock set of widget that would mess with the scan
+        for wid in self.locklist :
+            wid.set_sensitive(False)
+
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
         if self.search_count == 1:
@@ -911,8 +937,11 @@ class GameConqueror():
         Gdk.threads_enter()
 
         self.scanprogress_progressbar.set_fraction(1.0)
-        self.main_window.set_sensitive(True)
-        self.memoryeditor_window.set_sensitive(True)
+
+        # Unlock set of widget that would mess with the scan
+        for wid in self.locklist :
+            wid.set_sensitive(True)
+
         self.is_scanning = False
         self.update_scan_result()
         self.is_first_scan = False
@@ -1040,9 +1069,31 @@ class GameConqueror():
         if self.backend.get_version() != VERSION:
             self.show_error(_('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of GameConqueror as scanmem.'))
 
-    
 
 if __name__ == '__main__':
+    # Parse cmdline arguments
+    parser = argparse.ArgumentParser(prog='GameConqueror',
+                                     description=_('A GUI for scanmem, a game hacking tool'),
+                                     epilog=_('Report bugs to <%s>.') %(PACKAGE_BUGREPORT,)
+                                    )
+    parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
+    parser.add_argument('-s', '--search', metavar='val', dest='search_value', help=_('prefill the search box'))
+    parser.add_argument("pid", nargs='?', type=int, help=_('PID of the process'))
+    args = parser.parse_args()
+
+    # Init application
     GObject.threads_init()
     Gdk.threads_init()
-    GameConqueror().main()
+    gc_instance = GameConqueror()
+
+    # Attach to given pid (if any)
+    if (args.pid is not None) :
+        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
+        gc_instance.select_process(args.pid, process_name)
+
+    # Prefill the search box (if asked)
+    if (args.search_value is not None) :
+        gc_instance.input_box.set_text(args.search_value)
+
+    # Start
+    gc_instance.main()
