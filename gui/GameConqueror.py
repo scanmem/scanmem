@@ -5,6 +5,8 @@
     Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
     Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
+    Copyright (C) 2015,2016 Sebastian Parschauer <s.parschauer(a)gmx.de>
+    Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
