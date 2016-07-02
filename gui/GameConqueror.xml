@@ -813,6 +813,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <signal name="activate" handler="focus_on_next_widget_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
@@ -824,6 +825,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <signal name="activate" handler="focus_on_next_widget_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
