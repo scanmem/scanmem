@@ -557,6 +557,12 @@ class GameConqueror():
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
 
+    # Manually add cheat
+
+    def focus_on_next_widget_cb(self, widget, data=None):
+        widget.get_toplevel().child_focus(Gtk.DirectionType.TAB_FORWARD)
+        return True
+
     # Main window
 
     def cheatlist_edit_start(self, a, b, c):
