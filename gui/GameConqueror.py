@@ -334,6 +334,8 @@ class GameConqueror():
     ###########################
     # GUI callbacks
 
+    # Memory editor
+
     def MemoryEditor_Window_delete_event_cb(self, widget, event, data=None):
         self.memoryeditor_window.hide()
         return True
@@ -364,6 +366,34 @@ class GameConqueror():
             self.browse_memory(addr)
         except:
             self.show_error(_('Invalid address'))
+
+    # Manually add cheat
+
+    def ConfirmAddCheat_Button_clicked_cb(self, button, data=None):
+        addr = self.addcheat_address_input.get_text()
+        try:
+            addr = int(addr, 16)
+        except ValueError:
+            self.show_error(_('Please enter a valid address.'))
+            return False
+
+        description = self.addcheat_description_input.get_text()
+        if not description: description = _('No Description')
+        typestr = LOCK_VALUE_TYPES[self.addcheat_type_combobox.get_active()][0]
+        if 'int' in typestr: value = 0
+        elif 'float' in typestr: value = 0.0
+        elif 'string' in typestr: value = ''
+        else: value = None
+
+        self.add_to_cheat_list(addr, value, typestr, description)
+        self.addcheat_dialog.hide()
+        return True
+
+    def CloseAddCheat_Button_clicked_cb(self, button, data=None):
+        self.addcheat_dialog.hide()
+        return True
+
+    # Main window
 
     def ManuallyAddCheat_Button_clicked_cb(self, button, data=None):
         self.addcheat_dialog.show()
@@ -459,6 +489,21 @@ class GameConqueror():
             return True
         return False
 
+    def Scan_Button_clicked_cb(self, button, data=None):
+        self.do_scan()
+        return True
+
+    def Reset_Button_clicked_cb(self, button, data=None):
+        self.reset_scan()
+        return True
+
+    def Logo_EventBox_button_release_event_cb(self, widget, data=None):
+        self.about_dialog.run()
+        self.about_dialog.hide()
+        return True
+
+    # Process list
+
     def ProcessFilter_Input_changed_cb(self, widget, data=None):
         self.processlist_filter.refilter()
 
@@ -497,52 +542,19 @@ class GameConqueror():
         self.process_list_dialog.hide()
         return True
 
-    def ConfirmAddCheat_Button_clicked_cb(self, button, data=None):
-        addr = self.addcheat_address_input.get_text()
-        try:
-            addr = int(addr, 16)
-        except ValueError:
-            self.show_error(_('Please enter a valid address.'))
-            return False
-
-        description = self.addcheat_description_input.get_text()
-        if not description: description = _('No Description')
-        typestr = LOCK_VALUE_TYPES[self.addcheat_type_combobox.get_active()][0]
-        if 'int' in typestr: value = 0
-        elif 'float' in typestr: value = 0.0
-        elif 'string' in typestr: value = ''
-        else: value = None
-        
-        self.add_to_cheat_list(addr, value, typestr, description)
-        self.addcheat_dialog.hide()
-        return True
-
-    def CloseAddCheat_Button_clicked_cb(self, button, data=None):
-        self.addcheat_dialog.hide()
-        return True
-
-    def Scan_Button_clicked_cb(self, button, data=None):
-        self.do_scan()
-        return True
-
-    def Reset_Button_clicked_cb(self, button, data=None):
-        self.reset_scan()
-        return True
-
-    def Logo_EventBox_button_release_event_cb(self, widget, data=None):
-        self.about_dialog.run()
-        self.about_dialog.hide()
-        return True
-
     #######################
     # customed callbacks
     # (i.e. not standard event names are used)
-    
+
+    # Memory editor
+
     def memoryeditor_hexview_char_changed_cb(self, hexview, offset, charval):
         addr = hexview.base_addr + offset
         self.write_value(addr, 'int8', charval)
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
+
+    # Main window
 
     def cheatlist_edit_start(self, a, b, c):
         self.cheatlist_editing = True
@@ -682,6 +694,8 @@ class GameConqueror():
             self.cheatlist_liststore[row][4] = new_text
             self.cheatlist_liststore[row][1] = False # unlock
         return True
+
+    # Process list
 
     def processlist_filter_func(self, model, iter, data=None):
         (pid, user, process) = model.get(iter, 0, 1, 2)
