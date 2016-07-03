@@ -597,7 +597,7 @@ class HexView(Gtk.Box):
     def set_payload(self, val):
         self._payload = val
 
-        for view in (self.offset_text, self.hex_text, self.ascii_text):
+        for view in {self.offset_text, self.hex_text, self.ascii_text}:
             # Invalidate previous iters
             if hasattr(view, 'prev_start'):
                 view.prev_start = None
@@ -614,7 +614,7 @@ class HexView(Gtk.Box):
             desc = Pango.FontDescription(val)
             self._font = val
 
-            for view in (self.offset_text, self.hex_text, self.ascii_text):
+            for view in {self.offset_text, self.hex_text, self.ascii_text}:
                 view.modify_font(desc)
         except Exception:
             pass
