@@ -620,13 +620,13 @@ class GameConqueror():
             for path in reversed(pathlist):
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
-        elif pressedkey in ('Delete', 'BackSpace'):
+        elif pressedkey in {'Delete', 'BackSpace'}:
             self.scanresult_delete_selected_matches(None)
 
     def CheatList_TreeView_key_press_event_cb(self, cheatlist_tv, event, data=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
-        if pressedkey in ('Delete', 'BackSpace'):
+        if pressedkey in {'Delete', 'BackSpace'}:
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path))
@@ -726,7 +726,7 @@ class GameConqueror():
             (addr, typestr, value) = self.cheatlist_liststore[row][3:6]
             if new_text == typestr:
                 continue
-            if new_text in ['bytearray', 'string']:
+            if new_text in {'bytearray', 'string'}:
                 self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value)))
             self.cheatlist_liststore[row][4] = new_text
             self.cheatlist_liststore[row][1] = False # unlock
@@ -761,7 +761,7 @@ class GameConqueror():
             return None
         try:
             bitn = int(bits[:-len('bit')])
-            if bitn not in [8,16,32,64]:
+            if bitn not in {8,16,32,64}:
                 return None
             else:
                 return bitn
