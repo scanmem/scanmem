@@ -85,14 +85,14 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned long block, seconds = 1;
     char *delay = NULL;
     char *end;
     bool cont = false;
     struct setting {
         char *matchids;
         char *value;
-        unsigned seconds;
+        unsigned long seconds;
     } *settings = NULL;
 
     assert(argc != 0);
@@ -216,7 +216,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             /* check if specific match(s) were specified */
             if (settings[block].matchids != NULL) {
                 char *id, *lmatches = NULL;
-                unsigned num = 0;
+                unsigned long num = 0;
 
                 /* create local copy of the matchids for strtok() to modify */
                 lmatches = strdupa(settings[block].matchids);
@@ -443,7 +443,7 @@ out_free:
 /* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned id;
+    unsigned long id;
     char *end = NULL;
     match_location loc;
 
@@ -554,7 +554,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
 /* dregion [!][x][,x,...] */
 bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned id;
+    unsigned long id;
     bool invert = false;
     char *end = NULL, *idstr = NULL, *block = NULL;
     element_t *np, *pp;
@@ -1152,7 +1152,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 {
     value_t o, n;
-    unsigned id;
+    unsigned long id;
     char *end = NULL, buf[128], timestamp[64];
     time_t t;
     match_location loc;
