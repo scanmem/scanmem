@@ -56,11 +56,11 @@ def check_scan_command (data_type, cmd, is_first_scan):
         if cmd == '?':
             return 'snapshot'
 
-        is_operator_cmd = cmd in ['=', '!=', '>', '<', '+', '-']
+        is_operator_cmd = cmd in {'=', '!=', '>', '<', '+', '-'}
         if not is_first_scan and is_operator_cmd:
             return cmd
 
-        if is_first_scan and (is_operator_cmd or cmd[:2] in ['+ ', '- ']):
+        if is_first_scan and (is_operator_cmd or cmd[:2] in {'+ ', '- '}):
             raise ValueError(_('Command \"%s\" is not valid for the first scan') % (cmd[:2],))
 
         # evaluating the command
@@ -74,7 +74,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
             check_int(data_type, num_2)
         else:
             # regular command processing
-            if cmd[:2] in ['+ ', '- ', '> ', '< ']:
+            if cmd[:2] in {'+ ', '- ', '> ', '< '}:
                 num = cmd[2:]
                 cmd = cmd[:2]
             elif cmd[:3] ==  '!= ':

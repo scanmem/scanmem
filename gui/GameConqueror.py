@@ -645,7 +645,7 @@ class GameConqueror():
             (addr, typestr, value) = self.cheatlist_liststore[row][3:6]
             if new_text == typestr:
                 continue
-            if new_text in ['bytearray', 'string']:
+            if new_text in {'bytearray', 'string'}:
                 self.cheatlist_liststore[row][5] = self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value)))
             self.cheatlist_liststore[row][4] = new_text
             self.cheatlist_liststore[row][1] = False # unlock
@@ -678,7 +678,7 @@ class GameConqueror():
             return None
         try:
             bitn = int(bits[:-len('bit')])
-            if bitn not in [8,16,32,64]:
+            if bitn not in {8,16,32,64}:
                 return None
             else:
                 return bitn
