@@ -56,7 +56,7 @@ CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
 PROGRESS_INTERVAL = 100 # for scan progress updates
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
-SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
+SCAN_RESULT_LIST_LIMIT = 10000 # maximal number of entries that can be displayed
 
 SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string']
 
@@ -1023,17 +1023,29 @@ class GameConqueror():
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
+            if misc.PY3K:
+                addr = GObject.Value(GObject.TYPE_UINT64)
+                off = GObject.Value(GObject.TYPE_UINT64)
             for line in lines:
                 line = misc.decode(line)
                 (mid, line) = line.split(']', 1)
                 mid = int(mid.strip(' []'))
-                (addr, off, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
-                addr = int(addr, 16)
-                off = int(off.split('+')[1], 16)
+                (addr_str, off_str, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
                 t = t.strip(' []')
                 if t == 'unknown':
                     continue
-                self.scanresult_liststore.append([addr, val, t, True, off, rt, mid])
+                # `insert_with_valuesv` has the same function of `append`, but it's 7x faster
+                # PY3 has problems with int's, so we need a forced guint64 conversion
+                # See: https://bugzilla.gnome.org/show_bug.cgi?id=769532
+                # Still 5x faster even with the extra baggage
+                if misc.PY3K:
+                    addr.set_uint64(int(addr_str, 16))
+                    off.set_uint64(int(off_str.split('+')[1], 16))
+                else:
+                    addr = long(addr_str, 16)
+                    off = long(off_str.split('+')[1], 16)
+                self.scanresult_liststore.insert_with_valuesv(-1, [0, 1, 2, 3, 4, 5, 6], [addr, val, t, True, off, rt, mid])
+                # self.scanresult_liststore.append([addr, val, t, True, off, rt, mid])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
