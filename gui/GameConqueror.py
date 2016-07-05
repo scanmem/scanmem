@@ -62,23 +62,28 @@ SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32'
 
 LOCK_FLAG_TYPES = misc.build_simple_str_liststore(['=', '+', '-'])
 
-LOCK_VALUE_TYPES = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64', 'bytearray', 'string']
+MEMORY_TYPES = ['int8', 'uint8',
+                'int16', 'uint16',
+                'int32', 'uint32',
+                'int64', 'uint64',
+                'float32', 'float64',
+                'bytearray', 'string']
 
 SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
 
 # convert type names used by scanmem into ours
 TYPENAMES_S2G = {'I64':'int64'
                 ,'I64s':'int64'
-                ,'I64u':'int64'
+                ,'I64u':'uint64'
                 ,'I32':'int32'
                 ,'I32s':'int32'
-                ,'I32u':'int32'
+                ,'I32u':'uint32'
                 ,'I16':'int16'
                 ,'I16s':'int16'
-                ,'I16u':'int16'
+                ,'I16u':'uint16'
                 ,'I8':'int8'
                 ,'I8s':'int8'
-                ,'I8u':'int8'
+                ,'I8u':'uint8'
                 ,'F32':'float32'
                 ,'F64':'float64'
                 ,'bytearray':'bytearray'
@@ -87,18 +92,26 @@ TYPENAMES_S2G = {'I64':'int64'
 
 # convert our typenames into struct format characters
 TYPENAMES_G2STRUCT = {'int8':'b'
+                     ,'uint8':'B'
                      ,'int16':'h'
+                     ,'uint16':'H'
                      ,'int32':'i'
+                     ,'uint32':'I'
                      ,'int64':'q'
+                     ,'uint64':'Q'
                      ,'float32':'f'
                      ,'float64':'d'
                      }
         
 # sizes in bytes of integer and float types
 TYPESIZES = {'int8':1
+            ,'uint8':1
             ,'int16':2
+            ,'uint16':2
             ,'int32':4
+            ,'uint32':4
             ,'int64':8
+            ,'uint64':8
             ,'float32':4
             ,'float64':8
             }
@@ -237,7 +250,7 @@ class GameConqueror():
                                         ,attributes = (('text',4),)
                                         ,properties = (('editable', True)
                                                       ,('has-entry', False)
-                                                      ,('model', misc.build_simple_str_liststore(LOCK_VALUE_TYPES))
+                                                      ,('model', misc.build_simple_str_liststore(MEMORY_TYPES))
                                                       ,('text-column', 0))
                                         ,signals = (('edited', self.cheatlist_edit_type_cb),
                                                     ('editing-started', self.cheatlist_edit_start),
@@ -294,7 +307,7 @@ class GameConqueror():
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
         self.addcheat_type_combobox = self.builder.get_object('Type_ComboBoxText')
-        for entry in LOCK_VALUE_TYPES:
+        for entry in MEMORY_TYPES:
             self.addcheat_type_combobox.append_text(entry)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
