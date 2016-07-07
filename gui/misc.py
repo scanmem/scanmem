@@ -184,7 +184,7 @@ def treeview_append_column(treeview, title, sort_id=None, resizable=True, hex_co
             renderer.connect(k,v)
 
 # data is optional data to callback
-def menu_append_item(menu, name, callback, data):
+def menu_append_item(menu, name, callback, data=None):
     item = Gtk.MenuItem(name)
     menu.append(item)
     item.connect('activate', callback, data)
