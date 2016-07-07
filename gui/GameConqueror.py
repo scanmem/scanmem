@@ -161,8 +161,8 @@ class GameConqueror():
         # we may need a cell data func here
         # create model
         self.scanresult_tv = self.builder.get_object('ScanResult_TreeView')
-        # liststore contents:                     addr,                value, type, valid, offset,              region type
-        self.scanresult_liststore = Gtk.ListStore(GObject.TYPE_UINT64, str,   str,  bool,  GObject.TYPE_UINT64, str)
+        # liststore contents:                     addr,                value, type, valid, offset,              region type, match_id
+        self.scanresult_liststore = Gtk.ListStore(GObject.TYPE_UINT64, str,   str,  bool,  GObject.TYPE_UINT64, str,         int)
         self.scanresult_tv.set_model(self.scanresult_liststore)
         self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
@@ -303,6 +303,7 @@ class GameConqueror():
         misc.menu_append_item(self.scanresult_popup, _('Add to cheat list'), self.scanresult_popup_cb, 'add_to_cheat_list')
         misc.menu_append_item(self.scanresult_popup, _('Browse this address'), self.scanresult_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.scanresult_popup, _('Scan for this address'), self.scanresult_popup_cb, 'scan_for_this_address')
+        misc.menu_append_item(self.scanresult_popup, _('Remove this match'), self.scanresult_delete_selected_matches)
         self.scanresult_popup.show_all()
 
         # init popup menu for cheatlist
@@ -561,6 +562,15 @@ class GameConqueror():
     def cheatlist_edit_cancel(self, a):
         self.cheatlist_editing = False
 
+    def scanresult_delete_selected_matches(self, menuitem, data=None):
+        (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
+        match_id_list = [ model.get_value(model.get_iter(path), 6) for path in pathlist ]
+        self.command_lock.acquire()
+        for mid in sorted(match_id_list, reverse=True): # Start from the largest, so no match id gets invalidated
+            self.backend.send_command('delete %d' %(mid,))
+        self.update_scan_result()
+        self.command_lock.release()
+
     def scanresult_popup_cb(self, menuitem, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
         if data == 'add_to_cheat_list':
@@ -585,6 +595,8 @@ class GameConqueror():
             for path in reversed(pathlist):
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
+        elif pressedkey in ('Delete', 'BackSpace'):
+            self.scanresult_delete_selected_matches(None)
 
     def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
         keycode = event.keyval
@@ -993,14 +1005,15 @@ class GameConqueror():
             self.scanresult_liststore.clear()
             for line in lines:
                 line = str(u(line))
-                line = line[line.find(']')+1:]
+                (mid, line) = line.split(']', 1)
+                mid = int(mid.strip(' []'))
                 (addr, off, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
                 addr = int(addr, 16)
                 off = int(off.split('+')[1], 16)
                 t = t.strip(' []')
                 if t == 'unknown':
                     continue
-                self.scanresult_liststore.append([addr, val, t, True, off, rt])
+                self.scanresult_liststore.append([addr, val, t, True, off, rt, mid])
             self.scanresult_tv.set_model(self.scanresult_liststore)
 
     # return range(r1, r2) where all rows between r1 and r2 (EXCLUSIVE) are visible
@@ -1023,7 +1036,7 @@ class GameConqueror():
             rows = self.get_visible_rows(self.scanresult_tv)
             for i in rows:
                 row = self.scanresult_liststore[i]
-                addr, cur_value, scanmem_type, valid, off, rtype = row
+                addr, cur_value, scanmem_type, valid = row[:4]
                 if valid:
                     new_value = self.read_value(addr, TYPENAMES_S2G[scanmem_type.split(' ', 1)[0]], cur_value)
                     if new_value is not None:
