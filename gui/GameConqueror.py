@@ -555,7 +555,7 @@ class GameConqueror():
                 (addr, value, typestr) = model.get(model.get_iter(path), 0, 1, 2)
                 self.add_to_cheat_list(addr, value, typestr)
             return True
-        addr = model.get(model.get_iter(self.scanresult_last_clicked), 0)[0]
+        addr = model.get_value(model.get_iter(self.scanresult_last_clicked), 0)
         if data == 'browse_this_address':
             self.browse_memory(addr)
             return True
@@ -588,7 +588,7 @@ class GameConqueror():
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path)) 
             return True
-        addr = model.get(model.get_iter(self.cheatlist_last_clicked), 3)[0]
+        addr = model.get_value(model.get_iter(self.cheatlist_last_clicked), 3)
         if data == 'browse_this_address':
             self.browse_memory(addr)
             return True
