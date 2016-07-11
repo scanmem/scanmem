@@ -41,7 +41,6 @@ from gi.repository import GObject
 from consts import *
 from hexview import HexView
 from backend import GameConquerorBackend
-from misc import u
 import misc
 
 import locale
@@ -778,7 +777,7 @@ class GameConqueror():
         elif typename == 'bytearray':
             return (len(value.strip())+1)/3
         elif typename == 'string':
-            return len(value)
+            return len(misc.encode(value))
         return None
 
     # parse bytes dumped by scanmem into number, string, etc.
@@ -788,9 +787,9 @@ class GameConqueror():
         if typename in TYPENAMES_G2STRUCT:
             return struct.unpack(TYPENAMES_G2STRUCT[typename], databytes)[0]
         elif typename == 'string':
-            return str(u(databytes))
+            return misc.decode(databytes, 'replace')
         elif typename == 'bytearray':
-            databytes = u(databytes)
+            databytes = misc.decode(databytes)
             return ' '.join(['%02x'%ord(i) for i in databytes])
         else:
             return databytes
@@ -847,7 +846,7 @@ class GameConqueror():
                 self.show_error(_('Cannot read memory'))
                 return
             self.last_hexedit_address = (start_addr, end_addr)
-            self.memoryeditor_hexview.payload = u(data)
+            self.memoryeditor_hexview.payload = misc.u(data)
             self.memoryeditor_hexview.base_addr = start_addr
         
         # set editable flag
@@ -1034,7 +1033,7 @@ class GameConqueror():
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
             for line in lines:
-                line = str(u(line))
+                line = misc.decode(line)
                 (mid, line) = line.split(']', 1)
                 mid = int(mid.strip(' []'))
                 (addr, off, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
