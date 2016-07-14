@@ -138,7 +138,7 @@ end_was_escaped:
     if (cmd_endpos-1 == cmd_stpos)
         return true; // XXX cleanup
 
-    cmd_len = cmd_endpos - cmd_stpos; // -1 for endtick
+    cmd_len = cmd_endpos - cmd_stpos;
     cmd = (char *)alloca(cmd_len);
 
     /* copy shell command substr into cmd */
