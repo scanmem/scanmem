@@ -880,8 +880,8 @@ class GameConqueror():
 
     def get_process_list(self):
         plist = []
-        for proc in os.popen('ps -wweo pid=,user=,command= --sort=-pid').readlines():
-            (pid, user, pname) = [tok.strip() for tok in proc.strip().split(' ', 2)]
+        for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
+            (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
             plist.append((int(pid), user, pname))
         return plist
 
