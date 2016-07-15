@@ -37,6 +37,7 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
+from gi.repository import GLib
 
 from consts import *
 from hexview import HexView
@@ -266,7 +267,7 @@ class GameConqueror():
         self.processlist_liststore = Gtk.ListStore(int, str, str)
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
-        self.processlist_tv.set_model(Gtk.TreeModelSort(self.processlist_filter))
+        self.processlist_tv.set_model(Gtk.TreeModelSort(model=self.processlist_filter))
         self.processlist_tv.set_search_column(1)
         # first col
         misc.treeview_append_column(self.processlist_tv, 'PID', 0
@@ -336,7 +337,7 @@ class GameConqueror():
         self.backend = GameConquerorBackend(os.path.join(LIBDIR, 'libscanmem.so.1'))
         self.check_backend_version()
         self.search_count = 0
-        GObject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
+        GLib.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
         self.command_lock = threading.RLock()
 
 
@@ -412,11 +413,11 @@ class GameConqueror():
         return True
 
     def LoadCheat_Button_clicked_cb(self, button, data=None):
-        dialog = Gtk.FileChooserDialog(_("Open.."),
-                self.main_window,
-                Gtk.FileChooserAction.OPEN,
-                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog = Gtk.FileChooserDialog(title=_("Open.."),
+                                       transient_for=self.main_window,
+                                       action=Gtk.FileChooserAction.OPEN,
+                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
 
         response = dialog.run()
@@ -432,11 +433,11 @@ class GameConqueror():
         return True
 
     def SaveCheat_Button_clicked_cb(self, button, data=None):
-        dialog = Gtk.FileChooserDialog(_("Save.."),
-                self.main_window,
-                Gtk.FileChooserAction.SAVE,
-                (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                    Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog = Gtk.FileChooserDialog(title=_("Save.."),
+                                       transient_for=self.main_window,
+                                       action=Gtk.FileChooserAction.SAVE,
+                                       buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+                                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
         dialog.set_do_overwrite_confirmation(True)
 
@@ -747,11 +748,11 @@ class GameConqueror():
     ############################
     # core functions
     def show_error(self, msg):
-        dialog = Gtk.MessageDialog(self.main_window
-                                 ,Gtk.DialogFlags.MODAL
-                                 ,Gtk.MessageType.ERROR
-                                 ,Gtk.ButtonsType.OK
-                                 ,msg)
+        dialog = Gtk.MessageDialog(transient_for=self.main_window,
+                                   modal=True,
+                                   message_type=Gtk.MessageType.ERROR,
+                                   buttons=Gtk.ButtonsType.OK,
+                                   text=msg)
         dialog.run()
         dialog.destroy()
 
@@ -992,15 +993,15 @@ class GameConqueror():
         if self.search_count == 1:
             self.apply_scan_settings()
         self.backend.reset_scan_progress()
-        self.progress_watcher_id = GObject.timeout_add(PROGRESS_INTERVAL,
-            self.progress_watcher, priority=GObject.PRIORITY_DEFAULT_IDLE)
+        self.progress_watcher_id = GLib.timeout_add(PROGRESS_INTERVAL,
+            self.progress_watcher, priority=GLib.PRIORITY_DEFAULT_IDLE)
         threading.Thread(target=self.scan_thread_func, args=(cmd,)).start()
 
     def scan_thread_func(self, cmd):
         self.command_lock.acquire()
         self.backend.send_command(cmd)
 
-        GObject.source_remove(self.progress_watcher_id)
+        GLib.source_remove(self.progress_watcher_id)
         Gdk.threads_enter()
 
         self.scanprogress_progressbar.set_fraction(1.0)

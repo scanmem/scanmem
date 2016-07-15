@@ -29,6 +29,7 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import Pango
 from gi.repository import GObject
+from gi.repository import GLib
 
 class BaseText(Gtk.TextView):
     __gtype_name__ = 'BaseText'
@@ -38,7 +39,7 @@ class BaseText(Gtk.TextView):
         self.buffer = self.get_buffer()
 
         self._parent = parent
-        self.modify_font(Pango.FontDescription(parent.font))
+        self.override_font(Pango.FontDescription(parent.font))
         self.set_editable(False)
         self.texttag = self.buffer.create_tag(None)
 
@@ -495,7 +496,7 @@ class HexView(Gtk.Box):
     }
 
     def __init__(self):
-        super(HexView, self).__init__(False, 4)
+        super(HexView, self).__init__(homogeneous=False, spacing=4)
         self.set_border_width(4)
 
         self._bpl = 16
@@ -544,7 +545,7 @@ class HexView(Gtk.Box):
     # select the byte at addr
     # set focus
     def show_addr(self, addr):
-        GObject.idle_add(self.show_addr_helper, addr)
+        GLib.idle_add(self.show_addr_helper, addr)
 
     def show_addr_helper(self, addr):
         off = addr - self._base_addr
@@ -616,7 +617,7 @@ class HexView(Gtk.Box):
             self._font = val
 
             for view in {self.offset_text, self.hex_text, self.ascii_text}:
-                view.modify_font(desc)
+                view.override_font(desc)
         except Exception:
             pass
 
