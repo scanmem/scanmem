@@ -32,7 +32,8 @@ class GameConquerorBackend():
         'sm_get_num_matches' : (ctypes.c_ulong, ),
         'sm_get_version' : (ctypes.c_char_p, ),
         'sm_get_scan_progress' : (ctypes.c_double, ),
-        'sm_reset_scan_progress' : (None,)
+        'sm_reset_scan_progress' : (None,),
+        'sm_set_stop_flag' : (ctypes.c_bool, )
     }
 
     def __init__(self, libpath='libscanmem.so'):
@@ -78,3 +79,5 @@ class GameConquerorBackend():
     def reset_scan_progress(self):
         self.lib.sm_reset_scan_progress()
 
+    def set_stop_flag(self, stop_flag):
+        self.lib.sm_set_stop_flag(stop_flag)

@@ -150,6 +150,7 @@ class GameConqueror():
         self.input_box = self.builder.get_object('Value_Input')
 
         self.scan_button = self.builder.get_object('Scan_Button')
+        self.stop_button = self.builder.get_object('Stop_Button')
         self.reset_button = self.builder.get_object('Reset_Button')
 
         ###
@@ -286,7 +287,8 @@ class GameConqueror():
         self.disablelist.append(self.cheatlist_tv)
         self.disablelist.append(self.scanresult_tv)
         self.disablelist.append(self.builder.get_object('processGrid'))
-        self.disablelist.append(self.builder.get_object('searchGrid'))
+        self.disablelist.append(self.value_input)
+        self.disablelist.append(self.reset_button)
         self.disablelist.append(self.builder.get_object('buttonGrid'))
         self.disablelist.append(self.memoryeditor_window)
 
@@ -496,6 +498,10 @@ class GameConqueror():
 
     def Scan_Button_clicked_cb(self, button, data=None):
         self.do_scan()
+        return True
+
+    def Stop_Button_clicked_cb(self, button, data=None):
+        self.backend.set_stop_flag(True)
         return True
 
     def Reset_Button_clicked_cb(self, button, data=None):
@@ -981,6 +987,10 @@ class GameConqueror():
         # disable set of widgets interfering with the scan
         for wid in self.disablelist:
             wid.set_sensitive(False)
+        
+        # Replace scan_button with stop_button
+        self.scan_button.set_visible(False)
+        self.stop_button.set_visible(True)
 
         self.is_scanning = True
         # set scan options only when first scan, since this will reset backend
@@ -1004,6 +1014,10 @@ class GameConqueror():
         # enable set of widgets interfering with the scan
         for wid in self.disablelist:
             wid.set_sensitive(True)
+
+        # Replace stop_button with scan_button
+        self.stop_button.set_visible(False)
+        self.scan_button.set_visible(True)
 
         self.is_scanning = False
         self.update_scan_result()

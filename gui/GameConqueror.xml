@@ -162,6 +162,11 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
     <property name="can_focus">False</property>
     <property name="icon_name">document-save</property>
   </object>
+  <object class="GtkImage" id="stop_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">stop</property>
+  </object>
   <object class="GtkImage" id="system_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -337,6 +342,22 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                       </object>
                       <packing>
                         <property name="left_attach">3</property>
+                        <property name="top_attach">0</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="Stop_Button">
+                        <property name="width_request">32</property>
+                        <property name="height_request">32</property>
+                        <property name="can_focus">True</property>
+                        <property name="receives_default">True</property>
+                        <property name="tooltip_text" translatable="yes">Stop scan</property>
+                        <property name="margin_right">1</property>
+                        <property name="image">stop_image</property>
+                        <signal name="clicked" handler="Stop_Button_clicked_cb" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="left_attach">2</property>
                         <property name="top_attach">0</property>
                       </packing>
                     </child>
