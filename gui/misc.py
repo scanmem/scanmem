@@ -127,13 +127,6 @@ def build_simple_str_liststore(l):
         r.append([e])
     return r
 
-# create a renderer for the combobox, set the text to `col`
-def build_combobox(combobox, model, col=0):
-    combobox.set_model(model)
-    renderer = Gtk.CellRendererText()
-    combobox.pack_start(renderer, True)
-    combobox.add_attribute(renderer, 'text', col)
-
 # set active item of the `combobox`
 # such that the value at `col` is `name`
 def combobox_set_active_item(combobox, name, col=0):

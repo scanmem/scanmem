@@ -57,11 +57,11 @@ PROGRESS_INTERVAL = 100 # for scan progress updates
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 SCAN_RESULT_LIST_LIMIT = 1000 # maximal number of entries that can be displayed
 
-SCAN_VALUE_TYPES = misc.build_simple_str_liststore(['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string' ])
+SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string']
 
 LOCK_FLAG_TYPES = misc.build_simple_str_liststore(['=', '+', '-'])
 
-LOCK_VALUE_TYPES = misc.build_simple_str_liststore(['int8', 'int16', 'int32', 'int64', 'float32', 'float64', 'bytearray', 'string' ])
+LOCK_VALUE_TYPES = ['int8', 'int16', 'int32', 'int64', 'float32', 'float64', 'bytearray', 'string']
 
 SEARCH_SCOPE_NAMES = ['Basic', 'Normal', 'Full']
 
@@ -141,8 +141,9 @@ class GameConqueror():
 
         ###
         # Set scan data type
-        self.scan_data_type_combobox = self.builder.get_object('ScanDataType_ComboBox')
-        misc.build_combobox(self.scan_data_type_combobox, SCAN_VALUE_TYPES)
+        self.scan_data_type_combobox = self.builder.get_object('ScanDataType_ComboBoxText')
+        for entry in SCAN_VALUE_TYPES :
+            self.scan_data_type_combobox.append_text(entry)
         # apply setting
         misc.combobox_set_active_item(self.scan_data_type_combobox, SETTINGS['scan_data_type'])
 
@@ -235,7 +236,7 @@ class GameConqueror():
                                         ,attributes = (('text',4),)
                                         ,properties = (('editable', True)
                                                       ,('has-entry', False)
-                                                      ,('model', LOCK_VALUE_TYPES)
+                                                      ,('model', misc.build_simple_str_liststore(LOCK_VALUE_TYPES))
                                                       ,('text-column', 0))
                                         ,signals = (('edited', self.cheatlist_edit_type_cb),
                                                     ('editing-started', self.cheatlist_edit_start),
@@ -291,8 +292,9 @@ class GameConqueror():
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
-        self.addcheat_type_combobox = self.builder.get_object('Type_ComboBox')
-        misc.build_combobox(self.addcheat_type_combobox, LOCK_VALUE_TYPES)
+        self.addcheat_type_combobox = self.builder.get_object('Type_ComboBoxText')
+        for entry in LOCK_VALUE_TYPES :
+            self.addcheat_type_combobox.append_text(entry)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
         
@@ -926,9 +928,8 @@ class GameConqueror():
 
     def apply_scan_settings (self):
         # scan data type
-        active = self.scan_data_type_combobox.get_active()
-        assert(active >= 0)
-        dt = self.scan_data_type_combobox.get_model()[active][0]
+        assert(self.scan_data_type_combobox.get_active() >= 0)
+        dt = self.scan_data_type_combobox.get_active_text()
 
         self.command_lock.acquire()
         self.backend.send_command('option scan_data_type %s' % (dt,))
@@ -945,9 +946,8 @@ class GameConqueror():
         if self.pid == 0:
             self.show_error(_('Please select a process'))
             return
-        active = self.scan_data_type_combobox.get_active()
-        assert(active >= 0)
-        data_type = self.scan_data_type_combobox.get_model()[active][0]
+        assert(self.scan_data_type_combobox.get_active() >= 0)
+        data_type = self.scan_data_type_combobox.get_active_text()
         cmd = self.value_input.get_text()
    
         try:
