@@ -140,6 +140,26 @@ def combobox_set_active_item(combobox, name, col=0):
         raise ValueError(_('Cannot locate item: %s')%(name,))
     combobox.set_active_iter(iter)
 
+# sort column according to datatype (callback for TreeView)
+def value_compare(treemodel, iter1, iter2, user_data) :
+    sort_col, isnumeric = user_data
+    
+    string1 = treemodel.get_value(iter1, sort_col)
+    string2 = treemodel.get_value(iter2, sort_col)
+    
+    if (isnumeric):
+        # It would be better to cast intNN to integer, but it's difficult
+        # to cast to long in both python 2 and 3, so cast to float in any case
+        val1 = float(string1)
+        val2 = float(string2)
+    else:
+        val1 = string1
+        val2 = string2
+    
+    if val1 >  val2 : return 1
+    if val1 == val2 : return 0
+    return -1
+
 # format number in base16 (callback for TreeView)
 def format16(col, cell, model, iter, hex_col) :
     cell.set_property("text", "%x" % model.get_value(iter, hex_col))
