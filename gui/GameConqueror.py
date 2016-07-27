@@ -924,10 +924,14 @@ class GameConqueror():
     def apply_scan_settings (self):
         # scan data type
         assert(self.scan_data_type_combobox.get_active() >= 0)
-        dt = self.scan_data_type_combobox.get_active_text()
+        datatype = self.scan_data_type_combobox.get_active_text()
+
+        # Tell the scanresult sort function if a numeric cast is needed
+        isnumeric = ('int' in datatype or 'float' in datatype or 'number' in datatype)
+        self.scanresult_liststore.set_sort_func(1, misc.value_compare, (1, isnumeric))
 
         self.command_lock.acquire()
-        self.backend.send_command('option scan_data_type %s' % (dt,))
+        self.backend.send_command('option scan_data_type %s' % (datatype,))
         # search scope
         self.backend.send_command('option region_scan_level %d' %(1 + int(self.search_scope_scale.get_value()),))
         # TODO: ugly, reset to make region_scan_level taking effect
