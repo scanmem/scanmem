@@ -441,7 +441,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                             <property name="can_focus">False</property>
                             <property name="column_spacing">5</property>
                             <child>
-                              <object class="GtkComboBox" id="ScanDataType_ComboBox">
+                              <object class="GtkComboBoxText" id="ScanDataType_ComboBoxText">
                                 <property name="visible">True</property>
                                 <property name="can_focus">False</property>
                               </object>
@@ -831,7 +831,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
               </packing>
             </child>
             <child>
-              <object class="GtkComboBox" id="Type_ComboBox">
+              <object class="GtkComboBoxText" id="Type_ComboBoxText">
                 <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
