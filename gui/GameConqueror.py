@@ -305,6 +305,7 @@ class GameConqueror():
 
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
+        self.addcheat_address_input.override_font(gi.repository.Pango.FontDescription("Monospace"))
         self.addcheat_description_input = self.builder.get_object('Description_Input')
 
         self.addcheat_length_spinbutton = self.builder.get_object('Length_SpinButton')
