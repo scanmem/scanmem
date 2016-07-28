@@ -768,6 +768,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
           <object class="GtkGrid" id="addValueGrid">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="row_spacing">2</property>
             <property name="column_spacing">5</property>
             <child>
               <object class="GtkLabel" id="Address_Label">
@@ -810,7 +811,6 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
             </child>
             <child>
               <object class="GtkEntry" id="Address_Input">
-                <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <signal name="activate" handler="focus_on_next_widget_cb" swapped="no"/>
@@ -822,7 +822,6 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
             </child>
             <child>
               <object class="GtkEntry" id="Description_Input">
-                <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <signal name="activate" handler="focus_on_next_widget_cb" swapped="no"/>
@@ -834,7 +833,6 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
             </child>
             <child>
               <object class="GtkComboBoxText" id="Type_ComboBoxText">
-                <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <signal name="changed" handler="Type_ComboBoxText_changed_cb" swapped="no"/>
