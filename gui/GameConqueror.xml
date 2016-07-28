@@ -837,10 +837,34 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="width_request">12</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
+                <signal name="changed" handler="Type_ComboBoxText_changed_cb" swapped="no"/>
               </object>
               <packing>
                 <property name="left_attach">1</property>
                 <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="Length_Label">
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="tooltip_text" translatable="yes">Specify data length (string/bytearray only)</property>
+                <property name="halign">start</property>
+                <property name="label" translatable="yes">Length:</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinButton" id="Length_SpinButton">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
               </packing>
             </child>
           </object>

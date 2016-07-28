@@ -305,10 +305,17 @@ class GameConqueror():
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_description_input = self.builder.get_object('Description_Input')
+        
+        self.addcheat_length_spinbutton = self.builder.get_object('Length_SpinButton')
+        self.addcheat_length_spinbutton_adjustment = Gtk.Adjustment(lower=1, upper=1024, step_incr=1)
+        self.addcheat_length_spinbutton.set_adjustment(self.addcheat_length_spinbutton_adjustment)
+        
         self.addcheat_type_combobox = self.builder.get_object('Type_ComboBoxText')
         for entry in MEMORY_VALUE_TYPES :
             self.addcheat_type_combobox.append_text(entry)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
+        self.Type_ComboBoxText_changed_cb(self.addcheat_type_combobox)
+        
         self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
         
         
@@ -394,10 +401,13 @@ class GameConqueror():
 
         description = self.addcheat_description_input.get_text()
         if not description: description = _('No Description')
-        typestr = LOCK_VALUE_TYPES[self.addcheat_type_combobox.get_active()][0]
+        
+        typestr = self.addcheat_type_combobox.get_active_text()
+        length = self.addcheat_length_spinbutton.get_value_as_int()
         if 'int' in typestr: value = 0
         elif 'float' in typestr: value = 0.0
-        elif 'string' in typestr: value = ''
+        elif typestr == 'string' : value = ' '*length
+        elif typestr == 'bytearray' : value = '00 '*length
         else: value = None
         
         self.add_to_cheat_list(addr, value, typestr, description)
@@ -574,6 +584,14 @@ class GameConqueror():
     def focus_on_next_widget_cb(self, widget, data=None):
         widget.get_toplevel().child_focus(Gtk.DirectionType.TAB_FORWARD)
         return True
+
+    def Type_ComboBoxText_changed_cb(self, combo_box):
+        data_type = combo_box.get_active_text()
+        if data_type in TYPESIZES:
+            self.addcheat_length_spinbutton.set_value(TYPESIZES[data_type])
+            self.addcheat_length_spinbutton.set_sensitive(False)
+        else:
+            self.addcheat_length_spinbutton.set_sensitive(True)
 
     # Main window
 
