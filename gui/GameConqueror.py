@@ -163,8 +163,6 @@ class GameConqueror():
         ###
         # set search scope
         self.search_scope_scale = self.builder.get_object('SearchScope_Scale')
-        self.search_scope_scale_adjustment = Gtk.Adjustment(lower=0, upper=2, step_incr=1, page_incr=1, page_size=0)
-        self.search_scope_scale.set_adjustment(self.search_scope_scale_adjustment)
         # apply setting
         self.search_scope_scale.set_value(SETTINGS['search_scope'])
 
@@ -177,9 +175,7 @@ class GameConqueror():
         # liststore contents:                     addr,                value, type, valid, offset,              region type, match_id
         self.scanresult_liststore = Gtk.ListStore(GObject.TYPE_UINT64, str,   str,  bool,  GObject.TYPE_UINT64, str,         int)
         self.scanresult_tv.set_model(self.scanresult_liststore)
-        self.scanresult_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.scanresult_last_clicked = 0
-        self.scanresult_tv.connect('key-press-event', self.scanresult_keypressed)
         # init columns
         misc.treeview_append_column(self.scanresult_tv, _('Address'), 0, hex_col=0,
                                     attributes=(('text',0),),
@@ -203,11 +199,8 @@ class GameConqueror():
         # cheatlist contents:                    lockflag, locked, description, addr,                type, value, valid
         self.cheatlist_liststore = Gtk.ListStore(str,      bool,   str,         GObject.TYPE_UINT64, str,  str,   bool)
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
-        self.cheatlist_tv.get_selection().set_mode(Gtk.SelectionMode.MULTIPLE)
         self.cheatlist_last_clicked = 0
-        self.cheatlist_tv.set_reorderable(True)
         self.cheatlist_editing = False
-        self.cheatlist_tv.connect('key-press-event', self.cheatlist_keypressed)
         # Lock Flag
         misc.treeview_append_column(self.cheatlist_tv, '', 0
                                         ,renderer_class = Gtk.CellRendererCombo
@@ -270,12 +263,10 @@ class GameConqueror():
         self.userfilter_input = self.builder.get_object('UserFilter_Input')
         # init ProcessList_TreeView
         self.processlist_tv = self.builder.get_object('ProcessList_TreeView')
-        self.processlist_tv.get_selection().set_mode(Gtk.SelectionMode.SINGLE)
         self.processlist_liststore = Gtk.ListStore(int, str, str)
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
         self.processlist_tv.set_model(Gtk.TreeModelSort(self.processlist_filter))
-        self.processlist_tv.set_enable_search(True)
         self.processlist_tv.set_search_column(1)
         # first col
         misc.treeview_append_column(self.processlist_tv, 'PID', 0
@@ -305,19 +296,15 @@ class GameConqueror():
         # init AddCheatDialog
         self.addcheat_address_input = self.builder.get_object('Address_Input')
         self.addcheat_address_input.override_font(gi.repository.Pango.FontDescription("Monospace"))
+
         self.addcheat_description_input = self.builder.get_object('Description_Input')
-        
         self.addcheat_length_spinbutton = self.builder.get_object('Length_SpinButton')
-        self.addcheat_length_spinbutton_adjustment = Gtk.Adjustment(lower=1, upper=1024, step_incr=1)
-        self.addcheat_length_spinbutton.set_adjustment(self.addcheat_length_spinbutton_adjustment)
         
         self.addcheat_type_combobox = self.builder.get_object('Type_ComboBoxText')
         for entry in MEMORY_VALUE_TYPES :
             self.addcheat_type_combobox.append_text(entry)
         misc.combobox_set_active_item(self.addcheat_type_combobox, SETTINGS['lock_data_type'])
         self.Type_ComboBoxText_changed_cb(self.addcheat_type_combobox)
-        
-        self.addcheat_dialog.connect('delete-event', lambda acd, e: acd.hide() or True)
         
         
         # init popup menu for scanresult
@@ -358,10 +345,6 @@ class GameConqueror():
     # GUI callbacks
     
     # Memory editor
-    
-    def MemoryEditor_Window_delete_event_cb(self, widget, event, data=None):
-        self.memoryeditor_window.hide()
-        return True
 
     def MemoryEditor_Button_clicked_cb(self, button, data=None):
         if self.pid == 0:
@@ -572,6 +555,11 @@ class GameConqueror():
     # customed callbacks
     # (i.e. not standard event names are used)
 
+    # Callback to hide window when 'X' button is pressed
+    def hide_window_on_delete_event_cb(self, widget, event, data=None):
+        widget.hide()
+        return True
+
     # Memory editor
 
     def memoryeditor_hexview_char_changed_cb(self, hexview, offset, charval):
@@ -626,7 +614,7 @@ class GameConqueror():
             return True
         return False
 
-    def scanresult_keypressed(self, scanresult_tv, event, selection=None):
+    def ScanResult_TreeView_key_press_event_cb(self, scanresult_tv, event, data=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey == 'Return':
@@ -637,7 +625,7 @@ class GameConqueror():
         elif pressedkey in ('Delete', 'BackSpace'):
             self.scanresult_delete_selected_matches(None)
 
-    def cheatlist_keypressed(self, cheatlist_tv, event, selection=None):
+    def CheatList_TreeView_key_press_event_cb(self, cheatlist_tv, event, data=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
         if pressedkey in ('Delete', 'BackSpace'):
