@@ -629,6 +629,7 @@
           <object class="GtkScrolledWindow" id="scrolledwindow3">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="min_content_height">50</property>
             <child>
               <object class="GtkTreeView" id="CheatList_TreeView">
                 <property name="visible">True</property>
