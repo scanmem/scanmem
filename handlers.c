@@ -468,6 +468,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
         /* It is not convenient to check whether anything else relies on this,
            so just mark it as not a REAL match */
         zero_match_flags(&loc.swath->data[loc.index].match_info);
+        vars->num_matches--;
         return true;
     }
     else
