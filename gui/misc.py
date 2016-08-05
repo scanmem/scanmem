@@ -54,7 +54,10 @@ def check_scan_command (data_type, cmd, is_first_scan):
         cmd = cmd.strip()
         # hack for snapshot
         if cmd == '?':
-            return 'snapshot'
+            if is_first_scan:
+                return 'snapshot'
+            else:
+                return ''
 
         is_operator_cmd = cmd in ['=', '!=', '>', '<', '+', '-']
         if not is_first_scan and is_operator_cmd:
