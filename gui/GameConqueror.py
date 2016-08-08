@@ -346,6 +346,14 @@ class GameConqueror():
     
     # Memory editor
 
+    def MemoryEditor_Window_delete_event_cb(self, widget, event, data=None):
+        self.memoryeditor_window.hide()
+        return True
+    
+    def MemoryEditor_Close_button_clicked_cb(self, widget, data=None):
+        self.memoryeditor_window.hide()
+        return True
+    
     def MemoryEditor_Button_clicked_cb(self, button, data=None):
         if self.pid == 0:
             self.show_error(_('Please select a process'))

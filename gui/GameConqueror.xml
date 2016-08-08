@@ -86,7 +86,9 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="can_focus">False</property>
                 <property name="margin_left">5</property>
                 <property name="margin_right">5</property>
-                <property name="label" translatable="yes">Address:</property>
+                <property name="label" translatable="yes">_Address:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">MemoryEditor_Address_Entry</property>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -98,8 +100,11 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
               <object class="GtkEntry" id="MemoryEditor_Address_Entry">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="tooltip_text" translatable="yes">&lt;CTRL+L&gt;</property>
                 <property name="margin_right">5</property>
+                <property name="placeholder_text" translatable="yes">Enter address to view</property>
                 <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
+                <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
                 <property name="expand">False</property>
@@ -114,6 +119,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Jump to address</property>
                 <property name="image">jumpto_image</property>
                 <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb" swapped="no"/>
               </object>
@@ -135,6 +141,24 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="expand">True</property>
                 <property name="fill">True</property>
                 <property name="position">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="MemoryEditor_Close_Button">
+                <property name="label" translatable="yes">_Close</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="halign">center</property>
+                <property name="use_underline">True</property>
+                <signal name="clicked" handler="MemoryEditor_Close_button_clicked_cb" swapped="no"/>
+                <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="padding">2</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>
@@ -282,8 +306,10 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
  &lt;span font_family="monospace"&gt;??&lt;/span&gt; can be used as a wildcard value
 
  For string: enter the string directly</property>
-                        <property name="label" translatable="yes">Value: &lt;span color="blue"&gt;&lt;u&gt;?&lt;/u&gt;&lt;/span&gt;</property>
+                        <property name="label" translatable="yes">_Value: &lt;span color="blue"&gt;&lt;u&gt;?&lt;/u&gt;&lt;/span&gt;</property>
                         <property name="use_markup">True</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">Value_Input</property>
                         <property name="single_line_mode">True</property>
                       </object>
                       <packing>
@@ -295,11 +321,16 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                       <object class="GtkEntry" id="Value_Input">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="has_focus">True</property>
+                        <property name="tooltip_text" translatable="yes">CTRL+K/L to focus searchbox</property>
                         <property name="margin_left">5</property>
                         <property name="margin_right">5</property>
                         <property name="hexpand">True</property>
-                        <property name="placeholder_text" translatable="yes">Insert value to search for</property>
+                        <property name="activates_default">True</property>
+                        <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
+                        <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -311,12 +342,15 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
+                        <property name="can_default">True</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Scan</property>
+                        <property name="tooltip_text" translatable="yes">Scan (CTRL+ENTER)</property>
                         <property name="margin_right">1</property>
                         <property name="image">find_image</property>
                         <signal name="clicked" handler="Scan_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">2</property>
@@ -328,12 +362,14 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Reset</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
+                        <property name="receives_default">False</property>
+                        <property name="tooltip_text" translatable="yes">Reset (CTRL+R)</property>
                         <property name="margin_left">1</property>
                         <property name="image">refresh_image</property>
                         <signal name="clicked" handler="Reset_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="r" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">3</property>
@@ -401,10 +437,12 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                             <property name="height_request">32</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="focus_on_click">False</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Select a process</property>
+                            <property name="tooltip_text" translatable="yes">Select a process (CTRL+F)</property>
                             <property name="image">system_image</property>
                             <signal name="clicked" handler="SelectProcess_Button_clicked_cb" swapped="no"/>
+                            <accelerator key="f" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -470,7 +508,9 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                                 <property name="can_focus">False</property>
                                 <property name="tooltip_text" translatable="yes">Specify type of target data</property>
                                 <property name="halign">start</property>
-                                <property name="label" translatable="yes">Data Type:</property>
+                                <property name="label" translatable="yes">Data _Type:</property>
+                                <property name="use_underline">True</property>
+                                <property name="mnemonic_widget">ScanDataType_ComboBoxText</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -500,7 +540,9 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
 &lt;b&gt;Normal:&lt;/b&gt;  Works for most cases
 &lt;b&gt;Full:&lt;/b&gt;         Never miss values but slowest</property>
                                 <property name="halign">start</property>
-                                <property name="label" translatable="yes">Search Scope:</property>
+                                <property name="label" translatable="yes">_Search Scope:</property>
+                                <property name="use_underline">True</property>
+                                <property name="mnemonic_widget">SearchScope_Scale</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -548,11 +590,13 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Memory Editor</property>
+                        <property name="tooltip_text" translatable="yes">Memory Editor (CTRL+SHIFT+M)</property>
                         <property name="image">edit_image</property>
                         <signal name="clicked" handler="MemoryEditor_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="m" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">5</property>
@@ -564,11 +608,13 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Save address list to file</property>
+                        <property name="tooltip_text" translatable="yes">Save address list to file (CTRL+S)</property>
                         <property name="image">save_image</property>
                         <signal name="clicked" handler="SaveCheat_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">3</property>
@@ -580,11 +626,13 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Load address list from file</property>
+                        <property name="tooltip_text" translatable="yes">Load address list from file (CTRL+O)</property>
                         <property name="image">load_image</property>
                         <signal name="clicked" handler="LoadCheat_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">2</property>
@@ -596,11 +644,13 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Remove all entries</property>
+                        <property name="tooltip_text" translatable="yes">Remove all entries (CTRL+D)</property>
                         <property name="image">delete_image</property>
                         <signal name="clicked" handler="RemoveAllCheat_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="d" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -612,11 +662,13 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
-                        <property name="tooltip_text" translatable="yes">Manually add an entry</property>
+                        <property name="tooltip_text" translatable="yes">Manually add an entry (CTRL+M)</property>
                         <property name="image">add_image</property>
                         <signal name="clicked" handler="ManuallyAddCheat_Button_clicked_cb" swapped="no"/>
+                        <accelerator key="m" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -724,6 +776,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
         </child>
       </object>
     </child>
+    <accelerator key="w" signal="close" modifiers="GDK_CONTROL_MASK"/>
   </object>
   <object class="GtkDialog" id="AddCheatDialog">
     <property name="can_focus">False</property>
@@ -796,7 +849,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Memory address of the value</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Address:</property>
+                <property name="label" translatable="yes">_Address:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Address_Input</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -809,7 +864,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Give a brief description of the value</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Description:</property>
+                <property name="label" translatable="yes">_Description:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Description_Input</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -822,7 +879,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Specify type of target data</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Type:</property>
+                <property name="label" translatable="yes">_Type:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Type_ComboBoxText</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -868,7 +927,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Specify data length (string/bytearray only)</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Length:</property>
+                <property name="label" translatable="yes">_Length:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Length_SpinButton</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -899,6 +960,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
       <action-widget response="0">CloseAddCheat_Button</action-widget>
       <action-widget response="0">ConfirmAddCheat_Button</action-widget>
     </action-widgets>
+    <accelerator key="w" signal="close" modifiers="GDK_CONTROL_MASK"/>
   </object>
   <object class="GtkDialog" id="ProcessListDialog">
     <property name="width_request">350</property>
@@ -1001,7 +1063,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">User:</property>
+                        <property name="label" translatable="yes">_User:</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">UserFilter_Input</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -1013,7 +1077,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">start</property>
-                        <property name="label" translatable="yes">Process:</property>
+                        <property name="label" translatable="yes">_Process:</property>
+                        <property name="use_underline">True</property>
+                        <property name="mnemonic_widget">ProcessFilter_Input</property>
                       </object>
                       <packing>
                         <property name="left_attach">0</property>
@@ -1066,5 +1132,6 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
       <action-widget response="-5">ProcessListDialog_OK_Button</action-widget>
       <action-widget response="-6">ProcessListDialog_Cancel_Button</action-widget>
     </action-widgets>
+    <accelerator key="w" signal="close" modifiers="GDK_CONTROL_MASK"/>
   </object>
 </interface>
