@@ -267,7 +267,7 @@ class GameConqueror():
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
         self.processlist_tv.set_model(Gtk.TreeModelSort(self.processlist_filter))
-        self.processlist_tv.set_search_column(1)
+        self.processlist_tv.set_search_column(2)
         # first col
         misc.treeview_append_column(self.processlist_tv, 'PID', 0
                                         ,attributes = (('text',0),)
@@ -514,10 +514,14 @@ class GameConqueror():
     # Process list
 
     def ProcessFilter_Input_changed_cb(self, widget, data=None):
-        self.processlist_filter.refilter()
+        self.ProcessList_Refilter_Generic()
 
     def UserFilter_Input_changed_cb(self, widget, data=None):
+        self.ProcessList_Refilter_Generic()
+        
+    def ProcessList_Refilter_Generic(self):
         self.processlist_filter.refilter()
+        self.processlist_tv.set_cursor(0)
 
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
         (model, iter) = self.processlist_tv.get_selection().get_selected()
@@ -566,6 +570,14 @@ class GameConqueror():
         self.write_value(addr, 'int8', charval)
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
+        
+    def memoryeditor_key_press_event_cb(self, window, event, data=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey == 'w' and (event.state & Gdk.ModifierType.CONTROL_MASK):
+            self.memoryeditor_window.hide()
+        elif pressedkey == 'Escape':
+            self.memoryeditor_window.hide()
 
     # Manually add cheat
 
@@ -613,6 +625,16 @@ class GameConqueror():
             return True
         return False
 
+    def value_input_key_press_event_cb(self, main_window, event, data=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey == 'j' and (event.state & Gdk.ModifierType.CONTROL_MASK):
+            if self.cheatlist_tv.is_focus() == self.scanresult_tv.is_focus():
+                self.scanresult_tv.grab_focus()
+                self.scanresult_tv.set_cursor(0)
+            else:
+                self.value_input.grab_focus()
+        
     def ScanResult_TreeView_key_press_event_cb(self, scanresult_tv, event, data=None):
         keycode = event.keyval
         pressedkey = Gdk.keyval_name(keycode)
@@ -623,6 +645,12 @@ class GameConqueror():
                 self.add_to_cheat_list(addr, value, typestr)
         elif pressedkey in ('Delete', 'BackSpace'):
             self.scanresult_delete_selected_matches(None)
+        elif pressedkey == 'j' and (event.state & Gdk.ModifierType.CONTROL_MASK):
+            self.cheatlist_tv.grab_focus()
+            if self.cheatlist_tv.get_cursor()[0] != None:
+                curpos = self.cheatlist_tv.get_cursor()[0]
+                valcol = self.cheatlist_tv.get_column(5)
+                self.cheatlist_tv.set_cursor(curpos, valcol)
 
     def CheatList_TreeView_key_press_event_cb(self, cheatlist_tv, event, data=None):
         keycode = event.keyval
@@ -631,6 +659,10 @@ class GameConqueror():
             (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
             for path in reversed(pathlist):
                 self.cheatlist_liststore.remove(model.get_iter(path))
+        elif pressedkey == 'j' and (event.state & Gdk.ModifierType.CONTROL_MASK):
+            self.scanresult_tv.grab_focus()
+            if self.scanresult_tv.get_cursor()[0] != None:
+                self.scanresult_tv.set_cursor(0)
 
     def cheatlist_popup_cb(self, menuitem, data=None):
         self.cheatlist_editing = False
@@ -812,7 +844,7 @@ class GameConqueror():
                               'exited (crashed), or you don\'t have enough privileges'))
             return
         selected_region = None
-        if addr:
+        if addr is not None:
             for m in self.maps:
                 if m['start_addr'] <= addr and addr < m['end_addr']:
                     selected_region = m
@@ -851,7 +883,7 @@ class GameConqueror():
         # set editable flag
         self.memoryeditor_hexview.editable = (selected_region['flags'][1] == 'w')
 
-        if addr:
+        if addr is not None:
             self.memoryeditor_hexview.show_addr(addr)
         self.memoryeditor_window.show()
 
@@ -944,6 +976,7 @@ class GameConqueror():
         self.scanprogress_progressbar.set_fraction(0.0)
         self.scanoption_frame.set_sensitive(True)
         self.is_first_scan = True
+        self.value_input.grab_focus()
 
     def apply_scan_settings (self):
         # scan data type
@@ -1009,7 +1042,9 @@ class GameConqueror():
         # enable set of widgets interfering with the scan
         for wid in self.disablelist:
             wid.set_sensitive(True)
-
+            
+        self.value_input.grab_focus()
+            
         self.is_scanning = False
         self.update_scan_result()
         self.is_first_scan = False
