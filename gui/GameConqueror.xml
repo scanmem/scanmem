@@ -1,7 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.20.0 -->
+<!-- Generated with glade 3.20.0 
+
+Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
+Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
+Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
+
+This file is part of GameConqueror.
+
+GameConqueror is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+GameConqueror is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
+
+-->
 <interface>
   <requires lib="gtk+" version="3.2"/>
+  <!-- interface-license-type gplv3 -->
+  <!-- interface-name GameConqueror -->
+  <!-- interface-description A graphical frontend of scanmem -->
   <object class="GtkImage" id="add_image">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
@@ -207,6 +231,7 @@
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="border_width">5</property>
+                <property name="row_spacing">5</property>
                 <child>
                   <object class="GtkGrid" id="searchGrid">
                     <property name="visible">True</property>
@@ -238,8 +263,9 @@
  5.67
  (- 8 * 9)&lt;/span&gt;
 
- For bytearray: use 2-byte hexadecimal notation for each byte, separated by spaces
+ For bytearray: use 2-char hexadecimal notation for each byte, separated by spaces
  e.g. &lt;span font_family="monospace"&gt;FE DC BA 98 76 54 32 10&lt;/span&gt;
+ &lt;span font_family="monospace"&gt;??&lt;/span&gt; can be used as a wildcard value
 
  For string: enter the string directly</property>
                         <property name="label" translatable="yes">Value: &lt;span color="blue"&gt;&lt;u&gt;?&lt;/u&gt;&lt;/span&gt;</property>
@@ -310,72 +336,7 @@
                   <object class="GtkGrid" id="headGrid">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_bottom">5</property>
-                    <child>
-                      <object class="GtkGrid" id="procAndBarGrid">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="hexpand">True</property>
-                        <child>
-                          <object class="GtkGrid" id="processGrid">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="column_spacing">5</property>
-                            <child>
-                              <object class="GtkButton" id="SelectProcess_Button">
-                                <property name="width_request">32</property>
-                                <property name="height_request">32</property>
-                                <property name="visible">True</property>
-                                <property name="can_focus">True</property>
-                                <property name="receives_default">True</property>
-                                <property name="tooltip_text" translatable="yes">Select a process</property>
-                                <property name="image">system_image</property>
-                                <signal name="clicked" handler="SelectProcess_Button_clicked_cb" swapped="no"/>
-                              </object>
-                              <packing>
-                                <property name="left_attach">0</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                            <child>
-                              <object class="GtkLabel" id="Process_Label">
-                                <property name="visible">True</property>
-                                <property name="can_focus">False</property>
-                                <property name="tooltip_text" translatable="yes">Select a process</property>
-                                <property name="label" translatable="yes">No process selected</property>
-                                <property name="ellipsize">end</property>
-                              </object>
-                              <packing>
-                                <property name="left_attach">1</property>
-                                <property name="top_attach">0</property>
-                              </packing>
-                            </child>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="GtkProgressBar" id="ScanProgress_ProgressBar">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="margin_right">5</property>
-                            <property name="margin_top">5</property>
-                            <property name="hexpand">True</property>
-                            <property name="show_text">True</property>
-                          </object>
-                          <packing>
-                            <property name="left_attach">0</property>
-                            <property name="top_attach">1</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="left_attach">0</property>
-                        <property name="top_attach">0</property>
-                      </packing>
-                    </child>
+                    <property name="column_spacing">5</property>
                     <child>
                       <object class="GtkEventBox" id="Logo_EventBox">
                         <property name="width_request">72</property>
@@ -397,6 +358,61 @@
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
+                        <property name="top_attach">0</property>
+                        <property name="height">2</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkProgressBar" id="ScanProgress_ProgressBar">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="valign">start</property>
+                        <property name="margin_top">5</property>
+                        <property name="hexpand">True</property>
+                        <property name="show_text">True</property>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
+                        <property name="top_attach">1</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkGrid" id="processGrid">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="column_spacing">5</property>
+                        <child>
+                          <object class="GtkButton" id="SelectProcess_Button">
+                            <property name="width_request">32</property>
+                            <property name="height_request">32</property>
+                            <property name="visible">True</property>
+                            <property name="can_focus">True</property>
+                            <property name="receives_default">True</property>
+                            <property name="tooltip_text" translatable="yes">Select a process</property>
+                            <property name="image">system_image</property>
+                            <signal name="clicked" handler="SelectProcess_Button_clicked_cb" swapped="no"/>
+                          </object>
+                          <packing>
+                            <property name="left_attach">0</property>
+                            <property name="top_attach">0</property>
+                          </packing>
+                        </child>
+                        <child>
+                          <object class="GtkLabel" id="Process_Label">
+                            <property name="visible">True</property>
+                            <property name="can_focus">False</property>
+                            <property name="tooltip_text" translatable="yes">Select a process</property>
+                            <property name="label" translatable="yes">No process selected</property>
+                            <property name="ellipsize">end</property>
+                          </object>
+                          <packing>
+                            <property name="left_attach">1</property>
+                            <property name="top_attach">0</property>
+                          </packing>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="left_attach">0</property>
                         <property name="top_attach">0</property>
                       </packing>
                     </child>
@@ -511,7 +527,6 @@
                   <object class="GtkGrid" id="buttonGrid">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin_top">5</property>
                     <property name="column_spacing">2</property>
                     <child>
                       <object class="GtkButton" id="MemoryEditor_Button">
@@ -844,7 +859,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
     <property name="width_request">350</property>
     <property name="height_request">500</property>
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Press Ctrl+F to search for a process</property>
+    <property name="border_width">5</property>
+    <property name="title" translatable="yes">Type to search for a process</property>
     <property name="modal">True</property>
     <property name="icon">GameConqueror_128x128.png</property>
     <property name="type_hint">dialog</property>
@@ -854,7 +870,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
-        <property name="spacing">2</property>
+        <property name="spacing">5</property>
         <child internal-child="action_area">
           <object class="GtkButtonBox" id="dialog-action_area2">
             <property name="visible">True</property>

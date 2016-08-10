@@ -5,6 +5,7 @@
     Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
     Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
+    Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -288,7 +289,6 @@ class GameConqueror():
         misc.menu_append_item(self.scanresult_popup, _('Add to cheat list'), self.scanresult_popup_cb, 'add_to_cheat_list')
         misc.menu_append_item(self.scanresult_popup, _('Browse this address'), self.scanresult_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.scanresult_popup, _('Scan for this address'), self.scanresult_popup_cb, 'scan_for_this_address')
-        self.scanresult_popup.connect('button-press-event', self.check_for_leftclick)
         self.scanresult_popup.show_all()
 
         # init popup menu for cheatlist
@@ -296,7 +296,6 @@ class GameConqueror():
         misc.menu_append_item(self.cheatlist_popup, _('Browse this address'), self.cheatlist_popup_cb, 'browse_this_address')
         misc.menu_append_item(self.cheatlist_popup, _('Copy address'), self.cheatlist_popup_cb, 'copy_address')
         misc.menu_append_item(self.cheatlist_popup, _('Remove this entry'), self.cheatlist_popup_cb, 'remove_entry')
-        self.cheatlist_popup.connect('button-press-event', self.check_for_leftclick)
         self.cheatlist_popup.show_all()
 
         self.builder.connect_signals(self)
@@ -387,6 +386,7 @@ class GameConqueror():
                 (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
                     Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
+        dialog.set_do_overwrite_confirmation(True)
 
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
@@ -427,10 +427,6 @@ class GameConqueror():
                 self.scanresult_last_clicked = path[0]
                 return path[0] in pathlist
         return False
-
-    def check_for_leftclick(self, widget, event, data=None):
-        if event.button != 1:
-            widget.deactivate()
 
     def CheatList_TreeView_button_press_event_cb(self, widget, event, data=None):
         if event.button == 3: # right click
