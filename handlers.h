@@ -273,11 +273,13 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
                 "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
                 "\tfloat{32|64} (or f{32|64} for short)\n" \
                 "\tbytearray\n" \
+                "\tstring\n" \
                 "\n" \
                 "Example:\n" \
                 "\twrite i16 60103e 0\n" \
                 "\twrite float32 60103e 0\n" \
-                "\twrite bytearray 60103e ff 01 32\n"
+                "\twrite bytearray 60103e ff 01 32\n" \
+                "\twrite string 60103e cheating\n"
 
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
