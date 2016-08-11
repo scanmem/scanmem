@@ -21,7 +21,8 @@ import sys
 import os
 import ctypes
 import tempfile
-from misc import u
+
+import misc
 
 class GameConquerorBackend():
     BACKEND_FUNCS = {
@@ -55,20 +56,21 @@ class GameConquerorBackend():
                 backup_stdout_fileno = os.dup(sys.stdout.fileno())
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-                self.lib.backend_exec_cmd(ctypes.c_char_p(cmd.encode()))
+                self.lib.backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
                 directed_file.seek(0)
                 return directed_file.readlines()
         else:
-            self.lib.backend_exec_cmd(ctypes.c_char_p(cmd.encode()))
+
+            self.lib.backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
     def get_match_count(self):
         return self.lib.get_num_matches()
 
     def get_version(self):
-        return u(self.lib.get_version())
+        return misc.decode(self.lib.get_version())
 
     def get_scan_progress(self):
         return self.lib.get_scan_progress()

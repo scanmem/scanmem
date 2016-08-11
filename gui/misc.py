@@ -208,3 +208,18 @@ def u(x):
         return codecs.unicode_escape_decode(x)[0]
     else:
         return x
+
+# Interface for bytes<>string conversion for py2/3
+# Usage is the same you'd do in py3, call `decode` on external raw data
+# and `encode` to work with the memory representation
+def decode(raw_bytes, errors=''):
+    if PY3K:
+        return raw_bytes.decode(errors=errors)
+    else:
+        return str(raw_bytes)
+
+def encode(unicode_string, errors=''):
+    if PY3K:
+        return unicode_string.encode(errors=errors)
+    else:
+        return unicode_string
