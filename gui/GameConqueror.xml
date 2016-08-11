@@ -325,8 +325,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="hexpand">True</property>
                         <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
-                        <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -501,7 +501,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                                 <property name="halign">start</property>
                                 <property name="label" translatable="yes">Data _Type:</property>
                                 <property name="use_underline">True</property>
-                                <property name="mnemonic_widget">ScanDataType_ComboBox</property>
+                                <property name="mnemonic_widget">ScanDataType_ComboBoxText</property>
                               </object>
                               <packing>
                                 <property name="left_attach">0</property>
@@ -867,7 +867,6 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="halign">start</property>
                 <property name="label" translatable="yes">_Type:</property>
                 <property name="use_underline">True</property>
-                <property name="mnemonic_widget">Type_ComboBox</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
