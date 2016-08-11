@@ -102,6 +102,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="can_focus">True</property>
                 <property name="tooltip_text" translatable="yes">&lt;CTRL+L&gt;</property>
                 <property name="margin_right">5</property>
+                <property name="placeholder_text" translatable="yes">Enter address to view</property>
                 <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
                 <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
               </object>
@@ -118,6 +119,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">Jump to address</property>
                 <property name="image">jumpto_image</property>
                 <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb" swapped="no"/>
               </object>
@@ -319,10 +321,12 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                       <object class="GtkEntry" id="Value_Input">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="has_focus">True</property>
                         <property name="tooltip_text" translatable="yes">CTRL+K/L to focus searchbox</property>
                         <property name="margin_left">5</property>
                         <property name="margin_right">5</property>
                         <property name="hexpand">True</property>
+                        <property name="activates_default">True</property>
                         <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
                         <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
@@ -338,7 +342,9 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
+                        <property name="can_default">True</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Scan (CTRL+ENTER)</property>
                         <property name="margin_right">1</property>
@@ -356,8 +362,9 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
-                        <property name="receives_default">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
+                        <property name="receives_default">False</property>
                         <property name="tooltip_text" translatable="yes">Reset (CTRL+R)</property>
                         <property name="margin_left">1</property>
                         <property name="image">refresh_image</property>
@@ -430,10 +437,12 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                             <property name="height_request">32</property>
                             <property name="visible">True</property>
                             <property name="can_focus">True</property>
+                            <property name="focus_on_click">False</property>
                             <property name="receives_default">True</property>
-                            <property name="tooltip_text" translatable="yes">Select a process</property>
+                            <property name="tooltip_text" translatable="yes">Select a process (CTRL+F)</property>
                             <property name="image">system_image</property>
                             <signal name="clicked" handler="SelectProcess_Button_clicked_cb" swapped="no"/>
+                            <accelerator key="f" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                           </object>
                           <packing>
                             <property name="left_attach">0</property>
@@ -581,7 +590,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Memory Editor (CTRL+SHIFT+M)</property>
                         <property name="image">edit_image</property>
@@ -598,7 +608,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Save address list to file (CTRL+S)</property>
                         <property name="image">save_image</property>
@@ -615,7 +626,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Load address list from file (CTRL+O)</property>
                         <property name="image">load_image</property>
@@ -632,7 +644,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Remove all entries (CTRL+D)</property>
                         <property name="image">delete_image</property>
@@ -649,7 +662,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="width_request">32</property>
                         <property name="height_request">32</property>
                         <property name="visible">True</property>
-                        <property name="can_focus">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="focus_on_click">False</property>
                         <property name="receives_default">True</property>
                         <property name="tooltip_text" translatable="yes">Manually add an entry (CTRL+M)</property>
                         <property name="image">add_image</property>
@@ -867,6 +881,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="halign">start</property>
                 <property name="label" translatable="yes">_Type:</property>
                 <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Type_ComboBoxText</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
@@ -912,7 +927,9 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="can_focus">False</property>
                 <property name="tooltip_text" translatable="yes">Specify data length (string/bytearray only)</property>
                 <property name="halign">start</property>
-                <property name="label" translatable="yes">Length:</property>
+                <property name="label" translatable="yes">_Length:</property>
+                <property name="use_underline">True</property>
+                <property name="mnemonic_widget">Length_SpinButton</property>
               </object>
               <packing>
                 <property name="left_attach">0</property>
