@@ -54,7 +54,10 @@ def check_scan_command (data_type, cmd, is_first_scan):
         cmd = cmd.strip()
         # hack for snapshot
         if cmd == '?':
-            return 'snapshot'
+            if is_first_scan:
+                return 'snapshot'
+            else:
+                return ''
 
         is_operator_cmd = cmd in ['=', '!=', '>', '<', '+', '-']
         if not is_first_scan and is_operator_cmd:
@@ -124,13 +127,6 @@ def build_simple_str_liststore(l):
         r.append([e])
     return r
 
-# create a renderer for the combobox, set the text to `col`
-def build_combobox(combobox, model, col=0):
-    combobox.set_model(model)
-    renderer = Gtk.CellRendererText()
-    combobox.pack_start(renderer, True)
-    combobox.add_attribute(renderer, 'text', col)
-
 # set active item of the `combobox`
 # such that the value at `col` is `name`
 def combobox_set_active_item(combobox, name, col=0):
@@ -144,6 +140,30 @@ def combobox_set_active_item(combobox, name, col=0):
         raise ValueError(_('Cannot locate item: %s')%(name,))
     combobox.set_active_iter(iter)
 
+# sort column according to datatype (callback for TreeView)
+def value_compare(treemodel, iter1, iter2, user_data) :
+    sort_col, isnumeric = user_data
+    
+    string1 = treemodel.get_value(iter1, sort_col)
+    string2 = treemodel.get_value(iter2, sort_col)
+    
+    if (isnumeric):
+        # It would be better to cast intNN to integer, but it's difficult
+        # to cast to long in both python 2 and 3, so cast to float in any case
+        val1 = float(string1)
+        val2 = float(string2)
+    else:
+        val1 = string1
+        val2 = string2
+    
+    if val1 >  val2 : return 1
+    if val1 == val2 : return 0
+    return -1
+
+# format number in base16 (callback for TreeView)
+def format16(col, cell, model, iter, hex_col) :
+    cell.set_property("text", "%x" % model.get_value(iter, hex_col))
+
 # append a column to `treeview`, with given `title`
 # keyword parameters
 #   renderer_class -- default: Gtk.CellRendererText
@@ -151,7 +171,7 @@ def combobox_set_active_item(combobox, name, col=0):
 #   properties -- if not None, will be applied to renderer
 #   signals -- if not None, will be connected to renderer
 # the latter two should be a list of tuples, i.e.  ((name1, value1), (name2, value2))
-def treeview_append_column(treeview, title, **kwargs):
+def treeview_append_column(treeview, title, sort_id=None, resizable=True, hex_col=None, **kwargs):
     renderer_class = kwargs.get('renderer_class', Gtk.CellRendererText)
     attributes = kwargs.get('attributes')
     properties = kwargs.get('properties')
@@ -159,8 +179,13 @@ def treeview_append_column(treeview, title, **kwargs):
 
     column = Gtk.TreeViewColumn(title)
     treeview.append_column(column)
+    if sort_id is not None :
+        column.set_sort_column_id(sort_id)
+    column.set_resizable(resizable)
     renderer = renderer_class()
     column.pack_start(renderer, True)
+    if hex_col is not None :
+        column.set_cell_data_func(renderer, format16, hex_col)
     if attributes:
         for k,v in attributes:
             column.add_attribute(renderer, k, v)
@@ -172,7 +197,7 @@ def treeview_append_column(treeview, title, **kwargs):
             renderer.connect(k,v)
 
 # data is optional data to callback
-def menu_append_item(menu, name, callback, data):
+def menu_append_item(menu, name, callback, data=None):
     item = Gtk.MenuItem(name)
     menu.append(item)
     item.connect('activate', callback, data)
