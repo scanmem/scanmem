@@ -37,6 +37,8 @@ from gi.repository import Gtk
 from gi.repository import Gdk
 from gi.repository import GObject
 
+import gtk
+
 from consts import *
 from hexview import HexView
 from backend import GameConquerorBackend
@@ -569,6 +571,12 @@ class GameConqueror():
         self.write_value(addr, 'int8', charval)
         # return False such that the byte the default handler will be called, and will be displayed correctly 
         return False
+        
+    def memoryeditor_key_press_event_cb(self, scanresult_tv, event, data=None):
+        keycode = event.keyval
+        pressedkey = Gdk.keyval_name(keycode)
+        if pressedkey == 'w' and (event.state & Gdk.ModifierType.CONTROL_MASK):
+            self.memoryeditor_window.hide()
 
     # Manually add cheat
 

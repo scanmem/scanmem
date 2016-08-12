@@ -70,6 +70,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
     <property name="icon">GameConqueror_128x128.png</property>
     <property name="type_hint">utility</property>
     <signal name="delete-event" handler="hide_window_on_delete_event_cb" swapped="no"/>
+    <signal name="key-press-event" handler="memoryeditor_key_press_event_cb" swapped="no"/>
     <child>
       <object class="GtkBox" id="vbox2">
         <property name="visible">True</property>
@@ -134,35 +135,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
               </packing>
             </child>
             <child>
-              <object class="GtkAlignment" id="alignment1">
-                <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <child>
-                  <placeholder/>
-                </child>
-              </object>
-              <packing>
-                <property name="expand">True</property>
-                <property name="fill">True</property>
-                <property name="position">3</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="MemoryEditor_Close_Button">
-                <property name="label" translatable="yes">_Close</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="halign">center</property>
-                <property name="use_underline">True</property>
-                <signal name="clicked" handler="MemoryEditor_Close_button_clicked_cb" swapped="no"/>
-                <accelerator key="w" signal="activate" modifiers="GDK_CONTROL_MASK"/>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">4</property>
-              </packing>
+              <placeholder/>
             </child>
           </object>
           <packing>
@@ -332,8 +305,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="activates_default">True</property>
                         <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
-                        <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
