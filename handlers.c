@@ -52,6 +52,7 @@
 #include "endianness.h"
 #include "handlers.h"
 #include "interrupt.h"
+#include "sets.h"
 #include "show_message.h"
 
 #define USEPARAMS() ((void) vars, (void) argv, (void) argc)     /* macro to hide gcc unused warnings */
@@ -451,44 +452,45 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     return true;
 }
 
-/* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
     size_t id;
-    char *end = NULL;
     match_location loc;
+    struct set del_set;
 
     if (argc != 2) {
         show_error("was expecting one argument, see `help delete`.\n");
         return false;
     }
 
-    /* parse argument */
-    id = strtoul(argv[1], &end, 0x00);
+    if (vars->num_matches == 0) {
+        show_error("nothing to delete.\n");
+        return false;
+    }
 
-    /* check that strtoul() worked */
-    if (argv[1][0] == '\0' || *end != '\0') {
-        show_error("sorry, couldnt parse `%s`, try `help delete`\n", argv[1]);
+    if (!parse_uintset(argv[1], &del_set, (size_t)vars->num_matches)) {
+        show_error("failed to parse the set, try `help delete`.\n");
         return false;
     }
-    
-    loc = nth_match(vars->matches, id);
-    
-    if (loc.swath)
-    {
-        /* it is not convenient to check whether anything else relies on this,
-           so just mark it as not a REAL match */
-        zero_match_flags(&loc.swath->data[loc.index].match_info);
-        vars->num_matches--;
-        return true;
+
+    foreach_set_bw(i, &del_set) {
+        id  = del_set.buf[i];
+        loc = nth_match(vars->matches, id);
+
+        if (loc.swath) {
+            /* It is not convenient to check whether anything else relies on this,
+               so just mark it as not a REAL match */
+            zero_match_flags(&loc.swath->data[loc.index].match_info);
+            vars->num_matches--;
+        } else {
+            show_error("BUG: delete: id <%zu> match failure\n", id);
+            set_cleanup(&del_set);
+            return false;
+        }
     }
-    else
-    {
-        /* I guess this is not a valid match-id */
-        show_warn("you specified a non-existant match `%u`.\n", id);
-        show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
-        return false;
-    }
+    set_cleanup(&del_set);
+
+    return true;
 }
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
