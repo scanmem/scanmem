@@ -1100,6 +1100,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <child internal-child="selection">
                   <object class="GtkTreeSelection" id="ProcessList_TreeSelection"/>
                 </child>
+                <accelerator key="semicolon" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
               </object>
             </child>
           </object>

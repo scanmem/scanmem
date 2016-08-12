@@ -269,7 +269,7 @@ class GameConqueror():
         self.processlist_filter = self.processlist_liststore.filter_new(root=None)
         self.processlist_filter.set_visible_func(self.processlist_filter_func, data=None)
         self.processlist_tv.set_model(Gtk.TreeModelSort(self.processlist_filter))
-        self.processlist_tv.set_search_column(1)
+        self.processlist_tv.set_search_column(2)
         # first col
         misc.treeview_append_column(self.processlist_tv, 'PID', 0
                                         ,attributes = (('text',0),)
@@ -519,10 +519,14 @@ class GameConqueror():
     # Process list
 
     def ProcessFilter_Input_changed_cb(self, widget, data=None):
-        self.processlist_filter.refilter()
+        self.ProcessList_Refilter_Generic()
 
     def UserFilter_Input_changed_cb(self, widget, data=None):
+        self.ProcessList_Refilter_Generic()
+        
+    def ProcessList_Refilter_Generic(self):
         self.processlist_filter.refilter()
+        self.processlist_tv.set_cursor(0)
 
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
         (model, iter) = self.processlist_tv.get_selection().get_selected()
