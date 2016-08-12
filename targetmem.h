@@ -127,6 +127,8 @@ void data_to_bytearray_text (char *buf, int buf_length,
                              matches_and_old_values_swath *swath,
                              long index, int bytearray_length);
 
+unsigned last_match_id (matches_and_old_values_array *matches);
+
 match_location nth_match (matches_and_old_values_array *matches, unsigned n);
 
 matches_and_old_values_array *delete_by_region (matches_and_old_values_array *array,

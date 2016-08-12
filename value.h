@@ -93,6 +93,19 @@ typedef struct {
     float float32_value;
     double float64_value;
 
+    void *value_set;
+    /* set properties */
+    struct {
+        size_t sz;  /* size of set (used) */
+        struct {
+            bool one_to;    /* {1 .. n}   range  */
+            bool to_end;    /* {n .. end} range} */
+            /* n value */
+            void *one_to_val;
+            void *to_end_val;
+        } n; /* special ranges */
+    } set_prop;
+
     bytearray_element_t *bytearray_value;
     const char *string_value;
 
@@ -105,6 +118,7 @@ void valtostr(const value_t *val, char *str, size_t n);
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t * val); /* parse bytearray, the parameter array should be allocated beforehand */
 bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */
 bool parse_uservalue_int(const char *nptr, uservalue_t * val);
+bool parse_uservalue_uintset(const char *, uservalue_t *);
 bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
