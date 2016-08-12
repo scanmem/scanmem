@@ -80,6 +80,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
           <object class="GtkBox" id="addressBox">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
+            <property name="margin_right">5</property>
             <child>
               <object class="GtkLabel" id="addressLabel">
                 <property name="visible">True</property>
@@ -102,6 +103,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="can_focus">True</property>
                 <property name="tooltip_text" translatable="yes">&lt;CTRL+L&gt;</property>
                 <property name="margin_right">5</property>
+                <property name="activates_default">True</property>
                 <property name="placeholder_text" translatable="yes">Enter address to view</property>
                 <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
                 <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
@@ -118,6 +120,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="height_request">28</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Jump to address</property>
                 <property name="image">jumpto_image</property>
@@ -157,7 +161,6 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
-                <property name="padding">2</property>
                 <property name="position">4</property>
               </packing>
             </child>
@@ -329,8 +332,8 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="activates_default">True</property>
                         <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
-                        <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                         <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
@@ -804,7 +807,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="label" translatable="yes">_Close</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
+                <property name="receives_default">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="CloseAddCheat_Button_clicked_cb" swapped="no"/>
               </object>
@@ -819,6 +822,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="label" translatable="yes">_Add</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="ConfirmAddCheat_Button_clicked_cb" swapped="no"/>
@@ -940,6 +945,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
               <object class="GtkSpinButton" id="Length_SpinButton">
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="activates_default">True</property>
                 <property name="adjustment">Length_SpinButton_Adjustment</property>
               </object>
               <packing>
@@ -988,6 +994,8 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                 <property name="label" translatable="yes">_OK</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_underline">True</property>
               </object>
@@ -1040,6 +1048,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                       <object class="GtkEntry" id="ProcessFilter_Input">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="activates_default">True</property>
                         <signal name="changed" handler="ProcessFilter_Input_changed_cb" swapped="no"/>
                       </object>
                       <packing>
@@ -1051,6 +1060,7 @@ Special thanks: Igor Gnatenko, Andrea Stacchiotti, Mattias Muenster, Zhang Zhe</
                       <object class="GtkEntry" id="UserFilter_Input">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
+                        <property name="activates_default">True</property>
                         <signal name="changed" handler="UserFilter_Input_changed_cb" swapped="no"/>
                       </object>
                       <packing>
