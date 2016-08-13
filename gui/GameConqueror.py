@@ -853,7 +853,7 @@ class GameConqueror():
                               'exited (crashed), or you don\'t have enough privileges'))
             return
         selected_region = None
-        if addr:
+        if addr is not None:
             for m in self.maps:
                 if m['start_addr'] <= addr and addr < m['end_addr']:
                     selected_region = m
@@ -892,7 +892,7 @@ class GameConqueror():
         # set editable flag
         self.memoryeditor_hexview.editable = (selected_region['flags'][1] == 'w')
 
-        if addr:
+        if addr is not None:
             self.memoryeditor_hexview.show_addr(addr)
         self.memoryeditor_window.show()
 

@@ -122,7 +122,6 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
-                <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Jump to address</property>
                 <property name="image">jumpto_image</property>
