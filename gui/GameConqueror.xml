@@ -297,7 +297,6 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                       <object class="GtkEntry" id="Value_Input">
                         <property name="visible">True</property>
                         <property name="can_focus">True</property>
-                        <property name="has_focus">True</property>
                         <property name="tooltip_text" translatable="yes">CTRL+K/L to focus searchbox</property>
                         <property name="margin_left">5</property>
                         <property name="margin_right">5</property>
@@ -305,8 +304,10 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                         <property name="activates_default">True</property>
                         <property name="placeholder_text" translatable="yes">Insert value to search for (CTRL+K/L)</property>
                         <signal name="activate" handler="Value_Input_activate_cb" swapped="no"/>
-                        <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="changed" handler="entry_changed_event_cb" swapped="no"/>
+                        <signal name="key-press-event" handler="value_input_key_press_event_cb" swapped="no"/>
                         <accelerator key="k" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
+                        <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
                       </object>
                       <packing>
                         <property name="left_attach">1</property>
