@@ -131,6 +131,7 @@ AC_DEFUN([AS_AC_EXPAND],
 # end copy
 
 AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
+AS_AC_EXPAND(LIBDIR, $libdir)
 
 GETTEXT_PACKAGE=GameConqueror
 AC_SUBST(GETTEXT_PACKAGE)

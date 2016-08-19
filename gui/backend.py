@@ -35,8 +35,8 @@ class GameConquerorBackend():
         'sm_reset_scan_progress' : (None,)
     }
 
-    def __init__(self):
-        self.lib = ctypes.CDLL('libscanmem.so')
+    def __init__(self, libpath='libscanmem.so'):
+        self.lib = ctypes.CDLL(libpath)
         self.init_lib_functions()
         self.lib.sm_set_backend()
         self.lib.sm_init()

@@ -334,7 +334,7 @@ class GameConqueror():
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
         self.is_data_worker_working = False
 
-        self.backend = GameConquerorBackend()
+        self.backend = GameConquerorBackend(os.path.join(LIBDIR, 'libscanmem.so.1'))
         self.check_backend_version()
         self.search_count = 0
         GObject.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
