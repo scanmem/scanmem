@@ -1,5 +1,5 @@
 """
-    Misc funtions for Game Conqueror
+    Misc functions for Game Conqueror
     
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
@@ -25,11 +25,9 @@ from gi.repository import Gtk
 
 PY3K = sys.version_info >= (3, 0)
 
-# check syntax, data range etc.
-# translate if neccesary
-# return (success, msg)
-# if success == True, msg is converted command
-# else msg is error message
+# check command syntax, data range etc.
+# return a valid scanmem command
+# raise if something is invalid
 def check_scan_command (data_type, cmd, is_first_scan):
     if cmd == '':
         raise ValueError(_('No value provided'))
