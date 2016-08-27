@@ -376,7 +376,8 @@ class GameConqueror():
         addr = self.addcheat_address_input.get_text()
         try:
             addr = int(addr, 16)
-        except ValueError:
+            addr = GObject.Value(GObject.TYPE_UINT64, addr)
+        except (ValueError, OverflowError):
             self.show_error(_('Please enter a valid address.'))
             return False
 
