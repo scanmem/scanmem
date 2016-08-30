@@ -4,11 +4,10 @@ TODOs
 - show error messages
 - different color for different addresses (heap, stack, module etc)
 - limit size of bytes read for memory editor
-- processlist sortable
 - popup in memory editor -- like `add entry for this address`
-- manually add cheat
 - icon in processlist
 - custom address region scan
 - different types of locking ('+' & '-')
 - plugin-like system to support different datatypes (or actually representations)
 - different representation (dec, hex ...) for cheatlist
+- reasonable parsing of simple math in several inputs
