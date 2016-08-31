@@ -91,8 +91,7 @@ msgstr ""
 "ださい\n"
 " 例: <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
 "\n"
-" 文字列を検索する場合: 検索したい文字列をそのまま入力してください\n"
-"\n"
+" 文字列を検索する場合: 検索したい文字列をそのまま入力してください"
 
 #: ../gui/GameConqueror.xml.h:32
 msgid "Value: <span color=\"blue\"><u>?</u></span>"

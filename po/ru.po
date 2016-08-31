@@ -92,8 +92,7 @@ msgstr ""
 "каждого байта, разделённые пробелами\n"
 " напр. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
 "\n"
-" Для строк: вводите искомую строку\n"
-"\n"
+" Для строк: вводите искомую строку"
 
 #: ../gui/GameConqueror.xml.h:32
 msgid "Value: <span color=\"blue\"><u>?</u></span>"
