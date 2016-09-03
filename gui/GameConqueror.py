@@ -521,7 +521,7 @@ class GameConqueror():
     def ProcessList_TreeView_row_activated_cb(self, treeview, path, view_column, data=None):
         (model, iter) = self.processlist_tv.get_selection().get_selected()
         if iter is not None:
-            (pid, user, process) = model.get(iter, 0, 1, 2)
+            (pid, process) = model.get(iter, 0, 2)
             self.select_process(pid, process)
             self.process_list_dialog.response(Gtk.ResponseType.CANCEL)
             return True
@@ -542,7 +542,7 @@ class GameConqueror():
                     self.show_error(_('Please select a process'))
                     continue
                 else:
-                    (pid, process) = model.get(iter, 0, 1)
+                    (pid, process) = model.get(iter, 0, 2)
                     self.select_process(pid, process)
                     break
             else: # for None and Cancel
