@@ -436,7 +436,7 @@ class GameConqueror():
                                        transient_for=self.main_window,
                                        action=Gtk.FileChooserAction.SAVE,
                                        buttons=(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-                                                Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+                                                Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
         dialog.set_default_response(Gtk.ResponseType.OK)
         dialog.set_do_overwrite_confirmation(True)
 
