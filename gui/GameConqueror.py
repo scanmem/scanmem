@@ -382,7 +382,7 @@ class GameConqueror():
 
         description = self.addcheat_description_input.get_text()
         if not description: description = _('No Description')
-        typestr = LOCK_VALUE_TYPES[self.addcheat_type_combobox.get_active()][0]
+        typestr = self.addcheat_type_combobox.get_active_text()
         if 'int' in typestr: value = 0
         elif 'float' in typestr: value = 0.0
         elif 'string' in typestr: value = ''
