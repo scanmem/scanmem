@@ -732,11 +732,11 @@ class GameConqueror():
     # Process list
 
     def processlist_filter_func(self, model, iter, data=None):
-        (pid, user, process) = model.get(iter, 0, 1, 2)
+        (user, process) = model.get(iter, 1, 2)
         return process is not None and \
-                process.find(self.processfilter_input.get_text()) != -1 and \
+                self.processfilter_input.get_text().lower() in process.lower() and \
                 user is not None and \
-                user.find(self.userfilter_input.get_text()) != -1
+                self.userfilter_input.get_text().lower() in user.lower()
         
 
 
