@@ -50,7 +50,7 @@ class GameConquerorBackend():
             f.restype = v[0]
             f.argtypes = v[1:]
 
-    # for scan command, we don't want get_output immediately
+    # `get_output` will return in a string what libscanmem would print to stdout
     def send_command(self, cmd, get_output = False):
         if get_output:
             with tempfile.TemporaryFile() as directed_file:
@@ -62,7 +62,7 @@ class GameConquerorBackend():
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
                 directed_file.seek(0)
-                return directed_file.readlines()
+                return directed_file.read()
         else:
 
             self.lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))

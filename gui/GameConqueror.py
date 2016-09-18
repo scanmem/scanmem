@@ -27,7 +27,6 @@ import sys
 import os
 import argparse
 import struct
-import tempfile
 import platform
 import threading
 import json
@@ -1068,8 +1067,9 @@ class GameConqueror():
             self.scanresult_liststore.clear()
         else:
             self.command_lock.acquire()
-            lines = self.backend.send_command('list', get_output = True)
+            list_bytes = self.backend.send_command('list', get_output=True)
             self.command_lock.release()
+            lines = filter(None, misc.decode(list_bytes).split('\n'))
 
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
@@ -1078,7 +1078,6 @@ class GameConqueror():
                 addr = GObject.Value(GObject.TYPE_UINT64)
                 off = GObject.Value(GObject.TYPE_UINT64)
             for line in lines:
-                line = misc.decode(line)
                 (mid, line) = line.split(']', 1)
                 mid = int(mid.strip(' []'))
                 (addr_str, off_str, rt, val, t) = list(map(str.strip, line.split(',')[:5]))
@@ -1153,19 +1152,11 @@ class GameConqueror():
     def read_memory(self, addr, length):
         if not isinstance(addr,str):
             addr = '%x'%(addr,)
-        f = tempfile.NamedTemporaryFile()
 
         self.command_lock.acquire()
-        self.backend.send_command('dump %s %d %s' % (addr, length, f.name))
+        data = self.backend.send_command('dump %s %d' %(addr, length), get_output=True)
         self.command_lock.release()
 
-        data = f.read()
-
-#        lines = self.backend.send_command('dump %s %d' % (addr, length))
-#        data = ''
-#        for line in lines:
-#            bytes = line.strip().split()
-#            for byte in bytes: data += chr(int(byte, 16))
         # TODO raise Exception here isn't good
         if len(data) != length:
             # self.show_error('Cannot access target memory')
