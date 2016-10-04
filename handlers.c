@@ -810,8 +810,17 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
             return false;
         }
     } else {
-        /* < > = != cannot be the initial scan */
-        if (argc == 1)
+        /* Cannot be used on first scan:
+         *   =, !=, <, >, +, + N, -, - N
+         * Can be used on first scan:
+         *   = N, != N, < N, > N
+         */
+        if (m == MATCHNOTCHANGED  ||
+            m == MATCHCHANGED     ||
+            m == MATCHDECREASED   ||
+            m == MATCHINCREASED   ||
+            m == MATCHDECREASEDBY ||
+            m == MATCHINCREASEDBY )
         {
             show_error("cannot use that search without matches\n");
             return false;
