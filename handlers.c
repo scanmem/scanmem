@@ -776,7 +776,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 
     if (strcmp(argv[0], "=") == 0)
     {
-        m = MATCHNOTCHANGED;
+        m = (argc == 1) ? MATCHNOTCHANGED : MATCHEQUALTO;
     }
     else if (strcmp(argv[0], "!=") == 0)
     {
@@ -800,7 +800,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        show_error("unrecogised match type seen at decinc handler.\n");
+        show_error("unrecognised match type seen at decinc handler.\n");
         return false;
     }
 
