@@ -1359,49 +1359,55 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        /* print it out */
-        int i,j;
-        int buf_idx = 0;
-        for (i = 0; i + 16 < len; i += 16)
+        if (vars->options.backend == 1)
         {
-            if (vars->options.backend == 0)
+            /* dump raw memory to stdout, the front-end will handle it */
+            fwrite(buf, sizeof(char), len, stdout);
+        }
+        else
+        {
+            /* print it out nicely */
+            int i,j;
+            int buf_idx = 0;
+            for (i = 0; i + 16 < len; i += 16)
+            {
                 printf("%p: ", addr+i);
-            for (j = 0; j < 16; ++j)
-            {
-                printf("%02X ", (unsigned char)(buf[buf_idx++]));
-            }
-            if(vars->options.dump_with_ascii == 1)
-            {
                 for (j = 0; j < 16; ++j)
                 {
-                    char c = buf[i+j];
-                    printf("%c", isprint(c) ? c : '.');
+                    printf("%02X ", (unsigned char)(buf[buf_idx++]));
                 }
+                if(vars->options.dump_with_ascii == 1)
+                {
+                    for (j = 0; j < 16; ++j)
+                    {
+                        char c = buf[i+j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
+                }
+                printf("\n");
             }
-            printf("\n");
-        }
-        if (i < len)
-        {
-            if (vars->options.backend == 0)
+            if (i < len)
+            {
                 printf("%p: ", addr+i);
-            for (j = i; j < len; ++j)
-            {
-                printf("%02X ", (unsigned char)(buf[buf_idx++]));
-            }
-            if(vars->options.dump_with_ascii == 1)
-            {
-                while(j%16 !=0) // skip "empty" numbers
+                for (j = i; j < len; ++j)
                 {
-                    printf("   ");
-                    ++j;
+                    printf("%02X ", (unsigned char)(buf[buf_idx++]));
                 }
-                for (j = 0; i+j < len; ++j)
+                if(vars->options.dump_with_ascii == 1)
                 {
-                    char c = buf[i+j];
-                    printf("%c", isprint(c) ? c : '.');
+                    while(j%16 !=0) // skip "empty" numbers
+                    {
+                        printf("   ");
+                        ++j;
+                    }
+                    for (j = 0; i+j < len; ++j)
+                    {
+                        char c = buf[i+j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
                 }
+                printf("\n");
             }
-            printf("\n");
         }
     }
 
