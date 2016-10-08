@@ -485,6 +485,9 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
+    /* reset scan progress */
+    vars->scan_progress = 0;
+
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
     /* refresh list of regions */

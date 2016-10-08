@@ -216,11 +216,6 @@ double sm_get_scan_progress(void)
     return sm_globals.scan_progress;
 }
 
-void sm_reset_scan_progress(void)
-{
-    sm_globals.scan_progress = 0;
-}
-
 void sm_set_stop_flag(bool stop_flag)
 {
     sm_globals.stop_flag = stop_flag;
