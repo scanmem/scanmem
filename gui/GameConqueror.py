@@ -1030,7 +1030,6 @@ class GameConqueror():
         if self.is_first_scan:
             self.apply_scan_settings()
             self.is_first_scan = False
-        self.backend.reset_scan_progress()
         self.progress_watcher_id = GLib.timeout_add(PROGRESS_INTERVAL,
             self.progress_watcher, priority=GLib.PRIORITY_DEFAULT_IDLE)
         threading.Thread(target=self.scan_thread_func, args=(cmd,)).start()
