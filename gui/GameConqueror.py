@@ -846,7 +846,7 @@ class GameConqueror():
                 self.show_error(_('Cannot read memory'))
                 return
             self.last_hexedit_address = (start_addr, end_addr)
-            self.memoryeditor_hexview.payload = misc.u(data)
+            self.memoryeditor_hexview.payload = misc.str2bytes(data)
             self.memoryeditor_hexview.base_addr = start_addr
         
         # set editable flag

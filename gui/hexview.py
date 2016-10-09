@@ -209,7 +209,7 @@ class AsciiText(BaseText):
         output = []
 
         convert = lambda i: "".join(
-            [(x in AsciiText._printable) and (x) or ('.') for x in list(i)])
+            [chr(x) if (chr(x) in AsciiText._printable) else ('.') for x in list(i)])
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
@@ -413,7 +413,7 @@ class HexText(BaseText):
             tot_lines += 1
 
         output = []
-        convert = lambda x: '%02X'%(ord(x),)
+        convert = lambda x: '%02X'%(x,)
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):

@@ -3,6 +3,7 @@
     
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
+    Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -19,7 +20,6 @@
 """
 
 import sys
-import codecs
 
 from gi.repository import Gtk
 
@@ -200,13 +200,6 @@ def menu_append_item(menu, name, callback, data=None):
     menu.append(item)
     item.connect('activate', callback, data)
 
-# for Python 3: convert to unicode just like Python 2 does
-def u(x):
-    if PY3K:
-        return codecs.unicode_escape_decode(x)[0]
-    else:
-        return x
-
 # Interface for bytes<>string conversion for py2/3
 # Usage is the same you'd do in py3, call `decode` on external raw data
 # and `encode` to work with the memory representation
@@ -221,3 +214,10 @@ def encode(unicode_string, errors='strict'):
         return unicode_string.encode(errors=errors)
     else:
         return unicode_string
+
+# Convert codepoints to integers byte by byte
+def str2bytes(string):
+    if PY3K:
+        return bytes(string)
+    else:
+        return map(ord, string)
