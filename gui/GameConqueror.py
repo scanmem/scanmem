@@ -789,8 +789,8 @@ class GameConqueror():
         elif typename == 'string':
             return misc.decode(databytes, 'replace')
         elif typename == 'bytearray':
-            databytes = misc.decode(databytes)
-            return ' '.join(['%02x'%ord(i) for i in databytes])
+            databytes = misc.str2bytes(databytes)
+            return ' '.join(['%02x' %(i,) for i in databytes])
         else:
             return databytes
 
