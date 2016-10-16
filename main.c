@@ -110,11 +110,6 @@ static void parse_parameter(int argc, char ** argv)
 
 int main(int argc, char **argv)
 {
-    if (getuid() != 0)
-    {
-        show_error("*** YOU ARE NOT RUNNING scanmem AS ROOT, IT MAY NOT WORK WELL. ***\n\n");
-    }
-    
     parse_parameter(argc, argv);
 
     int ret = EXIT_SUCCESS;
@@ -126,6 +121,11 @@ int main(int argc, char **argv)
         show_error("Initialization failed.\n");
         ret = EXIT_FAILURE;
         goto end;
+    }
+
+    if (getuid() != 0) {
+        show_warn("Run scanmem as root if memory regions are missing. "
+                  "See scanmem man page.\n\n");
     }
 
     /* this will initialise matches and regions */
