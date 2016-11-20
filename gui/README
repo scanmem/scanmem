@@ -4,8 +4,8 @@ Game Conqueror is a graphical game cheating tool under Linux, as a frontend of s
 
 
 Requirements
-===========
-scanmem (latest version)
+============
+libscanmem (latest version)
 Python (2.x / 3.x)
 PyGObject
 GTK+ 3
@@ -31,6 +31,4 @@ WANG Lu  <coolwanglu(a)gmail.com>
 
 License
 =======
-GPL v3
-
-
+GPLv3
