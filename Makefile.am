@@ -52,4 +52,4 @@ scanmem_LDADD = libscanmem.la
 dist_man_MANS = scanmem.1
 dist_doc_DATA = README
 
-EXTRA_DIST = gpl-3.0.txt
+EXTRA_DIST = gpl-3.0.txt lgpl-3.0.txt
