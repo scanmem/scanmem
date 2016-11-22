@@ -96,7 +96,7 @@ out:
 }
 
 
-bool init()
+bool init(void)
 {
     globals_t *vars = &globals;
 
@@ -180,7 +180,7 @@ bool init()
 }
 
 /* for front-ends */
-void set_backend()
+void set_backend(void)
 {
     globals.options.backend = 1;
 }
@@ -192,22 +192,22 @@ void backend_exec_cmd(const char * commandline)
     fflush(stderr);
 }
 
-long get_num_matches()
+long get_num_matches(void)
 {
     return globals.num_matches;
 }
 
-const char * get_version()
+const char * get_version(void)
 {
     return PACKAGE_VERSION;
 }
 
-double get_scan_progress()
+double get_scan_progress(void)
 {
     return globals.scan_progress;
 }
 
-void reset_scan_progress()
+void reset_scan_progress(void)
 {
     globals.scan_progress = 0;
 }
