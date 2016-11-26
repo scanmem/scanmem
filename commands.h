@@ -24,7 +24,6 @@
 
 #include "scanmem.h"
 
-/*lint -esym(534,registercommand) okay to ignore return value */
 
 typedef struct {
     bool(*handler) (globals_t * vars, char **argv, unsigned argc);

@@ -48,8 +48,6 @@ void l_destroy(list_t * list)
     free(list);
 }
 
-/*lint -e429 take custody of pointer data */
-
 /* add a new element to the list */
 int l_append(list_t * list, element_t * element, void *data)
 {

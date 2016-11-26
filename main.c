@@ -31,7 +31,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
-#include <getopt.h>             /*lint -e537 */
+#include <getopt.h>
 #include <stdbool.h>
 
 #include "scanmem.h"

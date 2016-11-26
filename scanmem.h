@@ -20,13 +20,12 @@
 #ifndef SCANMEM_H
 #define SCANMEM_H
 
-/*lint +libh(config.h) */
 #include "config.h"
 
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
-#include <sys/types.h>          /*lint !e537 */
+#include <sys/types.h>
 
 #include "scanroutines.h"
 #include "list.h"
@@ -34,8 +33,6 @@
 #include "target_memory_info_array.h"
 
 /* list of functions where i dont want to be warned about ignored return value */
-
-/*lint -esym(534,detach,printversion,strftime,fflush,sleep) */
 
 #ifndef PACKAGE_VERSION
 # define  PACKAGE_VERSION "(unknown)"
@@ -71,21 +68,6 @@
     })
 #endif
 
-#ifdef _lint
-/*lint -save -e652 -e683 -e547 */
-# define snprintf(a, b, c...) (((void) b), sprintf(a, ## c))
-# define strtoll(a,b,c) ((long long) strtol(a,b,c))
-# define WIFSTOPPED
-# define sighandler_t _sigfunc_t
-/*lint -restore */
-/*lint -save -esym(526,getline,strdupa,strdup,strndupa,strtoll,pread) */
-ssize_t getline(char **lineptr, size_t * n, FILE * stream);
-char *strndupa(const char *s, size_t n);
-char *strdupa(const char *s);
-char *strdup(const char *s);
-ssize_t pread(int fd, void *buf, size_t count, off_t offset);
-/*lint -restore */
-#endif
 #ifdef __CSURF__
 # define waitpid(x,y,z) ((*(y)=0),-rand())
 # define WIFSTOPPED(x) (rand())

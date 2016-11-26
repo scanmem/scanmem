@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <setjmp.h>
 #include <alloca.h>
-#include <strings.h>            /*lint -esym(526,strcasecmp) */
+#include <strings.h>
 #include <string.h>
 #include <stdbool.h>
 #include <time.h>
@@ -53,8 +53,6 @@
 #include "show_message.h"
 
 #define USEPARAMS() ((void) vars, (void) argv, (void) argc)     /* macro to hide gcc unused warnings */
-
-/*lint -esym(818, vars, argv) dont want want to declare these as const */
 
 /*
  * This file defines all the command handlers used, each one is registered using
