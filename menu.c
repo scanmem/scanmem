@@ -156,13 +156,3 @@ bool getcommand(globals_t * vars, char **line)
     add_history(*line);
     return true;
 }
-
-void printversion(FILE *outfd)
-{
-    fprintf(outfd, "scanmem version %s\n"
-               "Copyright (C) 2009,2010 Tavis Ormandy, Eli Dupree, WANG Lu\n"
-               "Copyright (C) 2006-2009 Tavis Ormandy\n"
-               "scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"
-               "This is free software, and you are welcome to redistribute it\n"
-               "under certain conditions; type `show copying' for details.\n\n", PACKAGE_VERSION);
-}

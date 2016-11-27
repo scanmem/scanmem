@@ -837,7 +837,7 @@ bool handler__version(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
-    printversion(stderr);
+    vars->printversion(stderr);
     return true;
 }
 
@@ -1054,8 +1054,10 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* print version information for generic help */
-    if (argv[1] == NULL)
-        printversion(outfd);
+    if (argv[1] == NULL) {
+        vars->printversion(outfd);
+        fprintf(outfd, "\n");
+    }
 
     /* traverse the commands list, printing out the relevant documentation */
     while (np) {
@@ -1263,7 +1265,7 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
     else if (strcmp(argv[1], "warranty") == 0)
         show_user(SM_WARRANTY);
     else if (strcmp(argv[1], "version") == 0)
-        printversion(stderr);
+        vars->printversion(stderr);
     else {
         show_error("unrecognized show command `%s`\n", argv[1]);
         return false;

@@ -39,6 +39,12 @@
 #include "handlers.h"
 #include "show_message.h"
 
+
+void printlibversion(FILE *outfd)
+{
+    fprintf(outfd, "libscanmem version %s\n", PACKAGE_VERSION);
+}
+
 /* global settings */
 globals_t globals = {
     0,                          /* exit flag */
@@ -49,6 +55,7 @@ globals_t globals = {
     NULL,                       /* regions */
     NULL,                       /* commands */
     NULL,                       /* current_cmdline */
+    printlibversion,            /* printversion() pointer */
     /* options */
     {
         1,                      /* alignment */

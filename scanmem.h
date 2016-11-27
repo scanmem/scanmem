@@ -87,6 +87,7 @@ typedef struct {
     list_t *regions;
     list_t *commands;      /* command handlers */
     const char *current_cmdline; /* the command being executed */
+    void (*printversion)(FILE *outfd);
     struct {
         unsigned short alignment;
         unsigned short debug;
@@ -115,6 +116,7 @@ typedef struct {
 extern globals_t globals;
 
 bool init();
+void printlibversion(FILE *outfd);
 
 /* ptrace.c */
 bool detach(pid_t target);
@@ -128,6 +130,5 @@ bool write_array(pid_t target, void *addr, const void *data, int len);
 
 /* menu.c */
 bool getcommand(globals_t * vars, char **line);
-void printversion(FILE *outfd);
 
 #endif /* SCANMEM_H */

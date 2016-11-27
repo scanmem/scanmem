@@ -22,7 +22,7 @@
 */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
 #include "config.h"
@@ -38,10 +38,34 @@
 #include "commands.h"
 #include "show_message.h"
 
+
+static const char copy_text[] =
+"Copyright (C) 2006-2009 Tavis Ormandy\n"
+"Copyright (C) 2009,2010 Tavis Ormandy, Eli Dupree, WANG Lu\n"
+"Copyright (C) 2011-2015 WANG Lu\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer\n"
+"scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"
+"This is free software, and you are welcome to redistribute it\n"
+"under certain conditions; type `show copying' for details.\n\n";
+
+/* print scanmem and libscanmem version */
+static void printversion(FILE *outfd)
+{
+    fprintf(outfd, "scanmem version %s\n", PACKAGE_VERSION);
+    printlibversion(outfd);
+}
+
+/* print scanmem version and copyright info */
+static void printcopyright(FILE *outfd)
+{
+    printversion(outfd);
+    fprintf(outfd, "\n%s", copy_text);
+}
+
 /* print quick usage message to stderr */
 static void printhelp()
 {
-    printversion(stderr);
+    printcopyright(stderr);
 
     show_user("Usage: scanmem [OPTION]... [PID]\n"
             "Interactively locate and modify variables in an executing process.\n"
@@ -117,7 +141,8 @@ int main(int argc, char **argv)
     int ret = EXIT_SUCCESS;
     globals_t *vars = &globals;
 
-    printversion(stderr);
+    printcopyright(stderr);
+    vars->printversion = printversion;
 
     if (!init()) {
         show_error("Initialization failed.\n");
