@@ -62,40 +62,44 @@ static void printcopyright(FILE *outfd)
     fprintf(outfd, "\n%s", copy_text);
 }
 
+static const char help_text[] =
+"Usage: scanmem [OPTION]... [PID]\n"
+"Interactively locate and modify variables in an executing process.\n"
+"\n"
+"-p, --pid=pid\t\tset the target process pid\n"
+"-h, --help\t\tprint this message\n"
+"-v, --version\t\tprint version information\n"
+"\n"
+"scanmem is an interactive debugging utility, enter `help` at the prompt\n"
+"for further assistance.\n"
+"\n"
+"Report bugs to <" PACKAGE_BUGREPORT ">.\n";
+
 /* print quick usage message to stderr */
-static void printhelp()
+static void printhelp(void)
 {
     printcopyright(stderr);
 
-    show_user("Usage: scanmem [OPTION]... [PID]\n"
-            "Interactively locate and modify variables in an executing process.\n"
-            "\n"
-            "-p, --pid=pid\t\tset the target process pid\n"
-            "-h, --help\t\tprint this message\n"
-            "-v, --version\t\tprint version information\n"
-            "\n"
-            "scanmem is an interactive debugging utility, enter `help` at the prompt\n"
-            "for further assistance.\n"
-            "\n" "Report bugs to <%s>.\n", PACKAGE_BUGREPORT);
+    show_user("%s", help_text);
     return;
 }
 
-static void parse_parameter(int argc, char ** argv)
+static void parse_parameter(int argc, char **argv)
 {
     struct option longopts[] = {
-        {"pid", 1, NULL, 'p'},  /* target pid */
+        {"pid",     1, NULL, 'p'},      /* target pid */
         {"version", 0, NULL, 'v'},      /* print version */
-        {"help", 0, NULL, 'h'}, /* print help summary */
-        {"debug", 0, NULL, 'd'}, /* enable debug mode */
+        {"help",    0, NULL, 'h'},      /* print help summary */
+        {"debug",   0, NULL, 'd'},      /* enable debug mode */
         {NULL, 0, NULL, 0},
     };
-
     char *end;
     int optindex;
     bool done = false;
+
     /* process command line */
     while (!done) {
-        switch (getopt_long(argc, argv, "vhbdp:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhdp:", longopts, &optindex)) {
             case 'p':
                 globals.target = (pid_t) strtoul(optarg, &end, 0);
 
@@ -155,7 +159,7 @@ int main(int argc, char **argv)
                   "See scanmem man page.\n\n");
     }
 
-    /* this will initialise matches and regions */
+    /* this will initialize matches and regions */
     if (execcommand(vars, "reset") == false) {
         vars->target = 0;
     }
@@ -172,20 +176,20 @@ int main(int argc, char **argv)
     while (!vars->exit) {
         char *line;
 
-        /* reads in a commandline from the user, and returns a pointer to it in *line */
+        /* reads in a commandline from the user and returns a pointer to it in *line */
         if (getcommand(vars, &line) == false) {
             show_error("failed to read in a command.\n");
             ret = EXIT_FAILURE;
             break;
         }
 
-        /* execcommand returning failure isnt fatal, just the a command couldnt complete. */
+        /* execcommand() returning failure is not fatal, just the command could not complete. */
         if (execcommand(vars, line) == false) {
             if (vars->target == 0) {
                 show_user("Enter the pid of the process to search using the \"pid\" command.\n");
                 show_user("Enter \"help\" for other commands.\n");
             } else {
-                show_user("Please enter current value, or \"help\" for other commands.\n");
+                show_user("Please enter current value or \"help\" for other commands.\n");
             }
         }
 
@@ -195,7 +199,7 @@ int main(int argc, char **argv)
         fflush(stderr);
     }
 
-  end:
+end:
 
     /* now free any allocated memory used */
     l_destroy(vars->regions);
