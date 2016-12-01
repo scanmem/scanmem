@@ -32,21 +32,12 @@
 #include "value.h"
 #include "target_memory_info_array.h"
 
-/* list of functions where i dont want to be warned about ignored return value */
 
 #ifndef PACKAGE_VERSION
-# define  PACKAGE_VERSION "(unknown)"
+#define PACKAGE_VERSION "(unknown)"
 #endif
 
-/*
-#ifndef NDEBUG
-# define eprintf(x, y...) fprintf(stderr, x, ## y)
-#else
-# define eprintf(x, y...)
-#endif
-*/
-
-/* from string.h in glibc */
+/* from string.h in glibc for Android/BSD */
 #ifndef strdupa
 #define strdupa(s)                                                            \
     ({                                                                        \
@@ -68,13 +59,8 @@
     })
 #endif
 
-#ifdef __CSURF__
-# define waitpid(x,y,z) ((*(y)=0),-rand())
-# define WIFSTOPPED(x) (rand())
-# define ptrace(w,x,y,z) ((errno=rand()),(ptrace(w,x,y,z)))
-#endif
 #ifndef MIN
-# define MIN(a,b) ((a) < (b) ? (a) : (b))
+#define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
 /* global settings */
@@ -85,13 +71,14 @@ typedef struct {
     long num_matches;
     double scan_progress;
     list_t *regions;
-    list_t *commands;      /* command handlers */
-    const char *current_cmdline; /* the command being executed */
+    list_t *commands;              /* command handlers */
+    const char *current_cmdline;   /* the command being executed */
     void (*printversion)(FILE *outfd);
     struct {
         unsigned short alignment;
         unsigned short debug;
-        unsigned short backend; /* if 1, scanmem will work as a backend, and output would be more machine-readable */
+        unsigned short backend;    /* if 1, scanmem will work as a backend and
+                                      output would be more machine-readable */
 
         /* options that can be changed during runtime */
         scan_data_type_t scan_data_type;
@@ -101,16 +88,6 @@ typedef struct {
         unsigned short reverse_endianness;
     } options;
 } globals_t;
-
-/* this structure represents one known match, its address and type. */
-#if 0
-typedef struct {
-    void *address;              /* address of variable */
-    region_t *region;           /* region it belongs to */
-    value_t lvalue;             /* last seen value */
-    unsigned matchid;           /* unique identifier */
-} match_t;
-#endif
 
 /* global settings */
 extern globals_t globals;
