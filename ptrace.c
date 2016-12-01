@@ -87,7 +87,7 @@ static struct {
 } peekbuf;
 
 
-bool attach(pid_t target)
+bool sm_attach(pid_t target)
 {
     int status;
 
@@ -112,7 +112,7 @@ bool attach(pid_t target)
 
 }
 
-bool detach(pid_t target)
+bool sm_detach(pid_t target)
 {
     // addr is ignore under Linux, but should be 1 under FreeBSD in order to let the child process continue at what it had been interrupted
     return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
@@ -120,14 +120,14 @@ bool detach(pid_t target)
 
 
 /*
- * peekdata - caches overlapping ptrace reads to improve performance.
+ * sm_peekdata - caches overlapping ptrace reads to improve performance.
  * 
  * This routine could just call ptrace(PEEKDATA), but using a cache reduces
  * the number of peeks required by 70% when reading large chunks of
  * consecutive addresses.
  */
 
-bool peekdata(pid_t pid, void *addr, value_t * result)
+bool sm_peekdata(pid_t pid, void *addr, value_t * result)
 {
     char *reqaddr = addr;
     int i, j;
@@ -271,9 +271,9 @@ static inline void print_a_dot(void)
 
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
-bool checkmatches(globals_t * vars, 
-                  scan_match_type_t match_type,
-                  const uservalue_t *uservalue) 
+bool sm_checkmatches(globals_t *vars,
+                     scan_match_type_t match_type,
+                     const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
@@ -309,16 +309,16 @@ bool checkmatches(globals_t * vars,
     vars->num_matches = 0;
     vars->scan_progress = 0.0;
     
-    if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
         show_error("unsupported scan for current data type.\n"); 
         return false;
     }
 
-    assert(g_scan_routine);
+    assert(sm_scan_routine);
     
     /* stop and attach to the target */
-    if (attach(vars->target) == false)
+    if (sm_attach(vars->target) == false)
         return false;
     while (reading_swath.first_byte_in_child) {
         int match_length = 0;
@@ -328,7 +328,7 @@ bool checkmatches(globals_t * vars,
         void *address = reading_swath.first_byte_in_child + reading_iterator;
         
         /* Read value from this address */
-        if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
+        if (EXPECT(sm_peekdata(vars->target, address, &data_value) == false, false)) {
             /* Uhh, what? We couldn't look at the data there? I guess this doesn't count as a match then */
         }
         else
@@ -344,7 +344,7 @@ bool checkmatches(globals_t * vars,
 
             zero_match_flags(&checkflags);
 
-            match_length = (*g_scan_routine)(&data_value, &old_val, uservalue, &checkflags, address);
+            match_length = (*sm_scan_routine)(&data_value, &old_val, uservalue, &checkflags, address);
         }
         
         if (match_length > 0)
@@ -406,7 +406,7 @@ bool checkmatches(globals_t * vars,
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
-    return detach(vars->target);
+    return sm_detach(vars->target);
 }
 
 /* read region using /proc/pid/mem */
@@ -435,8 +435,8 @@ ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
 }
     
 
-/* searchregions() performs an initial search of the process for values matching value */
-bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue)
+/* sm_searchregions() performs an initial search of the process for values matching value */
+bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
@@ -456,16 +456,16 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     match_flags zero_flag;
     zero_match_flags(&zero_flag);
     
-    if (choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
         show_error("unsupported scan for current data type.\n"); 
         return false;
     }
 
-    assert(g_scan_routine);
+    assert(sm_scan_routine);
 
     /* stop and attach to the target */
-    if (attach(vars->target) == false)
+    if (sm_attach(vars->target) == false)
         return false;
 
    
@@ -473,7 +473,7 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     if (vars->regions->size == 0) {
         show_warn("no regions defined, perhaps you deleted them all?\n");
         show_info("use the \"reset\" command to refresh regions.\n");
-        return detach(vars->target);
+        return sm_detach(vars->target);
     }
     
     total_size = sizeof(matches_and_old_values_array);
@@ -593,10 +593,11 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
 
             int match_length;
             /* check if we have a match */
-            if (EXPECT(((match_length = (*g_scan_routine)(&data_value, NULL, uservalue, &checkflags, address)) > 0), false)) {
+            if (EXPECT(((match_length = (*sm_scan_routine)(&data_value, NULL,
+                    uservalue, &checkflags, address)) > 0), false)) {
                 /* only set these flags for numbers */
-                if ((globals.options.scan_data_type != BYTEARRAY)
-                    && (globals.options.scan_data_type != STRING))
+                if ((vars->options.scan_data_type != BYTEARRAY)
+                    && (vars->options.scan_data_type != STRING))
                 {
                     checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
                 }
@@ -647,19 +648,19 @@ bool searchregions(globals_t * vars, scan_match_type_t match_type, const userval
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
-    return detach(vars->target);
+    return sm_detach(vars->target);
 }
 
-bool setaddr(pid_t target, void *addr, const value_t * to)
+bool sm_setaddr(pid_t target, void *addr, const value_t *to)
 {
     value_t saved;
     int i;
 
-    if (attach(target) == false) {
+    if (sm_attach(target) == false) {
         return false;
     }
 
-    if (peekdata(target, addr, &saved) == false) {
+    if (sm_peekdata(target, addr, &saved) == false) {
         show_error("couldnt access the target address %10p\n", addr);
         return false;
     }
@@ -690,12 +691,12 @@ bool setaddr(pid_t target, void *addr, const value_t * to)
         }
     }
 
-    return detach(target);
+    return sm_detach(target);
 }
 
-bool read_array(pid_t target, void *addr, char *buf, int len)
+bool sm_read_array(pid_t target, void *addr, char *buf, int len)
 {
-    if (attach(target) == false) {
+    if (sm_attach(target) == false) {
         return false;
     }
 
@@ -714,11 +715,11 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
 
     if (nread < len)
     {
-        detach(target);
+        sm_detach(target);
         return false;
     }
 
-    return detach(target);
+    return sm_detach(target);
 #else
     int i;
     /* here we just read long by long, this should be ok for most of time */
@@ -728,21 +729,21 @@ bool read_array(pid_t target, void *addr, char *buf, int len)
         errno = 0;
         *((long *)(buf+i)) = ptrace(PTRACE_PEEKDATA, target, addr+i, NULL);
         if (EXPECT((*((long *)(buf+i)) == -1L) && (errno != 0), false)) {
-            detach(target);
+            sm_detach(target);
             return false;
         }
     }
-    return detach(target);
+    return sm_detach(target);
 #endif
 }
 
 /* TODO: may use /proc/<pid>/mem here */
-bool write_array(pid_t target, void *addr, const void *data, int len)
+bool sm_write_array(pid_t target, void *addr, const void *data, int len)
 {
     int i,j;
     long peek_value;
 
-    if (attach(target) == false) {
+    if (sm_attach(target) == false) {
         return false;
     }
 
@@ -773,7 +774,7 @@ bool write_array(pid_t target, void *addr, const void *data, int len)
                         continue;
                     else
                     {
-                        show_error("write_array failed.\n"); 
+                        show_error("%s failed.\n", __func__);
                         return false;
                     }
                 }
@@ -784,7 +785,7 @@ bool write_array(pid_t target, void *addr, const void *data, int len)
 
                     if (ptrace(PTRACE_POKEDATA, target, addr - j, peek_value) == -1L)
                     {
-                        show_error("write_array failed.\n");
+                        show_error("%s failed.\n", __func__);
                         return false;
                     }
 
@@ -794,5 +795,5 @@ bool write_array(pid_t target, void *addr, const void *data, int len)
         }
     }
 
-    return detach(target);
+    return sm_detach(target);
 }

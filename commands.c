@@ -40,7 +40,7 @@
 #include "show_message.h"
 
 /*
- * registercommand - add the command and a pointer to its handler to the commands list.
+ * sm_registercommand - add the command and a pointer to its handler to the commands list.
  *
  * so that free(data) works when destroying the list, I just concatenate the string
  * with the command structure. I could have used a static vector of commands, but this
@@ -48,8 +48,8 @@
  *
  */
 
-bool registercommand(const char *command, void *handler, list_t * commands,
-                     char *shortdoc, char *longdoc)
+bool sm_registercommand(const char *command, void *handler, list_t *commands,
+                        char *shortdoc, char *longdoc)
 {
     command_t *data;
 
@@ -85,7 +85,7 @@ bool registercommand(const char *command, void *handler, list_t * commands,
     return true;
 }
 
-bool execcommand(globals_t * vars, const char *commandline)
+bool sm_execcommand(globals_t *vars, const char *commandline)
 {
     unsigned argc;
     char *str = NULL, *tok = NULL;

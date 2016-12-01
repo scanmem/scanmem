@@ -52,7 +52,7 @@ static const char copy_text[] =
 static void printversion(FILE *outfd)
 {
     fprintf(outfd, "scanmem version %s\n", PACKAGE_VERSION);
-    printlibversion(outfd);
+    sm_printversion(outfd);
 }
 
 /* print scanmem version and copyright info */
@@ -96,15 +96,16 @@ static void parse_parameter(int argc, char **argv)
     char *end;
     int optindex;
     bool done = false;
+    globals_t *vars = &sm_globals;
 
     /* process command line */
     while (!done) {
         switch (getopt_long(argc, argv, "vhdp:", longopts, &optindex)) {
             case 'p':
-                globals.target = (pid_t) strtoul(optarg, &end, 0);
+                vars->target = (pid_t) strtoul(optarg, &end, 0);
 
                 /* check if that parsed correctly */
-                if (*end != '\0' || *optarg == '\0' || globals.target == 0) {
+                if (*end != '\0' || *optarg == '\0' || vars->target == 0) {
                     show_error("invalid pid specified.\n");
                     exit(EXIT_FAILURE);
                 }
@@ -116,7 +117,7 @@ static void parse_parameter(int argc, char **argv)
                 printhelp();
                 exit(EXIT_FAILURE);
             case 'd':
-                globals.options.debug = 1;
+                vars->options.debug = 1;
                 break;
             case -1:
                 done = true;
@@ -128,10 +129,10 @@ static void parse_parameter(int argc, char **argv)
     }
     /* parse any pid specified after arguments */
     if (optind <= argc && argv[optind]) {
-        globals.target = (pid_t) strtoul(argv[optind], &end, 0);
+        vars->target = (pid_t) strtoul(argv[optind], &end, 0);
 
         /* check if that parsed correctly */
-        if (*end != '\0' || argv[optind][0] == '\0' || globals.target == 0) {
+        if (*end != '\0' || argv[optind][0] == '\0' || vars->target == 0) {
             show_error("invalid pid specified.\n");
             exit(EXIT_FAILURE);
         }
@@ -143,12 +144,12 @@ int main(int argc, char **argv)
     parse_parameter(argc, argv);
 
     int ret = EXIT_SUCCESS;
-    globals_t *vars = &globals;
+    globals_t *vars = &sm_globals;
 
     printcopyright(stderr);
     vars->printversion = printversion;
 
-    if (!init()) {
+    if (!sm_init()) {
         show_error("Initialization failed.\n");
         ret = EXIT_FAILURE;
         goto end;
@@ -160,7 +161,7 @@ int main(int argc, char **argv)
     }
 
     /* this will initialize matches and regions */
-    if (execcommand(vars, "reset") == false) {
+    if (sm_execcommand(vars, "reset") == false) {
         vars->target = 0;
     }
 
@@ -177,14 +178,14 @@ int main(int argc, char **argv)
         char *line;
 
         /* reads in a commandline from the user and returns a pointer to it in *line */
-        if (getcommand(vars, &line) == false) {
+        if (sm_getcommand(vars, &line) == false) {
             show_error("failed to read in a command.\n");
             ret = EXIT_FAILURE;
             break;
         }
 
-        /* execcommand() returning failure is not fatal, just the command could not complete. */
-        if (execcommand(vars, line) == false) {
+        /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
+        if (sm_execcommand(vars, line) == false) {
             if (vars->target == 0) {
                 show_user("Enter the pid of the process to search using the \"pid\" command.\n");
                 show_user("Enter \"help\" for other commands.\n");
@@ -206,7 +207,7 @@ end:
     l_destroy(vars->commands);
 
     /* attempt to detach just in case */
-    (void) detach(vars->target);
+    (void) sm_detach(vars->target);
 
     return ret;
 }

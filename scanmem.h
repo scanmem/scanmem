@@ -90,22 +90,30 @@ typedef struct {
 } globals_t;
 
 /* global settings */
-extern globals_t globals;
+extern globals_t sm_globals;
 
-bool init();
-void printlibversion(FILE *outfd);
+bool sm_init();
+void sm_printversion(FILE *outfd);
+void sm_set_backend();
+void sm_backend_exec_cmd(const char *commandline);
+long sm_get_num_matches();
+const char *sm_get_version();
+double sm_get_scan_progress();
+void sm_reset_scan_progress();
 
 /* ptrace.c */
-bool detach(pid_t target);
-bool setaddr(pid_t target, void *addr, const value_t * to);
-bool checkmatches(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
-bool searchregions(globals_t * vars, scan_match_type_t match_type, const uservalue_t *uservalue);
-bool peekdata(pid_t pid, void *addr, value_t * result);
-bool attach(pid_t target);
-bool read_array(pid_t target, void *addr, char *buf, int len);
-bool write_array(pid_t target, void *addr, const void *data, int len);
+bool sm_detach(pid_t target);
+bool sm_setaddr(pid_t target, void *addr, const value_t *to);
+bool sm_checkmatches(globals_t *vars, scan_match_type_t match_type,
+                     const uservalue_t *uservalue);
+bool sm_searchregions(globals_t *vars, scan_match_type_t match_type,
+                      const uservalue_t *uservalue);
+bool sm_peekdata(pid_t pid, void *addr, value_t *result);
+bool sm_attach(pid_t target);
+bool sm_read_array(pid_t target, void *addr, char *buf, int len);
+bool sm_write_array(pid_t target, void *addr, const void *data, int len);
 
 /* menu.c */
-bool getcommand(globals_t * vars, char **line);
+bool sm_getcommand(globals_t *vars, char **line);
 
 #endif /* SCANMEM_H */

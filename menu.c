@@ -52,11 +52,12 @@ static char *commandgenerator(const char *text, int state)
     unsigned i;
     size_t len;
     element_t *np;
+    globals_t *vars = &sm_globals;
 
     /* reset generator if state == 0, otherwise continue from last time */
     index = state ? index : 0;
 
-    np = globals.commands ? globals.commands->head : NULL;
+    np = vars->commands ? vars->commands->head : NULL;
 
     len = strlen(text);
 
@@ -101,12 +102,12 @@ static char **commandcompletion(const char *text, int start, int end)
 
 
 /*
- * getcommand() reads in a command using readline, and places a pointer to the
- * read string into *line, _which must be free'd by caller_.
+ * sm_getcommand() reads in a command using readline, and places a pointer to
+ * the read string into *line, _which must be free'd by caller_.
  * returns true on success, or false on error.
  */
 
-bool getcommand(globals_t * vars, char **line)
+bool sm_getcommand(globals_t *vars, char **line)
 {
     char prompt[64];
     bool success = true;

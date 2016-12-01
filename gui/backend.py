@@ -26,20 +26,20 @@ import misc
 
 class GameConquerorBackend():
     BACKEND_FUNCS = {
-        'init' : (ctypes.c_bool, ),
-        'set_backend' : (None, ),
-        'backend_exec_cmd' : (None, ctypes.c_char_p),
-        'get_num_matches' : (ctypes.c_long, ),
-        'get_version' : (ctypes.c_char_p, ),
-        'get_scan_progress' : (ctypes.c_double, ),
-        'reset_scan_progress' : (None,)
+        'sm_init' : (ctypes.c_bool, ),
+        'sm_set_backend' : (None, ),
+        'sm_backend_exec_cmd' : (None, ctypes.c_char_p),
+        'sm_get_num_matches' : (ctypes.c_long, ),
+        'sm_get_version' : (ctypes.c_char_p, ),
+        'sm_get_scan_progress' : (ctypes.c_double, ),
+        'sm_reset_scan_progress' : (None,)
     }
 
     def __init__(self):
         self.lib = ctypes.CDLL('libscanmem.so')
         self.init_lib_functions()
-        self.lib.set_backend()
-        self.lib.init()
+        self.lib.sm_set_backend()
+        self.lib.sm_init()
         self.send_command('reset')
         self.version = ''
 
@@ -56,7 +56,7 @@ class GameConquerorBackend():
                 backup_stdout_fileno = os.dup(sys.stdout.fileno())
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-                self.lib.backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+                self.lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
@@ -64,17 +64,17 @@ class GameConquerorBackend():
                 return directed_file.readlines()
         else:
 
-            self.lib.backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+            self.lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
     def get_match_count(self):
-        return self.lib.get_num_matches()
+        return self.lib.sm_get_num_matches()
 
     def get_version(self):
-        return misc.decode(self.lib.get_version())
+        return misc.decode(self.lib.sm_get_version())
 
     def get_scan_progress(self):
-        return self.lib.get_scan_progress()
+        return self.lib.sm_get_scan_progress()
 
     def reset_scan_progress(self):
-        self.lib.reset_scan_progress()
+        self.lib.sm_reset_scan_progress()
 

@@ -22,7 +22,7 @@
 */
 
 #ifndef _GNU_SOURCE
-# define _GNU_SOURCE
+#define _GNU_SOURCE
 #endif
 
 #include "config.h"
@@ -40,13 +40,13 @@
 #include "show_message.h"
 
 
-void printlibversion(FILE *outfd)
+void sm_printversion(FILE *outfd)
 {
     fprintf(outfd, "libscanmem version %s\n", PACKAGE_VERSION);
 }
 
 /* global settings */
-globals_t globals = {
+globals_t sm_globals = {
     0,                          /* exit flag */
     0,                          /* pid target */
     NULL,                       /* matches */
@@ -55,7 +55,7 @@ globals_t globals = {
     NULL,                       /* regions */
     NULL,                       /* commands */
     NULL,                       /* current_cmdline */
-    printlibversion,            /* printversion() pointer */
+    sm_printversion,            /* printversion() pointer */
     /* options */
     {
         1,                      /* alignment */
@@ -103,9 +103,9 @@ out:
 }
 
 
-bool init()
+bool sm_init()
 {
-    globals_t *vars = &globals;
+    globals_t *vars = &sm_globals;
 
     /* before attaching to target, install signal handler to detach on error */
     if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
@@ -126,95 +126,95 @@ bool init()
     }
 
     /* NULL shortdoc means dont display this command in `help` listing */
-    registercommand("set", handler__set, vars->commands, SET_SHRTDOC,
-                    SET_LONGDOC);
-    registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,
-                    LIST_LONGDOC);
-    registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
-                    DELETE_LONGDOC);
-    registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-                    RESET_LONGDOC);
-    registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
-                    PID_LONGDOC);
-    registercommand("snapshot", handler__snapshot, vars->commands,
-                    SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC);
-    registercommand("dregion", handler__dregion, vars->commands,
-                    DREGION_SHRTDOC, DREGION_LONGDOC);
-    registercommand("dregions", handler__dregion, vars->commands,
-                    NULL, DREGION_LONGDOC);
-    registercommand("lregions", handler__lregions, vars->commands,
-                    LREGIONS_SHRTDOC, LREGIONS_LONGDOC);
-    registercommand("version", handler__version, vars->commands,
-                    VERSION_SHRTDOC, VERSION_LONGDOC);
-    registercommand("=", handler__decinc, vars->commands, NOTCHANGED_SHRTDOC,
-                    NOTCHANGED_LONGDOC);
-    registercommand("!=", handler__decinc, vars->commands, CHANGED_SHRTDOC,
-                    CHANGED_LONGDOC);
-    registercommand("<", handler__decinc, vars->commands, LESSTHAN_SHRTDOC,
-                    LESSTHAN_LONGDOC);
-    registercommand(">", handler__decinc, vars->commands, GREATERTHAN_SHRTDOC,
-                    GREATERTHAN_LONGDOC);
-    registercommand("+", handler__decinc, vars->commands, INCREASED_SHRTDOC,
-                    INCREASED_LONGDOC);
-    registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
-                    DECREASED_LONGDOC);
-    registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
-                    STRING_LONGDOC);
-    registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
-                    UPDATE_LONGDOC);
-    registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,
-                    EXIT_LONGDOC);
-    registercommand("quit", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
-    registercommand("q", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
-    registercommand("help", handler__help, vars->commands, HELP_SHRTDOC,
+    sm_registercommand("set", handler__set, vars->commands, SET_SHRTDOC,
+                       SET_LONGDOC);
+    sm_registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,
+                       LIST_LONGDOC);
+    sm_registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
+                       DELETE_LONGDOC);
+    sm_registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
+                       RESET_LONGDOC);
+    sm_registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
+                       PID_LONGDOC);
+    sm_registercommand("snapshot", handler__snapshot, vars->commands,
+                       SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC);
+    sm_registercommand("dregion", handler__dregion, vars->commands,
+                       DREGION_SHRTDOC, DREGION_LONGDOC);
+    sm_registercommand("dregions", handler__dregion, vars->commands,
+                       NULL, DREGION_LONGDOC);
+    sm_registercommand("lregions", handler__lregions, vars->commands,
+                       LREGIONS_SHRTDOC, LREGIONS_LONGDOC);
+    sm_registercommand("version", handler__version, vars->commands,
+                       VERSION_SHRTDOC, VERSION_LONGDOC);
+    sm_registercommand("=", handler__decinc, vars->commands, NOTCHANGED_SHRTDOC,
+                       NOTCHANGED_LONGDOC);
+    sm_registercommand("!=", handler__decinc, vars->commands, CHANGED_SHRTDOC,
+                       CHANGED_LONGDOC);
+    sm_registercommand("<", handler__decinc, vars->commands, LESSTHAN_SHRTDOC,
+                       LESSTHAN_LONGDOC);
+    sm_registercommand(">", handler__decinc, vars->commands, GREATERTHAN_SHRTDOC,
+                       GREATERTHAN_LONGDOC);
+    sm_registercommand("+", handler__decinc, vars->commands, INCREASED_SHRTDOC,
+                       INCREASED_LONGDOC);
+    sm_registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
+                       DECREASED_LONGDOC);
+    sm_registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
+                       STRING_LONGDOC);
+    sm_registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
+                       UPDATE_LONGDOC);
+    sm_registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,
+                       EXIT_LONGDOC);
+    sm_registercommand("quit", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
+    sm_registercommand("q", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
+    sm_registercommand("help", handler__help, vars->commands, HELP_SHRTDOC,
                     HELP_LONGDOC);
-    registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC, SHELL_LONGDOC);
-    registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
+    sm_registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC, SHELL_LONGDOC);
+    sm_registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                     WATCH_LONGDOC);
-    registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
-    registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC, DUMP_LONGDOC);
-    registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
-    registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
+    sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
+    sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC, DUMP_LONGDOC);
+    sm_registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
+    sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
 
     /* commands beginning with __ have special meaning */
-    registercommand("__eof", handler__eof, vars->commands, NULL, NULL);
+    sm_registercommand("__eof", handler__eof, vars->commands, NULL, NULL);
 
     /* special value NULL means no other matches */
-    registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
-                    DEFAULT_LONGDOC);
+    sm_registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
+                       DEFAULT_LONGDOC);
 
     return true;
 }
 
 /* for front-ends */
-void set_backend()
+void sm_set_backend()
 {
-    globals.options.backend = 1;
+    sm_globals.options.backend = 1;
 }
 
-void backend_exec_cmd(const char * commandline)
+void sm_backend_exec_cmd(const char *commandline)
 {
-    execcommand(&globals, commandline);
+    sm_execcommand(&sm_globals, commandline);
     fflush(stdout);
     fflush(stderr);
 }
 
-long get_num_matches()
+long sm_get_num_matches()
 {
-    return globals.num_matches;
+    return sm_globals.num_matches;
 }
 
-const char * get_version()
+const char *sm_get_version()
 {
     return PACKAGE_VERSION;
 }
 
-double get_scan_progress()
+double sm_get_scan_progress()
 {
-    return globals.scan_progress;
+    return sm_globals.scan_progress;
 }
 
-void reset_scan_progress()
+void sm_reset_scan_progress()
 {
-    globals.scan_progress = 0;
+    sm_globals.scan_progress = 0;
 }

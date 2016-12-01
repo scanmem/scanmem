@@ -64,14 +64,14 @@ typedef enum {
 /*       address is pointing to new_value in TARGET PROCESS MEMORY SPACE, used when searching for a byte array */
 /* return the number of bytes needed to store old_value, 0 for not matched */
 typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag, void *address);
-extern scan_routine_t g_scan_routine;
+extern scan_routine_t sm_scan_routine;
 
 /* 
  * choose the global scanroutine according to the given parameters, g_scan_routine will be set 
  * return whether a proper routine has been found
  */
-bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
 
-scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
 
 #endif /* SCANROUTINES_H */

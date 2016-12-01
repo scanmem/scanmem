@@ -61,7 +61,6 @@ typedef struct {
     char filename[1];           /* associated file, must be last */
 } region_t;
 
-bool readmaps(pid_t target, list_t * regions);
-int compare_region_id(const region_t *a, const region_t *b);
+bool sm_readmaps(pid_t target, list_t *regions);
 
 #endif /* MAPS_H */

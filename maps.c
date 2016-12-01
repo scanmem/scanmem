@@ -45,7 +45,7 @@
 
 const char *region_type_names[] = REGION_TYPE_NAMES;
 
-bool readmaps(pid_t target, list_t * regions)
+bool sm_readmaps(pid_t target, list_t *regions)
 {
     FILE *maps;
     char name[128], *line = NULL;
@@ -190,7 +190,7 @@ bool readmaps(pid_t target, list_t * regions)
                         type = REGION_TYPE_STACK;
 
                     /* determine if this region is useful */
-                    switch (globals.options.region_scan_level)
+                    switch (sm_globals.options.region_scan_level)
                     {
                         case REGION_ALL:
                             useful = true;
@@ -268,9 +268,4 @@ bool readmaps(pid_t target, list_t * regions)
     fclose(maps);
 
     return false;
-}
-
-int compare_region_id(const region_t *a, const region_t *b)
-{    
-    return (int) (a->id - b->id);
 }

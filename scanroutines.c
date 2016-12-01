@@ -30,7 +30,7 @@
 
 /* for convenience */
 #define SCAN_ROUTINE_ARGUMENTS (const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags, void *address) 
-int (*g_scan_routine) SCAN_ROUTINE_ARGUMENTS;
+int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
 #define VALUE_COPY(a,b,field)       ((set_##field(a, get_##field(b))), ((a)->flags.field = 1))
@@ -301,7 +301,7 @@ int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
         } 
          
         /* read next block */
-        if (!peekdata(globals.target, address+i+sizeof(int64_t), &val_buf))
+        if (!sm_peekdata(sm_globals.target, address+i+sizeof(int64_t), &val_buf))
         {
             /* cannot read */
             return 0;
@@ -352,7 +352,7 @@ int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
         } 
          
         /* read next block */
-        if (!peekdata(globals.target, address+i+sizeof(int64_t), &val_buf))
+        if (!sm_peekdata(sm_globals.target, address + i + sizeof(int64_t), &val_buf))
         {
             /* cannot read */
             return 0;
@@ -443,14 +443,14 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
 
 
 
-bool choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
-    return (g_scan_routine = get_scanroutine(dt, mt)) != NULL;
+    return (sm_scan_routine = sm_get_scanroutine(dt, mt)) != NULL;
 }
 
-scan_routine_t get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
-    if (globals.options.detect_reverse_change)
+    if (sm_globals.options.detect_reverse_change)
     {
         CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASED, INCREASED_WITH_REVERSE)
         CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED_WITH_REVERSE)

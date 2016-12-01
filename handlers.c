@@ -183,7 +183,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
         /* control returns here when interrupted */
 // settings is allocated with alloca, do not free it
 //        free(settings);
-        detach(vars->target);
+        sm_detach(vars->target);
         ENDINTERRUPTABLE();
         return true;
     }
@@ -255,7 +255,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
                         /* set the value specified */
                         fix_endianness(vars, &v);
-                        if (setaddr(vars->target, address, &v) == false) {
+                        if (sm_setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
                         }
@@ -290,7 +290,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
                         fix_endianness(vars, &v);
-                        if (setaddr(vars->target, address, &v) == false) {
+                        if (sm_setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
                         }
@@ -329,7 +329,7 @@ fail:
 /* FORMAT (don't change, front-end depends on this): 
  * [#no] addr, value, [possible types (separated by space)]
  */
-bool handler__list(globals_t * vars, char **argv, unsigned argc)
+bool handler__list(globals_t *vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
     int buf_len = 128; /* will be realloc later if necessary */
@@ -362,7 +362,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc)
         /* Only actual matches are considered */
         if (flags_to_max_width_in_bytes(flags) > 0)
         {
-            switch(globals.options.scan_data_type)
+            switch(vars->options.scan_data_type)
             {
             case BYTEARRAY:
                 ; /* cheat gcc */ 
@@ -496,7 +496,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* read in maps if a pid is known */
-    if (vars->target && readmaps(vars->target, vars->regions) != true) {
+    if (vars->target && sm_readmaps(vars->target, vars->regions) != true) {
         show_error("sorry, there was a problem getting a list of regions to search.\n");
         show_warn("the pid may be invalid, or you don't have permission.\n");
         vars->target = 0;
@@ -530,7 +530,7 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc)
     return handler__reset(vars, resetargv, 1);
 }
 
-bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
+bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
 {
     USEPARAMS();
     
@@ -544,7 +544,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
     /* remove any existing matches */
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
 
-    if (searchregions(vars, MATCHANY, NULL) != true) {
+    if (sm_searchregions(vars, MATCHANY, NULL) != true) {
         show_error("failed to save target address space.\n");
         return false;
     }
@@ -553,7 +553,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc)
 }
 
 /* dregion [!][x][,x,...] */
-bool handler__dregion(globals_t * vars, char **argv, unsigned argc)
+bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
 {
     unsigned id;
     bool invert = false;
@@ -805,7 +805,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
 
     if (vars->matches) {
-        if (checkmatches(vars, m, &val) == false) {
+        if (sm_checkmatches(vars, m, &val) == false) {
             show_error("failed to search target address space.\n");
             return false;
         }
@@ -818,7 +818,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
         }
         else
         {
-            if (searchregions(vars, m, &val) != true) {
+            if (sm_searchregions(vars, m, &val) != true) {
                 show_error("failed to search target address space.\n");
                 return false;
             }
@@ -833,7 +833,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-bool handler__version(globals_t * vars, char **argv, unsigned argc)
+bool handler__version(globals_t *vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
@@ -872,13 +872,13 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars, MATCHEQUALTO, &val) != true) {
+        if (sm_checkmatches(vars, MATCHEQUALTO, &val) != true) {
             show_error("failed to search target address space.\n");
             return false;
         }
     } else {
         /* initial search */
-        if (searchregions(vars, MATCHEQUALTO, &val) != true) {
+        if (sm_searchregions(vars, MATCHEQUALTO, &val) != true) {
             show_error("failed to search target address space.\n");
             return false;
         }
@@ -980,13 +980,13 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
         /* already know some matches */
-        if (checkmatches(vars, m, val) != true) {
+        if (sm_checkmatches(vars, m, val) != true) {
             show_error("failed to search target address space.\n");
             goto retl;
         }
     } else {
         /* initial search */
-        if (searchregions(vars, m, val) != true) {
+        if (sm_searchregions(vars, m, val) != true) {
             show_error("failed to search target address space.\n");
             goto retl;
         }
@@ -1007,12 +1007,12 @@ retl:
     return ret;
 }
 
-bool handler__update(globals_t * vars, char **argv, unsigned argc)
+bool handler__update(globals_t *vars, char **argv, unsigned argc)
 {
 
     USEPARAMS();
     if (vars->matches) {
-        if (checkmatches(vars, MATCHANY, NULL) == false) {
+        if (sm_checkmatches(vars, MATCHANY, NULL) == false) {
             show_error("failed to scan target address space.\n");
             return false;
         }
@@ -1024,7 +1024,7 @@ bool handler__update(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-bool handler__exit(globals_t * vars, char **argv, unsigned argc)
+bool handler__exit(globals_t *vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
@@ -1034,7 +1034,7 @@ bool handler__exit(globals_t * vars, char **argv, unsigned argc)
 
 #define DOC_COLUMN  11           /* which column descriptions start on with help command */
 
-bool handler__help(globals_t * vars, char **argv, unsigned argc)
+bool handler__help(globals_t *vars, char **argv, unsigned argc)
 {
     bool ret = false;
     list_t *commands = vars->commands;
@@ -1201,7 +1201,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     valtostr(&o, buf, sizeof(buf));
 
     if (INTERRUPTABLE()) {
-        (void) detach(vars->target);
+        (void) sm_detach(vars->target);
         ENDINTERRUPTABLE();
         return true;
     }
@@ -1214,10 +1214,10 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     while (true) {
 
-        if (attach(vars->target) == false)
+        if (sm_attach(vars->target) == false)
             return false;
 
-        if (peekdata(vars->target, address, &n) == false)
+        if (sm_peekdata(vars->target, address, &n) == false)
             return false;
 
 
@@ -1226,7 +1226,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         /* check if the new value is different */
         match_flags tmpflags;
         zero_match_flags(&tmpflags);
-        scan_routine_t valuecmp_routine = (get_scanroutine(ANYNUMBER, MATCHCHANGED));
+        scan_routine_t valuecmp_routine = (sm_get_scanroutine(ANYNUMBER, MATCHCHANGED));
         if (valuecmp_routine(&o, &n, NULL, &tmpflags, address)) {
 
             valcpy(&o, &n);
@@ -1243,7 +1243,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         }
 
         /* detach after valuecmp_routine, since it may read more data (e.g. bytearray) */
-        detach(vars->target);
+        sm_detach(vars->target);
 
         (void) sleep(1);
     }
@@ -1327,7 +1327,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    if (!read_array(vars->target, addr, buf, len))
+    if (!sm_read_array(vars->target, addr, buf, len))
     {
         if (dump_f)
             fclose(dump_f);
@@ -1564,7 +1564,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
             }
             if (wildcard_used)
             {
-                if(!read_array(vars->target, addr, buf, data_width))
+                if(!sm_read_array(vars->target, addr, buf, data_width))
                 {
                     show_error("read memory failed.\n");
                     free(array);
@@ -1592,7 +1592,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* write into memory */
-    ret = write_array(vars->target, addr, buf, data_width);
+    ret = sm_write_array(vars->target, addr, buf, data_width);
 
 retl:
     if(buf)

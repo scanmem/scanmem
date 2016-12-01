@@ -54,7 +54,7 @@
                "\tset 0,3=42/8 - set matches 0 and 3 to 42 every 8 seconds\n" \
                "\tset 12,13,14=0x23/2 23,19=0/8 6=4 0 - complex example, can be combined" \
 
-bool handler__set(globals_t * vars, char **argv, unsigned argc);
+bool handler__set(globals_t *vars, char **argv, unsigned argc);
 
 #define LIST_SHRTDOC "list all currently known matches"
 #define LIST_LONGDOC "usage: list\n" \
@@ -67,7 +67,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc);
                "are displayed. The offset is used from the code load address or region start.\n" \
                "This helps bypassing address space layout randomization (ASLR).\n"
 
-bool handler__list(globals_t * vars, char **argv, unsigned argc);
+bool handler__list(globals_t *vars, char **argv, unsigned argc);
 
 #define DELETE_SHRTDOC "delete a known match by match-id"
 #define DELETE_LONGDOC "usage: delete match-id\n" \
@@ -80,7 +80,7 @@ bool handler__list(globals_t * vars, char **argv, unsigned argc);
                 "\tdelete 0 - delete match 0\n" \
                 "NOTE: match-ids may be recalculated after matches are removed or added."
 
-bool handler__delete(globals_t * vars, char **argv, unsigned argc);
+bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
 #define RESET_SHRTDOC "forget all matches, and reinitialise regions"
 #define RESET_LONGDOC "usage: reset\n" \
@@ -88,7 +88,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc);
                 "maps file. Useful if you have made an error, or want to find a new\n" \
                 "variable.\n"
 
-bool handler__reset(globals_t * vars, char **argv, unsigned argc);
+bool handler__reset(globals_t *vars, char **argv, unsigned argc);
 
 #define PID_SHRTDOC "print current pid, or attach to a new process"
 #define PID_LONGDOC "usage: pid [pid]\n" \
@@ -96,7 +96,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc);
                 "process `pid`. If `pid` is not specified, print information about\n" \
                 "current process."
 
-bool handler__pid(globals_t * vars, char **argv, unsigned argc);
+bool handler__pid(globals_t *vars, char **argv, unsigned argc);
 
 #define SNAPSHOT_SHRTDOC "take a snapshot of the current process state"
 #define SNAPSHOT_LONGDOC "usage: snapshot\n" \
@@ -106,7 +106,7 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc);
                 "`=`).\n\n" \
                 "NOTE: This can use a lot of memory with large processes."
 
-bool handler__snapshot(globals_t * vars, char **argv, unsigned argc);
+bool handler__snapshot(globals_t *vars, char **argv, unsigned argc);
 
 #define DREGION_SHRTDOC "delete a known region by region-id"
 #define DREGION_LONGDOC "usage: dregion [!]region-id[,region-id[,...]]\n" \
@@ -114,7 +114,7 @@ bool handler__snapshot(globals_t * vars, char **argv, unsigned argc);
                 "affected from the match list. The `region-id` can be found using the `lregions`\n" \
                 "command. A leading `!` indicates the list should be inverted.\n" 
 
-bool handler__dregion(globals_t * vars, char **argv, unsigned argc);
+bool handler__dregion(globals_t *vars, char **argv, unsigned argc);
 
 #define LREGIONS_SHRTDOC "list all known regions"
 #define LREGIONS_LONGDOC "usage: lregions\n" \
@@ -125,7 +125,7 @@ bool handler__dregion(globals_t * vars, char **argv, unsigned argc);
                 "The load address is the start of the .text region for the executable\n" \
                 "or libraries. Otherwise, it is the region start.\n"
 
-bool handler__lregions(globals_t * vars, char **argv, unsigned argc);
+bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 
 #define GREATERTHAN_SHRTDOC "match values that have increased or greater than some number"
 #define LESSTHAN_SHRTDOC "match values that have decreased or less than some number"
@@ -160,19 +160,19 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc);
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
 
-bool handler__decinc(globals_t * vars, char **argv, unsigned argc);
+bool handler__decinc(globals_t *vars, char **argv, unsigned argc);
 
 #define VERSION_SHRTDOC "print current version"
 #define VERSION_LONGDOC "usage: version\n" \
                 "Display the current version of scanmem in use."
 
-bool handler__version(globals_t * vars, char **argv, unsigned argc);
+bool handler__version(globals_t *vars, char **argv, unsigned argc);
 
 #define EXIT_SHRTDOC "exit the program immediately"
 #define EXIT_LONGDOC "usage: exit\n" \
                 "Exit scanmem immediately, zero will be returned."
 
-bool handler__exit(globals_t * vars, char **argv, unsigned argc);
+bool handler__exit(globals_t *vars, char **argv, unsigned argc);
 
 #define HELP_SHRTDOC "access online documentation, use `help command` for specific help"
 #define HELP_LONGDOC "usage: help [command]\n" \
@@ -180,7 +180,7 @@ bool handler__exit(globals_t * vars, char **argv, unsigned argc);
                 "including options and usage summary. If `command` is not specified, print a\n" \
                 "one line description of each command supported."
 
-bool handler__help(globals_t * vars, char **argv, unsigned argc);
+bool handler__help(globals_t *vars, char **argv, unsigned argc);
 
 #define DEFAULT_SHRTDOC NULL
 #define DEFAULT_LONGDOC "When searching for a number, use any notation in standard C language (leading 0x for\n" \
@@ -198,7 +198,7 @@ bool handler__help(globals_t * vars, char **argv, unsigned argc);
                 "eliminate matches, eventually identifying where the variable is located.\n" \
                 "Once the variable is found, use `set` to change its value.\n"
 
-bool handler__default(globals_t * vars, char **argv, unsigned argc);
+bool handler__default(globals_t *vars, char **argv, unsigned argc);
 
 #define STRING_SHRTDOC "match a given string"
 #define STRING_LONGDOC "usage \" <text>\n" \
@@ -207,7 +207,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc);
                 "Example:\n" \
                 "\t\" Scan for string, spaces and ' \" are all acceptable.\n"
 
-bool handler__string(globals_t * vars, char **argv, unsigned argc);
+bool handler__string(globals_t *vars, char **argv, unsigned argc);
 
 #define UPDATE_SHRTDOC "update match values without culling list"
 #define UPDATE_LONGDOC "usage: update\n" \
@@ -216,9 +216,9 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc);
                 "scanmem compares to when using `>`, `<`, or `=`. This command is equivalent\n" \
                 "to a search command that all current results match.\n"
 
-bool handler__update(globals_t * vars, char **argv, unsigned argc);
+bool handler__update(globals_t *vars, char **argv, unsigned argc);
 
-bool handler__eof(globals_t * vars, char **argv, unsigned argc);
+bool handler__eof(globals_t *vars, char **argv, unsigned argc);
 
 #define SHELL_SHRTDOC "execute a shell command without leaving scanmem"
 #define SHELL_LONGDOC "usage: shell [shell-command]\n" \
@@ -229,7 +229,7 @@ bool handler__eof(globals_t * vars, char **argv, unsigned argc);
                 "\tshell man scanmem\n" \
                 "\tshell cat > notes.txt\n"
 
-bool handler__shell(globals_t * vars, char **argv, unsigned argc);
+bool handler__shell(globals_t *vars, char **argv, unsigned argc);
 
 #define WATCH_SHRTDOC "monitor the value of a memory location as it changes"
 #define WATCH_LONGDOC "usage: watch [match-id]\n" \
@@ -239,7 +239,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc);
                 "Examples:\n" \
                 "\twatch 12 - watch match 12 for any changes.\n"
 
-bool handler__watch(globals_t * vars, char **argv, unsigned argc);
+bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
 /*XXX: improve this */
 #define SHOW_SHRTDOC "display information about scanmem."
@@ -247,7 +247,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc);
                 "Display information relating to <info>.\n" \
                 "Possible <info> values: `copying`, `warranty` or `version`\n"
 
-bool handler__show(globals_t * vars, char **argv, unsigned argc);
+bool handler__show(globals_t *vars, char **argv, unsigned argc);
 
 #define DUMP_SHRTDOC "dump a memory region to screen or a file" 
 #define DUMP_LONGDOC "usage: dump <address> <length> [<filename>]\n" \
@@ -255,7 +255,7 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc);
                 "If <filename> is given, save the region of memory to the file \n" \
                 "Otherwise display it in a human-readable format.\n"
     
-bool handler__dump(globals_t * vars, char **argv, unsigned argc);
+bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
@@ -271,7 +271,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc);
                 "\twrite float32 60103e 0\n" \
                 "\twrite bytearray 60103e ff 01 32\n"
 
-bool handler__write(globals_t * vars, char **argv, unsigned argc);
+bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
@@ -325,6 +325,6 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc);
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
 
-bool handler__option(globals_t * vars, char **argv, unsigned argc);
+bool handler__option(globals_t *vars, char **argv, unsigned argc);
 
 #endif /* HANDLERS_H */
