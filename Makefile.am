@@ -9,27 +9,30 @@ AM_CFLAGS = -O2 -g -Wall
 
 lib_LTLIBRARIES = libscanmem.la
 
-libscanmem_la_SOURCES = commands.h \
-    commands.c \
+libscanmem_la_includedir = $(includedir)/scanmem
+
+libscanmem_la_include_HEADERS = commands.h \
+    list.h \
+    maps.h \
+    scanmem.h \
+    scanroutines.h \
+    show_message.h \
+    target_memory_info_array.h \
+    value.h
+
+libscanmem_la_SOURCES = commands.c \
     ptrace.c \
     menu.c \
     handlers.h \
     handlers.c \
     interrupt.h \
-    list.h \
     list.c \
     licence.h \
-    maps.h \
     maps.c \
-    scanmem.h \
     scanmem.c \
-    scanroutines.h \
     scanroutines.c \
-    show_message.h \
     show_message.c \
-    target_memory_info_array.h \
     target_memory_info_array.c \
-    value.h \
     value.c 
 
 if !HAVE_GETLINE
