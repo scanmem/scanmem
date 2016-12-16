@@ -133,25 +133,28 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc);
 bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 
 #define GREATERTHAN_SHRTDOC "match values that have increased or greater than some number"
-#define LESSTHAN_SHRTDOC "match values that have decreased or less than some number"
-#define NOTCHANGED_SHRTDOC "match all variables that have not changed since last scan"
-#define CHANGED_SHRTDOC "match all variables that have changed since last scan"
-#define INCREASED_SHRTDOC "match values that have increased by some given number"
-#define DECREASED_SHRTDOC "match values that have decreased by some given number"
+#define LESSTHAN_SHRTDOC    "match values that have decreased or less than some number"
+#define NOTCHANGED_SHRTDOC  "match values that have not changed or equal to some number"
+#define CHANGED_SHRTDOC     "match values that have changed or different from some number"
+#define INCREASED_SHRTDOC   "match values that have increased at all or by some number"
+#define DECREASED_SHRTDOC   "match values that have decreased at all or by some number"
 
 #define GREATERTHAN_LONGDOC "usage: > [n]\n" \
                 "If n is given, match values that are greater than n.\n" \
-                "Otherwise all current matches that have not increased since the last scan are discarded. (same as `+`)\n" \
+                "Otherwise match all values that have increased. (same as `+`)\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
 #define LESSTHAN_LONGDOC "usage: < [n]\n" \
                 "If n is given, match values that are less than n.\n" \
-                "Otherwise all current matches that have not decreased since the last scan are discarded.(same as `-`)\n" \
+                "Otherwise match all values that have decreased. (same as `-`)\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
-#define NOTCHANGED_LONGDOC "usage: =\n" \
-                "All current matches that have changed since the last scan are discarded.\n" \
+
+#define NOTCHANGED_LONGDOC "usage: = [n]\n" \
+                "If n is given, match values that are equal to n. (same as `n`)\n" \
+                "Otherwise match all values have not changed since the last scan.\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
-#define CHANGED_LONGDOC "usage: !=\n" \
-                "All current matches that have not changed since the last scan are discarded.\n" \
+#define CHANGED_LONGDOC "usage: != [n]\n" \
+                "If n is given, match values that are different from n.\n" \
+                "Otherwise match all values have changed since the last scan.\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
 #define INCREASED_LONGDOC "usage: + [n]\n" \
