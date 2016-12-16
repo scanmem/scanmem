@@ -1,6 +1,11 @@
 /*
     Specific command handling with help texts.
 
+    Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
+    Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
+    Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
+    Copyright (C) 2014-2016      Sebastian Parschauer <s.parschauer@gmx.de>
+
     This file is part of libscanmem.
 
     This library is free software: you can redistribute it and/or modify

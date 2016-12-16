@@ -2,6 +2,7 @@
     Definition of routines of scanning for different data types.
 
     Copyright (C) 2009,2010 WANG Lu  <coolwanglu(a)gmail.com>
+    Copyright (C) 2015      Vyacheslav Shegai <v.shegai(a)netris.ru>
 
     This file is part of libscanmem.
 

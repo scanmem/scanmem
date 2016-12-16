@@ -1,10 +1,11 @@
 """
     HexView: memory editor with hex and ascii output
 
-    Extended by Wang Lu
+    Extended by Wang Lu and Sebastian Parschauer
     * Added editing and cursor moving stuff
     * Port to GTK 3
     Copyright (C) 2010,2011,2013 WANG Lu <coolwanglu@gmail.com>
+    Copyright (C) 2015 Sebastian Parschauer <s.parschauer@gmx.de>
 
     First version
     Copyright (C) 2008, 2009 Adriano Monteiro Marques

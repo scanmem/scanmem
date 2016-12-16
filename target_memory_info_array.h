@@ -3,6 +3,7 @@
 
     Copyright (C) 2009 Eli Dupree  <elidupree(a)charter.net>
     Copyright (C) 2010 WANG Lu  <coolwanglu(a)gmail.com>
+    Copyright (C) 2015 Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of libscanmem.
 
