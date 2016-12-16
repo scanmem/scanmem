@@ -104,7 +104,7 @@ out:
 }
 
 
-bool sm_init()
+bool sm_init(void)
 {
     globals_t *vars = &sm_globals;
 
@@ -188,7 +188,7 @@ bool sm_init()
 }
 
 /* for front-ends */
-void sm_set_backend()
+void sm_set_backend(void)
 {
     sm_globals.options.backend = 1;
 }
@@ -200,22 +200,22 @@ void sm_backend_exec_cmd(const char *commandline)
     fflush(stderr);
 }
 
-long sm_get_num_matches()
+long sm_get_num_matches(void)
 {
     return sm_globals.num_matches;
 }
 
-const char *sm_get_version()
+const char *sm_get_version(void)
 {
     return PACKAGE_VERSION;
 }
 
-double sm_get_scan_progress()
+double sm_get_scan_progress(void)
 {
     return sm_globals.scan_progress;
 }
 
-void sm_reset_scan_progress()
+void sm_reset_scan_progress(void)
 {
     sm_globals.scan_progress = 0;
 }

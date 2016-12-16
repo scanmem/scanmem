@@ -95,14 +95,14 @@ typedef struct {
 /* global settings */
 extern globals_t sm_globals;
 
-bool sm_init();
+bool sm_init(void);
 void sm_printversion(FILE *outfd);
-void sm_set_backend();
+void sm_set_backend(void);
 void sm_backend_exec_cmd(const char *commandline);
-long sm_get_num_matches();
-const char *sm_get_version();
-double sm_get_scan_progress();
-void sm_reset_scan_progress();
+long sm_get_num_matches(void);
+const char *sm_get_version(void);
+double sm_get_scan_progress(void);
+void sm_reset_scan_progress(void);
 
 /* ptrace.c */
 bool sm_detach(pid_t target);
