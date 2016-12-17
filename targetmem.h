@@ -21,8 +21,8 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef TARGET_MEMORY_INFO_ARRAY_H
-#define TARGET_MEMORY_INFO_ARRAY_H
+#ifndef TARGETMEM_H
+#define TARGETMEM_H
 
 #include <assert.h>
 #include <string.h>
@@ -316,4 +316,4 @@ data_to_val (matches_and_old_values_swath *swath, long index)
     return data_to_val_aux(swath, index, swath->number_of_bytes);
 }
 
-#endif /* TARGET_MEMORY_INFO_ARRAY_H */
+#endif /* TARGETMEM_H */

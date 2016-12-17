@@ -29,7 +29,7 @@
 #include <assert.h>
 #include <ctype.h>
 
-#include "target_memory_info_array.h"
+#include "targetmem.h"
 #include "show_message.h"
 
 

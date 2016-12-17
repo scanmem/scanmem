@@ -17,7 +17,7 @@ libscanmem_la_include_HEADERS = commands.h \
     scanmem.h \
     scanroutines.h \
     show_message.h \
-    target_memory_info_array.h \
+    targetmem.h \
     value.h
 
 libscanmem_la_SOURCES = commands.c \
@@ -32,7 +32,7 @@ libscanmem_la_SOURCES = commands.c \
     scanmem.c \
     scanroutines.c \
     show_message.c \
-    target_memory_info_array.c \
+    targetmem.c \
     value.c 
 
 if !HAVE_GETLINE

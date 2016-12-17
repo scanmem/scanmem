@@ -33,7 +33,7 @@
 #include "scanroutines.h"
 #include "list.h"
 #include "value.h"
-#include "target_memory_info_array.h"
+#include "targetmem.h"
 
 
 #ifndef PACKAGE_VERSION
