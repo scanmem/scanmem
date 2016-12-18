@@ -53,6 +53,7 @@ globals_t sm_globals = {
     NULL,                       /* matches */
     0,                          /* match count */
     0,                          /* scan progress */
+    false,                      /* stop flag */
     NULL,                       /* regions */
     NULL,                       /* commands */
     NULL,                       /* current_cmdline */
@@ -218,4 +219,9 @@ double sm_get_scan_progress(void)
 void sm_reset_scan_progress(void)
 {
     sm_globals.scan_progress = 0;
+}
+
+void sm_set_stop_flag(bool stop_flag)
+{
+    sm_globals.stop_flag = stop_flag;
 }

@@ -309,6 +309,7 @@ bool sm_checkmatches(globals_t *vars,
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
     vars->scan_progress = 0.0;
+    vars->stop_flag = false;
     
     if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
     {
@@ -379,6 +380,8 @@ bool sm_checkmatches(globals_t *vars,
                     /* for user, just print a dot */
                     print_a_dot();
                 }
+                /* stop scanning if asked to */
+                if (vars->stop_flag) break;
             }
         }
         ++bytes_scanned;
@@ -504,6 +507,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         total_scan_bytes += ((region_t *)n->data)->size;
 
     vars->scan_progress = 0.0;
+    vars->stop_flag = false;
     n = vars->regions->head;
 
     /* check every memory region */
@@ -625,16 +629,20 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                     print_a_dot();
                     /* for front-end, update percentage */
                     vars->scan_progress += progress_per_dot;
+                    /* stop scanning if asked to */
+                    if (vars->stop_flag) break;
                 }
             }
         }
 
-        vars->scan_progress += progress_per_dot;
-        n = n->next;
-        show_user("ok\n");
 #if HAVE_PROCMEM
         free(data);
 #endif
+        vars->scan_progress += progress_per_dot;
+        /* stop scanning if asked to */
+        if (vars->stop_flag) break;
+        n = n->next;
+        show_user("ok\n");
     }
 
     /* tell front-end we've done */

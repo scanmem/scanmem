@@ -73,6 +73,7 @@ typedef struct {
     matches_and_old_values_array *matches;
     unsigned long num_matches;
     double scan_progress;
+    bool stop_flag;
     list_t *regions;
     list_t *commands;              /* command handlers */
     const char *current_cmdline;   /* the command being executed */
@@ -103,6 +104,7 @@ unsigned long sm_get_num_matches(void);
 const char *sm_get_version(void);
 double sm_get_scan_progress(void);
 void sm_reset_scan_progress(void);
+void sm_set_stop_flag(bool stop_flag);
 
 /* ptrace.c */
 bool sm_detach(pid_t target);
