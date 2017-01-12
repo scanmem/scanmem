@@ -425,7 +425,7 @@ regions for this and check the load address of the executable.
 [ 8] 7ffc8c113000,  135168 bytes, stack, 7ffc8c113000, rw-, [stack]
 .fi
 
-We are on x86_64 and 0x400000 is the static load adress for executables there. This means
+We are on x86_64 and 0x400000 is the static load address for executables there. This means
 that this is not a PIE and the gold is always stored at 0x7b09e0. This makes it easy to
 use a game trainer like GameConqueror which refills the gold value periodically.
 
