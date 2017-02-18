@@ -114,7 +114,11 @@ bool sm_getcommand(globals_t *vars, char **line)
 
     assert(vars != NULL);
 
-    snprintf(prompt, sizeof(prompt), "%ld> ", vars->num_matches);
+    if (vars->matches) {
+        snprintf(prompt, sizeof(prompt), "%ld> ", vars->num_matches);
+    } else {
+        snprintf(prompt, sizeof(prompt), "> ");
+    }
 
     rl_readline_name = "scanmem";
     rl_attempted_completion_function = commandcompletion;
