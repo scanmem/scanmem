@@ -200,7 +200,7 @@ void sm_backend_exec_cmd(const char *commandline)
     fflush(stderr);
 }
 
-long sm_get_num_matches(void)
+unsigned long sm_get_num_matches(void)
 {
     return sm_globals.num_matches;
 }
