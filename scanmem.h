@@ -71,7 +71,7 @@ typedef struct {
     unsigned exit:1;
     pid_t target;
     matches_and_old_values_array *matches;
-    long num_matches;
+    unsigned long num_matches;
     double scan_progress;
     list_t *regions;
     list_t *commands;              /* command handlers */
@@ -99,7 +99,7 @@ bool sm_init(void);
 void sm_printversion(FILE *outfd);
 void sm_set_backend(void);
 void sm_backend_exec_cmd(const char *commandline);
-long sm_get_num_matches(void);
+unsigned long sm_get_num_matches(void);
 const char *sm_get_version(void);
 double sm_get_scan_progress(void);
 void sm_reset_scan_progress(void);
