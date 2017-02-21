@@ -153,10 +153,16 @@ AS_IF([test "x$enable_gui" = "xyes"], [
     gui/Makefile
     gui/icons/Makefile
     gui/consts.py
-    gui/gameconqueror
+    gui/gameconqueror-root
+    gui/gameconqueror-noroot
     gui/org.freedesktop.gameconqueror.policy.in
   ])
 ])
+
+# Allow using gameconqueror as regular user by default
+AC_ARG_ENABLE([root], [AS_HELP_STRING([--disable-root],
+                            [set gameconqueror symlink to gameconqueror-noroot])])
+AM_CONDITIONAL([ENABLE_ROOT], [test "x$enable_root" != "xno"])
 
 # Check for termcap and readline or bypass checking for the libraries.
 AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
