@@ -1,0 +1,5 @@
+#!/bin/bash
+
+DATADIR=@PKGDATADIR@
+
+$DATADIR/GameConqueror.py "$@"
