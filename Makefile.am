@@ -1,8 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS = po
 if ENABLE_GUI
-  SUBDIRS += gui
+  SUBDIRS = po gui
 endif
 
 AM_CFLAGS = -O2 -g -Wall

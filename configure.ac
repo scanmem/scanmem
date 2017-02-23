@@ -86,6 +86,31 @@ AS_IF([test "x$android" = "xno"], [
   AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
 ])
 
+# Check for termcap and readline or bypass checking for the libraries.
+AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
+                            [build without readline])])
+AM_CONDITIONAL([WITH_READLINE], [test "x$with_readline" != "xno"])
+AS_IF([test "x$with_readline" != "xno"], [
+  # termcap is sometimes required by readline
+  AC_CHECK_LIB([termcap], [tgetent], [], [])
+  AC_CHECK_LIB([readline], [readline], [], [
+    echo "libreadline could not be found, which is required to continue."
+    echo "The libreadline-dev package may be required."
+    exit 1
+  ])
+])
+
+GETTEXT_PACKAGE=GameConqueror
+AC_SUBST(GETTEXT_PACKAGE)
+AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
+                   [The domain to use with gettext])
+
+AC_CONFIG_FILES([
+  Makefile
+  po/Makefile.in
+])
+
+
 # copied from ubuntu-tweak
 
 dnl AS_AC_EXPAND(VAR, CONFIGURE_VAR)
@@ -130,24 +155,17 @@ AC_DEFUN([AS_AC_EXPAND],
 ])
 # end copy
 
-AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
-AS_AC_EXPAND(LIBDIR, $libdir)
 
-GETTEXT_PACKAGE=GameConqueror
-AC_SUBST(GETTEXT_PACKAGE)
-AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
-                   [The domain to use with gettext])
-AS_AC_EXPAND(LOCALEDIR, $localedir)
-
-AC_CONFIG_FILES([ 
-                Makefile
-                po/Makefile.in
-                ])
+# GameConqueror configuration
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--enable-gui],
                             [enable gameconqueror, the gui front-end of scanmem])])
 AM_CONDITIONAL([ENABLE_GUI], [test "x$enable_gui" = "xyes"])
 AS_IF([test "x$enable_gui" = "xyes"], [
+  AS_AC_EXPAND(PKGDATADIR, $datadir/gameconqueror)
+  AS_AC_EXPAND(LOCALEDIR, $localedir)
+  AS_AC_EXPAND(LIBDIR, $libdir)
+
   AM_PATH_PYTHON([2.7])
   AC_CONFIG_FILES([
     gui/Makefile
@@ -155,20 +173,6 @@ AS_IF([test "x$enable_gui" = "xyes"], [
     gui/consts.py
     gui/gameconqueror
     gui/org.freedesktop.gameconqueror.policy.in
-  ])
-])
-
-# Check for termcap and readline or bypass checking for the libraries.
-AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
-                            [build without readline])])
-AM_CONDITIONAL([WITH_READLINE], [test "x$with_readline" != "xno"])
-AS_IF([test "x$with_readline" != "xno"], [
-  # termcap is sometimes required by readline
-  AC_CHECK_LIB([termcap], [tgetent], [], [])
-  AC_CHECK_LIB([readline], [readline], [], [
-    echo "libreadline could not be found, which is required to continue."
-    echo "The libreadline-dev package may be required."
-    exit 1
   ])
 ])
 
