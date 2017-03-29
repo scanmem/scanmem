@@ -130,7 +130,7 @@ void data_to_bytearray_text (char *buf, int buf_length,
 match_location nth_match (matches_and_old_values_array *matches, unsigned n);
 
 matches_and_old_values_array *delete_by_region (matches_and_old_values_array *array,
-                                                long *num_matches, region_t *which,
+                                                unsigned long *num_matches, region_t *which,
                                                 bool invert);
 
 static inline long
