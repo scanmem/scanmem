@@ -1,4 +1,4 @@
-.TH scanmem 1 "2016-12-17" "scanmem-0.16"
+.TH scanmem 1 "2017-04-15" "scanmem-0.17"
 .SH NAME
 scanmem - locate and modify a variable in an executing process.
 
@@ -327,19 +327,16 @@ $ sudo scanmem `pgrep nethack`
 info: maps file located at /proc/14658/maps opened.
 info: 9 suitable regions found.
 Please enter current value, or "help" for other commands.
-0>
+>
 .fi
 
-The 0 in the
-.B scanmem
-prompt indicates we currently have no candidates, so I enter how much gold I
-currently have (58 pieces) and let
+I enter how much gold I currently have (58 pieces) and let
 .B scanmem
 find the potential candidates.
 
 
 .nf
-0> 58
+> 58
 01/09 searching   0x79f000 -   0x7b0000..........ok
 02/09 searching   0x7b0000 -   0x7cc000..........ok
 03/09 searching  0x24d2000 -  0x24f3000..........ok
@@ -370,9 +367,10 @@ info: we currently have 16 matches.
 16>
 .fi
 
-16 potential matches were found, many of them are quite unrelated, as they are part of
-the stack, belong to libraries or miscellaneous memory-mapped files. Even the heap is
-unlikely for a very old command line game. We could make
+16 potential matches were found. This is also displayed in the prompt.
+Many of them are quite unrelated, as they are part of the stack, belong to libraries
+or miscellaneous memory-mapped files. Even the heap is unlikely for a very old command
+line game. We could make
 .B scanmem
 eliminate these manually using the
 .B delete
