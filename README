@@ -12,7 +12,6 @@ variable and allows you to modify its value.
 ## GUI
 
 GameConqueror is a GUI front-end for scanmem, providing more features, such as:
-  * Flexible syntax for searching
   * Easier and multiple variable locking
   * Better process finder
   * Memory browser/editor
@@ -35,8 +34,7 @@ To read documentation:
 
 ## Build Requirements
 
-The build requires autotools-dev (autoconf, automake, etc.), libtool, libreadline-dev,
-intltool and python.
+The build requires autotools-dev, libtool, libreadline-dev, intltool, and python.
 
 ## Build and Install
 
@@ -54,20 +52,18 @@ To build without GUI:
     ./configure --prefix=/usr && make
     sudo make install
 
-If you want to specify a prefix other than `/usr`, make sure that `<prefix>/lib` and
-`<prefix>/lib64` are in an ld.so config file (`<name>.conf`) in `/etc/ld.so.conf.d/`.
-See `man ld.so`.
-
-Run `sudo ldconfig` after the first install to update the ld.so cache. Otherwise, libscanmem
-can't be found.
+scanmem and GameConqueror use static paths to libscanmem. So executing
+`ldconfig` is not required. Consider setting `--libdir=/usr/lib/scanmem` or
+`--libdir=/usr/lib64/scanmem` to avoid that libscanmem is in a library
+search path.
 
 Run `./configure --help` for more details.
 
 ## Android Build
 
-You need a [standalone toolchain of Android NDK]
-(https://developer.android.com/ndk/guides/standalone_toolchain.html#itc) (Advanced method)
-to build interactive capabilities for Android.
+You need a
+[standalone toolchain of Android NDK](https://developer.android.com/ndk/guides/standalone_toolchain.html#itc)
+(Advanced method) to build interactive capabilities for Android.
 For more information, run:
 
     ./build_for_android.sh help
