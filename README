@@ -12,6 +12,7 @@ variable and allows you to modify its value.
 ## GUI
 
 GameConqueror is a GUI front-end for scanmem, providing more features, such as:
+  * Flexible syntax for searching
   * Easier and multiple variable locking
   * Better process finder
   * Memory browser/editor
