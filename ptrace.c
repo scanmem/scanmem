@@ -582,7 +582,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 }
             }
 #else
-            if (EXPECT(peekdata(vars->target, address, &data_value) == false, false)) {
+            if (EXPECT(sm_peekdata(vars->target, address, &data_value) == false, false)) {
                 break;
             }
 #endif
