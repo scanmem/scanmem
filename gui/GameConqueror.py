@@ -55,6 +55,7 @@ CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
 PROGRESS_INTERVAL = 100 # for scan progress updates
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
+HEXEDIT_SPAN = 1024 # hexview half-height
 SCAN_RESULT_LIST_LIMIT = 10000 # maximal number of entries that can be displayed
 
 SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string']
@@ -328,7 +329,6 @@ class GameConqueror():
         # init others (backend, flag...)
         self.pid = 0 # target pid
         self.maps = []
-        self.last_hexedit_address = (0,0) # used for hexview
         self.is_scanning = False
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
 
@@ -860,18 +860,15 @@ class GameConqueror():
                 return
             addr = selected_region['start_addr']
 
-        # read region if necessary
-        start_addr = max(addr - 1024, selected_region['start_addr'])
-        end_addr = min(addr + 1024, selected_region['end_addr'])
-        if self.last_hexedit_address[0] != start_addr or \
-           self.last_hexedit_address[1] != end_addr:
-            data = self.read_memory(start_addr, end_addr - start_addr)
-            if data is None:
-                self.show_error(_('Cannot read memory'))
-                return
-            self.last_hexedit_address = (start_addr, end_addr)
-            self.memoryeditor_hexview.payload = misc.str2bytes(data)
-            self.memoryeditor_hexview.base_addr = start_addr
+        # read region if possible
+        start_addr = max(addr - HEXEDIT_SPAN, selected_region['start_addr'])
+        end_addr = min(addr + HEXEDIT_SPAN, selected_region['end_addr'])
+        data = self.read_memory(start_addr, end_addr - start_addr)
+        if data is None:
+            self.show_error(_('Cannot read memory'))
+            return
+        self.memoryeditor_hexview.payload = misc.str2bytes(data)
+        self.memoryeditor_hexview.base_addr = start_addr
         
         # set editable flag
         self.memoryeditor_hexview.editable = (selected_region['flags'][1] == 'w')
