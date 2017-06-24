@@ -6,7 +6,7 @@
     Copyright (C) 2010 Bryan Cain
     Copyright (C) 2013 Mattias Muenster <mattiasmun(a)gmail.com>
     Copyright (C) 2014-2016 Sebastian Parschauer <s.parschauer(a)gmx.de>
-    Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
+    Copyright (C) 2016-2017 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
     
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -283,14 +283,13 @@ class GameConqueror():
 
 
         # get list of things to be disabled during scan
-        self.disablelist = []
-        self.disablelist.append(self.cheatlist_tv)
-        self.disablelist.append(self.scanresult_tv)
-        self.disablelist.append(self.builder.get_object('processGrid'))
-        self.disablelist.append(self.value_input)
-        self.disablelist.append(self.reset_button)
-        self.disablelist.append(self.builder.get_object('buttonGrid'))
-        self.disablelist.append(self.memoryeditor_window)
+        self.disablelist = [self.cheatlist_tv,
+                            self.scanresult_tv,
+                            self.builder.get_object('processGrid'),
+                            self.value_input,
+                            self.reset_button,
+                            self.builder.get_object('buttonGrid'),
+                            self.memoryeditor_window]
 
 
         # init AddCheatDialog
@@ -338,6 +337,7 @@ class GameConqueror():
         self.is_first_scan = True
         GLib.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
         self.command_lock = threading.RLock()
+        self.progress_watcher_id = None
 
 
     ###########################
@@ -452,7 +452,7 @@ class GameConqueror():
         dialog.destroy()
         return True
 
-    def SearchScope_Scale_format_value_cb(self, scale, value, Data=None):
+    def SearchScope_Scale_format_value_cb(self, scale, value, data=None):
         return SEARCH_SCOPE_NAMES[int(value)]
 
     def Value_Input_activate_cb(self, entry, data=None):
