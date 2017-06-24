@@ -3,7 +3,8 @@
 
 Copyright (C) 2009,2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
 Copyright (C) 2013 Mattias Muenster <mattiasmun(a)gmail.com>
-Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
+Copyright (C) 2016-2017 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
+
 
 This file is part of GameConqueror.
 
@@ -105,7 +106,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="margin_right">5</property>
                 <property name="activates_default">True</property>
                 <property name="placeholder_text" translatable="yes">Enter address to view</property>
-                <signal name="activate" handler="MemoryEditor_Address_Entry_activate_cb" swapped="no"/>
+                <signal name="activate" handler="MemoryEditor_Handle_Address_cb" swapped="no"/>
                 <accelerator key="l" signal="grab-focus" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>
@@ -124,7 +125,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Jump to address (CTRL+ENTER)</property>
                 <property name="image">jumpto_image</property>
-                <signal name="clicked" handler="MemoryEditor_JumpTo_Button_clicked_cb" swapped="no"/>
+                <signal name="clicked" handler="MemoryEditor_Handle_Address_cb" swapped="no"/>
                 <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
               </object>
               <packing>

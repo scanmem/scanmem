@@ -352,18 +352,8 @@ class GameConqueror():
         self.browse_memory()
         return True
 
-    def MemoryEditor_Address_Entry_activate_cb(self, entry, data=None):
-        txt = self.memoryeditor_address_entry.get_text()
-        if txt == '':
-            return
-        try:
-            addr = int(txt, 16)
-            self.browse_memory(addr)
-        except:
-            self.show_error(_('Invalid address'))
-
-    def MemoryEditor_JumpTo_Button_clicked_cb(self, button, data=None):
-        txt = self.memoryeditor_address_entry.get_text()
+    def MemoryEditor_Handle_Address_cb(self, widget, data=None):
+        txt = self.memoryeditor_address_entry.get_text().strip()
         if txt == '':
             return
         try:
