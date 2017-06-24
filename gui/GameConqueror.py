@@ -122,7 +122,7 @@ class GameConqueror():
         # init GUI
         self.builder = Gtk.Builder()
         self.builder.set_translation_domain(GETTEXT_PACKAGE)
-        self.builder.add_from_file(os.path.join(WORK_DIR, 'GameConqueror.xml'))
+        self.builder.add_from_file(os.path.join(WORK_DIR, 'GameConqueror.ui'))
 
         self.main_window = self.builder.get_object('MainWindow')
         self.main_window.set_title('GameConqueror %s' % (VERSION,))
