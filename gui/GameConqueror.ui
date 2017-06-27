@@ -63,6 +63,21 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
     <property name="can_focus">False</property>
     <property name="icon_name">go-jump</property>
   </object>
+  <object class="GtkImage" id="load_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">document-open</property>
+  </object>
+  <object class="GtkImage" id="refresh_image">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="icon_name">view-refresh</property>
+  </object>
+  <object class="GtkImage" id="refresh_image2">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-refresh</property>
+  </object>
   <object class="GtkWindow" id="MemoryEditor_Window">
     <property name="height_request">280</property>
     <property name="can_focus">False</property>
@@ -124,6 +139,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="can_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="tooltip_text" translatable="yes">Jump to address (CTRL+ENTER)</property>
+                <property name="margin_right">2</property>
                 <property name="image">jumpto_image</property>
                 <signal name="clicked" handler="MemoryEditor_Handle_Address_cb" swapped="no"/>
                 <accelerator key="Return" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -132,6 +148,25 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="MemoryEditor_Refresh_Button">
+                <property name="width_request">28</property>
+                <property name="height_request">28</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="tooltip_text" translatable="yes">_Refresh (CTRL+R)</property>
+                <property name="image">refresh_image2</property>
+                <signal name="clicked" handler="MemoryEditor_Refresh_Button_clicked_cb" swapped="no"/>
+                <accelerator key="r" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">3</property>
               </packing>
             </child>
             <child>
@@ -145,7 +180,7 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
               <packing>
                 <property name="expand">True</property>
                 <property name="fill">True</property>
-                <property name="position">3</property>
+                <property name="position">4</property>
               </packing>
             </child>
           </object>
@@ -157,16 +192,6 @@ along with GameConqueror.  If not, see <http://www.gnu.org/licenses/>.
         </child>
       </object>
     </child>
-  </object>
-  <object class="GtkImage" id="load_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">document-open</property>
-  </object>
-  <object class="GtkImage" id="refresh_image">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="icon_name">view-refresh</property>
   </object>
   <object class="GtkImage" id="save_image">
     <property name="visible">True</property>

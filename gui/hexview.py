@@ -558,6 +558,12 @@ class HexView(Gtk.Box):
         buf.select_range(off_iter, iter2)
         self.hex_text.grab_focus()
 
+    def get_current_addr(self):
+        buf = self.hex_text.get_buffer()
+        buf_iter = buf.get_iter_at_mark(buf.get_insert())
+        off = buf_iter.get_offset()
+        return off//3 + self._base_addr
+
     def do_realize(self):
         Gtk.Box.do_realize(self)
         # set font

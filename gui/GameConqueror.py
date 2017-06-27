@@ -572,6 +572,18 @@ class GameConqueror():
         elif pressedkey == 'Escape':
             self.memoryeditor_window.hide()
 
+    def MemoryEditor_Refresh_Button_clicked_cb(self, button, data=None):
+        dlength = len(self.memoryeditor_hexview.payload)
+        data = self.read_memory(self.memoryeditor_hexview.base_addr, dlength)
+        if data is None:
+            self.memoryeditor_window.hide()
+            self.show_error(_('Cannot read memory'))
+            return
+        old_addr = self.memoryeditor_hexview.get_current_addr()
+        self.memoryeditor_hexview.payload = misc.str2bytes(data)
+        self.memoryeditor_hexview.show_addr(old_addr)
+
+
     # Manually add cheat
 
     def focus_on_next_widget_cb(self, widget, data=None):
