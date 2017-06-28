@@ -502,7 +502,6 @@ class HexView(Gtk.Box):
         self._font = "Monospace 10"
         self._payload = ""
         self._base_addr = 0;
-        self.scroll_mark = None
         self.editable = False
 
         self.vadj = Gtk.Adjustment()
@@ -553,12 +552,7 @@ class HexView(Gtk.Box):
         buf = self.hex_text.get_buffer()
         off_iter = buf.get_iter_at_offset(off)
 
-        if self.scroll_mark is None:
-            self.scroll_mark = buf.create_mark(None, off_iter)
-        else:
-            buf.move_mark(self.scroll_mark, off_iter)
-
-        self.hex_text.scroll_to_mark(self.scroll_mark, 0, True, 0, 0)
+        self.hex_text.scroll_to_iter(off_iter, 0, True, 0, 0)
         iter2 = off_iter.copy()
         iter2.forward_char()
         buf.select_range(off_iter, iter2)
