@@ -42,7 +42,8 @@
 
 /* from string.h in glibc for Android/BSD */
 #ifndef strdupa
-#define strdupa(s)                                                            \
+# include <alloca.h>
+# define strdupa(s)                                                           \
     ({                                                                        \
       const char *__old = (s);                                                \
       size_t __len = strlen(__old) + 1;                                       \
@@ -52,7 +53,8 @@
 #endif
 
 #ifndef strndupa
-#define strndupa(s, n)                                                        \
+# include <alloca.h>
+# define strndupa(s, n)                                                       \
     ({                                                                        \
       const char *__old = (s);                                                \
       size_t __len = strnlen(__old, (n));                                     \

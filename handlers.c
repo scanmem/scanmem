@@ -36,7 +36,6 @@
 #include <signal.h>
 #include <assert.h>
 #include <setjmp.h>
-#include <alloca.h>
 #include <strings.h>
 #include <string.h>
 #include <stdbool.h>
@@ -69,8 +68,6 @@
  * Commands are allowed to read and modify settings in the vars structure.
  *
  */
-
-#define calloca(x,y) (memset(alloca((x) * (y)), 0x00, (x) * (y)))
 
 /* try to determine the size of a pointer */
 #ifndef ULONG_MAX
@@ -122,7 +119,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
     /* --- parse arguments into settings structs --- */
 
-    settings = calloca(argc - 1, sizeof(struct setting));
+    settings = calloc(argc - 1, sizeof(struct setting));
 
     /* parse every block into a settings struct */
     for (block = 0; block < argc - 1; block++) {
@@ -182,8 +179,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     if (INTERRUPTABLE()) {
         
         /* control returns here when interrupted */
-// settings is allocated with alloca, do not free it
-//        free(settings);
+        free(settings);
         sm_detach(vars->target);
         ENDINTERRUPTABLE();
         return true;
@@ -1144,7 +1140,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
         len += strlen(argv[i]);
 
     /* allocate space */
-    command = calloca(len, 1);
+    command = calloc(len, 1);
 
     /* concatenate strings */
     for (i = 1; i < argc; i++) {
@@ -1154,14 +1150,12 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 
     /* finally execute command */
     if (system(command) == -1) {
-// command is allocated with alloca, do not free it
-//        free(command);
+        free(command);
         show_error("system() failed, command was not executed.\n");
         return false;
     }
 
-// command is allocated with alloca, do not free it
-//    free(command);
+    free(command);
     return true;
 }
 
