@@ -453,7 +453,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     element_t *n = vars->regions->head;
     region_t *r;
     unsigned long total_scan_bytes = 0;
-    void *address = NULL;
 
 #if HAVE_PROCMEM
     unsigned char *data = NULL;
@@ -521,6 +520,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         size_t bytes_at_next_dot;
         size_t bytes_per_dot;
         double progress_per_dot;
+        char *address;
 
         /* load the next region */
         r = n->data;
@@ -557,15 +557,13 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         fflush(stderr);
 
         /* for every offset, check if we have a match */
-        for (offset = 0; offset < nread; offset++) {
+        for (offset = 0, address = r->start; offset < nread; offset++, address++) {
             match_flags checkflags;
             value_t data_value;
            
             /* initialise data_value */
             zero_value(&data_value);
             valnowidth(&data_value);
-
-            address = r->start + offset;
 
 #if HAVE_PROCMEM
             /* Don't dereference as this causes an alignment issue e.g. on ARM.
@@ -605,7 +603,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             if (EXPECT(((match_length = (*sm_scan_routine)(&data_value, NULL,
                     uservalue, &checkflags, address)) > 0), false)) {
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value);
                 
                 ++vars->num_matches;
                 
@@ -614,7 +612,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             else if (required_extra_bytes_to_record)
             {
                 old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value);
+                writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value);
                 --required_extra_bytes_to_record;
             }
 
