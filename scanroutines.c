@@ -42,7 +42,7 @@ int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 /* for MATCHANY */
 #define DEFINE_INTEGER_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_ANY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_ANY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value)->flags.s##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
@@ -57,7 +57,7 @@ DEFINE_INTEGER_MATCHANY_ROUTINE(INTEGER64, 64)
 
 
 #define DEFINE_INTEGER_ROUTINE(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH) \
-    int scan_routine_##DATATYPENAME##_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         assert(VALUE_TO_COMPARE_WITH); \
         int ret = 0; \
@@ -93,7 +93,7 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPE(DECREASED, <, old_value)
 
 /* for MATCHANY */
 #define DEFINE_FLOAT_MATCHANY_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_ANY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_ANY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value)->flags.f##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
@@ -104,7 +104,7 @@ DEFINE_FLOAT_MATCHANY_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_MATCHANY_ROUTINE(FLOAT64, 64)
 
 #define DEFINE_FLOAT_ROUTINE(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH) \
-    int scan_routine_##DATATYPENAME##_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         assert(VALUE_TO_COMPARE_WITH); \
         int ret = 0; \
@@ -135,7 +135,7 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(LESSTHAN, <, user_value)
 /* special EQUALTO for float numbers */
 /*-----------------------------------*/
 #define DEFINE_FLOAT_EQUALTO_ROUTINE(FLOATTYPENAME, WIDTH) \
-    int scan_routine_##FLOATTYPENAME##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##FLOATTYPENAME##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.f##WIDTH##b) && (user_value->flags.f##WIDTH##b) \
@@ -154,7 +154,7 @@ DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 /* for reverse changing detect */
 /*-----------------------------*/
 #define DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, REVERSEMATCHTYPENAME) \
-    int scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.ineq_forwards) && scan_routine_##DATATYPENAME##_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_forwards); } \
@@ -177,7 +177,7 @@ DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
 /* for INCREASEDBY and DECREASEDBY */
 /*---------------------------------*/
 #define DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_INCREASEDBY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_INCREASEDBY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.s##DATAWIDTH##b) && (old_value->flags.s##DATAWIDTH##b) && (user_value->flags.s##DATAWIDTH##b) \
@@ -188,7 +188,7 @@ DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
         return ret; \
     } \
-    int scan_routine_##DATATYPENAME##_DECREASEDBY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_DECREASEDBY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.s##DATAWIDTH##b) && (old_value->flags.s##DATAWIDTH##b) && (user_value->flags.s##DATAWIDTH##b) \
@@ -206,7 +206,7 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(INTEGER32, 32)
 DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(INTEGER64, 64)
 
 #define DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_INCREASEDBY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_INCREASEDBY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.f##DATAWIDTH##b) && (old_value->flags.f##DATAWIDTH##b) && (user_value->flags.f##DATAWIDTH##b) \
@@ -214,7 +214,7 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(INTEGER64, 64)
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
         return ret; \
     } \
-    int scan_routine_##DATATYPENAME##_DECREASEDBY SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_DECREASEDBY SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.f##DATAWIDTH##b) && (old_value->flags.f##DATAWIDTH##b) && (user_value->flags.f##DATAWIDTH##b) \
@@ -231,7 +231,7 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(FLOAT64, 64)
 /*-----------*/
 
 #define DEFINE_INTEGER_RANGE_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.s##DATAWIDTH##b) \
@@ -253,7 +253,7 @@ DEFINE_INTEGER_RANGE_ROUTINE(INTEGER32, 32)
 DEFINE_INTEGER_RANGE_ROUTINE(INTEGER64, 64)
 
 #define DEFINE_FLOAT_RANGE_ROUTINE(DATATYPENAME, DATAWIDTH) \
-    int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_##DATATYPENAME##_RANGE SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0; \
         if ((new_value->flags.f##DATAWIDTH##b) \
@@ -270,12 +270,12 @@ DEFINE_FLOAT_RANGE_ROUTINE(FLOAT64, 64)
 /*---------------*/
 /* for BYTEARRAY */
 /*---------------*/
-int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
+extern inline int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
 {
    return saveflags->bytearray_length = ((old_value)->flags.bytearray_length); 
 }
 
-int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
+extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     bytearray_element_t *array = user_value->bytearray_value;
     int length = user_value->flags.bytearray_length;
@@ -333,11 +333,11 @@ int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*------------*/
 /* for STRING */
 /*------------*/
-int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
+extern inline int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
 {
    return saveflags->string_length = ((old_value)->flags.string_length); 
 }
-int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
+extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
     int length = user_value->flags.string_length;
@@ -379,7 +379,7 @@ int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*-------------------------*/
 /* this is for anynumber, anyinteger, anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
-    int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0, tmp_ret;\
         if ((tmp_ret = scan_routine_INTEGER8_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
@@ -388,14 +388,14 @@ int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
         if ((tmp_ret = scan_routine_INTEGER64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
         return ret; \
     } \
-    int scan_routine_ANYFLOAT_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_ANYFLOAT_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret = 0, tmp_ret; \
         if ((tmp_ret = scan_routine_FLOAT32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
         if ((tmp_ret = scan_routine_FLOAT64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
         return ret; \
     } \
-    int scan_routine_ANYNUMBER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    extern inline int scan_routine_ANYNUMBER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
         int ret1 = scan_routine_ANYINTEGER_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
         int ret2 = scan_routine_ANYFLOAT_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
