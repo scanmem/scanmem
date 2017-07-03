@@ -33,84 +33,43 @@
 #include "maps.h"
 #include "show_message.h"
 
+/* Public structs */
 
-/* public structs */
+/* Single match struct */
 typedef struct {
     uint8_t old_value;
     match_flags match_info;
 } old_value_and_match_info;
 
-/*
-   These three structs are not used; pointers to them are used to refer to arrays
-   containing copied_data_swaths / matches_swaths, in the following format:
-   - the array begins with the first_byte_in_child pointer; immediately after
-     that is the number_of_bytes, and then the struct's data describing that many
-     bytes. (Note that the number refers to the number of bytes in the child
+/* Array that contains a consecutive (in memory) sequence of matches (= swath).
+   - the first_byte_in_child pointer refers to locations in the child,
+     it cannot be followed except using ptrace()
+   - the number_of_bytes refers to the number of bytes in the child
      process's memory that are covered, not the number of bytes the struct
-     takes up.)
-   - in the first position after each such block is another such block
-     (first byte pointer and number of bytes), or a null pointer and a 0 number
-     of bytes to terminate the data. (The first_byte_in_child pointers refer
-     to locations in the child - they cannot be followed except using ptrace())
-*/
-
-/*
-typedef struct {
-    void *first_byte_in_child;
-    unsigned long number_of_bytes;
-} unknown_type_of_swath;
-
-typedef struct {
-    void *first_byte_in_child;
-    unsigned long number_of_bytes;
-    uint8_t copied_bytes[0];
-} copied_data_swath;
-
-typedef struct {
-    void *first_byte_in_child;
-    unsigned long number_of_bytes;
-    match_flags match_info[0];
-} matches_swath;
-*/
-
+     takes up. It's the length of data. */
 typedef struct {
     void *first_byte_in_child;
     unsigned long number_of_bytes;
     old_value_and_match_info data[0];
 } matches_and_old_values_swath;
 
-/*
-typedef struct {
-    unsigned long bytes_allocated;
-    unsigned long max_needed_bytes;
-} unknown_type_of_array;
-
-typedef struct {
-    unsigned long bytes_allocated;
-    unsigned long max_needed_bytes;
-    copied_data_swath swaths[0];
-} copied_data_array;
-
-typedef struct {
-    unsigned long bytes_allocated;
-    unsigned long max_needed_bytes;
-    matches_swath swaths[0];
-} matches_array;
-*/
-
+/* Master matches array, smartly resized, contains swaths.
+   Both `bytes` values refer to real struct bytes this time. */
 typedef struct {
     unsigned long bytes_allocated;
     unsigned long max_needed_bytes;
     matches_and_old_values_swath swaths[0];
 } matches_and_old_values_array;
 
+/* Location of a match in a matches_and_old_values_array */
 typedef struct {
     matches_and_old_values_swath *swath;
     long index;
 } match_location;
 
 
-/* public functions */
+/* Public functions */
+
 matches_and_old_values_array *allocate_array (matches_and_old_values_array *array,
                                               unsigned long max_bytes);
 
@@ -132,6 +91,9 @@ match_location nth_match (matches_and_old_values_array *matches, unsigned n);
 matches_and_old_values_array *delete_by_region (matches_and_old_values_array *array,
                                                 unsigned long *num_matches,
                                                 region_t *which, bool invert);
+
+/* The following functions are called in the hot scanning path and were moved
+   to this header from the .c file so that they could be inlined */
 
 static inline long
 index_of_last_element (matches_and_old_values_swath *swath)
@@ -214,7 +176,8 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
 static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
              matches_and_old_values_swath *swath,
-             void *remote_address, void *new_element)
+             void *remote_address,
+             const old_value_and_match_info *new_element)
 {
     if (swath->number_of_bytes == 0) {
         assert(swath->first_byte_in_child == NULL);
@@ -256,10 +219,10 @@ add_element (matches_and_old_values_array **array,
                 local_address_excess, &swath);
 
             switch (local_address_excess) {
-            case 4:
+            case 4 : /* = sizeof(old_value_and_match_info) */
                 memset(local_address_beyond_last_element(swath), 0, 4);
                 break;
-            case 8:
+            case 8 : /* = 2*sizeof(old_value_and_match_info) */
                 memset(local_address_beyond_last_element(swath), 0, 8);
                 break;
             default:
@@ -274,7 +237,7 @@ add_element (matches_and_old_values_array **array,
 
     /* Add me */
     *(old_value_and_match_info *)local_address_beyond_last_element(swath) =
-        *(old_value_and_match_info *)new_element;
+        *new_element;
     ++swath->number_of_bytes;
 
     return swath;
