@@ -149,7 +149,7 @@ bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *
 
     /* everything is ok */
     val->bytearray_value = array;
-    val->flags.bytearray_length = argc;
+    val->flags.length = argc;
     return true;
 }
 
@@ -241,10 +241,8 @@ int flags_to_max_width_in_bytes(match_flags flags)
     switch(sm_globals.options.scan_data_type)
     {
         case BYTEARRAY:
-            return flags.bytearray_length;
-            break;
         case STRING:
-            return flags.string_length;
+            return flags.length;
             break;
         default: /* numbers */
                  if (flags.u64b || flags.s64b || flags.f64b) return 8;

@@ -367,7 +367,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             {
             case BYTEARRAY:
                 ; /* cheat gcc */ 
-                buf_len = flags.bytearray_length * 3 + 32;
+                buf_len = flags.length * 3 + 32;
                 v = realloc(v, buf_len); /* for each byte and the suffix', this should be enough */
 
                 if (v == NULL)
@@ -375,20 +375,20 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                     show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags.bytearray_length);
+                data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags.length);
                 assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, bytearray_suffix);
                 break;
             case STRING:
                 ; /* cheat gcc */
-                buf_len = flags.string_length + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
+                buf_len = flags.length + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
                 v = realloc(v, buf_len);
                 if (v == NULL)
                 {
                     show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags.string_length);
+                data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags.length);
                 assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, string_suffix);
                 break;
@@ -872,7 +872,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     /* the string being scanned */
     uservalue_t val;
     val.string_value = vars->current_cmdline+2;
-    val.flags.string_length = strlen(val.string_value);
+    val.flags.length = strlen(val.string_value);
  
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {

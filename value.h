@@ -34,7 +34,7 @@
 /* some routines for working with value_t structures */
 
 /* this is memory-efficient but DANGEROUS */
-/* always keep in mind that don't mess up with bytearray_length or string_length when scanning for BYTEARRAY of STRING */
+/* always keep in mind to not mess up with `length` when scanning for BYTEARRAY or STRING */
 typedef union {
     struct __attribute__ ((packed)) {
         unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
@@ -52,8 +52,7 @@ typedef union {
         unsigned ineq_reverse:1; /* Whether this value has matched inequalities in reverse */
     };
 
-    uint16_t bytearray_length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
-    uint16_t string_length;          /* used when search for a string */
+    uint16_t length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
 } match_flags;
 
 /* this struct describing values retrieved from target memory */
@@ -208,7 +207,6 @@ static inline void valnowidth(value_t *val)
     val->flags.ineq_forwards = 1;
     val->flags.ineq_reverse = 1;
 
-    /* don't bother with bytearray_length and string_length */
     return;
 }
 
