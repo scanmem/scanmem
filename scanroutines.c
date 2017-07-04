@@ -272,13 +272,13 @@ DEFINE_FLOAT_RANGE_ROUTINE(FLOAT64, 64)
 /*---------------*/
 extern inline int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
 {
-   return saveflags->bytearray_length = ((old_value)->flags.bytearray_length); 
+   return saveflags->length = ((old_value)->flags.length);
 }
 
 extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     bytearray_element_t *array = user_value->bytearray_value;
-    int length = user_value->flags.bytearray_length;
+    int length = user_value->flags.length;
     int cur_idx = 0;
     int i, j;
     value_t val_buf = *new_value;
@@ -325,7 +325,7 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
     } 
     
     /* matched */
-    saveflags->bytearray_length = length;
+    saveflags->length = length;
 
     return length;
 }
@@ -335,12 +335,12 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*------------*/
 extern inline int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
 {
-   return saveflags->string_length = ((old_value)->flags.string_length); 
+   return saveflags->length = ((old_value)->flags.length);
 }
 extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
-    int length = user_value->flags.string_length;
+    int length = user_value->flags.length;
     int i, j;
     value_t val_buf = *new_value;
     for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
@@ -370,7 +370,7 @@ extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
     } 
     
     /* matched */
-    saveflags->string_length = length;
+    saveflags->length = length;
 
     return length;
 }
