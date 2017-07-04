@@ -53,6 +53,7 @@ typedef union {
     };
 
     uint16_t length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
+    uint16_t all_flags;    /* used to access the whole union for bitwise operations */
 } match_flags;
 
 /* this struct describing values retrieved from target memory */
@@ -164,16 +165,8 @@ static inline void truncval_to_flags(value_t *dst, match_flags flags)
 {
     assert(dst != NULL);
 
-    dst->flags.u64b &= flags.u64b;
-    dst->flags.s64b &= flags.s64b;
-    dst->flags.f64b &= flags.f64b;
-    dst->flags.u32b &= flags.u32b;
-    dst->flags.s32b &= flags.s32b;
-    dst->flags.f32b &= flags.f32b;
-    dst->flags.u16b &= flags.u16b;
-    dst->flags.s16b &= flags.s16b;
-    dst->flags.u8b  &= flags.u8b;
-    dst->flags.s8b  &= flags.s8b;
+    /* Act on all numeric flags in a single go */
+    dst->flags.all_flags &= flags.all_flags;
 
     /* Hack - simply overwrite the inequality flags (this should
        have no effect except to make them display properly) */
