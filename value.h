@@ -145,7 +145,8 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
 
 static inline void zero_match_flags(match_flags *flags)
 {
-    memset(flags, 0, sizeof(*flags));
+    /* It's faster than a 2 bytes memset() */
+    flags->all_flags = 0;
 }
 
 static inline void zero_value(value_t *val)
