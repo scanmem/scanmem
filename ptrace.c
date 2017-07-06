@@ -404,6 +404,8 @@ bool sm_checkmatches(globals_t *vars,
         return false;
     }
 
+    show_user("ok\n");
+
     /* tell front-end we've done */
     vars->scan_progress = MAX_PROGRESS;
 
