@@ -604,12 +604,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             /* check if we have a match */
             if (EXPECT(((match_length = (*sm_scan_routine)(&data_value, NULL,
                     uservalue, &checkflags, address)) > 0), false)) {
-                /* only set these flags for numbers */
-                if ((vars->options.scan_data_type != BYTEARRAY)
-                    && (vars->options.scan_data_type != STRING))
-                {
-                    checkflags.ineq_forwards = checkflags.ineq_reverse = 1;
-                }
                 old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
                 writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start + offset, &new_value);
                 

@@ -48,14 +48,13 @@ void valtostr(const value_t *val, char *str, size_t n)
 #define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? (string "u ") : (val->flags.s##bytes##b) ? (string "s ") : ""
     
     /* set the flags */
-    np = snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s%s]",
+    np = snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s]",
          FLAG_MACRO(64, "I64"),
          FLAG_MACRO(32, "I32"),
          FLAG_MACRO(16, "I16"),
          FLAG_MACRO(8,  "I8"),
          val->flags.f64b ? "F64 " : "",
-         val->flags.f32b ? "F32 " : "",
-         (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
+         val->flags.f32b ? "F32 " : "");
     /* handle having no type at all */
     if (np <= 2) {
         show_debug("BUG: No type\n");

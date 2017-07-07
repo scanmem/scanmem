@@ -1658,16 +1658,6 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             return false;
         }
     }
-    else if (strcasecmp(argv[1], "detect_reverse_change") == 0)
-    {
-        if (strcmp(argv[2], "0") == 0) {vars->options.detect_reverse_change = 0; }
-        else if (strcmp(argv[2], "1") == 0) {vars->options.detect_reverse_change = 1; }
-        else
-        {
-            show_error("bad value for detect_reverse_change, see `help option`.\n");
-            return false;
-        }
-    }
     else if (strcasecmp(argv[1], "dump_with_ascii") == 0)
     {
         if (strcmp(argv[2], "0") == 0) {vars->options.dump_with_ascii = 0; }

@@ -47,9 +47,6 @@ typedef union {
         unsigned s64b:1;        /* could be a    signed 64-bit variable (e.g. long long)          */
         unsigned f32b:1;        /* could be a 32-bit floating point variable (i.e. float)         */
         unsigned f64b:1;        /* could be a 64-bit floating point variable (i.e. double)        */
-
-        unsigned ineq_forwards:1; /* Whether this value has matched inequalities used the normal way */
-        unsigned ineq_reverse:1; /* Whether this value has matched inequalities in reverse */
     };
 
     uint16_t length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
@@ -168,11 +165,6 @@ static inline void truncval_to_flags(value_t *dst, match_flags flags)
 
     /* Act on all numeric flags in a single go */
     dst->flags.all_flags &= flags.all_flags;
-
-    /* Hack - simply overwrite the inequality flags (this should
-       have no effect except to make them display properly) */
-    dst->flags.ineq_forwards = flags.ineq_forwards;
-    dst->flags.ineq_reverse  = flags.ineq_reverse;
 }
 
 static inline void truncval(value_t *dst, const value_t *src)
@@ -197,9 +189,6 @@ static inline void valnowidth(value_t *val)
     val->flags.s8b  = 1;
     val->flags.f64b = 1;
     val->flags.f32b = 1;
-
-    val->flags.ineq_forwards = 1;
-    val->flags.ineq_reverse = 1;
 
     return;
 }

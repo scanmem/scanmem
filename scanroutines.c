@@ -33,7 +33,6 @@
 int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
-#define VALUE_COPY(a,b,field)       ((set_##field(a, get_##field(b))), ((a)->flags.field = 1))
 #define SET_FLAG(f, field)          ((f)->field = 1)
 
 /********************/
@@ -149,29 +148,6 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(LESSTHAN, <, user_value)
 
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
-
-/*-----------------------------*/
-/* for reverse changing detect */
-/*-----------------------------*/
-#define DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, MATCHTYPENAME, REVERSEMATCHTYPENAME) \
-    extern inline int scan_routine_##DATATYPENAME##_##MATCHTYPENAME##_WITH_REVERSE SCAN_ROUTINE_ARGUMENTS \
-    { \
-        int ret = 0; \
-        if ((new_value->flags.ineq_forwards) && scan_routine_##DATATYPENAME##_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_forwards); } \
-        if ((new_value->flags.ineq_reverse) && scan_routine_##DATATYPENAME##_##REVERSEMATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, ineq_reverse); } \
-        return ret; \
-    }
-
-#define DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(DATATYPENAME, DATAWIDTH) \
-    DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, INCREASED, DECREASED) \
-    DEFINE_ROUTINE_WITH_REVERSE_DETECT(DATATYPENAME, DATAWIDTH, DECREASED, INCREASED)
-
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER8, 8)
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER16, 16)
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER32, 32)
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(INTEGER64, 64)
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT32, 32)
-DEFINE_ROUTINE_WITH_REVERSE_DETECT_FOR_DATATYPE(FLOAT64, 64)
 
 /*---------------------------------*/
 /* for INCREASEDBY and DECREASEDBY */
@@ -411,8 +387,6 @@ DEFINE_ANYTYPE_ROUTINE(INCREASED)
 DEFINE_ANYTYPE_ROUTINE(DECREASED)
 DEFINE_ANYTYPE_ROUTINE(GREATERTHAN)
 DEFINE_ANYTYPE_ROUTINE(LESSTHAN)
-DEFINE_ANYTYPE_ROUTINE(INCREASED_WITH_REVERSE)
-DEFINE_ANYTYPE_ROUTINE(DECREASED_WITH_REVERSE)
 DEFINE_ANYTYPE_ROUTINE(INCREASEDBY)
 DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
 DEFINE_ANYTYPE_ROUTINE(RANGE)
@@ -450,12 +424,6 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
 {
-    if (sm_globals.options.detect_reverse_change)
-    {
-        CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASED, INCREASED_WITH_REVERSE)
-        CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED_WITH_REVERSE)
-    }
-
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHEQUALTO, EQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHNOTEQUALTO, NOTEQUALTO)

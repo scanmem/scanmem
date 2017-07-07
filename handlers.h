@@ -309,14 +309,6 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\t2:\theap, stack executable and bss only\n" \
                  "\t3:\teverything(e.g. other libs)\n" \
                  "\n" \
-                 "detect_reverse_change\twhether to (also) search for values that changes oppositely as given order\n" \
-                 "\t\t\tDefault:0\n" \
-                 "\tIf you want to use this feature, you can only search for INCREASED or DECREASED after initial search\n" \
-                 "\n" \
-                 "\tpossible values:\n" \
-                 "\t0:\tdisabled\n" \
-                 "\t1:\tenabled\n" \
-                 "\n" \
                  "dump_with_ascii\twhether to print ascii characters with a memory dump\n" \
                  "\t\t\tDefault:1\n" \
                  "\n" \

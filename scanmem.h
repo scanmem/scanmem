@@ -87,7 +87,6 @@ typedef struct {
         /* options that can be changed during runtime */
         scan_data_type_t scan_data_type;
         region_scan_level_t region_scan_level;
-        unsigned short detect_reverse_change;
         unsigned short dump_with_ascii;
         unsigned short reverse_endianness;
     } options;
