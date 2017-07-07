@@ -256,13 +256,13 @@ int flags_to_max_width_in_bytes(match_flags flags)
     }
 }
 
-int val_max_width_in_bytes(value_t *val)
+int val_max_width_in_bytes(const value_t *val)
 {
 	return flags_to_max_width_in_bytes(val->flags);
 }
 
 #define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(type, typename, signedness_letter) \
-type get_##signedness_letter##typename (const value_t const* val) \
+type get_##signedness_letter##typename (const value_t* val) \
 { \
 	     if (sizeof(type) <= 1) return (type)get_##signedness_letter##8b(val); \
 	else if (sizeof(type) <= 2) return (type)get_##signedness_letter##16b(val); \

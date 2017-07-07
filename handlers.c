@@ -902,7 +902,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-static inline bool parse_uservalue_default(char *str, uservalue_t *val)
+static inline bool parse_uservalue_default(const char *str, uservalue_t *val)
 {
     bool ret = true;
 

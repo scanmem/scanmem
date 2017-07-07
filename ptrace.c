@@ -83,7 +83,7 @@
 static struct {
     uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from ptrace()  */
     unsigned size;              /* number of entries (in bytes) */
-    char *base;                 /* base address of cached region */
+    const char *base;           /* base address of cached region */
     pid_t pid;                  /* what pid this applies to */
 } peekbuf;
 
@@ -128,12 +128,12 @@ bool sm_detach(pid_t target)
  * consecutive addresses.
  */
 
-bool sm_peekdata(pid_t pid, void *addr, value_t * result)
+bool sm_peekdata(pid_t pid, const void *addr, value_t * result)
 {
-    char *reqaddr = addr;
+    const char *reqaddr = addr;
     int i, j;
     int shift_size1 = 0, shift_size2 = 0;
-    char *last_address_gathered = 0;
+    const char *last_address_gathered = NULL;
 
     assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
     assert(result != NULL);
@@ -186,7 +186,7 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
     
     for (i = 0; i < shift_size1; i += sizeof(long))
     {
-        char *ptrace_address = peekbuf.base + peekbuf.size;
+        const char *ptrace_address = peekbuf.base + peekbuf.size;
         long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
 
         /* check if ptrace() succeeded */
@@ -699,7 +699,7 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
     return sm_detach(target);
 }
 
-bool sm_read_array(pid_t target, void *addr, char *buf, int len)
+bool sm_read_array(pid_t target, const void *addr, char *buf, int len)
 {
     if (sm_attach(target) == false) {
         return false;

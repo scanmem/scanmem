@@ -64,7 +64,7 @@ typedef enum {
 /* NOTE: saveflag must be set to 0, since only useful bits are set, but extra bits are not cleared! */
 /*       address is pointing to new_value in TARGET PROCESS MEMORY SPACE, used when searching for a byte array */
 /* return the number of bytes needed to store old_value, 0 for not matched */
-typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag, void *address);
+typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag, const void *address);
 extern scan_routine_t sm_scan_routine;
 
 /* 

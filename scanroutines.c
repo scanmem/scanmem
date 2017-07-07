@@ -29,7 +29,7 @@
 
 
 /* for convenience */
-#define SCAN_ROUTINE_ARGUMENTS (const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags, void *address) 
+#define SCAN_ROUTINE_ARGUMENTS (const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags, const void *address)
 int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 #define VALUE_COMP(a,b,field,op)    (((a)->flags.field && (b)->flags.field) && (get_##field(a) op get_##field(b)))
@@ -235,7 +235,7 @@ extern inline int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
 
 extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
-    bytearray_element_t *array = user_value->bytearray_value;
+    const bytearray_element_t *array = user_value->bytearray_value;
     int length = user_value->flags.length;
     int cur_idx = 0;
     int i, j;

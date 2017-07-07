@@ -90,7 +90,7 @@ typedef struct {
     float float32_value;
     double float64_value;
 
-    bytearray_element_t *bytearray_value;
+    const bytearray_element_t *bytearray_value;
     const char *string_value;
 
     match_flags flags;
@@ -106,7 +106,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
 int flags_to_max_width_in_bytes(match_flags flags);
-int val_max_width_in_bytes(value_t *val);
+int val_max_width_in_bytes(const value_t *val);
 
 #define get_s8b(val) ((val)->int8_value)
 #define get_u8b(val) ((val)->uint8_value)
@@ -131,8 +131,8 @@ int val_max_width_in_bytes(value_t *val);
 #define set_f64b(val, v) (((val)->float64_value) = v)
 
 #define DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(type, typename) \
-    unsigned type get_u##typename (const value_t const *val); \
-    signed type get_s##typename (const value_t const *val); 
+    unsigned type get_u##typename (const value_t *val); \
+    signed type get_s##typename (const value_t *val);
 
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(char, char);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
