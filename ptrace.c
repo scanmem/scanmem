@@ -270,7 +270,8 @@ static inline void print_a_dot(void)
     fflush(stderr);
 }
 
-/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
+/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
+it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
 bool sm_checkmatches(globals_t *vars,
                      scan_match_type_t match_type,
@@ -286,6 +287,14 @@ bool sm_checkmatches(globals_t *vars,
     int samples_to_dot = SAMPLES_PER_DOT;
     size_t bytes_at_next_sample;
     size_t bytes_per_sample;
+
+    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    {
+        show_error("unsupported scan for current data type.\n");
+        return false;
+    }
+
+    assert(sm_scan_routine);
 
     while(tmp_swath_index->number_of_bytes)
     {
@@ -310,18 +319,11 @@ bool sm_checkmatches(globals_t *vars,
     vars->num_matches = 0;
     vars->scan_progress = 0.0;
     vars->stop_flag = false;
-    
-    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
-    {
-        show_error("unsupported scan for current data type.\n"); 
-        return false;
-    }
 
-    assert(sm_scan_routine);
-    
     /* stop and attach to the target */
     if (sm_attach(vars->target) == false)
         return false;
+
     while (reading_swath.first_byte_in_child) {
         int match_length = 0;
         value_t data_value;
