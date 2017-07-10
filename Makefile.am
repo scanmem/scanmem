@@ -4,7 +4,7 @@ if ENABLE_GUI
   SUBDIRS = po gui
 endif
 
-AM_CFLAGS = -O2 -g -Wall
+AM_CFLAGS = -std=gnu99 -O2 -g -Wall
 
 lib_LTLIBRARIES = libscanmem.la
 
