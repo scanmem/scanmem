@@ -24,6 +24,8 @@
 #ifndef ENDIANNESS_H
 #define ENDIANNESS_H
 
+#include "config.h"
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -31,7 +33,6 @@
 
 #include "scanmem.h"
 #include "value.h"
-#include "config.h"
 
 /* True if host is big endian */
 #ifdef WORDS_BIGENDIAN

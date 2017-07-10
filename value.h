@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <assert.h>
+#include <stdbool.h>
 
 /* some routines for working with value_t structures */
 

@@ -25,6 +25,10 @@
 #ifndef HANDLERS_H
 #define HANDLERS_H
 
+#include <stdbool.h>
+
+#include "scanmem.h"
+
 /*
  * SHRTDOC's are one line descriptions of the supported command (shown with `help`).
  * LONGDOC's are detailed descriptions (shown with `help command`) (wrap them before column 80).

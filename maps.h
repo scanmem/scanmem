@@ -25,6 +25,9 @@
 #ifndef MAPS_H
 #define MAPS_H
 
+#include <stdbool.h>
+#include <sys/types.h>
+
 #include "list.h"
 
 /* determine what regions we need */

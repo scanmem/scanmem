@@ -20,6 +20,9 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
+#include <setjmp.h>
+#include <signal.h>
+
 /* small header file to manage interrupted commands */
 
 static sigjmp_buf jmpbuf;       /* used when aborting a command due to interrupt */
