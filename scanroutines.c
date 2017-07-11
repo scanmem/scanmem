@@ -118,7 +118,8 @@ DEFINE_FLOAT_MATCHANY_ROUTINE(FLOAT64, 64)
     DEFINE_FLOAT_ROUTINE(FLOAT32, 32, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH) \
     DEFINE_FLOAT_ROUTINE(FLOAT64, 64, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH) 
 
-DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(NOTEQUALTO, !=, user_value)   /* TODO: this should be consistent with !EQUALTO */
+DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(EQUALTO, ==, user_value)
+DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(NOTEQUALTO, !=, user_value)
 DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(NOTCHANGED, ==, old_value)         /* this is bad */
 DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(CHANGED, !=, old_value)      /* this is bad, but better than above */
 DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(INCREASED, >, old_value)
@@ -129,25 +130,6 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPE(LESSTHAN, <, user_value)
 /********************/
 /* Special routines */
 /********************/
-
-/*-----------------------------------*/
-/* special EQUALTO for float numbers */
-/*-----------------------------------*/
-#define DEFINE_FLOAT_EQUALTO_ROUTINE(FLOATTYPENAME, WIDTH) \
-    extern inline int scan_routine_##FLOATTYPENAME##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
-    { \
-        int ret = 0; \
-        if ((new_value->flags.f##WIDTH##b) && (user_value->flags.f##WIDTH##b) \
-            && (get_f##WIDTH##b(new_value) == get_f##WIDTH##b(user_value))) \
-        { \
-            SET_FLAG(saveflags, f##WIDTH##b); \
-            ret = (WIDTH)/8; \
-        } \
-        return ret; \
-    }
-
-DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT32, 32)
-DEFINE_FLOAT_EQUALTO_ROUTINE(FLOAT64, 64)
 
 /*---------------------------------*/
 /* for INCREASEDBY and DECREASEDBY */
