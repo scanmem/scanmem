@@ -1491,11 +1491,9 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         string_parameter = vars->current_cmdline;
         for(i = 0; i < 3; ++i)
         {
-            while(((*string_parameter) == ' ')
-                 ||(*string_parameter) == '\t') 
+            while(isspace(*string_parameter))
                 ++ string_parameter;
-            while(((*string_parameter) != ' ')
-                 &&(*string_parameter) != '\t') 
+            while(!isspace(*string_parameter))
                 ++ string_parameter;
         }
         ++ string_parameter;
