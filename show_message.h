@@ -48,7 +48,4 @@ void show_debug(const char *fmt, ...);
 /* display message only when not running as a backend */
 void show_user(const char *fmt, ...);
 
-/* display progress of scan */
-void show_scan_progress(unsigned long cur, unsigned long total);
-
 #endif /* SHOW_MESSAGE_H */

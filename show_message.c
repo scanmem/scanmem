@@ -76,10 +76,3 @@ void show_debug(const char *fmt, ...)
     }
     va_end (args);
 }
-
-
-void show_scan_progress(unsigned long cur, unsigned long total)
-{
-    fprintf(stderr, ".");
-    fflush(stderr);
-}
