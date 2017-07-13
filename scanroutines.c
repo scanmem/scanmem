@@ -332,6 +332,32 @@ extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 
     return length;
 }
+
+/* optimized routines for small strings
+   careful: WIDTH = 8*LENGTH */
+
+#define DEFINE_STRING_POW2_EQUALTO_ROUTINE(WIDTH) \
+    extern inline int scan_routine_STRING##WIDTH##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (new_value->flags.length && \
+            (get_u##WIDTH##b(new_value) == *(uint##WIDTH##_t*)(user_value->string_value))) \
+        { \
+            /* matched */ \
+            saveflags->length = (WIDTH)/8; \
+            return (WIDTH)/8; \
+        } \
+        else \
+        { \
+            /* not matched */ \
+            return 0; \
+        } \
+    }
+
+DEFINE_STRING_POW2_EQUALTO_ROUTINE(8)
+DEFINE_STRING_POW2_EQUALTO_ROUTINE(16)
+DEFINE_STRING_POW2_EQUALTO_ROUTINE(32)
+DEFINE_STRING_POW2_EQUALTO_ROUTINE(64)
+
 /*-------------------------*/
 /* Any-xxx types specifiec */
 /*-------------------------*/
@@ -397,14 +423,39 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
     CHOOSE_ROUTINE(ANYFLOAT, ANYFLOAT, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     CHOOSE_ROUTINE(ANYNUMBER, ANYNUMBER, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
 
+#define CHOOSE_ROUTINE_STRING(SCANMATCHTYPE, ROUTINEMATCHTYPENAME, LENGTH) \
+    if (mt == SCANMATCHTYPE) \
+    { \
+        switch (LENGTH) \
+        { \
+            case 0: \
+                assert(false); \
+                break; \
+            case 1: \
+                return &scan_routine_STRING8_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 2: \
+                return &scan_routine_STRING16_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 4: \
+                return &scan_routine_STRING32_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 8: \
+                return &scan_routine_STRING64_##ROUTINEMATCHTYPENAME; \
+                break; \
+            default: \
+                return &scan_routine_STRING_##ROUTINEMATCHTYPENAME; \
+                break; \
+        } \
+    }
 
 
-bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
 {
-    return (sm_scan_routine = sm_get_scanroutine(dt, mt)) != NULL;
+    return (sm_scan_routine = sm_get_scanroutine(dt, mt, uflags)) != NULL;
 }
 
-scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
 {
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHEQUALTO, EQUALTO)
@@ -419,8 +470,11 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHLESSTHAN, LESSTHAN)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHRANGE, RANGE)
 
-    CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO) 
-    CHOOSE_ROUTINE(STRING, STRING, MATCHEQUALTO, EQUALTO) 
+    CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO)
+
+    if (uflags && dt == STRING) {
+        CHOOSE_ROUTINE_STRING(MATCHEQUALTO, EQUALTO, uflags->length)
+    }
 
     return NULL;
 }

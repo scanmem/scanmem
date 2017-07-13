@@ -288,7 +288,7 @@ bool sm_checkmatches(globals_t *vars,
     size_t bytes_at_next_sample;
     size_t bytes_per_sample;
 
-    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, &uservalue->flags) == false)
     {
         show_error("unsupported scan for current data type.\n");
         return false;
@@ -463,7 +463,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     match_flags zero_flag;
     zero_match_flags(&zero_flag);
     
-    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type) == false)
+    if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, &uservalue->flags) == false)
     {
         show_error("unsupported scan for current data type.\n"); 
         return false;

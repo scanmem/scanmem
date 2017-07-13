@@ -1260,7 +1260,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         /* check if the new value is different */
         match_flags tmpflags;
         zero_match_flags(&tmpflags);
-        scan_routine_t valuecmp_routine = (sm_get_scanroutine(ANYNUMBER, MATCHCHANGED));
+        scan_routine_t valuecmp_routine = (sm_get_scanroutine(ANYNUMBER, MATCHCHANGED, NULL));
         if (valuecmp_routine(&o, &n, NULL, &tmpflags, address)) {
 
             valcpy(&o, &n);
