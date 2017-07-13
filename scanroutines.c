@@ -300,34 +300,51 @@ extern inline int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
 extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
-    int length = user_value->flags.length;
-    int i, j;
-    value_t val_buf = *new_value;
-    for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
+    /* this testing order is faster than the more logical reverse */
+    if(new_value->int64_value != *((int64_t*)scan_string) ||
+       !new_value->flags.length)
     {
+        /* not matched */
+        return 0;
+    }
+
+    uint length = user_value->flags.length;
+    unsigned int i, j;
+    value_t val_buf;
+    for(i = sizeof(int64_t); i + sizeof(int64_t) <= length; i += sizeof(int64_t))
+    {
+        /* read next block */
+        if (!sm_peekdata(sm_globals.target, address + i, &val_buf))
+        {
+            /* cannot read */
+            return 0;
+        }
+
         if(val_buf.int64_value != *((int64_t*)(scan_string+i)))
         {
             /* not matched */
-            return 0;
-        } 
-         
-        /* read next block */
-        if (!sm_peekdata(sm_globals.target, address + i + sizeof(int64_t), &val_buf))
-        {
-            /* cannot read */
             return 0;
         }
     }
 
     /* match bytes left */
-    for(j = 0; j < length - i; ++j)
+    if (i < length)
     {
-        if(val_buf.bytes[j] != *(scan_string+i+j))
+        /* read next block */
+        if (!sm_peekdata(sm_globals.target, address + i, &val_buf))
         {
-            /* not matched */
+            /* cannot read */
             return 0;
         }
-    } 
+        for(j = 0; j < length - i; ++j)
+        {
+            if(val_buf.chars[j] != (scan_string+i)[j])
+            {
+                /* not matched */
+                return 0;
+            }
+        }
+    }
     
     /* matched */
     saveflags->length = length;
