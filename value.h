@@ -68,6 +68,7 @@ typedef struct {
         float float32_value;
         double float64_value;
         uint8_t bytes[sizeof(int64_t)];
+        char chars[sizeof(int64_t)];
     };
     
     match_flags flags;
