@@ -295,6 +295,8 @@ extern inline int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
 {
    return saveflags->length = ((old_value)->flags.length);
 }
+
+/* Used only for length>8 */
 extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
@@ -357,6 +359,34 @@ DEFINE_STRING_POW2_EQUALTO_ROUTINE(8)
 DEFINE_STRING_POW2_EQUALTO_ROUTINE(16)
 DEFINE_STRING_POW2_EQUALTO_ROUTINE(32)
 DEFINE_STRING_POW2_EQUALTO_ROUTINE(64)
+
+#define DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(WIDTH) \
+    extern inline int scan_routine_STRING##WIDTH##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (!new_value->flags.length) \
+        { \
+            /* new_value is not actually a valid string */ \
+            return 0; \
+        } \
+        const char *scan_string = user_value->string_value; \
+        int i; \
+        for(i = 0; i < (WIDTH)/8; ++i) \
+        { \
+            if(new_value->chars[i] != scan_string[i]) \
+            { \
+                /* not matched */ \
+                return 0; \
+            } \
+        } \
+        /* matched */ \
+        saveflags->length = (WIDTH)/8; \
+        return (WIDTH)/8; \
+    }
+
+DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(24)
+DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(40)
+DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(48)
+DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(56)
 
 /*-------------------------*/
 /* Any-xxx types specifiec */
@@ -437,8 +467,20 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
             case 2: \
                 return &scan_routine_STRING16_##ROUTINEMATCHTYPENAME; \
                 break; \
+            case 3: \
+                return &scan_routine_STRING24_##ROUTINEMATCHTYPENAME; \
+                break; \
             case 4: \
                 return &scan_routine_STRING32_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 5: \
+                return &scan_routine_STRING40_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 6: \
+                return &scan_routine_STRING48_##ROUTINEMATCHTYPENAME; \
+                break; \
+            case 7: \
+                return &scan_routine_STRING56_##ROUTINEMATCHTYPENAME; \
                 break; \
             case 8: \
                 return &scan_routine_STRING64_##ROUTINEMATCHTYPENAME; \
