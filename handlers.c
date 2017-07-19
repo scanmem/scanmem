@@ -485,7 +485,23 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
 
+    bool keep_regions = false;
+
+    if (argc == 1 && strcmp(argv[0], "mreset")==0)
+        keep_regions = true;
+
+    unsigned idx = 0;
+    for (; idx < argc; ++idx ) {
+        if ( strcmp(argv[idx], "keep-regions")==0)
+            keep_regions = true;
+    }
+
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+
+    if (keep_regions) {
+        show_info("matches reseted, but regions were kept\n");
+        return true;
+    }
 
     /* refresh list of regions */
     l_destroy(vars->regions);
@@ -925,6 +941,10 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     bool ret = false;
 
     USEPARAMS();
+
+    if (argc == 1 && strcmp(argv[0], "mreset")==0) {
+        return handler__reset(vars, argv, argc);
+    }
 
     switch(vars->options.scan_data_type)
     {
