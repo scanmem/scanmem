@@ -25,15 +25,17 @@
 #include "scanmem.h"
 
 
+typedef bool (*handler_ptr)(globals_t *vars, char **argv, unsigned argc);
+
 typedef struct {
-    bool (*handler)(globals_t *vars, char **argv, unsigned argc);
+    handler_ptr handler;
     char *command;
     char *shortdoc;
     char *longdoc;
 } command_t;
 
 
-bool sm_registercommand(const char *command, void *handler, list_t *commands,
+bool sm_registercommand(const char *command, handler_ptr handler, list_t *commands,
                         char *shortdoc, char *longdoc);
 bool sm_execcommand(globals_t *vars, const char *commandline);
 
