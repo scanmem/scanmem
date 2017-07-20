@@ -38,7 +38,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
     char *lptr;
     size_t len = 0;
 
-    /* Check for invalid arguments */
+    /* check for invalid arguments */
     if (lineptr == NULL || n == NULL) {
         errno = EINVAL;
         return -1;
@@ -46,13 +46,13 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
 
     lptr = fgetln(stream, &len);
     if (lptr == NULL) {
-        /* Invalid stream */
+        /* invalid stream */
         errno = EINVAL;
         return -1;
     }
 
     /*
-     * getline() returns a null byte ('\0') terminated C string
+     * getline() returns a null byte ('\0') terminated C string,
      * but fgetln() returns characters without '\0' termination
      */
     if (*lineptr == NULL) {
@@ -60,7 +60,7 @@ ssize_t getline(char **lineptr, size_t *n, FILE *stream)
         goto alloc_buf;
     }
 
-    /* Realloc the original pointer */
+    /* realloc the original pointer */
     if (*n < len + 1) {
         free(*lineptr);
 
@@ -73,7 +73,7 @@ alloc_buf:
         }
     }
 
-    /* Copy over the string */
+    /* copy over the string */
     memcpy(*lineptr, lptr, len);
     (*lineptr)[len] = '\0';
 

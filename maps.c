@@ -101,7 +101,7 @@ bool sm_readmaps(pid_t target, list_t *regions)
                 goto error;
             }
             
-            /* initialise to zero */
+            /* initialize to zero */
             memset(filename, '\0', len);
 
             /* parse each line */
@@ -224,7 +224,7 @@ bool sm_readmaps(pid_t target, list_t *regions)
                     goto error;
                 }
 
-                /* initialise this region */
+                /* initialize this region */
                 map->flags.read = true;
                 map->flags.write = true;
                 map->start = (void *) start;

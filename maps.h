@@ -27,7 +27,7 @@
 
 #include "list.h"
 
-/* determine what regions we need */
+/* determine which regions we need */
 typedef enum {
     REGION_ALL,                            /* each of them */
     REGION_HEAP_STACK_EXECUTABLE,          /* heap, stack, executable */
@@ -47,7 +47,7 @@ extern const char *region_type_names[];
 
 /* a region obtained from /proc/pid/maps, these are searched for matches */
 typedef struct {
-    void *start;             /* start address. Hack: If HAVE_PROCMEM, this is actually an (unsigned long) offset into /proc/{pid}/mem */
+    void *start;             /* Start address. Hack: If HAVE_PROCMEM is defined, this is actually an (unsigned long) offset into /proc/{pid}/mem */
     unsigned long size;              /* size */
     region_type_t type;
     unsigned long load_addr;         /* e.g. load address of the executable */

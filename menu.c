@@ -102,8 +102,8 @@ static char **commandcompletion(const char *text, int start, int end)
 
 
 /*
- * sm_getcommand() reads in a command using readline, and places a pointer to
- * the read string into *line, _which must be free'd by caller_.
+ * sm_getcommand() reads in a command using readline and places a pointer to
+ * the read string into *line, _which must be free'd by caller.
  * returns true on success, or false on error.
  */
 
@@ -126,7 +126,7 @@ bool sm_getcommand(globals_t *vars, char **line)
     while (true) {
         if (vars->options.backend == 0)
         {
-            /* for normal user, read in the next command using readline library */
+            /* for normal users, read in the next command using readline library */
             success = ((*line = readline(prompt)) != NULL);
         }
         else 
@@ -139,7 +139,7 @@ bool sm_getcommand(globals_t *vars, char **line)
             ssize_t bytes_read = getline(line, &n, stdin);
             success = (bytes_read > 0);
             if (success)
-                (*line)[bytes_read-1] = '\0'; /* remove the trialing newline */
+                (*line)[bytes_read-1] = '\0'; /* remove the trailing newline */
         }
         if (!success) {
             /* EOF */

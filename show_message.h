@@ -20,16 +20,16 @@
 */
 
 /*
- * This file declares all types of output functions, in order to provide well-formatted messages that a front-end can understand
+ * This file declares all types of output functions, in order to provide well-formatted messages that a front-end can understand.
  *
- * Basically, all data go through stdout, and all message (to user or to front-end) go through stderr
+ * Basically, all data goes through stdout, and all messages (to user or front-end) go through stderr.
  *
  * In stderr:
- *  all messages prefixed with 'error:' will be considered fatal error, front-end may notify user to re-start backend
- *  all messages prefixed with 'warn:' will be considered nonfatal error
+ *  all messages prefixed with 'error:' will be considered a fatal error; front-end may notify user to restart backend
+ *  all messages prefixed with 'warn:' will be considered a nonfatal error.
  *  all messages prefixed with 'info:' will be ignored (by the front-end)
  *
- *  To display message to user only, use show_user, nothing will be prepended, and the message will be ignore if scanmem is running as a backend
+ *  To display messages to user only, use show_user; nothing will be prepended, and the message will be ignored if scanmem is running as a backend.
  */
 
 #ifndef SHOW_MESSAGE_H

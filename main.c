@@ -185,7 +185,7 @@ int main(int argc, char **argv)
             break;
         }
 
-        /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
+        /* sm_execcommand() returning failure is not fatal, it just means the command could not complete. */
         if (sm_execcommand(vars, line) == false) {
             if (vars->target == 0) {
                 show_user("Enter the pid of the process to search using the \"pid\" command.\n");

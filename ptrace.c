@@ -52,7 +52,7 @@
 # define EXPECT(x,y) x
 #endif
 
-// Dirty hack for FreeBSD
+// dirty hack for FreeBSD
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define PTRACE_ATTACH PT_ATTACH
 #define PTRACE_DETACH PT_DETACH
@@ -66,7 +66,7 @@
 #include "scanmem.h"
 #include "show_message.h"
 
-/* Progress handling */
+/* progress handling */
 #define NUM_DOTS (10)
 #define NUM_SAMPLES (100)
 #define MAX_PROGRESS (1.0)  /* 100% */
@@ -92,7 +92,7 @@ bool sm_attach(pid_t target)
 {
     int status;
 
-    /* attach, to the target application, which should cause a SIGSTOP */
+    /* attach to the target application, which should cause a SIGSTOP */
     if (ptrace(PTRACE_ATTACH, target, NULL, NULL) == -1L) {
         show_error("failed to attach to %d, %s\n", target, strerror(errno));
         return false;
@@ -115,7 +115,7 @@ bool sm_attach(pid_t target)
 
 bool sm_detach(pid_t target)
 {
-    // addr is ignore under Linux, but should be 1 under FreeBSD in order to let the child process continue at what it had been interrupted
+    // addr is ignored on Linux, but should be 1 on FreeBSD in order to let the child process continue execution where it had been interrupted
     return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
 }
 
@@ -138,7 +138,7 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
     assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
     assert(result != NULL);
 
-    /* initialise result */
+    /* initialize result */
     zero_value(result);
     valnowidth(result);
 
@@ -155,11 +155,11 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
         assert(peekbuf.size != 0);
 
         /* partial hit, we have some of the data but not all, so remove old entries - shift the frame by as far as is necessary */
-        /* tail shift, round up to nearest long size, for ptrace efficiency */
+        /* tail shift, round up to nearest long size for ptrace efficiency */
         shift_size1 = (reqaddr + sizeof(int64_t)) - (peekbuf.base + peekbuf.size);
         shift_size1 = sizeof(long) * (1 + (shift_size1-1) / sizeof(long));
 
-        /* head shift if necessary*/
+        /* head shift if necessary */
         if (peekbuf.size + shift_size1 > MAX_PEEKBUF_SIZE) 
         {
             shift_size2 = reqaddr-peekbuf.base;
@@ -174,14 +174,14 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
         }
     } else {
 
-        /* cache miss, invalidate cache */
+        /* cache miss, invalidate the cache */
         shift_size1 = shift_size2 = sizeof(int64_t);
         peekbuf.pid = pid;
         peekbuf.size = 0;
         peekbuf.base = addr;
     }
 
-    /* we need a ptrace() to complete request */
+    /* we need a ptrace() to complete the request */
     errno = 0;
     
     for (i = 0; i < shift_size1; i += sizeof(long))
@@ -191,18 +191,18 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
 
         /* check if ptrace() succeeded */
         if (EXPECT(ptraced_long == -1L && errno != 0, false)) {
-            /* its possible i'm trying to read partially oob */
+            /* it's possible i'm trying to read partially oob */
             if (errno == EIO || errno == EFAULT) {
                 
                 /* read backwards until we get a good read, then shift out the right value */
                 for (j = 1, errno = 0; j < sizeof(long); j++, errno = 0) {
                 
-                    /* Try for a shifted ptrace - 'continue' (i.e. try an increased shift) if it fails */
+                    /* try for a shifted ptrace - 'continue' (i.e. try an increased shift) if it fails */
                     if ((ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address - j, NULL)) == -1L && 
                         (errno == EIO || errno == EFAULT))
                             continue;
                     
-                    /* Cache it with the appropriate offset */
+                    /* cache it with the appropriate offset */
                     if(peekbuf.size >= j)
                     {
                         memcpy(&peekbuf.cache[peekbuf.size - j], &ptraced_long, sizeof(long));
@@ -215,16 +215,16 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
                     peekbuf.size += sizeof(long) - j;
                     last_address_gathered = ptrace_address + sizeof(long) - j;
                     
-                    /* Interrupt the gathering process */
+                    /* interrupt the gathering process */
                     goto doublebreak;
                 }
             }
             
-            /* i wont print a message here, would be very noisy if a region is unmapped */
+            /* I wont print a message here, would be very noisy if a region is unmapped */
             return false;
         }
         
-        /* Otherwise, ptrace() worked - cache the data, increase the size */
+        /* otherwise, ptrace() worked - cache the data and increase the size */
         memcpy(&peekbuf.cache[peekbuf.size], &ptraced_long, sizeof(long));
         peekbuf.size += sizeof(long);
         last_address_gathered = ptrace_address + sizeof(long);
@@ -232,24 +232,24 @@ bool sm_peekdata(pid_t pid, void *addr, value_t * result)
     
     doublebreak:
     
-    /* Return result to caller */
+    /* return result to caller */
     if (reqaddr + sizeof(int64_t) <= last_address_gathered)
     {
-        /* The values are fine - read away */
+        /* the values are fine - read away */
         memcpy(&result->int64_value, &peekbuf.cache[reqaddr - peekbuf.base], sizeof(result->int64_value));
     }
     else
     {
         int successful_gathering = last_address_gathered - reqaddr;
         
-        /* We didn't get enough - add zeroes at the end */
+        /* we didn't get enough - add zeroes at the end */
         for (i = 0; i < sizeof(int64_t); ++i)
         {
             uint8_t val = (i < successful_gathering) ? peekbuf.cache[reqaddr - peekbuf.base + i] : 0;
             *(((uint8_t *)&result->int64_value)    + i) = val;
         }
         
-        /* Mark which values this can't be */
+        /* mark which values this can't be */
         if (successful_gathering < sizeof(int64_t))
             result->flags.u64b = result->flags.s64b = result->flags.f64b = 0;
         if (successful_gathering < sizeof(int32_t))
@@ -270,7 +270,7 @@ static inline void print_a_dot(void)
     fflush(stderr);
 }
 
-/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true.
+/* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches); it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory; otherwise, true.
 "value" is what to compare to. It is meaningless when the match type is not MATCHEXACT. */
 bool sm_checkmatches(globals_t *vars,
                      scan_match_type_t match_type,
@@ -329,7 +329,7 @@ bool sm_checkmatches(globals_t *vars,
 
         void *address = reading_swath.first_byte_in_child + reading_iterator;
         
-        /* Read value from this address */
+        /* read value from this address */
         if (EXPECT(sm_peekdata(vars->target, address, &data_value) == false, false)) {
             /* Uhh, what? We couldn't look at the data there? I guess this doesn't count as a match then */
         }
@@ -338,7 +338,7 @@ bool sm_checkmatches(globals_t *vars,
             value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
-            /* these are not harmful for bytearray routine, since it will ignore flags of new_value & old_value */
+            /* these are not harmful for bytearray routine, since it will ignore flags of new_value and old_value */
             truncval_to_flags(&old_val, flags);
             truncval_to_flags(&data_value, flags);
 
@@ -386,7 +386,7 @@ bool sm_checkmatches(globals_t *vars,
         }
         ++bytes_scanned;
         
-        /* Go on to the next one... */
+        /* go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath.number_of_bytes)
         {
@@ -404,7 +404,7 @@ bool sm_checkmatches(globals_t *vars,
         return false;
     }
 
-    /* tell front-end we've done */
+    /* tell front-end we've finished */
     vars->scan_progress = MAX_PROGRESS;
 
     show_info("we currently have %ld matches.\n", vars->num_matches);
@@ -429,7 +429,7 @@ ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
         return -1;
     }
 
-    /* try to honour the request */
+    /* try to honor the request */
     len = pread(fd, buf, count, offset);
     
     /* clean up */
@@ -439,7 +439,7 @@ ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
 }
     
 
-/* sm_searchregions() performs an initial search of the process for values matching value */
+/* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
 bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
@@ -502,7 +502,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
     
-    /* get total byte */
+    /* get total number of bytes */
     for(n = vars->regions->head; n; n = n->next)
         total_scan_bytes += ((region_t *)n->data)->size;
 
@@ -525,7 +525,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         progress_per_dot = (double)bytes_per_dot / total_scan_bytes;
 
 #if HAVE_PROCMEM        
-        /* over allocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
+        /* overallocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
         if ((data = calloc(r->size + sizeof(int64_t) - 1, 1)) == NULL) {
             show_error("sorry, there was a memory allocation error.\n");
             return false;
@@ -546,7 +546,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         /* cannot use /proc/pid/mem */
         nread = r->size;
 #endif
-        /* print a progress meter so user knows we havent crashed */
+        /* print a progress meter so user knows we haven't crashed */
         /* cannot use show_info here because it'll append a '\n' */
         show_user("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
@@ -557,7 +557,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             match_flags checkflags;
             value_t data_value;
            
-            /* initialise data_value */
+            /* initialize data_value */
             zero_value(&data_value);
             valnowidth(&data_value);
 
@@ -565,10 +565,10 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
 #if HAVE_PROCMEM
             /* Don't dereference as this causes an alignment issue e.g. on ARM.
-               GCC replaces memcpy() with dereferencing where possible. */
+               GCC replaces memcpy() with dereferencing wherever possible. */
             memcpy(&data_value.int64_value, &data[offset], sizeof(int64_t));
 
-            /* Mark which values this can't be */
+            /* mark which values this can't be */
             if (EXPECT((nread - offset < sizeof(int64_t)), false))
             {
                 data_value.flags.u64b = data_value.flags.s64b = data_value.flags.f64b = 0;
@@ -593,7 +593,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
             fix_endianness(vars, &data_value);
 
-            /* initialise checkflags */
+            /* initialize checkflags */
             zero_match_flags(&checkflags);
 
             int match_length;
@@ -620,7 +620,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 --required_extra_bytes_to_record;
             }
 
-            /* print a simple progress meter. */
+            /* print a simple progress meter */
             if (EXPECT(offset >= bytes_at_next_dot, false)) {
                 bytes_at_next_dot += bytes_per_dot;
                 /* handle rounding */
@@ -645,7 +645,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         show_user("ok\n");
     }
 
-    /* tell front-end we've done */
+    /* tell front-end we've finished */
     vars->scan_progress = MAX_PROGRESS;
     
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
@@ -675,7 +675,7 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
     }
     
     /* Basically, overwrite as much of the data as makes sense, and no more. */
-    /* about float/double: now value_t is a union, we can use the following way instead of the commented way, in order to avoid compiler warning */
+    /* about float/double: now value_t is a union, we can use the following way instead of the commented way, in order to avoid compiler warnings */
          if (saved.flags.u64b && to->flags.u64b) { set_u64b(&saved, get_u64b(to)); }
     else if (saved.flags.s64b && to->flags.s64b) { set_s64b(&saved, get_s64b(to)); }
     else if (saved.flags.f64b && to->flags.f64b) { set_s64b(&saved, get_s64b(to)); } /* *((int64_t *)&(to->float64_value))); } */
@@ -773,7 +773,7 @@ bool sm_write_array(pid_t target, void *addr, const void *data, int len)
         }
         else /* we have to play with bits... */
         {
-            /* try all possible shifting read & write */
+            /* try all possible shifting read and write */
             for(j = 0; j <= sizeof(long) - (len - i); ++j)
             {
                 errno = 0;

@@ -57,11 +57,11 @@
 
 /*
  * This file defines all the command handlers used, each one is registered using
- * registercommand(), and when a matching command is entered, the commandline is
+ * registercommand(). When a matching command is entered, the commandline is
  * tokenized and parsed into an argv/argc.
  * 
  * argv[0] will contain the command entered, so one handler can handle multiple
- * commands by checking whats in there, but you still need seperate documentation
+ * commands by checking what's in there. You still need seperate documentation
  * for each command when you register it.
  *
  * Most commands will also need some documentation, see handlers.h for the format.
@@ -127,7 +127,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     /* parse every block into a settings struct */
     for (block = 0; block < argc - 1; block++) {
 
-        /* first seperate the block into matches and value, which are separated by '=' */
+        /* first separate the block into matches and value, which are separated by '=' */
         if ((settings[block].value = strchr(argv[block + 1], '=')) == NULL) {
 
             /* no '=' found, whole string must be the value */
@@ -161,7 +161,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 show_error("trailing garbage after delay count, `%s`.\n", settings[block].value);
                 return false;
             } else if (settings[block].seconds == 0) {
-                /* 10=24/0 disables continous mode */
+                /* 10=24/0 disables continuous mode */
                 show_info("you specified a zero delay, disabling continuous mode.\n");
             } else {
                 /* valid delay count seen and understood */
@@ -197,7 +197,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
         /* for every settings struct */
         for (block = 0; block < argc - 1; block++) {
 
-            /* check if this block has anything to do this iteration */
+            /* check if this block has anything to do in this iteration */
             if (seconds != 1) {
                 /* not the first iteration (all blocks get executed first iteration) */
 
@@ -222,7 +222,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 /* create local copy of the matchids for strtok() to modify */
                 lmatches = strdupa(settings[block].matchids);
 
-                /* now seperate each match, spearated by commas */
+                /* now separate each match, separated by commas */
                 while ((id = strtok(lmatches, ",")) != NULL) {
                     match_location loc;
 
@@ -232,7 +232,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     /* parse this id */
                     num = strtoul(id, &end, 0x00);
 
-                    /* check that succeeded */
+                    /* check if that succeeded */
                     if (*id == '\0' || *end != '\0') {
                         show_error("could not parse match id `%s`\n", id);
                         goto fail;
@@ -275,7 +275,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 /* user wants to set all matches */
                 while (reading_swath_index->first_byte_in_child) {
 
-                    /* Only actual matches are considered */
+                    /* only actual matches are considered */
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
@@ -297,7 +297,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         }
                     }
                      
-                     /* Go on to the next one... */
+                     /* go on to the next one... */
                     ++reading_iterator;
                     if (reading_iterator >= reading_swath_index->number_of_bytes)
                     {
@@ -333,7 +333,7 @@ fail:
 bool handler__list(globals_t *vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
-    int buf_len = 128; /* will be realloc later if necessary */
+    int buf_len = 128; /* will be realloc'd later if necessary */
     element_t *np = NULL;
     char *v = malloc(buf_len);
     if (v == NULL)
@@ -360,7 +360,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
 
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
-        /* Only actual matches are considered */
+        /* only actual matches are considered */
         if (flags_to_max_width_in_bytes(flags) > 0)
         {
             switch(vars->options.scan_data_type)
@@ -368,7 +368,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             case BYTEARRAY:
                 ; /* cheat gcc */ 
                 buf_len = flags.bytearray_length * 3 + 32;
-                v = realloc(v, buf_len); /* for each byte and the suffix', this should be enough */
+                v = realloc(v, buf_len); /* for each byte and the suffix, this should be enough */
 
                 if (v == NULL)
                 {
@@ -408,7 +408,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             unsigned long match_off = 0;
             const char *region_type = "??";
             /* get region info belonging to the match -
-             * note: we assume the regions list and matches to be sorted
+             * note: we assume the regions list and matches are sorted
              */
             while (np) {
                 region_t *region = np->data;
@@ -426,7 +426,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                     i++, address_ul, region_id, match_off, region_type, v);
         }
 
-        /* Go on to the next one... */
+        /* go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
@@ -466,7 +466,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
     
     if (loc.swath)
     {
-        /* It is not convenient to check whether anything else relies on this,
+        /* it is not convenient to check whether anything else relies on this,
            so just mark it as not a REAL match */
         zero_match_flags(&loc.swath->data[loc.index].match_info);
         vars->num_matches--;
@@ -584,7 +584,7 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
         /* create a copy of the argument for strtok(), +1 to skip '!' */
         block = strdupa(argv[1] + 1);
         
-        /* check for lone '!' */
+        /* check for a lone '!' */
         if (*block == '\0') {
             show_error("inverting an empty set, maybe try `reset` instead?\n");
             return false;
@@ -611,7 +611,7 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
         /* attempt to parse as a regionid */
         id = strtoul(idstr, &end, 0x00);
 
-        /* check that worked, "1,abc,4,,5,6foo" */
+        /* check if that worked, "1,abc,4,,5,6foo" */
         if (*end != '\0' || *idstr == '\0') {
             show_error("could not parse argument %s.\n", idstr);
             if (invert) {
@@ -626,7 +626,7 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
             return false;
         }
         
-        /* initialise list pointers */
+        /* initialize list pointers */
         np = vars->regions->head;
         pp = NULL;
         
@@ -734,7 +734,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
         show_info("no regions are known.\n");
     }
     
-    /* print a list of regions that are searched */
+    /* print a list of regions that have been searched */
     while (np) {
         region_t *region = np->data;
 
@@ -752,7 +752,7 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-/* the name of the function is for history reason, now GREATERTHAN & LESSTHAN are also handled by this function */
+/* the name of the function is for historical reasons, now `GREATERTHAN` and `LESSTHAN` are also handled by this function */
 bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
@@ -1045,7 +1045,7 @@ bool handler__exit(globals_t *vars, char **argv, unsigned argc)
     return true;
 }
 
-#define DOC_COLUMN  11           /* which column descriptions start on with help command */
+#define DOC_COLUMN  11           /* which column descriptions start on with the help command */
 
 bool handler__help(globals_t *vars, char **argv, unsigned argc)
 {
@@ -1082,7 +1082,7 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
 
         /* just `help` with no argument */
         if (argv[1] == NULL) {
-            /* NULL shortdoc means dont print in help listing */
+            /* NULL shortdoc means don't print in the help listing */
             if (command->shortdoc == NULL) {
                 np = np->next;
                 continue;
@@ -1197,7 +1197,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     
     loc = nth_match(vars->matches, id);
 
-    /* check this is a valid match-id */
+    /* check that this is a valid match-id */
     if (!loc.swath) {
         show_error("you specified a non-existent match `%u`.\n", id);
         show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
