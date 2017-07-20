@@ -34,11 +34,11 @@
  * LONGDOC's are detailed descriptions (shown with `help command`) (wrap them before column 80).
  * 
  * The DOC's are passed to the registercommand() routine, and are read by the help
- * command. You can define SHRTDOC to NULL and help will not print it.
- * However, a NULL longdoc will print "missing documentation" if specific help is requested,
- * if you really dont want it to print anything, use "".
+ * command. You can define SHRTDOC as NULL and help will not print it.
+ * However, a NULL longdoc will print "missing documentation" if specific help is requested.
+ * If you really don't want it to print anything, use "".
  *
- * Each handler is passed an argv and argc, argv[0] is the command called, along with
+ * Each handler is passed an argv and argc, argv[0] being the command called. Also passed is
  * a pointer to the global settings structure, which contains various settings and lists
  * that handlers are allowed to change. One handler can handle multiple commands, but
  * you need register each command with its own documentation.

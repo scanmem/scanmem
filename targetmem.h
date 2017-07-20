@@ -139,7 +139,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
     } else {
         matches_and_old_values_array *original_location = array;
 
-        /* Allocate twice as much each time,
+        /* allocate twice as much each time,
            so we don't have to do it too often */
         unsigned long bytes_to_allocate = array->bytes_allocated;
         while (bytes_to_allocate < bytes_needed)
@@ -148,7 +148,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
         show_debug("to_allocate %ld, max %ld\n", bytes_to_allocate,
                    array->max_needed_bytes);
 
-        /* Sometimes we know an absolute max that we will need */
+        /* sometimes we know an absolute max that we will need */
         if (array->max_needed_bytes < bytes_to_allocate) {
             assert(array->max_needed_bytes >= bytes_needed);
             bytes_to_allocate = array->max_needed_bytes;
@@ -172,7 +172,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
     }
 }
 
-/* Returns a pointer to the swath to which the element was added -
+/* returns a pointer to the swath to which the element was added -
    i.e. the last swath in the array after the operation */
 static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
@@ -183,7 +183,7 @@ add_element (matches_and_old_values_array **array,
     if (swath->number_of_bytes == 0) {
         assert(swath->first_byte_in_child == NULL);
 
-        /* We have to overwrite this as a new swath */
+        /* we have to overwrite this as a new swath */
         *array = allocate_enough_to_reach(*array, (void *)swath +
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info), &swath);
@@ -202,7 +202,7 @@ add_element (matches_and_old_values_array **array,
             sizeof(old_value_and_match_info);
 
         if (local_address_excess >= needed_size) {
-            /* It is most memory-efficient to start a new swath */
+            /* it is most memory-efficient to start a new swath */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 sizeof(matches_and_old_values_swath) +
@@ -213,7 +213,7 @@ add_element (matches_and_old_values_array **array,
             swath->number_of_bytes = 0;
 
         } else {
-            /* It is most memory-efficient to write over the intervening
+            /* it is most memory-efficient to write over the intervening
                space with null values */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
@@ -236,7 +236,7 @@ add_element (matches_and_old_values_array **array,
         }
     }
 
-    /* Add me */
+    /* add me */
     *(old_value_and_match_info *)local_address_beyond_last_element(swath) =
         *new_element;
     ++swath->number_of_bytes;

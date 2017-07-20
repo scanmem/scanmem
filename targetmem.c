@@ -36,7 +36,7 @@
 matches_and_old_values_array *
 allocate_array (matches_and_old_values_array *array, unsigned long max_bytes)
 {
-    /* Make enough space for the array header and a null first swath. */
+    /* make enough space for the array header and a null first swath */
     unsigned long bytes_to_allocate =
         sizeof(matches_and_old_values_array) +
         sizeof(matches_and_old_values_swath);
@@ -72,7 +72,7 @@ null_terminate (matches_and_old_values_array *array,
                     (void *)array);
 
     if (bytes_needed < array->bytes_allocated) {
-        /* Reduce array to its final size */
+        /* reduce array to its final size */
         if (!(array = realloc(array, bytes_needed)))
             return NULL;
 
@@ -137,7 +137,7 @@ nth_match (matches_and_old_values_array *matches, unsigned n)
         return (match_location){NULL, 0};
 
     while (reading_swath_index->first_byte_in_child) {
-        /* Only actual matches are considered */
+        /* only actual matches are considered */
         if (flags_to_max_width_in_bytes(
                 reading_swath_index->data[reading_iterator].match_info) > 0) {
 
@@ -147,7 +147,7 @@ nth_match (matches_and_old_values_array *matches, unsigned n)
             ++i;
         }
 
-        /* Go on to the next one... */
+        /* go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes) {
             reading_swath_index =
@@ -202,12 +202,12 @@ delete_by_region (matches_and_old_values_array *matches,
                                       writing_swath_index, address,
                                       &reading_swath_index->data[reading_iterator]);
 
-            /* Actual matches are recorded */
+            /* actual matches are recorded */
             if (flags_to_max_width_in_bytes(flags) > 0)
                 ++(*num_matches);
         }
 
-        /* Go on to the next one... */
+        /* go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath.number_of_bytes) {
 

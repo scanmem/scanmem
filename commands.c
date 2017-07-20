@@ -42,7 +42,7 @@
 /*
  * sm_registercommand - add the command and a pointer to its handler to the commands list.
  *
- * so that free(data) works when destroying the list, I just concatenate the string
+ * So that free(data) works when destroying the list, I just concatenate the string
  * with the command structure. I could have used a static vector of commands, but this
  * way I can add aliases and macros at runtime (planned in future).
  *
@@ -124,7 +124,7 @@ bool sm_execcommand(globals_t *vars, const char *commandline)
     if (argv[0] == NULL) {
         free(argv);
         
-        /* legal i guess, just dont do anything */
+        /* legal I guess, just don't do anything */
         return true;
     }
     

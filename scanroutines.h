@@ -68,8 +68,8 @@ typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value
 extern scan_routine_t sm_scan_routine;
 
 /* 
- * choose the global scanroutine according to the given parameters, g_scan_routine will be set 
- * return whether a proper routine has been found
+ * Choose the global scanroutine according to the given parameters, sm_scan_routine will be set.
+ * Returns whether a proper routine has been found.
  */
 bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt);
 

@@ -54,7 +54,7 @@ typedef union {
     uint16_t all_flags;    /* used to access the whole union for bitwise operations */
 } match_flags;
 
-/* this struct describing values retrieved from target memory */
+/* this struct describes values retrieved from target memory */
 typedef struct {
     union {
         int8_t int8_value;
@@ -78,7 +78,7 @@ typedef struct{
     uint8_t is_wildcard;
 } bytearray_element_t;
 
-/* this struct describing values provided by users */
+/* this struct describes values provided by users */
 typedef struct {
     int8_t int8_value;
     uint8_t uint8_value;
@@ -97,8 +97,8 @@ typedef struct {
     match_flags flags;
 } uservalue_t;
 
-/* used when output values to user */
-/* only work for numbers */
+/* used when outputting values to user */
+/* only works for numbers */
 void valtostr(const value_t *val, char *str, size_t n);
 bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t * val); /* parse bytearray, the parameter array should be allocated beforehand */
 bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */

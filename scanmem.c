@@ -70,7 +70,7 @@ globals_t sm_globals = {
     }
 };
 
-/* signal handler - Use async-signal-safe functions ONLY! */
+/* signal handler - use async-signal safe functions ONLY! */
 static void sighandler(int n)
 {
     const char err_msg[] = "error: \nKilled by signal ";
@@ -120,13 +120,13 @@ bool sm_init(void)
         (void) signal(SIGTERM, sighandler);
     }
 
-    /* linked list of commands, and function pointers to their handlers */
+    /* linked list of commands and function pointers to their handlers */
     if ((vars->commands = l_init()) == NULL) {
         show_error("sorry, there was a memory allocation error.\n");
         return false;
     }
 
-    /* NULL shortdoc means dont display this command in `help` listing */
+    /* NULL shortdoc means don't display this command in `help` listing */
     sm_registercommand("set", handler__set, vars->commands, SET_SHRTDOC,
                        SET_LONGDOC);
     sm_registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,

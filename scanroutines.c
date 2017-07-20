@@ -335,7 +335,7 @@ extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*-------------------------*/
 /* Any-xxx types specifiec */
 /*-------------------------*/
-/* this is for anynumber, anyinteger, anyfloat */
+/* this is for anynumber, anyinteger and anyfloat */
 #define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
     extern inline int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
     { \
