@@ -47,6 +47,7 @@
 #include <inttypes.h>
 #include <ctype.h>
 
+#include "common.h"
 #include "commands.h"
 #include "endianness.h"
 #include "handlers.h"

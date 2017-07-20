@@ -27,7 +27,6 @@
 
 #include <stdio.h>
 #include <stdint.h>
-#include <string.h>
 #include <sys/types.h>
 
 #include "scanroutines.h"
@@ -35,38 +34,6 @@
 #include "value.h"
 #include "targetmem.h"
 
-
-#ifndef PACKAGE_VERSION
-#define PACKAGE_VERSION "(unknown)"
-#endif
-
-/* from string.h in glibc for Android/BSD */
-#ifndef strdupa
-# include <alloca.h>
-# define strdupa(s)                                                           \
-    ({                                                                        \
-      const char *__old = (s);                                                \
-      size_t __len = strlen(__old) + 1;                                       \
-      char *__new = (char *) alloca(__len);                                   \
-      (char *) memcpy(__new, __old, __len);                                   \
-    })
-#endif
-
-#ifndef strndupa
-# include <alloca.h>
-# define strndupa(s, n)                                                       \
-    ({                                                                        \
-      const char *__old = (s);                                                \
-      size_t __len = strnlen(__old, (n));                                     \
-      char *__new = (char *) alloca(__len + 1);                               \
-      __new[__len] = '\0';                                                    \
-      (char *) memcpy(__new, __old, __len);                                   \
-    })
-#endif
-
-#ifndef MIN
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#endif
 
 /* global settings */
 typedef struct {

@@ -20,6 +20,7 @@ libscanmem_la_include_HEADERS = commands.h \
     value.h
 
 libscanmem_la_SOURCES = commands.c \
+    common.h \
     ptrace.c \
     handlers.h \
     handlers.c \

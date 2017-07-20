@@ -37,6 +37,7 @@
 #include <ctype.h>
 
 #include "commands.h"
+#include "common.h"
 #include "show_message.h"
 
 /*
