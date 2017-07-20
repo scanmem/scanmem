@@ -39,6 +39,8 @@
 #include "commands.h"
 #include "show_message.h"
 
+#include "menu.h"
+
 
 static const char copy_text[] =
 "Copyright (C) 2006-2009 Tavis Ormandy\n"
@@ -179,7 +181,7 @@ int main(int argc, char **argv)
         char *line;
 
         /* reads in a commandline from the user and returns a pointer to it in *line */
-        if (sm_getcommand(vars, &line) == false) {
+        if (getcommand(vars, &line) == false) {
             show_error("failed to read in a command.\n");
             ret = EXIT_FAILURE;
             break;

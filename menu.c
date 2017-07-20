@@ -1,23 +1,23 @@
 /*
-    Prompt, command completion and version information.
+    Prompt and command completion.
 
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2010,2011 Lu Wang <coolwanglu@gmail.com>
 
-    This file is part of libscanmem.
+    This file is part of scanmem.
 
-    This library is free software: you can redistribute it and/or modify
-    it under the terms of the GNU Lesser General Public License as published
-    by the Free Software Foundation; either version 3 of the License, or
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    This library is distributed in the hope that it will be useful,
+    This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU Lesser General Public License for more details.
+    GNU General Public License for more details.
 
-    You should have received a copy of the GNU Lesser General Public License
-    along with this library.  If not, see <http://www.gnu.org/licenses/>.
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #ifndef _GNU_SOURCE
@@ -40,6 +40,7 @@
 #include "readline.h"
 #endif
 
+#include "menu.h"
 #include "getline.h"
 #include "scanmem.h"
 #include "commands.h"
@@ -102,12 +103,12 @@ static char **commandcompletion(const char *text, int start, int end)
 
 
 /*
- * sm_getcommand() reads in a command using readline and places a pointer to
+ * getcommand() reads in a command using readline and places a pointer to
  * the read string into *line, which must be free'd by caller.
  * returns true on success, or false on error.
  */
 
-bool sm_getcommand(globals_t *vars, char **line)
+bool getcommand(globals_t *vars, char **line)
 {
     char prompt[64];
     bool success = true;

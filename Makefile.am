@@ -21,7 +21,6 @@ libscanmem_la_include_HEADERS = commands.h \
 
 libscanmem_la_SOURCES = commands.c \
     ptrace.c \
-    menu.c \
     handlers.h \
     handlers.c \
     interrupt.h \
@@ -48,7 +47,10 @@ libscanmem_la_LDFLAGS = -version-info 1:0:0
 
 bin_PROGRAMS = scanmem
 
-scanmem_SOURCES = main.c
+scanmem_SOURCES = menu.h \
+    menu.c \
+    main.c
+
 scanmem_LDADD = libscanmem.la
 
 dist_man_MANS = scanmem.1
