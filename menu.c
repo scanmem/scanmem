@@ -124,28 +124,12 @@ bool sm_getcommand(globals_t *vars, char **line)
     rl_attempted_completion_function = commandcompletion;
 
     while (true) {
-        if (vars->options.backend == 0)
-        {
-            /* for normal users, read in the next command using readline library */
-            success = ((*line = readline(prompt)) != NULL);
-        }
-        else 
-        {
-            /* disable readline for front-end, since readline may produce ansi escape codes, which is terrible for front-end */
-            printf("%s\n", prompt); /* add a newline for front-end */
-            fflush(stdout); /* otherwise front-end may not receive this */
-            *line = NULL; /* let getline malloc it */
-            size_t n;
-            ssize_t bytes_read = getline(line, &n, stdin);
-            success = (bytes_read > 0);
-            if (success)
-                (*line)[bytes_read-1] = '\0'; /* remove the trailing newline */
-        }
+
+        success = ((*line = readline(prompt)) != NULL);
         if (!success) {
             /* EOF */
             if ((*line = strdup("__eof")) == NULL) {
-                fprintf(stderr,
-                        "error: sorry, there was a memory allocation error.\n");
+                show_error("sorry, there was a memory allocation error.\n");
                 return false;
             }
         }
