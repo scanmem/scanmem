@@ -119,7 +119,4 @@ bool sm_attach(pid_t target);
 bool sm_read_array(pid_t target, const void *addr, char *buf, int len);
 bool sm_write_array(pid_t target, void *addr, const void *data, int len);
 
-/* menu.c */
-bool sm_getcommand(globals_t *vars, char **line);
-
 #endif /* SCANMEM_H */
