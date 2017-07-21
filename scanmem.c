@@ -171,6 +171,7 @@ bool sm_init(void)
     sm_registercommand("help", handler__help, vars->commands, HELP_SHRTDOC,
                     HELP_LONGDOC);
     sm_registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC, SHELL_LONGDOC);
+    sm_registercommand("!", handler__shell, vars->commands, NULL, SHELL_LONGDOC);
     sm_registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                     WATCH_LONGDOC);
     sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
