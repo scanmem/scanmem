@@ -229,11 +229,11 @@ bool handler__update(globals_t *vars, char **argv, unsigned argc);
 bool handler__eof(globals_t *vars, char **argv, unsigned argc);
 
 #define SHELL_SHRTDOC "execute a shell command without leaving scanmem"
-#define SHELL_LONGDOC "usage: shell [shell-command]\n" \
+#define SHELL_LONGDOC "usage: ! | shell [shell-command]\n" \
                 "Execute `shell-command` using /bin/sh then return, useful for reading man\n" \
                 "pages, checking top, or making notes with an external editor.\n" \
                 "Examples:\n" \
-                "\tshell vi notes.txt\n" \
+                "\t! vi notes.txt\n" \
                 "\tshell man scanmem\n" \
                 "\tshell cat > notes.txt\n"
 
