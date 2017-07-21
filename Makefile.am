@@ -38,11 +38,6 @@ if !HAVE_GETLINE
       getline.c
 endif
 
-if !WITH_READLINE
-  libscanmem_la_SOURCES += readline.h \
-      readline.c
-endif
-
 libscanmem_la_LDFLAGS = -version-info 1:0:0
 
 bin_PROGRAMS = scanmem
@@ -50,6 +45,11 @@ bin_PROGRAMS = scanmem
 scanmem_SOURCES = menu.h \
     menu.c \
     main.c
+
+if !WITH_READLINE
+  scanmem_SOURCES += readline.h \
+      readline.c
+endif
 
 scanmem_LDADD = libscanmem.la
 
