@@ -44,7 +44,7 @@ po/.intltool-merge-cache
 po/GameConqueror.pot
 po/Makefile.in.in
 po/POTFILES
-po/??.gmo
+po/*.gmo
 po/stamp-it
 
 # Android builds
