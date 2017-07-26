@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Serbian/Montenegrin translations for GameConqueror.
+# Copyright (C) 2017 Vidovic Slobodan <vidovicslobodan89(a)gmail.com>
+# This file is distributed under the same license as GameConqueror.
+# Slobodan Vidovic <vidovicslobodan89@gmail.com>, 2017.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-07-25 10:04+0200\n"
-"PO-Revision-Date: 2017-07-25 13:29+0200\n"
+"PO-Revision-Date: 2017-07-26 12:45+0200\n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -25,7 +25,7 @@ msgstr "GameConqueror - Urednik Memorije"
 
 #: ../gui/GameConqueror.ui.h:2
 msgid "_Address:"
-msgstr "_Adresa"
+msgstr "_Adresa:"
 
 #: ../gui/GameConqueror.ui.h:3
 msgid "Target address here (CTRL+L)"
@@ -70,8 +70,7 @@ msgid ""
 " <b>- N</b>       Decreased by N\n"
 " <b>!= N</b>      Other than N\n"
 "</span>\n"
-" where N could be a number of a simple math expression embraced by (), e."
-"g.\n"
+" where N could be a number of a simple math expression embraced by (), e.g.\n"
 "<span font_family=\"monospace\"> 12\n"
 " 0x34\n"
 " 5.67\n"
@@ -170,40 +169,13 @@ msgid ""
 "<b>Normal:</b>  Works for most cases\n"
 "<b>Full:</b>         Never miss values but slowest"
 msgstr ""
-"Syntaksa:\n"
-"\n"
-"Za brojevne vrijednosti:\n"
-"<span font_family=\"monospace\">\n"
-" <b>N</b>         Upravo ovaj broj\n"
-" <b>N..M</b>      Raspon između dva broja\n"
-" <b>?</b>         Nepoznata inicijalna vrijednost\n"
-" <b>&gt; or +</b>    Uvećana vrijednost\n"
-" <b>&lt; or -</b>    Umanjena vrijenost\n"
-" <b>=</b>         Ne promijenjena vrijednost\n"
-" <b>!=</b>        Promijenjena vrijednost\n"
-" <b>&gt; N</b>       Veće od N\n"
-" <b>&lt; N</b>       Manje od N\n"
-" <b>+ N</b>       Uvećano za N\n"
-" <b>- N</b>       Umanjeno za N\n"
-" <b>!= N</b>      Osim N\n"
-"</span>\n"
-" where N could be a number of a simple math expression embraced by (), e."
-"g.\n"
-"<span font_family=\"monospace\"> 12\n"
-" 0x34\n"
-" 5.67\n"
-" (- 8 * 9)</span>\n"
-"\n"
-" For bytearray: use 2-char hexadecimal notation for each byte, separated by "
-"spaces\n"
-" e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
-" <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
-"\n"
-" For string: enter the string directly"
+"<b>Osnovno:</b>     Najbrže, ali možda nedostaje određene vrednosti\n"
+"<b>Normalno:</b>  Radi u većini slučajeva\n"
+"<b>Potpuno:</b>         Nikada ne propustite vrednosti, već najsporije"
 
 #: ../gui/GameConqueror.ui.h:52
 msgid "_Search Scope:"
-msgstr "_pretraga:"
+msgstr "_Pretraga:"
 
 #: ../gui/GameConqueror.ui.h:53
 msgid "Memory Editor (CTRL+SHIFT+M)"
@@ -237,8 +209,7 @@ msgstr ""
 "Autorsko pravo (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
 "Autorsko pravo (C) 2010 Bryan Cain\n"
 "Autorsko pravo (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
-"Autorsko pravo  (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail."
-"com>\n"
+"Autorsko pravo  (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>\n"
 "\n"
 "Specijalna zahvalnica: Igor Gnatenko, Mattias Muenster, Zhang Zhe"
 
@@ -268,7 +239,7 @@ msgstr "Memorijska adresa vrijednosti"
 
 #: ../gui/GameConqueror.ui.h:70
 msgid "Addres_s:"
-msgstr "Adresa:"
+msgstr "Adresa_s:"
 
 #: ../gui/GameConqueror.ui.h:71
 msgid "Give a brief description of the value"
@@ -436,8 +407,8 @@ msgid ""
 "Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
 "or you don't have enough privileges"
 msgstr ""
-"Ne mogu očitati mapu memorije tog procesa, možda je program zatvoren "
-"(srušio se), ili nemate potrenu privilegiju"
+"Ne mogu očitati mapu memorije tog procesa, možda je program zatvoren (srušio "
+"se), ili nemate potrenu privilegiju"
 
 #. not readable
 #: ../gui/GameConqueror.py:858
