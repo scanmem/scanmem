@@ -280,11 +280,11 @@ bool sm_checkmatches(globals_t *vars,
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
 
-    long bytes_scanned = 0;
-    long total_scan_bytes = 0;
+    unsigned long bytes_scanned = 0;
+    unsigned long total_scan_bytes = 0;
     matches_and_old_values_swath *tmp_swath_index = reading_swath_index;
-    int samples_remaining = NUM_SAMPLES;
-    int samples_to_dot = SAMPLES_PER_DOT;
+    unsigned int samples_remaining = NUM_SAMPLES;
+    unsigned int samples_to_dot = SAMPLES_PER_DOT;
     size_t bytes_at_next_sample;
     size_t bytes_per_sample;
 
@@ -306,7 +306,7 @@ bool sm_checkmatches(globals_t *vars,
     /* for user, just print the first dot */
     print_a_dot();
 
-    int reading_iterator = 0;
+    unsigned int reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
@@ -659,7 +659,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 bool sm_setaddr(pid_t target, void *addr, const value_t *to)
 {
     value_t saved;
-    int i;
+    unsigned int i;
 
     if (sm_attach(target) == false) {
         return false;

@@ -245,10 +245,10 @@ add_element (matches_and_old_values_array **array,
 
 /* only at most sizeof(int64_t) bytes will be read,
    if more bytes are needed (e.g. bytearray),
-   read them separatedly (for performance) */
+   read them separately (for performance) */
 static inline value_t
 data_to_val_aux (matches_and_old_values_swath *swath,
-                 long index, long swath_length)
+                 unsigned long index, unsigned long swath_length)
 {
     int i;
     value_t val;
@@ -263,18 +263,15 @@ data_to_val_aux (matches_and_old_values_swath *swath,
     if (max_bytes >= 1) val.flags.u8b  = val.flags.s8b                   = 1;
 
     for (i = 0; i < max_bytes; ++i) {
-        uint8_t byte;
-
-        byte = ((matches_and_old_values_swath *)swath)->data[index + i].old_value;
-
-        *((uint8_t *)(&val.int64_value) + i) = byte;
+        /* Both uint8_t, no explicit casting needed */
+        val.bytes[i] = swath->data[index + i].old_value;
     }
 
     return val;
 }
 
 static inline value_t
-data_to_val (matches_and_old_values_swath *swath, long index)
+data_to_val (matches_and_old_values_swath *swath, unsigned long index)
 {
     return data_to_val_aux(swath, index, swath->number_of_bytes);
 }

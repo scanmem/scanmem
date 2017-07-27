@@ -131,7 +131,7 @@ nth_match (matches_and_old_values_array *matches, unsigned n)
     matches_and_old_values_swath *reading_swath_index =
         (matches_and_old_values_swath *)matches->swaths;
 
-    int reading_iterator = 0;
+    unsigned int reading_iterator = 0;
 
     if (!matches)
         return (match_location){NULL, 0};
@@ -166,7 +166,7 @@ matches_and_old_values_array *
 delete_by_region (matches_and_old_values_array *matches,
                   unsigned long *num_matches, region_t *which, bool invert)
 {
-    int reading_iterator = 0;
+    unsigned int reading_iterator = 0;
     matches_and_old_values_swath *reading_swath_index =
         (matches_and_old_values_swath *)matches->swaths;
 

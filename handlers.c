@@ -266,7 +266,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             } else {
                 
                 matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
-                int reading_iterator = 0;
+                unsigned int reading_iterator = 0;
 
                 /* user wants to set all matches */
                 while (reading_swath_index->first_byte_in_child) {
@@ -329,7 +329,7 @@ fail:
 bool handler__list(globals_t *vars, char **argv, unsigned argc)
 {
     unsigned i = 0;
-    int buf_len = 128; /* will be realloc later if necessary */
+    size_t buf_len = 128; /* will be realloc later if necessary */
     element_t *np = NULL;
     char *v = malloc(buf_len);
     if (v == NULL)
@@ -349,7 +349,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         np = vars->regions->head;
 
     matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
-    int reading_iterator = 0;
+    unsigned int reading_iterator = 0;
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
@@ -400,7 +400,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             void *address = remote_address_of_nth_element(reading_swath_index,
                 reading_iterator /* ,MATCHES_AND_VALUES */);
             unsigned long address_ul = (unsigned long)address;
-            int region_id = 99;
+            unsigned int region_id = 99;
             unsigned long match_off = 0;
             const char *region_type = "??";
             /* get region info belonging to the match -
