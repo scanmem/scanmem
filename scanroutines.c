@@ -225,6 +225,47 @@ DEFINE_INTEGER_RANGE_ROUTINE(INTEGER64, 64)
 DEFINE_FLOAT_RANGE_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_RANGE_ROUTINE(FLOAT64, 64)
 
+/*-------------------------*/
+/* Any-xxx types specifiec */
+/*-------------------------*/
+/* this is for anynumber, anyinteger, anyfloat */
+#define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
+    extern inline int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    { \
+        int ret = 0, tmp_ret;\
+        if ((tmp_ret = scan_routine_INTEGER8_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER16_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_INTEGER64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        return ret; \
+    } \
+    extern inline int scan_routine_ANYFLOAT_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    { \
+        int ret = 0, tmp_ret; \
+        if ((tmp_ret = scan_routine_FLOAT32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        if ((tmp_ret = scan_routine_FLOAT64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
+        return ret; \
+    } \
+    extern inline int scan_routine_ANYNUMBER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
+    { \
+        int ret1 = scan_routine_ANYINTEGER_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
+        int ret2 = scan_routine_ANYFLOAT_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
+        return (ret1 > ret2 ? ret1 : ret2); \
+    } \
+
+DEFINE_ANYTYPE_ROUTINE(ANY)
+DEFINE_ANYTYPE_ROUTINE(EQUALTO)
+DEFINE_ANYTYPE_ROUTINE(NOTEQUALTO)
+DEFINE_ANYTYPE_ROUTINE(CHANGED)
+DEFINE_ANYTYPE_ROUTINE(NOTCHANGED)
+DEFINE_ANYTYPE_ROUTINE(INCREASED)
+DEFINE_ANYTYPE_ROUTINE(DECREASED)
+DEFINE_ANYTYPE_ROUTINE(GREATERTHAN)
+DEFINE_ANYTYPE_ROUTINE(LESSTHAN)
+DEFINE_ANYTYPE_ROUTINE(INCREASEDBY)
+DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
+DEFINE_ANYTYPE_ROUTINE(RANGE)
+
 /*----------------------------------------*/
 /* for generic VLT (Variable Length Type) */
 /*----------------------------------------*/
@@ -404,52 +445,10 @@ DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(40)
 DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(48)
 DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(56)
 
-/*-------------------------*/
-/* Any-xxx types specifiec */
-/*-------------------------*/
-/* this is for anynumber, anyinteger and anyfloat */
-#define DEFINE_ANYTYPE_ROUTINE(MATCHTYPENAME) \
-    extern inline int scan_routine_ANYINTEGER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
-    { \
-        int ret = 0, tmp_ret;\
-        if ((tmp_ret = scan_routine_INTEGER8_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER16_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_INTEGER64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        return ret; \
-    } \
-    extern inline int scan_routine_ANYFLOAT_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
-    { \
-        int ret = 0, tmp_ret; \
-        if ((tmp_ret = scan_routine_FLOAT32_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        if ((tmp_ret = scan_routine_FLOAT64_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address)) > ret) { ret = tmp_ret; } \
-        return ret; \
-    } \
-    extern inline int scan_routine_ANYNUMBER_##MATCHTYPENAME SCAN_ROUTINE_ARGUMENTS \
-    { \
-        int ret1 = scan_routine_ANYINTEGER_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
-        int ret2 = scan_routine_ANYFLOAT_##MATCHTYPENAME (new_value, old_value, user_value, saveflags, address); \
-        return (ret1 > ret2 ? ret1 : ret2); \
-    } \
-
-DEFINE_ANYTYPE_ROUTINE(ANY)
-DEFINE_ANYTYPE_ROUTINE(EQUALTO)
-DEFINE_ANYTYPE_ROUTINE(NOTEQUALTO)
-DEFINE_ANYTYPE_ROUTINE(CHANGED)
-DEFINE_ANYTYPE_ROUTINE(NOTCHANGED)
-DEFINE_ANYTYPE_ROUTINE(INCREASED)
-DEFINE_ANYTYPE_ROUTINE(DECREASED)
-DEFINE_ANYTYPE_ROUTINE(GREATERTHAN)
-DEFINE_ANYTYPE_ROUTINE(LESSTHAN)
-DEFINE_ANYTYPE_ROUTINE(INCREASEDBY)
-DEFINE_ANYTYPE_ROUTINE(DECREASEDBY)
-DEFINE_ANYTYPE_ROUTINE(RANGE)
-
 
 /***************************************************************/
 /* choose a routine according to scan_data_type and match_type */
 /***************************************************************/
-
 
 
 #define CHOOSE_ROUTINE(SCANDATATYPE, ROUTINEDATATYPENAME, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
@@ -468,6 +467,7 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
     CHOOSE_ROUTINE(ANYINTEGER, ANYINTEGER, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     CHOOSE_ROUTINE(ANYFLOAT, ANYFLOAT, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     CHOOSE_ROUTINE(ANYNUMBER, ANYNUMBER, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
+
 
 #define SELECTION_CASE(ROUTINEDATATYPENAME, WIDTH, ROUTINEMATCHTYPENAME) \
     case (WIDTH): \
@@ -497,11 +497,6 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
     }
 
 
-bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
-{
-    return (sm_scan_routine = sm_get_scanroutine(dt, mt, uflags)) != NULL;
-}
-
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
 {
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
@@ -524,4 +519,10 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
     }
 
     return NULL;
+}
+
+
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
+{
+    return (sm_scan_routine = sm_get_scanroutine(dt, mt, uflags)) != NULL;
 }
