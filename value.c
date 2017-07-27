@@ -119,7 +119,6 @@ bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *
     int i,j;
 
     const char *cur_str;
-    char cur_char;
     char *endptr;
     bytearray_element_t *cur_element;
 
@@ -141,12 +140,12 @@ bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *
         else
         {
             /* parse as hex integer */
-            cur_char = (char)strtol(cur_str, &endptr, 16);
+            uint8_t cur_byte = (uint8_t)strtoul(cur_str, &endptr, 16);
             if (*endptr != '\0')
                 return false;
 
             cur_element->is_wildcard = 0;
-            cur_element->byte = cur_char;
+            cur_element->byte = cur_byte;
         }
     }
 

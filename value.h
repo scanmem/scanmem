@@ -66,15 +66,15 @@ typedef struct {
         uint64_t uint64_value;  
         float float32_value;
         double float64_value;
-        int8_t bytes[sizeof(int64_t)];
+        uint8_t bytes[sizeof(int64_t)];
     };
     
     match_flags flags;
 } value_t;
 
 typedef struct{
-    int8_t byte;
-    int8_t is_wildcard;
+    uint8_t byte;
+    uint8_t is_wildcard;
 } bytearray_element_t;
 
 /* this struct describing values provided by users */
