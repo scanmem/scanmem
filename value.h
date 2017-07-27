@@ -175,22 +175,15 @@ static inline void truncval(value_t *dst, const value_t *src)
     truncval_to_flags(dst, src->flags);
 }
 
-/* set all possible width flags, if nothing is known about val */
+/* set all possible width flags, if nothing is known about val
+ * when scanning for a VLT, this will set the length to the uint16
+ * maximum value, in line with the 'maximum width' idea */
 static inline void valnowidth(value_t *val)
 {
     assert(val);
 
-    val->flags.u64b = 1;
-    val->flags.s64b = 1;
-    val->flags.u32b = 1;
-    val->flags.s32b = 1;
-    val->flags.u16b = 1;
-    val->flags.s16b = 1;
-    val->flags.u8b  = 1;
-    val->flags.s8b  = 1;
-    val->flags.f64b = 1;
-    val->flags.f32b = 1;
-
+    /* set all flags to 1 in a single go */
+    val->flags.all_flags = 0xffffU;
     return;
 }
 
