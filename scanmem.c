@@ -147,17 +147,17 @@ bool sm_init(void)
                        LREGIONS_SHRTDOC, LREGIONS_LONGDOC);
     sm_registercommand("version", handler__version, vars->commands,
                        VERSION_SHRTDOC, VERSION_LONGDOC);
-    sm_registercommand("=", handler__decinc, vars->commands, NOTCHANGED_SHRTDOC,
+    sm_registercommand("=", handler__operators, vars->commands, NOTCHANGED_SHRTDOC,
                        NOTCHANGED_LONGDOC);
-    sm_registercommand("!=", handler__decinc, vars->commands, CHANGED_SHRTDOC,
+    sm_registercommand("!=", handler__operators, vars->commands, CHANGED_SHRTDOC,
                        CHANGED_LONGDOC);
-    sm_registercommand("<", handler__decinc, vars->commands, LESSTHAN_SHRTDOC,
+    sm_registercommand("<", handler__operators, vars->commands, LESSTHAN_SHRTDOC,
                        LESSTHAN_LONGDOC);
-    sm_registercommand(">", handler__decinc, vars->commands, GREATERTHAN_SHRTDOC,
+    sm_registercommand(">", handler__operators, vars->commands, GREATERTHAN_SHRTDOC,
                        GREATERTHAN_LONGDOC);
-    sm_registercommand("+", handler__decinc, vars->commands, INCREASED_SHRTDOC,
+    sm_registercommand("+", handler__operators, vars->commands, INCREASED_SHRTDOC,
                        INCREASED_LONGDOC);
-    sm_registercommand("-", handler__decinc, vars->commands, DECREASED_SHRTDOC,
+    sm_registercommand("-", handler__operators, vars->commands, DECREASED_SHRTDOC,
                        DECREASED_LONGDOC);
     sm_registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
                        STRING_LONGDOC);

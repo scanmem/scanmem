@@ -168,7 +168,7 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
 
-bool handler__decinc(globals_t *vars, char **argv, unsigned argc);
+bool handler__operators(globals_t *vars, char **argv, unsigned argc);
 
 #define VERSION_SHRTDOC "print current version"
 #define VERSION_LONGDOC "usage: version\n" \

@@ -752,8 +752,8 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
-/* the name of the function is for history reason, now GREATERTHAN & LESSTHAN are also handled by this function */
-bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
+/* handles every scan that starts with an operator */
+bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
     scan_match_type_t m;
@@ -804,7 +804,7 @@ bool handler__decinc(globals_t * vars, char **argv, unsigned argc)
     }
     else
     {
-        show_error("unrecognized match type seen at decinc handler.\n");
+        show_error("unrecognized operator seen at handler_operators: \"%s\".\n", argv[0]);
         return false;
     }
 
