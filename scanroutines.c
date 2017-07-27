@@ -225,14 +225,17 @@ DEFINE_INTEGER_RANGE_ROUTINE(INTEGER64, 64)
 DEFINE_FLOAT_RANGE_ROUTINE(FLOAT32, 32)
 DEFINE_FLOAT_RANGE_ROUTINE(FLOAT64, 64)
 
-/*---------------*/
-/* for BYTEARRAY */
-/*---------------*/
-extern inline int scan_routine_BYTEARRAY_ANY SCAN_ROUTINE_ARGUMENTS
+/*----------------------------------------*/
+/* for generic VLT (Variable Length Type) */
+/*----------------------------------------*/
+extern inline int scan_routine_VLT_ANY SCAN_ROUTINE_ARGUMENTS
 {
    return saveflags->length = ((old_value)->flags.length);
 }
 
+/*---------------*/
+/* for BYTEARRAY */
+/*---------------*/
 extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const bytearray_element_t *array = user_value->bytearray_value;
@@ -291,10 +294,6 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 /*------------*/
 /* for STRING */
 /*------------*/
-extern inline int scan_routine_STRING_ANY SCAN_ROUTINE_ARGUMENTS
-{
-   return saveflags->length = ((old_value)->flags.length);
-}
 
 /* Used only for length>8 */
 extern inline int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
@@ -470,40 +469,29 @@ DEFINE_ANYTYPE_ROUTINE(RANGE)
     CHOOSE_ROUTINE(ANYFLOAT, ANYFLOAT, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
     CHOOSE_ROUTINE(ANYNUMBER, ANYNUMBER, SCANMATCHTYPE, ROUTINEMATCHTYPENAME) \
 
-#define CHOOSE_ROUTINE_STRING(SCANMATCHTYPE, ROUTINEMATCHTYPENAME, LENGTH) \
-    if (mt == SCANMATCHTYPE) \
+#define SELECTION_CASE(ROUTINEDATATYPENAME, WIDTH, ROUTINEMATCHTYPENAME) \
+    case (WIDTH): \
+        return &scan_routine_##ROUTINEDATATYPENAME##WIDTH##_##ROUTINEMATCHTYPENAME; \
+        break; \
+
+#define CHOOSE_ROUTINE_VLT(SCANDATATYPE, ROUTINEDATATYPENAME, SCANMATCHTYPE, ROUTINEMATCHTYPENAME, WIDTH) \
+    if ((dt == SCANDATATYPE) && (mt == SCANMATCHTYPE)) \
     { \
-        switch (LENGTH) \
+        switch (WIDTH) \
         { \
             case 0: \
                 assert(false); \
                 break; \
-            case 1: \
-                return &scan_routine_STRING8_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 2: \
-                return &scan_routine_STRING16_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 3: \
-                return &scan_routine_STRING24_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 4: \
-                return &scan_routine_STRING32_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 5: \
-                return &scan_routine_STRING40_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 6: \
-                return &scan_routine_STRING48_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 7: \
-                return &scan_routine_STRING56_##ROUTINEMATCHTYPENAME; \
-                break; \
-            case 8: \
-                return &scan_routine_STRING64_##ROUTINEMATCHTYPENAME; \
-                break; \
+            SELECTION_CASE(ROUTINEDATATYPENAME,  8, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 16, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 24, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 32, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 40, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 48, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 56, ROUTINEMATCHTYPENAME) \
+            SELECTION_CASE(ROUTINEDATATYPENAME, 64, ROUTINEMATCHTYPENAME) \
             default: \
-                return &scan_routine_STRING_##ROUTINEMATCHTYPENAME; \
+                return &scan_routine_##ROUTINEDATATYPENAME##_##ROUTINEMATCHTYPENAME; \
                 break; \
         } \
     }
@@ -531,8 +519,8 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
 
     CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO)
 
-    if (uflags && dt == STRING) {
-        CHOOSE_ROUTINE_STRING(MATCHEQUALTO, EQUALTO, uflags->length)
+    if (uflags) {
+        CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, uflags->length*8)
     }
 
     return NULL;
