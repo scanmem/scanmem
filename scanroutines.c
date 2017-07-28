@@ -1,7 +1,8 @@
 /*
-    Routines of scanning for different data types.
+    Scanning routines for different data types.
 
     Copyright (C) 2009,2010 WANG Lu  <coolwanglu(a)gmail.com>
+    Copyright (C) 2017 Andrea Stacchiotti  <andreastacchiotti(a)gmail.com>
 
     This file is part of libscanmem.
 
@@ -283,35 +284,52 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const uint8_t *bytes_array = user_value->bytearray_value;
     const wildcard_t *wildcards_array = user_value->wildcard_value;
+    if(!new_value->flags.length ||
+       *((int64_t*)bytes_array) != (new_value->int64_value & *((int64_t*)wildcards_array)))
+    {
+        /* not matched */
+        return 0;
+    }
+
     uint length = user_value->flags.length;
     unsigned int i, j;
-    value_t val_buf = *new_value;
-    for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
+    value_t val_buf;
+    for(i = sizeof(int64_t); i + sizeof(int64_t) <= length; i += sizeof(int64_t))
     {
+        /* read next block */
+        if (!sm_peekdata(sm_globals.target, address+i, &val_buf))
+        {
+            /* cannot read */
+            return 0;
+        }
+
         if (*((int64_t*)(bytes_array+i)) != (val_buf.int64_value & *((int64_t*)(wildcards_array+i))))
         {
             /* not matched */
             return 0;
         }
-         
+
+    }
+
+    /* match bytes left */
+    if (i < length)
+    {
         /* read next block */
-        if (!sm_peekdata(sm_globals.target, address+i+sizeof(int64_t), &val_buf))
+        if (!sm_peekdata(sm_globals.target, address + i, &val_buf))
         {
             /* cannot read */
             return 0;
         }
+        for(j = 0; j < length - i; ++j)
+        {
+            if ((bytes_array+i)[j] != (val_buf.bytes[j] & (wildcards_array+i)[j]))
+            {
+                /* not matched */
+                return 0;
+            }
+        }
     }
 
-    /* match bytes left */
-    for(j = 0; j < length - i; ++j)
-    {
-        if ((bytes_array+i)[j] != (val_buf.bytes[j] & (wildcards_array+i)[j]))
-        {
-            /* not matched */
-            return 0;
-        }
-    } 
-    
     /* matched */
     saveflags->length = length;
 
