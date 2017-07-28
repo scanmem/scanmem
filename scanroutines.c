@@ -279,7 +279,8 @@ extern inline int scan_routine_VLT_ANY SCAN_ROUTINE_ARGUMENTS
 /*---------------*/
 extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
-    const bytearray_element_t *array = user_value->bytearray_value;
+    const uint8_t *bytes_array = user_value->bytearray_value;
+    const wildcard_t *wildcards_array = user_value->wildcard_value;
     int length = user_value->flags.length;
     int cur_idx = 0;
     int i, j;
@@ -289,8 +290,7 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
         /* match current block */
         for(j = 0; j < sizeof(int64_t); ++j)
         {
-            if(     (array[cur_idx].is_wildcard == 1) 
-                 || (array[cur_idx].byte == val_buf.bytes[j])) 
+            if (bytes_array[cur_idx] == (val_buf.bytes[j] & wildcards_array[cur_idx]))
             {
                 /* pass */
             }
@@ -313,8 +313,7 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
     /* match bytes left */
     for(j = 0; j < length - i; ++j)
     {
-        if(     (array[cur_idx].is_wildcard == 1) 
-             || (array[cur_idx].byte == val_buf.bytes[j])) 
+        if (bytes_array[cur_idx] == (val_buf.bytes[j] & wildcards_array[cur_idx]))
         {
             /* pass */
         }
