@@ -942,13 +942,14 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t vals[2];
     uservalue_t *val = &vals[0];
-    bytearray_element_t *array = NULL;
     scan_match_type_t m = MATCHEQUALTO;
     char *ustr = argv[0];
     char *pos;
     bool ret = false;
 
     USEPARAMS();
+
+    zero_uservalue(val);
 
     switch(vars->options.scan_data_type)
     {
@@ -984,14 +985,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         break;
     case BYTEARRAY:
         /* attempt to parse command as a bytearray */
-        array = calloc(argc, sizeof(bytearray_element_t));
-    
-        if (array == NULL)
-        {
-            show_error("there's a memory allocation error.\n");
-            goto retl;
-        }
-        if (!parse_uservalue_bytearray(argv, argc, array, val)) {
+        if (!parse_uservalue_bytearray(argv, argc, val)) {
             show_error("unable to parse command `%s`\n", ustr);
             goto retl;
         }
@@ -1035,8 +1029,7 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     ret = true;
 
 retl:
-    if (array)
-        free(array);
+    free_uservalue(val);
 
     return ret;
 }
@@ -1572,18 +1565,11 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     case 1: // bytearray
         ; /* cheat gcc */
         /* call parse_uservalue_bytearray */
-        bytearray_element_t *array = calloc(data_width, sizeof(bytearray_element_t));
         uservalue_t val_buf;
-        if (array == NULL)
+        if(!parse_uservalue_bytearray(argv+3, argc-3, &val_buf))
         {
-            show_error("memory allocation failed.\n");
-            ret = false;
-            goto retl;
-        }
-        if(!parse_uservalue_bytearray(argv+3, argc-3, array, &val_buf)) 
-        {
-            show_error("bad byte array speicified.\n");
-            free(array);
+            show_error("bad byte array specified.\n");
+            free_uservalue(&val_buf);
             ret = false;
             goto retl;
         }
@@ -1594,7 +1580,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
             bool wildcard_used = false;
             for(i = 0; i < data_width; ++i)
             {
-                if(array[i].is_wildcard == 1)
+                if(val_buf.wildcard_value[i] == WILDCARD)
                 {
                     wildcard_used = true;
                     break;
@@ -1605,7 +1591,7 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
                 if(!sm_read_array(vars->target, addr, buf, data_width))
                 {
                     show_error("read memory failed.\n");
-                    free(array);
+                    free_uservalue(&val_buf);
                     ret = false;
                     goto retl;
                 }
@@ -1614,13 +1600,12 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
 
         for(i = 0; i < data_width; ++i)
         {
-            bytearray_element_t *cur_element = array+i;
-            if(cur_element->is_wildcard == 0)
+            if(val_buf.wildcard_value[i] == FIXED)
             {
-                buf[i] = cur_element->byte;
+                buf[i] = val_buf.bytearray_value[i];
             }
         }
-        free(array);
+        free_uservalue(&val_buf);
         break;
     case 2: //string
         strncpy(buf, string_parameter, data_width);

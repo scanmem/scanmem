@@ -36,6 +36,7 @@
 #include "value.h"
 #include "scanroutines.h"
 #include "scanmem.h"
+#include "show_message.h"
 
 void valtostr(const value_t *val, char *str, size_t n)
 {
@@ -112,14 +113,21 @@ void uservalue2value(value_t *dst, const uservalue_t *src)
     if(dst->flags.f64b) set_f64b(dst, get_f64b(src));
 }
 
-/* array must have been allocated, of size at least argc */
-bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t *val)
+/* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
+bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *val)
 {
     int i,j;
+    uint8_t *bytes_array = malloc(argc*sizeof(uint8_t));
+    wildcard_t *wildcards_array = malloc(argc*sizeof(wildcard_t));
+
+    if (bytes_array == NULL || wildcards_array == NULL)
+    {
+        show_error("memory allocation for bytearray failed.\n");
+        goto err;
+    }
 
     const char *cur_str;
     char *endptr;
-    bytearray_element_t *cur_element;
 
     for(i = 0; i < argc; ++i)
     {
@@ -128,30 +136,36 @@ bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *
         /* test its length */
         for(j = 0; (j < 3) && (cur_str[j]); ++j) {}
         if (j != 2) /* length is not 2 */
-            return false;
+            goto err;
 
-        cur_element = array + i;
         if (strcmp(cur_str, "??") == 0)
         {
-            cur_element->is_wildcard = 1;
-            continue;
+            wildcards_array[i] = WILDCARD;
+            bytes_array[i] = 0x00;
         }
         else
         {
             /* parse as hex integer */
             uint8_t cur_byte = (uint8_t)strtoul(cur_str, &endptr, 16);
             if (*endptr != '\0')
-                return false;
+                goto err;
 
-            cur_element->is_wildcard = 0;
-            cur_element->byte = cur_byte;
+            wildcards_array[i] = FIXED;
+            bytes_array[i] = cur_byte;
         }
     }
 
     /* everything is ok */
-    val->bytearray_value = array;
+    val->bytearray_value = bytes_array;
+    val->wildcard_value = wildcards_array;
     val->flags.length = argc;
     return true;
+
+err:
+    if (bytes_array) free(bytes_array);
+    if (wildcards_array) free(wildcards_array);
+    zero_uservalue(val);
+    return false;
 }
 
 bool parse_uservalue_number(const char *nptr, uservalue_t * val)
@@ -235,6 +249,15 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     val->float32_value = (float) num;
     val->float64_value =  num;   
     return true;
+}
+
+void free_uservalue(uservalue_t *uval)
+{
+    /* bytearray arrays are dynamically allocated and have to be freed, strings are not */
+    if (uval->bytearray_value)
+        free((void*)uval->bytearray_value);
+    if (uval->wildcard_value)
+        free((void*)uval->wildcard_value);
 }
 
 int flags_to_max_width_in_bytes(match_flags flags)

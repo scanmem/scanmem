@@ -74,10 +74,13 @@ typedef struct {
     match_flags flags;
 } value_t;
 
-typedef struct{
-    uint8_t byte;
-    uint8_t is_wildcard;
-} bytearray_element_t;
+/* bytearray wildcards: they must be uint8_t. They are ANDed with the incoming
+ * memory before the comparison, so that '??' wildcards always return true
+ * It's possible to extend them to fully granular wildcard-ing, if needed */
+typedef enum __attribute__ ((__packed__)) {
+    FIXED = 0xffu,
+    WILDCARD = 0x00u,
+} wildcard_t;
 
 /* this struct describes values provided by users */
 typedef struct {
@@ -92,7 +95,9 @@ typedef struct {
     float float32_value;
     double float64_value;
 
-    const bytearray_element_t *bytearray_value;
+    const uint8_t *bytearray_value;
+    const wildcard_t *wildcard_value;
+
     const char *string_value;
 
     match_flags flags;
@@ -101,10 +106,12 @@ typedef struct {
 /* used when outputting values to user */
 /* only works for numbers */
 void valtostr(const value_t *val, char *str, size_t n);
-bool parse_uservalue_bytearray(char **argv, unsigned argc, bytearray_element_t *array, uservalue_t * val); /* parse bytearray, the parameter array should be allocated beforehand */
+/* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
+bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *val);
 bool parse_uservalue_number(const char *nptr, uservalue_t * val); /* parse int or float */
 bool parse_uservalue_int(const char *nptr, uservalue_t * val);
 bool parse_uservalue_float(const char *nptr, uservalue_t * val);
+void free_uservalue(uservalue_t *uval);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
 int flags_to_max_width_in_bytes(match_flags flags);
