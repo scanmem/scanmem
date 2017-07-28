@@ -277,6 +277,8 @@ extern inline int scan_routine_VLT_ANY SCAN_ROUTINE_ARGUMENTS
 /*---------------*/
 /* for BYTEARRAY */
 /*---------------*/
+
+/* Used only for length>8 */
 extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const uint8_t *bytes_array = user_value->bytearray_value;
@@ -315,6 +317,61 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 
     return length;
 }
+
+/* optimized routines for small lengths
+   careful: WIDTH = 8*LENGTH */
+
+#define DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(WIDTH) \
+    extern inline int scan_routine_BYTEARRAY##WIDTH##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (new_value->flags.length && \
+            ((get_u##WIDTH##b(new_value) & *(uint##WIDTH##_t*)user_value->wildcard_value) \
+              == *(uint##WIDTH##_t*)(user_value->bytearray_value))) \
+        { \
+            /* matched */ \
+            saveflags->length = (WIDTH)/8; \
+            return (WIDTH)/8; \
+        } \
+        else \
+        { \
+            /* not matched */ \
+            return 0; \
+        } \
+    }
+
+DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(8)
+DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(16)
+DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(32)
+DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(64)
+
+#define DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(WIDTH) \
+    extern inline int scan_routine_BYTEARRAY##WIDTH##_EQUALTO SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (!new_value->flags.length) \
+        { \
+            /* new_value is not actually a valid bytearray */ \
+            return 0; \
+        } \
+        const uint8_t *bytes_array = user_value->bytearray_value; \
+        const wildcard_t *wildcards_array = user_value->wildcard_value; \
+        int i; \
+        for(i = 0; i < (WIDTH)/8; ++i) \
+        { \
+            if(bytes_array[i] != (new_value->bytes[i] & wildcards_array[i])) \
+            { \
+                /* not matched */ \
+                return 0; \
+            } \
+        } \
+        /* matched */ \
+        saveflags->length = (WIDTH)/8; \
+        return (WIDTH)/8; \
+    }
+
+DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(24)
+DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(40)
+DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(48)
+DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(56)
 
 /*------------*/
 /* for STRING */
@@ -496,7 +553,9 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHLESSTHAN, LESSTHAN)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHRANGE, RANGE)
 
-    CHOOSE_ROUTINE(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO)
+    if (uflags) {
+        CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, uflags->length*8)
+    }
 
     if (uflags) {
         CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, uflags->length*8)
