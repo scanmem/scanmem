@@ -1,0 +1,537 @@
+# Serbian/Montenegrin translations for GameConqueror.
+# Copyright (C) 2017 Vidovic Slobodan <vidovicslobodan89(a)gmail.com>
+# This file is distributed under the same license as GameConqueror.
+# Slobodan Vidovic <vidovicslobodan89@gmail.com>, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-07-25 10:04+0200\n"
+"PO-Revision-Date: 2017-07-26 12:45+0200\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"Language: sr_ME@latin\n"
+
+#: ../gui/GameConqueror.ui.h:1
+msgid "GameConqueror - Memory Editor"
+msgstr "GameConqueror - Urednik Memorije"
+
+#: ../gui/GameConqueror.ui.h:2
+msgid "_Address:"
+msgstr "_Adresa:"
+
+#: ../gui/GameConqueror.ui.h:3
+msgid "Target address here (CTRL+L)"
+msgstr "Ciljana adresa ovdje (CTRL+L)"
+
+#: ../gui/GameConqueror.ui.h:4
+msgid "Enter address to view"
+msgstr "Unesi adresu da vidiš"
+
+#: ../gui/GameConqueror.ui.h:5
+msgid "Jump to address (CTRL+ENTER)"
+msgstr "Skoči na adresu (CTRL+ENTER)"
+
+#: ../gui/GameConqueror.ui.h:6
+msgid "_Refresh (CTRL+R)"
+msgstr "_Osveži (CTRL+R)"
+
+#: ../gui/GameConqueror.ui.h:7
+msgid "GameConqueror"
+msgstr "GameConqueror"
+
+#: ../gui/GameConqueror.ui.h:8
+msgid "Found: 0"
+msgstr "Pronađeno: 0"
+
+#: ../gui/GameConqueror.ui.h:9
+msgid ""
+"Syntax:\n"
+"\n"
+" For numeric types:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Exactly this number\n"
+" <b>N..M</b>      Range between two numbers\n"
+" <b>?</b>         Unknown initial value\n"
+" <b>&gt; or +</b>    Increased values\n"
+" <b>&lt; or -</b>    Decreased values\n"
+" <b>=</b>         Unchanged values\n"
+" <b>!=</b>        Changed values\n"
+" <b>&gt; N</b>       Greater than N\n"
+" <b>&lt; N</b>       Less than N\n"
+" <b>+ N</b>       Increased by N\n"
+" <b>- N</b>       Decreased by N\n"
+" <b>!= N</b>      Other than N\n"
+"</span>\n"
+" where N could be a number of a simple math expression embraced by (), e.g.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+" For bytearray: use 2-char hexadecimal notation for each byte, separated by "
+"spaces\n"
+" e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
+"\n"
+" For string: enter the string directly"
+msgstr ""
+"Sintaksa:\n"
+"\n"
+"Za numeričke tipove:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Upravo ovaj broj\n"
+" <b>N..M</b>      Raspon između dva broja\n"
+" <b>?</b>         Nepoznata početna vrijednost\n"
+" <b>&gt; or +</b>    Uvećana vrijednost\n"
+" <b>&lt; or -</b>    Umanjena vrijednost\n"
+" <b>=</b>         Nepromijenjena vrijednost\n"
+" <b>!=</b>        Izmijenjena vrijednost\n"
+" <b>&gt; N</b>       Veće od N\n"
+" <b>&lt; N</b>       Manje od N\n"
+" <b>+ N</b>       Uvećano za N\n"
+" <b>- N</b>       Umanjeno za N\n"
+" <b>!= N</b>      Osim N\n"
+"</span>\n"
+" gdje N može biti broj jednostavnog matematičkog izraza obuhvaćenog (), na "
+"pr.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+" Za niz bajtova: koristite heksadecimalnu notaciju od 2 karaktera za svaki "
+"bajt, razdvojene razmacima\n"
+"na pr. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> može se koristiti kao džoker "
+"vrijednost\n"
+"\n"
+"Za niz: unesite niz direktno"
+
+#: ../gui/GameConqueror.ui.h:37
+msgid "_Value: <span color=\"blue\"><u>?</u></span>"
+msgstr "_Vrijednost: <span color=\"blue\"><u>?</u></span>"
+
+#: ../gui/GameConqueror.ui.h:38
+msgid "Enter search value here (CTRL+K/L)"
+msgstr "Unesite traženu vrijednost ovdje (CTRL+K/L)"
+
+#: ../gui/GameConqueror.ui.h:39
+msgid "Insert value to search for (CTRL+K/L)"
+msgstr "Unesite vrijednost za pretragu (CTRL+K/L)"
+
+#: ../gui/GameConqueror.ui.h:40
+msgid "Scan (CTRL+ENTER)"
+msgstr "Skeniraj (CTRL+ENTER)"
+
+#: ../gui/GameConqueror.ui.h:41
+msgid "Reset (CTRL+R)"
+msgstr "Resetuj (CTRL+R)"
+
+#: ../gui/GameConqueror.ui.h:42
+msgid "Stop scan"
+msgstr "Stopiraj skeniranje"
+
+#: ../gui/GameConqueror.ui.h:43
+msgid "About"
+msgstr "O programu"
+
+#: ../gui/GameConqueror.ui.h:44
+msgid "Select a process (CTRL+F)"
+msgstr "Odaberi proces (CTRL+F)"
+
+#: ../gui/GameConqueror.ui.h:45 ../gui/GameConqueror.py:929
+msgid "Select a process"
+msgstr "Odaberi proces"
+
+#: ../gui/GameConqueror.ui.h:46 ../gui/GameConqueror.py:928
+msgid "No process selected"
+msgstr "Nijedan proces nije označen"
+
+#: ../gui/GameConqueror.ui.h:47
+msgid "Specify type of target data"
+msgstr "Naznači tip targetnog podatka"
+
+#: ../gui/GameConqueror.ui.h:48
+msgid "Data _Type:"
+msgstr "Tip _podatka:"
+
+#: ../gui/GameConqueror.ui.h:49
+msgid ""
+"<b>Basic:</b>      Fastest but may miss some values\n"
+"<b>Normal:</b>  Works for most cases\n"
+"<b>Full:</b>         Never miss values but slowest"
+msgstr ""
+"<b>Osnovno:</b>     Najbrže, ali možda nedostaje određene vrednosti\n"
+"<b>Normalno:</b>  Radi u većini slučajeva\n"
+"<b>Potpuno:</b>         Nikada ne propustite vrednosti, već najsporije"
+
+#: ../gui/GameConqueror.ui.h:52
+msgid "_Search Scope:"
+msgstr "_Pretraga:"
+
+#: ../gui/GameConqueror.ui.h:53
+msgid "Memory Editor (CTRL+SHIFT+M)"
+msgstr "Editor memorije (CTRL+SHIFT+M)"
+
+#: ../gui/GameConqueror.ui.h:54
+msgid "Save address list to file (CTRL+S)"
+msgstr "Sačuvaj listu adresa u datoteku (CTRL+S)"
+
+#: ../gui/GameConqueror.ui.h:55
+msgid "Load address list from file (CTRL+O)"
+msgstr "Učitaj listu adresa iz datoteke"
+
+#: ../gui/GameConqueror.ui.h:56
+msgid "Remove all entries (CTRL+D)"
+msgstr "Ukloni sve unose"
+
+#: ../gui/GameConqueror.ui.h:57
+msgid "Manually add an entry (CTRL+M)"
+msgstr "Ručno dadaj novi unos (CTRL+M)"
+
+#: ../gui/GameConqueror.ui.h:58
+msgid ""
+"Copyright (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2010 Bryan Cain\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
+"Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>\n"
+"\n"
+"Special thanks: Igor Gnatenko, Mattias Muenster, Zhang Zhe"
+msgstr ""
+"Autorsko pravo (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
+"Autorsko pravo (C) 2010 Bryan Cain\n"
+"Autorsko pravo (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
+"Autorsko pravo  (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>\n"
+"\n"
+"Specijalna zahvalnica: Igor Gnatenko, Mattias Muenster, Zhang Zhe"
+
+#: ../gui/GameConqueror.ui.h:64
+msgid "A graphical frontend of scanmem"
+msgstr "Grafički prikaz od scanmem"
+
+#: ../gui/GameConqueror.ui.h:65
+msgid "Homepage"
+msgstr "Početna stranica"
+
+#: ../gui/GameConqueror.ui.h:66
+msgid "Manually add an entry"
+msgstr "Ručno dodaj unos"
+
+#: ../gui/GameConqueror.ui.h:67
+msgid "_Add"
+msgstr "_Dodaj"
+
+#: ../gui/GameConqueror.ui.h:68
+msgid "_Close"
+msgstr "_Zatvori"
+
+#: ../gui/GameConqueror.ui.h:69
+msgid "Memory address of the value"
+msgstr "Memorijska adresa vrijednosti"
+
+#: ../gui/GameConqueror.ui.h:70
+msgid "Addres_s:"
+msgstr "Adresa_s:"
+
+#: ../gui/GameConqueror.ui.h:71
+msgid "Give a brief description of the value"
+msgstr "Navedite kratak opis vrijednosti"
+
+#: ../gui/GameConqueror.ui.h:72
+msgid "_Description:"
+msgstr "_Opis:"
+
+#: ../gui/GameConqueror.ui.h:73
+msgid "_Type:"
+msgstr "_Tip:"
+
+#: ../gui/GameConqueror.ui.h:74
+msgid "Specify data length (string/bytearray only)"
+msgstr "Naveditie dužinu podatka (niz/niz bajtova)"
+
+#: ../gui/GameConqueror.ui.h:75
+msgid "_Length:"
+msgstr "_Dužina:"
+
+#: ../gui/GameConqueror.ui.h:76
+msgid "Type to search for a process"
+msgstr "Tip za pretragu procesa"
+
+#: ../gui/GameConqueror.ui.h:77
+msgid "_OK"
+msgstr "_U redu"
+
+#: ../gui/GameConqueror.ui.h:78
+msgid "_Cancel"
+msgstr "_Otkaži"
+
+#: ../gui/GameConqueror.ui.h:79
+msgid "_User:"
+msgstr "_Korisnik"
+
+#: ../gui/GameConqueror.ui.h:80
+msgid "_Process:"
+msgstr "_Procesi:"
+
+#: ../gui/GameConqueror.ui.h:81
+msgid "Filter"
+msgstr "Filter"
+
+#: ../gui/GameConqueror.py:72
+msgid "Basic"
+msgstr "Osnovno"
+
+#: ../gui/GameConqueror.py:72
+msgid "Normal"
+msgstr "Normalno"
+
+#: ../gui/GameConqueror.py:72
+msgid "Full"
+msgstr "Puno"
+
+#. init columns
+#. Address
+#: ../gui/GameConqueror.py:180 ../gui/GameConqueror.py:234
+msgid "Address"
+msgstr "Adresa"
+
+#. Value
+#: ../gui/GameConqueror.py:184 ../gui/GameConqueror.py:251
+msgid "Value"
+msgstr "Vrijednost"
+
+#: ../gui/GameConqueror.py:188
+msgid "Offset"
+msgstr "Ofset"
+
+#: ../gui/GameConqueror.py:192
+msgid "Region Type"
+msgstr "Tip regiona"
+
+#. Lock
+#: ../gui/GameConqueror.py:217
+msgid "Lock"
+msgstr "Zaključaj"
+
+#. Description
+#: ../gui/GameConqueror.py:226
+msgid "Description"
+msgstr "Opis"
+
+#. Type
+#: ../gui/GameConqueror.py:239
+msgid "Type"
+msgstr "Tip"
+
+#. second col
+#: ../gui/GameConqueror.py:276
+msgid "User"
+msgstr "Korisnik"
+
+#. third col
+#: ../gui/GameConqueror.py:281
+msgid "Process"
+msgstr "Proces"
+
+#: ../gui/GameConqueror.py:312
+msgid "Add to cheat list"
+msgstr "Dodaj na listu"
+
+#: ../gui/GameConqueror.py:313 ../gui/GameConqueror.py:320
+msgid "Browse this address"
+msgstr "Pretraži ovu adresu"
+
+#: ../gui/GameConqueror.py:314
+msgid "Scan for this address"
+msgstr "Skeniraj ovu adresu"
+
+#: ../gui/GameConqueror.py:315
+msgid "Remove this match"
+msgstr "Ukloni ovo poklapanje"
+
+#: ../gui/GameConqueror.py:321
+msgid "Copy address"
+msgstr "Kopiraj adresu"
+
+#: ../gui/GameConqueror.py:322
+msgid "Remove this entry"
+msgstr "Ukloni ovaj unos"
+
+#: ../gui/GameConqueror.py:350 ../gui/GameConqueror.py:538
+#: ../gui/GameConqueror.py:1002
+msgid "Please select a process"
+msgstr "Molimo označite unos"
+
+#: ../gui/GameConqueror.py:363
+msgid "Invalid address"
+msgstr "Pogrešna adresa"
+
+#: ../gui/GameConqueror.py:373
+msgid "Please enter a valid address."
+msgstr "Unesite važeću adresu"
+
+#: ../gui/GameConqueror.py:377 ../gui/GameConqueror.py:898
+msgid "No Description"
+msgstr "Bez opisa"
+
+#: ../gui/GameConqueror.py:406
+msgid "Open.."
+msgstr "Otvori.."
+
+#: ../gui/GameConqueror.py:426
+msgid "Save.."
+msgstr "Sačuvaj.."
+
+#: ../gui/GameConqueror.py:531
+msgid "<unknown>"
+msgstr "<nepoznato>"
+
+#: ../gui/GameConqueror.py:579 ../gui/GameConqueror.py:879
+msgid "Cannot read memory"
+msgstr "Ne mogu očitati memoriju"
+
+#: ../gui/GameConqueror.py:835
+msgid "Unknown architecture, you may report to developers"
+msgstr "Nepoznata arhitektura, prijavite programerima"
+
+#: ../gui/GameConqueror.py:847 ../gui/GameConqueror.py:930
+msgid ""
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
+msgstr ""
+"Ne mogu očitati mapu memorije tog procesa, možda je program zatvoren (srušio "
+"se), ili nemate potrenu privilegiju"
+
+#. not readable
+#: ../gui/GameConqueror.py:858
+#, python-format
+msgid "Address %x is not readable"
+msgstr "Adresa %x nije čitljiva"
+
+#: ../gui/GameConqueror.py:861
+#, python-format
+msgid "Address %x is not valid"
+msgstr "Adresa %x nije validna"
+
+#: ../gui/GameConqueror.py:870
+msgid "Cannot find a readable region"
+msgstr "Ne mogu pronaći čitljiv region"
+
+#: ../gui/GameConqueror.py:1062
+#, python-format
+msgid "Found: %d"
+msgstr "Pronađeno: %d"
+
+#: ../gui/GameConqueror.py:1178
+msgid ""
+"Version of scanmem mismatched, you may encounter problems. Please make sure "
+"you are using the same version of GameConqueror as scanmem."
+msgstr ""
+"Verzija za scanmem se ne podudara, može doći do problema. Molimo provjerite "
+"da li koristite istu verziju GameConqueror i scanmem-a."
+
+#: ../gui/GameConqueror.py:1184
+msgid "A GUI for scanmem, a game hacking tool"
+msgstr "Grafički prikaz za scanmem, alat za hakovanje igrica"
+
+#: ../gui/GameConqueror.py:1185
+msgid "Report bugs to "
+msgstr "Prijavi grešku"
+
+#: ../gui/GameConqueror.py:1187
+msgid "prefill the search box"
+msgstr "Popunite polje za pretragu"
+
+#: ../gui/GameConqueror.py:1189
+msgid "PID of the process"
+msgstr "Redni broj procesa"
+
+#: ../gui/misc.py:33
+msgid "No value provided"
+msgstr "Nije obezbjeđena vrijednost"
+
+#: ../gui/misc.py:43 ../gui/misc.py:49 ../gui/misc.py:104
+#, python-format
+msgid "Bad value: %s"
+msgstr "Loša vrijednost: %s"
+
+#: ../gui/misc.py:65
+#, python-format
+msgid "Command \"%s\" is not valid for the first scan"
+msgstr "Komanda \"%s\" nije validna za ovo skeniranje"
+
+#: ../gui/misc.py:112
+#, python-format
+msgid "%s is not an integer"
+msgstr "%s nije broj"
+
+#: ../gui/misc.py:118
+#, python-format
+msgid "%s is too bulky for %s"
+msgstr "%s je preveliki za %s"
+
+#: ../gui/misc.py:138
+#, python-format
+msgid "Cannot locate item: %s"
+msgstr "Ne mogu da pronađem: %s"
+
+#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
+msgid "Game Conqueror"
+msgstr "Game Conqueror"
+
+#: ../gui/GameConqueror.desktop.in.h:2
+msgid "A game hacking tool. A GUI front-end for scanmem."
+msgstr "Alat za hakovanje igrica. Grafički prikaz za scanmem"
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:1
+msgid "Run Game Conqueror"
+msgstr "Pokreni Game Conqueror"
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:2
+msgid "Authentication is required to run Game Conqueror"
+msgstr "Autentifikacija je potrebna za pokretanje"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:2
+msgid "Game hacking tool. GUI front-end for scanmem."
+msgstr "Alat za hakovanje igrica. Grafički prikaz za scanmem"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:3
+msgid ""
+"scanmem is a simple interactive debugging utility, used to locate the "
+"address of a variable in an executing process. This can be used for the "
+"analysis or modification of a hostile process on a compromised machine, "
+"reverse engineering, or as a \"pokefinder\" to cheat at video games. "
+"GameConqueror aims to provide a CheatEngine-alike interface for scanmem, "
+"it's user-friendly and easy to use."
+msgstr ""
+"Scanmem je jednostavan interaktivni uslužni program za otklanjanje grešaka, "
+"koji se koristi za lociranje adrese varijable u procesu izvršavanja. Ovo se "
+"može koristiti za analizu ili modifikaciju neprijateljskog procesa na "
+"kompromitovanoj mašini, obrnutom inžinjeringu ili kao \"pokefinder\" za "
+"varanje na video igricama. GameConkueror ima za cilj da obezbedi interfejs "
+"CheatEngine-alike za skeniranje, jednostavan za korišćenje i jednostavan za "
+"korišćenje."
+
+#: ../gui/GameConqueror.appdata.xml.in.h:4
+msgid "Features:"
+msgstr "Karakteristike:"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:5
+msgid "Locking on multiple variables"
+msgstr "Zaključavam višestruke promijenjiljive"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:6
+msgid "Memory Viewer/Editor"
+msgstr "Izmjenjivač/pregledaš memorije"
+
+#: ../gui/GameConqueror.appdata.xml.in.h:7
+msgid "... many to be done"
+msgstr "... Mnogi će biti učinjeni"
