@@ -57,8 +57,10 @@ void valtostr(const value_t *val, char *str, size_t n)
          val->flags.f32b ? "F32 " : "",
          (val->flags.ineq_reverse && !val->flags.ineq_forwards) ? "(reversed inequality) " : "");
     /* handle having no type at all */
-    if (np <= 2)
+    if (np <= 2) {
+        show_debug("BUG: No type\n");
         goto err;
+    }
 
          if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
     else if (val->flags.s64b) { max_bytes = 8; print_as_unsigned = false; }
@@ -75,16 +77,18 @@ void valtostr(const value_t *val, char *str, size_t n)
     else if (max_bytes == sizeof(int))       np = snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
     else if (max_bytes == sizeof(short))     np = snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
     else if (max_bytes == sizeof(char))      np = snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
-    else if (val->flags.f64b) np = snprintf(str, n, "%lf, %s", get_f64b(val), buf);
-    else if (val->flags.f32b) np = snprintf(str, n, "%f, %s", get_f32b(val), buf);
-    else
+    else if (val->flags.f64b) np = snprintf(str, n, "%lg, %s", get_f64b(val), buf);
+    else if (val->flags.f32b) np = snprintf(str, n, "%g, %s", get_f32b(val), buf);
+    else {
+        show_debug("BUG: No formatting found\n");
         goto err;
+    }
     if (np <= 0 || np >= (n - 1))
         goto err;
 
     return;
 err:
-    /* always print a value and a type for not crashing the GUI */
+    /* always print a value and a type to not crash front-ends */
     strncpy(str, "unknown, [unknown]", n);
 }
 
