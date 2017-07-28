@@ -281,26 +281,16 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const uint8_t *bytes_array = user_value->bytearray_value;
     const wildcard_t *wildcards_array = user_value->wildcard_value;
-    int length = user_value->flags.length;
-    int cur_idx = 0;
-    int i, j;
+    uint length = user_value->flags.length;
+    unsigned int i, j;
     value_t val_buf = *new_value;
     for(i = 0; i + sizeof(int64_t) < length; i += sizeof(int64_t))
     {
-        /* match current block */
-        for(j = 0; j < sizeof(int64_t); ++j)
+        if (*((int64_t*)(bytes_array+i)) != (val_buf.int64_value & *((int64_t*)(wildcards_array+i))))
         {
-            if (bytes_array[cur_idx] == (val_buf.bytes[j] & wildcards_array[cur_idx]))
-            {
-                /* pass */
-            }
-            else
-            {
-                /* not matched */
-                return 0;
-            }
-            ++ cur_idx;
-        } 
+            /* not matched */
+            return 0;
+        }
          
         /* read next block */
         if (!sm_peekdata(sm_globals.target, address+i+sizeof(int64_t), &val_buf))
@@ -313,16 +303,11 @@ extern inline int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
     /* match bytes left */
     for(j = 0; j < length - i; ++j)
     {
-        if (bytes_array[cur_idx] == (val_buf.bytes[j] & wildcards_array[cur_idx]))
-        {
-            /* pass */
-        }
-        else
+        if ((bytes_array+i)[j] != (val_buf.bytes[j] & (wildcards_array+i)[j]))
         {
             /* not matched */
             return 0;
         }
-        ++ cur_idx;
     } 
     
     /* matched */
