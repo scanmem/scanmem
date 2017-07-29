@@ -239,11 +239,11 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (loc.swath) {
                         value_t v;
                         value_t old;
-                        void *address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        void *address = remote_address_of_nth_element(loc.swath, loc.index);
 
                         /* copy val onto v */
                         /* XXX: valcmp? make sure the sizes match */
-                        old = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+                        old = data_to_val(loc.swath, loc.index);
                         zero_value(&v);
                         v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
@@ -274,11 +274,11 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     /* Only actual matches are considered */
                     if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
                     {
-                        void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator);
 
                         /* XXX: as above : make sure the sizes match */
                                     
-                        value_t old = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                        value_t old = data_to_val(reading_swath_index, reading_iterator);
                         value_t v;
                         zero_value(&v);
                         v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
@@ -297,7 +297,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     ++reading_iterator;
                     if (reading_iterator >= reading_swath_index->number_of_bytes)
                     {
-                        reading_swath_index = local_address_beyond_last_element(reading_swath_index /* ,MATCHES_AND_VALUES */);
+                        reading_swath_index = local_address_beyond_last_element(reading_swath_index);
                         reading_iterator = 0;
                     }
                 }
@@ -390,15 +390,14 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 break;
             default: /* numbers */
                 ; /* cheat gcc */
-                value_t val = data_to_val(reading_swath_index, reading_iterator /* ,MATCHES_AND_VALUES */);
+                value_t val = data_to_val(reading_swath_index, reading_iterator);
                 truncval_to_flags(&val, flags);
 
                 valtostr(&val, v, buf_len);
                 break;
             }
 
-            void *address = remote_address_of_nth_element(reading_swath_index,
-                reading_iterator /* ,MATCHES_AND_VALUES */);
+            void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator);
             unsigned long address_ul = (unsigned long)address;
             unsigned int region_id = 99;
             unsigned long match_off = 0;
@@ -426,8 +425,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes)
         {
-            reading_swath_index = local_address_beyond_last_element(
-                reading_swath_index /* ,MATCHES_AND_VALUES */);
+            reading_swath_index = local_address_beyond_last_element(reading_swath_index);
             reading_iterator = 0;
         }
     }
@@ -1198,9 +1196,9 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
     
-    address = remote_address_of_nth_element(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+    address = remote_address_of_nth_element(loc.swath, loc.index);
     
-    old_val = data_to_val(loc.swath, loc.index /* ,MATCHES_AND_VALUES */);
+    old_val = data_to_val(loc.swath, loc.index);
     old_val.flags = loc.swath->data[loc.index].match_info;
     valcpy(&o, &old_val);
     valcpy(&n, &o);

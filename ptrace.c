@@ -337,7 +337,7 @@ bool sm_checkmatches(globals_t *vars,
         }
         else
         {
-            value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes /* ,MATCHES_AND_VALUES */);
+            value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes);
 
             match_flags flags = reading_swath_index->data[reading_iterator].match_info;
             /* these are not harmful for bytearray routine, since it will ignore flags of new_value & old_value */
@@ -358,7 +358,7 @@ bool sm_checkmatches(globals_t *vars,
                 (We can get away with assuming that the pointers will stay valid, because as we never add more data to the array than there was before, it will not reallocate.) */
           
             old_value_and_match_info new_value = { get_u8b(&data_value), checkflags };
-            writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
+            writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value);
             
             ++vars->num_matches;
             
@@ -367,7 +367,7 @@ bool sm_checkmatches(globals_t *vars,
         else if (required_extra_bytes_to_record)
         {
             old_value_and_match_info new_value = { get_u8b(&data_value), zero_flag };
-            writing_swath_index = add_element(&vars->matches, writing_swath_index, address, &new_value /* ,MATCHES_AND_VALUES */);
+            writing_swath_index = add_element(&vars->matches, writing_swath_index, address, &new_value);
             --required_extra_bytes_to_record;
         }
 
@@ -400,7 +400,7 @@ bool sm_checkmatches(globals_t *vars,
         }
     }
     
-    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
+    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index)))
     {
         show_error("memory allocation error while reducing matches-array size\n");
         return false;
@@ -644,7 +644,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     /* tell front-end we've done */
     vars->scan_progress = MAX_PROGRESS;
     
-    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index /* ,MATCHES_AND_VALUES */)))
+    if (!(vars->matches = null_terminate(vars->matches, writing_swath_index)))
     {
         show_error("memory allocation error while reducing matches-array size\n");
         return false;
@@ -666,7 +666,7 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
     }
 
     if (sm_peekdata(target, addr, &saved) == false) {
-        show_error("couldnt access the target address %10p\n", addr);
+        show_error("couldn't access the target address %10p\n", addr);
         return false;
     }
     
