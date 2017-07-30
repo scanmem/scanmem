@@ -88,7 +88,7 @@ void valtostr(const value_t *val, char *str, size_t n)
 
     return;
 err:
-    /* always print a value and a type to not crash front-ends */
+    /* always print a value and a type to not crash the GUI */
     strncpy(str, "unknown, [unknown]", n);
 }
 
@@ -233,7 +233,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     if ((errno != 0) || (*endptr != '\0'))
         return false;
     
-    /* I'm not sure how to distinguish float & double, but I guess it's not necessary here */
+    /* I'm not sure how to distinguish between float and double, but I guess it's not necessary here */
     val->flags.f32b = val->flags.f64b = 1;
     val->float32_value = (float) num;
     val->float64_value =  num;   
@@ -255,7 +255,7 @@ int flags_to_max_width_in_bytes(match_flags flags)
             else if (flags.u32b || flags.s32b || flags.f32b) return 4;
             else if (flags.u16b || flags.s16b              ) return 2;
             else if (flags.u8b  || flags.s8b               ) return 1;
-            else    /* It can't be a variable of any size */ return 0;
+            else    /* it can't be a variable of any size */ return 0;
             break;
     }
 }

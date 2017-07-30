@@ -68,7 +68,7 @@ int l_append(list_t * list, element_t * element, void *data)
         list->head = n;
     } else {
 
-        /* insertion in the middle of a list */
+        /* insertion at the middle of a list */
         if (element->next == NULL) {
             list->tail = n;
         }

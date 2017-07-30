@@ -22,11 +22,11 @@
 
 /* small header file to manage interrupted commands */
 
-static sigjmp_buf jmpbuf;       /* used when aborting a command due to interrupt */
+static sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
 static sighandler_t oldsig;     /* reinstalled before longjmp */
 static unsigned intused;
 
-/* signal handler to handle interrupt during a commands */
+/* signal handler used to handle an interrupt during commands */
 static void interrupted(int n)
 {
     (void) n;

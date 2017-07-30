@@ -82,7 +82,7 @@ typedef struct {
         unsigned short alignment;
         unsigned short debug;
         unsigned short backend;    /* if 1, scanmem will work as a backend and
-                                      output would be more machine-readable */
+                                      output will be more machine-readable */
 
         /* options that can be changed during runtime */
         scan_data_type_t scan_data_type;
