@@ -441,44 +441,138 @@ out_free:
     return true;
 }
 
-/* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned id;
-    char *end = NULL;
+    unsigned id, last_id;
+    unsigned one_to_val, to_end_val;
     match_location loc;
+    uservalue_t val;
+    uint64_t *val_set;
 
     if (argc != 2) {
         show_error("was expecting one argument, see `help delete`.\n");
         return false;
     }
 
-    /* parse argument */
-    id = strtoul(argv[1], &end, 0x00);
+    if (vars->num_matches == 0) {
+        show_error("nothing to delete.\n");
+        return false;
+    }
 
-    /* check that strtoul() worked */
-    if (argv[1][0] == '\0' || *end != '\0') {
-        show_error("sorry, couldnt parse `%s`, try `help delete`\n", argv[1]);
+    zero_uservalue(&val);
+
+    if (!parse_uservalue_uintset(argv[1], &val)) {
+        show_error("failed to parse the set, try `help delete`\n");
         return false;
     }
-    
-    loc = nth_match(vars->matches, id);
-    
-    if (loc.swath)
-    {
-        /* It is not convenient to check whether anything else relies on this,
-           so just mark it as not a REAL match */
-        zero_match_flags(&loc.swath->data[loc.index].match_info);
-        vars->num_matches--;
-        return true;
+
+    val_set = (uint64_t *)val.value_set;
+
+    if (val.set_prop.sz && (uint64_t)val_set[val.set_prop.sz-1] >= UINT_MAX) {
+            show_error("`%zu` is too large.\n", (uint64_t)val_set[val.set_prop.sz-1]);
+            show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
+            goto error;
     }
-    else
-    {
-        /* I guess this is not a valid match-id */
-        show_warn("you specified a non-existant match `%u`.\n", id);
+
+    last_id = last_match_id(vars->matches);
+
+    if (val.set_prop.sz && val_set[val.set_prop.sz-1] > last_id) {
+        show_error("one or more numbers out of range.\n");
         show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
-        return false;
+        goto error;
     }
+
+    /* 0 .. n */
+    if (val.set_prop.n.one_to) {
+        one_to_val = *(unsigned *)val.set_prop.n.one_to_val;
+
+        if (one_to_val > last_id) {
+                show_error("`%u` is out of range.\n", one_to_val);
+                show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
+                goto error;
+        }
+
+        for (unsigned id = one_to_val; id >= 0; id--) {
+            loc = nth_match(vars->matches, id);
+
+            if (loc.swath) {
+                /* It is not convenient to check whether anything else relies on this,
+                   so just mark it as not a REAL match */
+                zero_match_flags(&loc.swath->data[loc.index].match_info);
+                vars->num_matches--;
+            } else {
+                show_error("BUG: delete: one_to\n");
+                goto error;
+            }
+
+            if (id == 0)
+                break;
+        }
+    }
+
+    /* n .. end */
+    if (val.set_prop.n.to_end) {
+        to_end_val = *(unsigned *)val.set_prop.n.to_end_val;
+
+        if (val.set_prop.n.one_to) {
+            last_id = last_match_id(vars->matches);
+            /* adjust for ID shift, +1 for 0th element */
+            to_end_val -= one_to_val+1;
+        }
+
+        if (to_end_val > last_id) {
+            show_error("`%u` is out of range.\n", to_end_val);
+            show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
+            goto error;
+        }
+
+        for (unsigned id = last_id; id >= to_end_val; id--) {
+            loc = nth_match(vars->matches, id);
+
+            if (loc.swath) {
+                /* It is not convenient to check whether anything else relies on this,
+                   so just mark it as not a REAL match */
+                zero_match_flags(&loc.swath->data[loc.index].match_info);
+                vars->num_matches--;
+            } else {
+                show_error("BUG: delete: to_end\n");
+                goto error;
+            }
+
+            if (id == 0)
+                break;
+        }
+    }
+
+    if (val.set_prop.sz != 0) {
+        for (size_t i = val.set_prop.sz-1; i >= 0; i--) {
+            id  = (unsigned)val_set[i];
+            loc = nth_match(vars->matches, val.set_prop.n.one_to ? id - (one_to_val+1) : id);
+
+            if (loc.swath) {
+                /* It is not convenient to check whether anything else relies on this,
+                   so just mark it as not a REAL match */
+                zero_match_flags(&loc.swath->data[loc.index].match_info);
+                vars->num_matches--;
+            } else {
+                show_error("BUG: delete: id <%u> match failure\n", id);
+                goto error;
+            }
+            if (i == 0)
+                break;
+        }
+    }
+
+    free(val_set);
+    free(val.set_prop.n.one_to_val);
+    free(val.set_prop.n.to_end_val);
+    return true;
+
+error:
+    free(val_set);
+    free(val.set_prop.n.one_to_val);
+    free(val.set_prop.n.to_end_val);
+    return false;
 }
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)

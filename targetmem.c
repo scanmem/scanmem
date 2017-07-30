@@ -123,6 +123,40 @@ void data_to_bytearray_text (char *buf, int buf_length,
     }
 }
 
+unsigned
+last_match_id (matches_and_old_values_array *matches)
+{
+    unsigned i = 0;
+
+    matches_and_old_values_swath *reading_swath_index =
+        (matches_and_old_values_swath *)matches->swaths;
+
+    int reading_iterator = 0;
+
+    if (!matches)
+        return 0;
+
+    while (reading_swath_index->first_byte_in_child) {
+        /* Only actual matches are considered */
+        if (flags_to_max_width_in_bytes(
+                reading_swath_index->data[reading_iterator].match_info) > 0)
+
+            ++i;
+
+        /* Go on to the next one... */
+        ++reading_iterator;
+        if (reading_iterator >= reading_swath_index->number_of_bytes) {
+            reading_swath_index =
+                local_address_beyond_last_element(
+                    (matches_and_old_values_swath *)reading_swath_index);
+
+            reading_iterator = 0;
+        }
+    }
+
+    return i-1;
+}
+
 match_location
 nth_match (matches_and_old_values_array *matches, unsigned n)
 {

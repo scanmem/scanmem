@@ -240,6 +240,186 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     return true;
 }
 
+#define DEFAULT_UINTLS_SZ (1000)
+
+/* XXX: this should be in a utility file of some sort (no pun intended) */
+static int _uint64_cmp(const void *i1, const void *i2)
+{
+    return (*(const uint64_t *)i1 - *(const uint64_t *)i2);
+}
+
+bool parse_uservalue_uintset(const char *lptr, uservalue_t *val)
+{
+    const char *tok, *tmpnum, *tmpnum_end;
+    bool        got_num;
+    uint64_t    last_num;
+    uint64_t   *valarr;
+    size_t      arr_szfilled, arr_maxsz;
+    size_t      vaidx = 0;
+    uservalue_t tokval;
+
+    assert(lptr);
+    assert(val);
+
+    enum {
+        NIL = -1,
+        NUM_TOK,
+        RNG_TOK,
+        CMA_TOK,
+    } last_type = NIL;
+
+    /* allocate space for value pointers */
+    if ((valarr = calloc(DEFAULT_UINTLS_SZ, sizeof(uint64_t))) == NULL)
+        return false;
+    if ((val->set_prop.n.one_to_val = malloc(sizeof(uint64_t))) == NULL ||
+        (val->set_prop.n.to_end_val = malloc(sizeof(uint64_t))) == NULL) {
+        free(valarr);
+        if (val->set_prop.n.one_to_val)
+            free(val->set_prop.n.one_to_val);
+        return false;
+    }
+
+    arr_szfilled = 0;
+    arr_maxsz = DEFAULT_UINTLS_SZ;
+    got_num = false;
+
+/* NOTE: used locally. fragile, make sure to not use it with anything fancy. */
+#define INC_ARRAY_SZ                                                                 \
+    do {                                                                             \
+        if (arr_maxsz > (SIZE_MAX-1) / 2 ||                                          \
+            (valarr = realloc(valarr, (arr_maxsz *= 2) * sizeof(uint64_t))) == NULL) \
+            goto error;                                                              \
+    } while (0)
+
+    for (tok = lptr; *tok; tok++) {
+        /* skip spaces */
+        while (tok && isspace(*tok))
+            tok++;
+
+        /* check if we just went over trailing space */
+        if (!tok || !*tok)
+            break;
+
+        assert(arr_szfilled <= arr_maxsz); // should never fail
+        if (arr_szfilled == arr_maxsz)
+            INC_ARRAY_SZ;
+
+        switch (*tok) {
+        case ',':
+            if (last_type == RNG_TOK)
+                goto error;
+            last_type = CMA_TOK;
+            continue;
+        case '.':
+            if (last_type == CMA_TOK || last_type == RNG_TOK)
+                goto error;
+            /* check for consecutive `..` */
+            if (tok != lptr && tok[-1] == '.')
+                last_type = RNG_TOK;
+            continue;
+        }
+
+        if (isdigit(*tok)) {
+            /* find the end of this number in string */
+            tmpnum_end = tok;
+            for ( ; isdigit(*tmpnum_end); tmpnum_end++)
+                ;
+            tmpnum = strndupa(tok, tmpnum_end - tok);
+
+            if (!parse_uservalue_int(tmpnum, &tokval))
+                goto error;
+
+            /* TODO: check for an invalid negative number */
+
+            if (last_type == RNG_TOK) {
+                if (!got_num) {
+                    /* we've got a {1 .. n} range */
+                    val->set_prop.n.one_to = true;
+                    *(uint64_t *)val->set_prop.n.one_to_val = last_num =
+                        tokval.uint64_value;
+                    last_type = NUM_TOK;
+                    got_num = true;
+                    /* move token position to last number found (needed for 2+ digit nums */
+                    tok = tmpnum_end-1;
+                    continue;
+                }
+                if (tokval.uint64_value <= last_num)
+                    goto error; /* invalid range */
+
+                /* pre-set the new size filled and do some bounds checking */
+                if ((arr_szfilled += (tokval.uint64_value - last_num)) > arr_maxsz)
+                    while (arr_szfilled > arr_maxsz)
+                        INC_ARRAY_SZ;
+
+                /* fill up array with range */
+                for (uint64_t i = last_num+1; i <= tokval.uint64_value; i++)
+                    valarr[vaidx++] = i;
+            } else if (last_type == NUM_TOK) {
+                /* sanity check */
+                goto error;
+            } else {
+                valarr[vaidx++] = tokval.uint64_value;
+                arr_szfilled++;
+            }
+            last_num = tokval.uint64_value;
+            last_type = NUM_TOK;
+            if (!got_num)
+                got_num = true;
+            /* move token position to last number found (needed for 2+ digit nums) */
+            tok = tmpnum_end-1;
+        } else {
+            /* bad token */
+            goto error;
+        }
+    }
+
+    if (last_type == RNG_TOK) {
+        if (!got_num)
+            goto error;
+        val->set_prop.n.to_end = true;
+        *(uint64_t *)val->set_prop.n.to_end_val = last_num;
+        arr_szfilled--;
+    }
+
+    /* consider empty sets invalid */
+    if (arr_szfilled == 0 && !val->set_prop.n.one_to && !val->set_prop.n.to_end)
+        goto error;
+
+    if (arr_szfilled > 1) {
+        /* sort the value array */
+        qsort(valarr, arr_szfilled, sizeof(valarr[0]), _uint64_cmp);
+
+        /* check if there are any duplicates */
+        for (size_t i = 0; i < (arr_szfilled % 2 ? arr_szfilled-1 : arr_szfilled); i++)
+            if (valarr[i] == valarr[i+1])
+                goto error;
+    }
+    /*
+     * - special case duplicate check -
+     * make sure that there weren't any numbers explictly specified
+     * that are implictly included in an open-ended range.
+     */
+    if ( arr_szfilled &&
+        ((val->set_prop.n.one_to && valarr[0]              < *(uint64_t *)val->set_prop.n.one_to_val) ||
+        ( val->set_prop.n.to_end && valarr[arr_szfilled-1] > *(uint64_t *)val->set_prop.n.to_end_val)))
+        goto error;
+
+    val->value_set   = valarr;
+    val->set_prop.sz = arr_szfilled;
+
+    return true;
+
+error:
+    if (valarr)
+        free(valarr);
+    if (val->set_prop.n.one_to_val)
+        free(val->set_prop.n.one_to_val);
+    if (val->set_prop.n.to_end_val)
+        free(val->set_prop.n.to_end_val);
+    zero_uservalue(val);
+    return false;
+}
+
 int flags_to_max_width_in_bytes(match_flags flags)
 {
     switch(sm_globals.options.scan_data_type)

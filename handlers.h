@@ -74,16 +74,24 @@ bool handler__set(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__list(globals_t *vars, char **argv, unsigned argc);
 
-#define DELETE_SHRTDOC "delete a known match by match-id"
-#define DELETE_LONGDOC "usage: delete match-id\n" \
-                "Remove the match `match-id` from the match list. The `match-id` can\n" \
+#define DELETE_SHRTDOC "delete known matches by match-id"
+#define DELETE_LONGDOC "usage: delete <match-id set>\n" \
+                "Remove a set of match-id's from the match list. The set format\n" \
+                "is described below. The list of match-id's can\n" \
                 "be found using the `list` command. To delete all matches, see\n" \
                 "the `reset` command.\n" \
                 "To delete all matches associated with a particular library, see the\n" \
-                "`dregion` command, which will also remove any associated matches.\n" \
-                "Example:\n" \
-                "\tdelete 0 - delete match 0\n" \
-                "NOTE: match-ids may be recalculated after matches are removed or added."
+                "`dregion` command, which will also remove any associated matches.\n\n" \
+                "The Set Format:\n" \
+                "[..a](,b..c | d, ...)[e..]\n" \
+                "The beginning and end of the set may include an optional \"open-ended\" range -\n" \
+                "`..a` means a range starting at match-id `0` to match-id `a`. `e..` means a range starting at\n" \
+                "match-id `e` to the last match-id. The rest is the same as the standard format.\n\n" \
+                "Examples:\n" \
+                "\tdelete ..5,10..15 - delete matches 0 through 5 and 10 through 15\n" \
+                "\tdelete ..5,14,20.. - delete matches 0 through 5, 14, and 20 through the last match\n\n" \
+                "NOTE: Match-ids may be recalculated after matches are removed or added. However, the set\n" \
+                "      of matches is guaranteed to be deleted properly."
 
 bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
@@ -112,6 +120,7 @@ bool handler__pid(globals_t *vars, char **argv, unsigned argc);
                 "NOTE: This can use a lot of memory with large processes."
 
 bool handler__snapshot(globals_t *vars, char **argv, unsigned argc);
+
 
 #define DREGION_SHRTDOC "delete a known region by region-id"
 #define DREGION_LONGDOC "usage: dregion [!]region-id[,region-id[,...]]\n" \
