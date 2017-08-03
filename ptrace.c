@@ -453,11 +453,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     element_t *n = vars->regions->head;
     region_t *r;
     unsigned long total_scan_bytes = 0;
-
-#if HAVE_PROCMEM
     unsigned char *data = NULL;
-    ssize_t len = 0;
-#endif
 
     /* used to fill in non-match regions */
     match_flags zero_flag;
@@ -528,13 +524,20 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         bytes_at_next_dot = bytes_per_dot;
         progress_per_dot = (double)bytes_per_dot / total_scan_bytes;
 
-#if HAVE_PROCMEM        
         /* overallocate by enough bytes set to zero that the last bytes can be read as 64-bit ints */
         if ((data = calloc(r->size + sizeof(int64_t) - 1, 1)) == NULL) {
             show_error("sorry, there was a memory allocation error.\n");
             return false;
         }
-    
+
+        /* print a progress meter so user knows we haven't crashed */
+        /* cannot use show_info here because it'll append a '\n' */
+        show_user("%02u/%02u searching %#10lx - %#10lx", ++regnum,
+                vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
+        fflush(stderr);
+
+#if HAVE_PROCMEM
+        ssize_t len = 0;
         /* keep reading until completed */
         while (nread < r->size) {
             if ((len = readregion(vars->target, data+nread, r->size-nread, (unsigned long)(r->start+nread))) == -1) {
@@ -546,15 +549,25 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
         }
 
-#else     
-        /* cannot use /proc/pid/mem */
-        nread = r->size;
+#else
+        /* Read the region with `ptrace()`: the API specifies that `ptrace()` returns a `long`, which
+         * is the size of a word for the current architecture, so this section will deal in `long`s */
+        for (nread = 0; nread < r->size; nread += sizeof(long)) {
+            const char *ptrace_address = r->start + nread;
+            long ptraced_long = ptrace(PTRACE_PEEKDATA, vars->target, ptrace_address, NULL);
+
+            /* check if ptrace() succeeded */
+            if (EXPECT(ptraced_long == -1L && errno != 0, false)) {
+                /* interrupt the gathering process */
+                break;
+            }
+
+            /* otherwise, ptrace() worked - store the data */
+            memcpy(data+nread, &ptraced_long, sizeof(long));
+        }
 #endif
-        /* print a progress meter so user knows we haven't crashed */
-        /* cannot use show_info here because it'll append a '\n' */
-        show_user("%02u/%02u searching %#10lx - %#10lx.", ++regnum,
-                vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
-        fflush(stderr);
+        /* region has been read, tell user */
+        print_a_dot();
 
         /* for every offset, check if we have a match */
         for (offset = 0, address = r->start; offset < nread; offset++, address++) {
@@ -565,7 +578,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             zero_value(&data_value);
             valnowidth(&data_value);
 
-#if HAVE_PROCMEM
             /* Don't dereference as this causes an alignment issue e.g. on ARM.
                GCC replaces memcpy() with dereferencing wherever possible. */
             memcpy(&data_value.int64_value, &data[offset], sizeof(int64_t));
@@ -587,11 +599,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                     }
                 }
             }
-#else
-            if (EXPECT(sm_peekdata(vars->target, address, &data_value) == false, false)) {
-                break;
-            }
-#endif
 
             fix_endianness(vars, &data_value);
 
@@ -631,9 +638,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
         }
 
-#if HAVE_PROCMEM
         free(data);
-#endif
         vars->scan_progress += progress_per_dot;
         /* stop scanning if asked to */
         if (vars->stop_flag) break;
