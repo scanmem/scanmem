@@ -278,7 +278,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 while (reading_swath_index->first_byte_in_child) {
 
                     /* only actual matches are considered */
-                    if (flags_to_max_width_in_bytes(reading_swath_index->data[reading_iterator].match_info) > 0)
+                    if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator);
 
@@ -377,7 +377,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
         /* only actual matches are considered */
-        if (flags_to_max_width_in_bytes(flags) > 0)
+        if (flags.all_flags != 0)
         {
             switch(vars->options.scan_data_type)
             {

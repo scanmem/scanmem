@@ -134,8 +134,7 @@ nth_match (matches_and_old_values_array *matches, size_t n)
 
     while (reading_swath_index->first_byte_in_child) {
         /* only actual matches are considered */
-        if (flags_to_max_width_in_bytes(
-                reading_swath_index->data[reading_iterator].match_info) > 0) {
+        if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0) {
 
             if (i == n)
                 return (match_location){reading_swath_index, reading_iterator};
@@ -195,7 +194,7 @@ delete_by_region (matches_and_old_values_array *matches,
                                       &reading_swath_index->data[reading_iterator]);
 
             /* actual matches are recorded */
-            if (flags_to_max_width_in_bytes(flags) > 0)
+            if (flags.all_flags != 0)
                 ++(*num_matches);
         }
 
