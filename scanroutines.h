@@ -54,25 +54,27 @@ typedef enum {
     MATCHCHANGED,
     MATCHINCREASED,
     MATCHDECREASED,
-    /* folowing: compare with both given value and old value */
+    /* following: compare with both given value and old value */
     MATCHINCREASEDBY,
     MATCHDECREASEDBY
 } scan_match_type_t;
 
 
-/* match old_value against new_value or user_value (or both, depending on the matching type, store the result into save */
-/* NOTE: saveflag must be set to 0, since only useful bits are set, but extra bits are not cleared! */
-/*       address is pointing to new_value in TARGET PROCESS MEMORY SPACE, used when searching for a byte array */
-/* return the number of bytes needed to store old_value, 0 for not matched */
-typedef int (*scan_routine_t)(const value_t *new_value, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflag, const void *address);
+/* Matches a memory area given by `memory_ptr` and `memlength` against `user_value` or `old_value`
+ * (or both, depending on the matching type), stores the result into saveflags.
+ * NOTE: saveflags must be set to 0, since only useful bits are set, but extra bits are not cleared!
+ * Returns the number of bytes needed to store said match, 0 for not matched
+ */
+typedef unsigned int (*scan_routine_t)(const mem64_t *memory_ptr, size_t memlength,
+                                       const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags);
 extern scan_routine_t sm_scan_routine;
 
 /* 
  * Choose the global scanroutine according to the given parameters, sm_scan_routine will be set.
  * Returns whether a proper routine has been found.
  */
-bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval);
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval, bool reverse_endianness);
 
-scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags);
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags, bool reverse_endianness);
 
 #endif /* SCANROUTINES_H */

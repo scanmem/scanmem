@@ -31,7 +31,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "scanmem.h"
 #include "value.h"
 
 /* true if host is big endian */
@@ -40,6 +39,11 @@ static const bool big_endian = true;
 #else
 static const bool big_endian = false;
 #endif
+
+static inline uint8_t swap_bytes8(uint8_t i)
+{
+    return i;
+}
 
 static inline uint16_t swap_bytes16(uint16_t i)
 {
@@ -86,9 +90,9 @@ static inline void swap_bytes_var(void *p, size_t num)
     return;
 }
 
-static inline void fix_endianness(globals_t *vars, value_t *data_value)
+static inline void fix_endianness(value_t *data_value, bool reverse_endianness)
 {
-    if (!vars->options.reverse_endianness) {
+    if (!reverse_endianness) {
         return;
     }
     if (data_value->flags.u64b) {

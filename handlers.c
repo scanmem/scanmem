@@ -52,6 +52,7 @@
 #include "endianness.h"
 #include "handlers.h"
 #include "interrupt.h"
+#include "scanroutines.h"
 #include "sets.h"
 #include "show_message.h"
 
@@ -257,7 +258,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
                         /* set the value specified */
-                        fix_endianness(vars, &v);
+                        fix_endianness(&v, vars->options.reverse_endianness);
                         if (sm_setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
@@ -292,7 +293,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
-                        fix_endianness(vars, &v);
+                        fix_endianness(&v, vars->options.reverse_endianness);
                         if (sm_setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
                             goto fail;
@@ -1225,14 +1226,14 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 {
-    value_t o, n;
     size_t id;
     char *end = NULL, buf[128], timestamp[64];
     time_t t;
     match_location loc;
-    value_t old_val;
+    value_t val;
     void *address;
     scan_data_type_t data_type = vars->options.scan_data_type;
+    scan_routine_t valuecmp_routine;
 
     if (argc != 2) {
         show_error("was expecting one argument, see `help watch`.\n");
@@ -1264,12 +1265,8 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     
     address = remote_address_of_nth_element(loc.swath, loc.index);
     
-    old_val = data_to_val(loc.swath, loc.index);
-    old_val.flags = loc.swath->data[loc.index].match_info;
-    valcpy(&o, &old_val);
-    valcpy(&n, &o);
-
-    valtostr(&o, buf, sizeof(buf));
+    val = data_to_val(loc.swath, loc.index);
+    truncval_to_flags(&val, loc.swath->data[loc.index].match_info);
 
     if (INTERRUPTABLE()) {
         (void) sm_detach(vars->target);
@@ -1283,34 +1280,31 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     show_info("%s monitoring %10p for changes until interrupted...\n", timestamp, address);
 
+    valuecmp_routine = sm_get_scanroutine(ANYNUMBER, MATCHCHANGED, NULL, vars->options.reverse_endianness);
     while (true) {
+        const mem64_t *memory_ptr;
+        size_t memlength;
 
         if (sm_attach(vars->target) == false)
             return false;
 
-        if (sm_peekdata(vars->target, address, &n) == false)
+        if (sm_peekdata(vars->target, address, sizeof(uint64_t), &memory_ptr, &memlength) == false)
             return false;
-
-
-        truncval(&n, &old_val);
 
         /* check if the new value is different */
         match_flags tmpflags;
         zero_match_flags(&tmpflags);
-        scan_routine_t valuecmp_routine = (sm_get_scanroutine(ANYNUMBER, MATCHCHANGED, NULL));
-        if (valuecmp_routine(&o, &n, NULL, &tmpflags, address)) {
+        if ((*valuecmp_routine)(memory_ptr, memlength, &val, NULL, &tmpflags)) {
 
-            valcpy(&o, &n);
-            truncval(&o, &old_val);
+            memcpy(val.bytes, memory_ptr, memlength);
 
-            valtostr(&o, buf, sizeof(buf));
+            valtostr(&val, buf, sizeof(buf));
 
             /* fetch new timestamp */
             t = time(NULL);
             strftime(timestamp, sizeof(timestamp), "[%T]", localtime(&t));
 
-            show_info("%s %10p -> %s\n", timestamp, address,
-                    buf);
+            show_info("%s %10p -> %s\n", timestamp, address, buf);
         }
 
         /* detach after valuecmp_routine, since it may read more data (e.g. bytearray) */

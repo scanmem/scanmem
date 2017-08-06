@@ -260,29 +260,6 @@ void free_uservalue(uservalue_t *uval)
         free((void*)uval->wildcard_value);
 }
 
-int flags_to_max_width_in_bytes(match_flags flags)
-{
-    switch(sm_globals.options.scan_data_type)
-    {
-        case BYTEARRAY:
-        case STRING:
-            return flags.length;
-            break;
-        default: /* numbers */
-                 if (flags.u64b || flags.s64b || flags.f64b) return 8;
-            else if (flags.u32b || flags.s32b || flags.f32b) return 4;
-            else if (flags.u16b || flags.s16b              ) return 2;
-            else if (flags.u8b  || flags.s8b               ) return 1;
-            else    /* it can't be a variable of any size */ return 0;
-            break;
-    }
-}
-
-int val_max_width_in_bytes(const value_t *val)
-{
-	return flags_to_max_width_in_bytes(val->flags);
-}
-
 #define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(type, typename, signedness_letter) \
 type get_##signedness_letter##typename (const value_t* val) \
 { \

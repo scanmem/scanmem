@@ -5,6 +5,7 @@
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
     Copyright (C) 2015           Sebastian Parschauer <s.parschauer@gmx.de>
+    Copyright (C) 2017           Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
 
     This file is part of libscanmem.
 
@@ -54,7 +55,7 @@ typedef union {
     uint16_t all_flags;    /* used to access the whole union for bitwise operations */
 } match_flags;
 
-/* this struct describes values retrieved from target memory */
+/* this struct describes matched values */
 typedef struct {
     union {
         int8_t int8_value;
@@ -73,6 +74,30 @@ typedef struct {
     
     match_flags flags;
 } value_t;
+
+/* This union describes 8 bytes retrieved from target memory.
+ * Pointers to this union are the only ones that are allowed to be unaligned:
+ * to avoid performance degradation/crashes on arches that don't support unaligned access
+ * (e.g. ARM) we access unaligned memory only through the attributes of this packed union.
+ * As described in http://www.alfonsobeato.net/arm/how-to-access-safely-unaligned-data/ ,
+ * a packed structure forces the compiler to write general access methods to its members
+ * that don't depend on alignment.
+ * So NEVER EVER dereference a mem64_t*, but use its accessors to obtain the needed type.
+ */
+typedef union __attribute__((packed)) {
+    int8_t int8_value;
+    uint8_t uint8_value;
+    int16_t int16_value;
+    uint16_t uint16_value;
+    int32_t int32_value;
+    uint32_t uint32_value;
+    int64_t int64_value;
+    uint64_t uint64_value;
+    float float32_value;
+    double float64_value;
+    uint8_t bytes[sizeof(int64_t)];
+    char chars[sizeof(int64_t)];
+} mem64_t;
 
 /* bytearray wildcards: they must be uint8_t. They are ANDed with the incoming
  * memory before the comparison, so that '??' wildcards always return true
@@ -114,8 +139,6 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void free_uservalue(uservalue_t *uval);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
-int flags_to_max_width_in_bytes(match_flags flags);
-int val_max_width_in_bytes(const value_t *val);
 
 #define get_s8b(val) ((val)->int8_value)
 #define get_u8b(val) ((val)->uint8_value)
@@ -181,18 +204,6 @@ static inline void truncval(value_t *dst, const value_t *src)
     assert(src != NULL);
 
     truncval_to_flags(dst, src->flags);
-}
-
-/* set all possible width flags, if nothing is known about val
- * when scanning for a VLT, this will set the length to the uint16
- * maximum value, in line with the 'maximum width' idea */
-static inline void valnowidth(value_t *val)
-{
-    assert(val);
-
-    /* set all flags to 1 in a single go */
-    val->flags.all_flags = 0xffffU;
-    return;
 }
 
 #endif /* VALUE_H */
