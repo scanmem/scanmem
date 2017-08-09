@@ -313,10 +313,12 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
         seconds++;
     }                           /* while(true) */
 
+    free(settings);
     ENDINTERRUPTABLE();
     return true;
 
 fail:
+    free(settings);
     ENDINTERRUPTABLE();
     return false;
     
