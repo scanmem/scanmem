@@ -326,13 +326,13 @@ fail:
     
 }
 
-/* XXX: add yesno command to check if matches > 099999 */
-/* FORMAT (don't change, front-end depends on this): 
+/* Accepts a numerical argument to print up to N matches, defaults to 10k
+ * FORMAT (don't change, front-end depends on this):
  * [#no] addr, value, [possible types (separated by space)]
  */
 bool handler__list(globals_t *vars, char **argv, unsigned argc)
 {
-    unsigned i = 0;
+    unsigned long num = 0;
     size_t buf_len = 128; /* will be realloc'd later if necessary */
     element_t *np = NULL;
     char *v = malloc(buf_len);
@@ -341,10 +341,18 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         show_error("memory allocation failed.\n");
         return false;
     }
-    char *bytearray_suffix = ", [bytearray]";
-    char *string_suffix = ", [string]";
+    const char *bytearray_suffix = ", [bytearray]";
+    const char *string_suffix = ", [string]";
 
-    USEPARAMS();
+    unsigned long max_to_print = 10000;
+    if (argc > 1) {
+        max_to_print = strtoul(argv[1], NULL, 0x00);
+
+        if (max_to_print == 0) {
+            show_error("`%s` is not a valid positive integer.\n", argv[1]);
+            return false;
+        }
+    }
 
     if (!vars->matches)
         goto out_free;
@@ -357,6 +365,10 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
+        if (num == max_to_print) {
+            show_user("[...]\n");
+            break;
+        }
 
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
@@ -366,7 +378,6 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             switch(vars->options.scan_data_type)
             {
             case BYTEARRAY:
-                ; /* cheat gcc */ 
                 buf_len = flags.length * 3 + 32;
                 v = realloc(v, buf_len); /* for each byte and the suffix, this should be enough */
 
@@ -380,7 +391,6 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 strcat(v, bytearray_suffix);
                 break;
             case STRING:
-                ; /* cheat gcc */
                 buf_len = flags.length + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
                 v = realloc(v, buf_len);
                 if (v == NULL)
@@ -421,8 +431,8 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 }
                 np = np->next;
             }
-            fprintf(stdout, "[%2u] "POINTER_FMT", %2u + "POINTER_FMT", %5s, %s\n", 
-                    i++, address_ul, region_id, match_off, region_type, v);
+            printf("[%2lu] "POINTER_FMT", %2u + "POINTER_FMT", %5s, %s\n",
+                   num++, address_ul, region_id, match_off, region_type, v);
         }
 
         /* go on to the next one... */

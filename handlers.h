@@ -65,12 +65,14 @@
 
 bool handler__set(globals_t *vars, char **argv, unsigned argc);
 
-#define LIST_SHRTDOC "list all currently known matches"
-#define LIST_LONGDOC "usage: list\n" \
-               "Print all the currently known matches, along with details about the\n" \
+#define LIST_SHRTDOC "list currently known matches"
+#define LIST_LONGDOC "usage: list [max_to_print]\n" \
+               "Print currently known matches, along with details about the\n" \
                "match, such as its type, location, and last known value. The number in\n" \
                "the left column is the `match-id`, this can be passed to other commands\n" \
                "such as `set`, `delete`, etc.\n" \
+               "By default `list` prints up to 10k matches, a numerical parameter" \
+               "can be given to change this limit.\n" \
                "The flags displayed indicate the possible types of the variable.\n" \
                "Also the region id, an offset and the region type belonging to a match\n" \
                "are displayed. The offset is used from the code load address or region start.\n" \
