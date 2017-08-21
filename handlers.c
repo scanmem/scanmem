@@ -862,22 +862,40 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* test the length */
-    int i;
-    for(i = 0; (i < 3) && vars->current_cmdline[i]; ++i) {}
-    if (i != 3) /* cmdline too short */
+    size_t cmdline_length = strlen(vars->current_cmdline);
+    if (cmdline_length < 3) /* cmdline too short */
     {
         show_error("please specify a string\n");
         return false;
     }
- 
-    /* the string being scanned */
+    size_t string_length = cmdline_length-2;
+    if (string_length > (uint16_t)(-1)) /* string too long */
+    {
+        show_error("String length is limited to %u\n", (uint16_t)(-1));
+        return false;
+    }
+
+    /* Allocate a copy of the target string. While it would be possible to reuse
+     * the incoming string, truncating the first 2 chars means it is aligned
+     * at most at a 2 bytes boundary, which will generate unaligned accesses
+     * when the string will be read as a sequence of int64 during a scan.
+     * `malloc()` instead ensures enough alignment for any type.
+     */
+    char *string_value = malloc((string_length+1)*sizeof(char));
+    if (string_value == NULL)
+    {
+        show_error("memory allocation for string failed.\n");
+        return false;
+    }
+    strcpy(string_value, vars->current_cmdline+2);
+
     uservalue_t val;
-    val.string_value = vars->current_cmdline+2;
-    val.flags.length = strlen(val.string_value);
+    val.string_value = string_value;
+    val.flags.length = string_length;
  
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {
-        return false;
+        goto fail;
     }
 
     /* user has specified an exact value of the variable to find */
@@ -885,13 +903,13 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
         /* already know some matches */
         if (sm_checkmatches(vars, MATCHEQUALTO, &val) != true) {
             show_error("failed to search target address space.\n");
-            return false;
+            goto fail;
         }
     } else {
         /* initial search */
         if (sm_searchregions(vars, MATCHEQUALTO, &val) != true) {
             show_error("failed to search target address space.\n");
-            return false;
+            goto fail;
         }
     }
 
@@ -901,7 +919,12 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
         show_info("enter \"help\" for other commands.\n");
     }
 
+    free(string_value);
     return true;
+
+fail:
+    free(string_value);
+    return false;
 }
 
 static inline bool parse_uservalue_default(const char *str, uservalue_t *val)
