@@ -52,6 +52,7 @@
 #include "endianness.h"
 #include "handlers.h"
 #include "interrupt.h"
+#include "scanmem.h"
 #include "scanroutines.h"
 #include "sets.h"
 #include "show_message.h"
@@ -524,7 +525,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
     }
 
     /* read in maps if a pid is known */
-    if (vars->target && sm_readmaps(vars->target, vars->regions) != true) {
+    if (vars->target && sm_readmaps(vars->target, vars->regions, vars->options.region_scan_level) != true) {
         show_error("sorry, there was a problem getting a list of regions to search.\n");
         show_warn("the pid may be invalid, or you don't have permission.\n");
         vars->target = 0;

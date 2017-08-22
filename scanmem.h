@@ -25,12 +25,14 @@
 #ifndef SCANMEM_H
 #define SCANMEM_H
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
 
 #include "scanroutines.h"
 #include "list.h"
+#include "maps.h"
 #include "value.h"
 #include "targetmem.h"
 

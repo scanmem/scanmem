@@ -20,6 +20,10 @@
 #ifndef INTERRUPT_H
 #define INTERRUPT_H
 
+#ifndef _GNU_SOURCE
+# define _GNU_SOURCE /* for sighandler_t */
+#endif
+
 #include <setjmp.h>
 #include <signal.h>
 

@@ -20,8 +20,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "config.h"
-
 #include <string.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -31,6 +29,7 @@
 
 #include "targetmem.h"
 #include "show_message.h"
+#include "value.h"
 
 
 matches_and_old_values_array *

@@ -25,8 +25,6 @@
 # define _GNU_SOURCE
 #endif
 
-#include "config.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>

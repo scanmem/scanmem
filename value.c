@@ -22,8 +22,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "config.h"
-
 #include <stdio.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -34,8 +32,6 @@
 #include <errno.h>
 
 #include "value.h"
-#include "scanroutines.h"
-#include "scanmem.h"
 #include "show_message.h"
 
 void valtostr(const value_t *val, char *str, size_t n)

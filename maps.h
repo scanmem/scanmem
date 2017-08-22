@@ -65,6 +65,6 @@ typedef struct {
     char filename[1];           /* associated file, must be last */
 } region_t;
 
-bool sm_readmaps(pid_t target, list_t *regions);
+bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level);
 
 #endif /* MAPS_H */

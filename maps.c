@@ -26,8 +26,6 @@
 # define _GNU_SOURCE
 #endif
 
-#include "config.h"
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <stddef.h>
@@ -40,12 +38,11 @@
 #include "list.h"
 #include "maps.h"
 #include "getline.h"
-#include "scanmem.h"
 #include "show_message.h"
 
 const char *region_type_names[] = REGION_TYPE_NAMES;
 
-bool sm_readmaps(pid_t target, list_t *regions)
+bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level)
 {
     FILE *maps;
     char name[128], *line = NULL;
@@ -190,7 +187,7 @@ bool sm_readmaps(pid_t target, list_t *regions)
                         type = REGION_TYPE_STACK;
 
                     /* determine if this region is useful */
-                    switch (sm_globals.options.region_scan_level)
+                    switch (region_scan_level)
                     {
                         case REGION_ALL:
                             useful = true;

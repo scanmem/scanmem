@@ -65,6 +65,7 @@
 #include "scanroutines.h"
 #include "scanmem.h"
 #include "show_message.h"
+#include "targetmem.h"
 
 /* progress handling */
 #define NUM_DOTS (10)

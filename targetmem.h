@@ -31,7 +31,6 @@
 #include <stdbool.h>
 
 #include "value.h"
-#include "maps.h"
 #include "show_message.h"
 
 /* Public structs */
