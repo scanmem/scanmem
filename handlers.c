@@ -1084,7 +1084,7 @@ bool handler__update(globals_t *vars, char **argv, unsigned argc)
 
     USEPARAMS();
     if (vars->num_matches) {
-        if (sm_checkmatches(vars, MATCHANY, NULL) == false) {
+        if (sm_checkmatches(vars, MATCHUPDATE, NULL) == false) {
             show_error("failed to scan target address space.\n");
             return false;
         }

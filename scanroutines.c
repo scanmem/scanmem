@@ -25,6 +25,7 @@
 #include <assert.h>
 
 #include "scanroutines.h"
+#include "common.h"
 #include "endianness.h"
 #include "value.h"
 
@@ -35,6 +36,7 @@ unsigned int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
 #define MEMORY_COMP(value,field,op) ((value)->flags.field && (get_##field(memory_ptr) op get_##field(value)))
 #define SET_FLAG(f, field)          ((f)->field = 1)
+
 
 /********************/
 /* Integer specific */
@@ -58,6 +60,22 @@ DEFINE_INTEGER_MATCHANY_ROUTINE( 8)
 DEFINE_INTEGER_MATCHANY_ROUTINE(16)
 DEFINE_INTEGER_MATCHANY_ROUTINE(32)
 DEFINE_INTEGER_MATCHANY_ROUTINE(64)
+
+
+#define DEFINE_INTEGER_MATCHUPDATE_ROUTINE(DATAWIDTH) \
+    extern inline unsigned int scan_routine_INTEGER##DATAWIDTH##_UPDATE SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (memlength < (DATAWIDTH)/8) return 0; \
+        int ret = 0; \
+        if (old_value->flags.s##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
+        if (old_value->flags.u##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
+        return ret; \
+    }
+
+DEFINE_INTEGER_MATCHUPDATE_ROUTINE( 8)
+DEFINE_INTEGER_MATCHUPDATE_ROUTINE(16)
+DEFINE_INTEGER_MATCHUPDATE_ROUTINE(32)
+DEFINE_INTEGER_MATCHUPDATE_ROUTINE(64)
 
 
 #define DEFINE_INTEGER_ROUTINE(DATAWIDTH, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH, REVENDIAN, REVEND_STR) \
@@ -124,6 +142,20 @@ DEFINE_INTEGER_ROUTINE_FOR_ALL_INTEGER_TYPES(DECREASED, <, old_value)
 
 DEFINE_FLOAT_MATCHANY_ROUTINE(32)
 DEFINE_FLOAT_MATCHANY_ROUTINE(64)
+
+
+#define DEFINE_FLOAT_MATCHUPDATE_ROUTINE(DATAWIDTH) \
+    extern inline unsigned int scan_routine_FLOAT##DATAWIDTH##_UPDATE SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (memlength < (DATAWIDTH)/8) return 0; \
+        int ret = 0; \
+        if (old_value->flags.f##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
+        return ret; \
+    }
+
+DEFINE_FLOAT_MATCHUPDATE_ROUTINE(32)
+DEFINE_FLOAT_MATCHUPDATE_ROUTINE(64)
+
 
 #define DEFINE_FLOAT_ROUTINE(DATAWIDTH, MATCHTYPENAME, MATCHTYPE, VALUE_TO_COMPARE_WITH, REVENDIAN, REVEND_STR) \
     extern inline unsigned int scan_routine_FLOAT##DATAWIDTH##_##MATCHTYPENAME##REVEND_STR SCAN_ROUTINE_ARGUMENTS \
@@ -293,6 +325,7 @@ DEFINE_FLOAT_RANGE_ROUTINE(64, 1, _REVENDIAN)
     } \
 
 DEFINE_ANYTYPE_ROUTINE(ANY, )
+DEFINE_ANYTYPE_ROUTINE(UPDATE, )
 
 DEFINE_ANYTYPE_ROUTINE(EQUALTO, )
 DEFINE_ANYTYPE_ROUTINE(NOTEQUALTO, )
@@ -315,9 +348,16 @@ DEFINE_ANYTYPE_ROUTINE(RANGE, _REVENDIAN)
 /*----------------------------------------*/
 /* for generic VLT (Variable Length Type) */
 /*----------------------------------------*/
+
 extern inline unsigned int scan_routine_VLT_ANY SCAN_ROUTINE_ARGUMENTS
 {
-   return saveflags->length = ((old_value)->flags.length);
+   return saveflags->length = MIN(memlength, (uint16_t)(-1));
+}
+
+extern inline unsigned int scan_routine_VLT_UPDATE SCAN_ROUTINE_ARGUMENTS
+{
+    /* memlength here is already MIN(memlength, old_value->flags.length) */
+   return saveflags->length = memlength;
 }
 
 /*---------------*/
@@ -595,6 +635,7 @@ DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(56)
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags, bool reverse_endianness)
 {
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
+    CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHUPDATE, UPDATE)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHEQUALTO, EQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHNOTEQUALTO, NOTEQUALTO)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHGREATERTHAN, GREATERTHAN)
@@ -607,10 +648,14 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASEDBY, DECREASEDBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHRANGE, RANGE)
 
+    CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHANY, ANY)
+    CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHUPDATE, UPDATE)
     if (uflags) {
         CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, uflags->length*8)
     }
 
+    CHOOSE_ROUTINE(STRING, VLT, MATCHANY, ANY)
+    CHOOSE_ROUTINE(STRING, VLT, MATCHUPDATE, UPDATE)
     if (uflags) {
         CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, uflags->length*8)
     }

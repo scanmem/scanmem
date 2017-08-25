@@ -42,14 +42,15 @@ typedef enum {
 } scan_data_type_t;
 
 typedef enum {
-    MATCHANY,                 /* to update */
+    MATCHANY,                /* for snapshot */
     /* following: compare with a given value */
     MATCHEQUALTO,
-    MATCHNOTEQUALTO,          
+    MATCHNOTEQUALTO,
     MATCHGREATERTHAN,
     MATCHLESSTHAN,
     MATCHRANGE,
     /* following: compare with the old value */
+    MATCHUPDATE,
     MATCHNOTCHANGED,
     MATCHCHANGED,
     MATCHINCREASED,

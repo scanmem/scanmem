@@ -248,20 +248,26 @@ add_element (matches_and_old_values_array **array,
    if more bytes are needed (e.g. bytearray),
    read them separately (for performance) */
 static inline value_t
-data_to_val_aux (matches_and_old_values_swath *swath,
+data_to_val_aux (const matches_and_old_values_swath *swath,
                  size_t index, size_t swath_length)
 {
     uint i;
     value_t val;
     size_t max_bytes = swath_length - index;
 
-    zero_value(&val);
+    /* Init all possible flags in a single go.
+     * Also init length to the maximum possible value */
+    val.flags.all_flags = 0xffffu;
 
-    if (max_bytes >  8) max_bytes = 8;
-    if (max_bytes >= 8) val.flags.u64b = val.flags.s64b = val.flags.f64b = 1;
-    if (max_bytes >= 4) val.flags.u32b = val.flags.s32b = val.flags.f32b = 1;
-    if (max_bytes >= 2) val.flags.u16b = val.flags.s16b                  = 1;
-    if (max_bytes >= 1) val.flags.u8b  = val.flags.s8b                   = 1;
+    /* NOTE: This does the right thing for VLT because the high flags are
+     * not in the least significant bits in the `length` union member,
+     * otherwise their zeroing would interfere with useful bits of `length`.
+     * This works on both endians, as the high flags are in the middle. */
+    if (max_bytes > 8) max_bytes = 8;
+    if (max_bytes < 8) val.flags.u64b = val.flags.s64b = val.flags.f64b = 0;
+    if (max_bytes < 4) val.flags.u32b = val.flags.s32b = val.flags.f32b = 0;
+    if (max_bytes < 2) val.flags.u16b = val.flags.s16b                  = 0;
+    if (max_bytes < 1) val.flags.u8b  = val.flags.s8b                   = 0;
 
     for (i = 0; i < max_bytes; ++i) {
         /* Both uint8_t, no explicit casting needed */
@@ -272,7 +278,7 @@ data_to_val_aux (matches_and_old_values_swath *swath,
 }
 
 static inline value_t
-data_to_val (matches_and_old_values_swath *swath, size_t index)
+data_to_val (const matches_and_old_values_swath *swath, size_t index)
 {
     return data_to_val_aux(swath, index, swath->number_of_bytes);
 }
