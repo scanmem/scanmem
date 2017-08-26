@@ -418,7 +418,7 @@ bool sm_checkmatches(globals_t *vars,
 }
 
 /* read region using /proc/pid/mem */
-ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
+static inline ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
 {
     char mem[32];
     int fd;
