@@ -92,9 +92,7 @@ void data_to_printable_string (char *buf, int buf_length,
     int i;
 
     for (i = 0; i < max_length; ++i) {
-        uint8_t byte;
-
-        byte  = ((matches_and_old_values_swath *)swath)->data[index+i].old_value;
+        uint8_t byte = swath->data[index+i].old_value;
         buf[i] = isprint(byte) ? byte : '.';
     }
     buf[i] = 0; /* null-terminate */
@@ -113,9 +111,8 @@ void data_to_bytearray_text (char *buf, int buf_length,
                        bytearray_length : swath_length;
 
     for (i = 0; i < max_length; ++i) {
-        uint8_t byte;
+        uint8_t byte = swath->data[index+i].old_value;
 
-        byte = ((matches_and_old_values_swath *)swath)->data[index+i].old_value;
         /* TODO: check error here */
         snprintf(buf+bytes_used, buf_length-bytes_used,
                  (i<max_length-1) ? "%02x " : "%02x", byte);
@@ -128,8 +125,7 @@ nth_match (matches_and_old_values_array *matches, unsigned n)
 {
     unsigned i = 0;
 
-    matches_and_old_values_swath *reading_swath_index =
-        (matches_and_old_values_swath *)matches->swaths;
+    matches_and_old_values_swath *reading_swath_index = matches->swaths;
 
     unsigned int reading_iterator = 0;
 
@@ -151,8 +147,7 @@ nth_match (matches_and_old_values_array *matches, unsigned n)
         ++reading_iterator;
         if (reading_iterator >= reading_swath_index->number_of_bytes) {
             reading_swath_index =
-                local_address_beyond_last_element(
-                    (matches_and_old_values_swath *)reading_swath_index);
+                local_address_beyond_last_element(reading_swath_index);
 
             reading_iterator = 0;
         }
@@ -167,13 +162,11 @@ delete_by_region (matches_and_old_values_array *matches,
                   unsigned long *num_matches, region_t *which, bool invert)
 {
     unsigned int reading_iterator = 0;
-    matches_and_old_values_swath *reading_swath_index =
-        (matches_and_old_values_swath *)matches->swaths;
+    matches_and_old_values_swath *reading_swath_index = matches->swaths;
 
     matches_and_old_values_swath reading_swath = *reading_swath_index;
 
-    matches_and_old_values_swath *writing_swath_index =
-        (matches_and_old_values_swath *)matches->swaths;
+    matches_and_old_values_swath *writing_swath_index = matches->swaths;
 
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
@@ -197,8 +190,7 @@ delete_by_region (matches_and_old_values_array *matches,
                 (We can get away with assuming that the pointers will stay
                  valid, because as we never add more data to the array than
                  there was before, it will not reallocate.) */
-            writing_swath_index = add_element((matches_and_old_values_array **)
-                                      (&matches), (matches_and_old_values_swath *)
+            writing_swath_index = add_element(&matches,
                                       writing_swath_index, address,
                                       &reading_swath_index->data[reading_iterator]);
 
@@ -220,8 +212,7 @@ delete_by_region (matches_and_old_values_array *matches,
         }
     }
 
-    matches = null_terminate((matches_and_old_values_array *)matches,
-                             (matches_and_old_values_swath *)writing_swath_index);
+    matches = null_terminate(matches, writing_swath_index);
 
     if (!matches)
         return NULL;

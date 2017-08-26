@@ -269,7 +269,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 }
             } else {
                 
-                matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+                matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
                 unsigned int reading_iterator = 0;
 
                 /* user wants to set all matches */
@@ -352,7 +352,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     if (vars->regions)
         np = vars->regions->head;
 
-    matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
     unsigned int reading_iterator = 0;
 
     /* list all known matches */
