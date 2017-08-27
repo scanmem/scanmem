@@ -33,8 +33,16 @@ def check_scan_command (data_type, cmd, is_first_scan):
         raise ValueError(_('No value provided'))
     if data_type == 'string':
         return '" ' + cmd
-    elif data_type == 'bytearray':
-        cmd = cmd.strip() 
+
+    cmd = cmd.strip()
+    # hack for snapshot/update (TODO: make it possible with string)
+    if cmd == '?':
+        if is_first_scan:
+            return 'snapshot'
+        else:
+            return 'update'
+
+    if data_type == 'bytearray':
         bytes = cmd.split(' ')
         for byte in bytes:
             if byte.strip() == '':
@@ -49,14 +57,6 @@ def check_scan_command (data_type, cmd, is_first_scan):
                 raise ValueError(_('Bad value: %s') % (byte, ))
         return cmd
     else: # for numbers
-        cmd = cmd.strip()
-        # hack for snapshot
-        if cmd == '?':
-            if is_first_scan:
-                return 'snapshot'
-            else:
-                return ''
-
         is_operator_cmd = cmd in {'=', '!=', '>', '<', '+', '-'}
         if not is_first_scan and is_operator_cmd:
             return cmd
