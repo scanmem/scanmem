@@ -39,7 +39,8 @@ if !HAVE_GETLINE
       getline.c
 endif
 
-libscanmem_la_LDFLAGS = -version-info 1:0:0
+libscanmem_la_LDFLAGS = -version-info 1:0:0 \
+                        -export-symbols-regex '^sm_|^show_'
 
 bin_PROGRAMS = scanmem
 
