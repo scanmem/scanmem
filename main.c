@@ -204,13 +204,6 @@ int main(int argc, char **argv)
     }
 
 end:
-
-    /* now free any allocated memory used */
-    l_destroy(vars->regions);
-    l_destroy(vars->commands);
-
-    /* attempt to detach just in case */
-    (void) sm_detach(vars->target);
-
+    sm_cleanup();
     return ret;
 }
