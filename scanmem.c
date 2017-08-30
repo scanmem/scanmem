@@ -188,6 +188,16 @@ bool sm_init(void)
     return true;
 }
 
+void sm_cleanup(void)
+{
+    /* free any allocated memory used */
+    l_destroy(sm_globals.regions);
+    l_destroy(sm_globals.commands);
+
+    /* attempt to detach just in case */
+    sm_detach(sm_globals.target);
+}
+
 /* for front-ends */
 void sm_set_backend(void)
 {

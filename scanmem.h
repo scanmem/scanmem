@@ -65,6 +65,7 @@ typedef struct {
 extern globals_t sm_globals;
 
 bool sm_init(void);
+void sm_cleanup(void);
 void sm_printversion(FILE *outfd);
 void sm_set_backend(void);
 void sm_backend_exec_cmd(const char *commandline);
