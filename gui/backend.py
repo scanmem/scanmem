@@ -27,6 +27,7 @@ import misc
 class GameConquerorBackend():
     BACKEND_FUNCS = {
         'sm_init' : (ctypes.c_bool, ),
+        'sm_cleanup' : (None, ),
         'sm_set_backend' : (None, ),
         'sm_backend_exec_cmd' : (None, ctypes.c_char_p),
         'sm_get_num_matches' : (ctypes.c_ulong, ),
@@ -77,3 +78,6 @@ class GameConquerorBackend():
 
     def set_stop_flag(self, stop_flag):
         self.lib.sm_set_stop_flag(stop_flag)
+
+    def exit_cleanup(self):
+        self.lib.sm_cleanup()

@@ -1171,6 +1171,7 @@ class GameConqueror():
 
     def exit(self, object, data=None):
         self.exit_flag = True
+        self.backend.exit_cleanup()
         Gtk.main_quit()
 
     def check_backend_version(self):
