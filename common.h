@@ -26,6 +26,16 @@
 # define MIN(a,b) ((a) < (b) ? (a) : (b))
 #endif
 
+/* From `include/linux/compiler.h`, in the linux kernel:
+ * Offers a simple interface to the expect builtin */
+#ifdef __GNUC__
+# define LIKELY(x)     __builtin_expect(!!(x), 1)
+# define UNLIKELY(x)   __builtin_expect(!!(x), 0)
+#else
+# define LIKELY(x)     (x)
+# define UNLIKELY(x)   (x)
+#endif
+
 /* from string.h in glibc for Android/BSD */
 #ifndef strdupa
 # include <alloca.h>

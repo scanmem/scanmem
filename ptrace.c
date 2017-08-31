@@ -47,12 +47,6 @@
 #include <limits.h>
 #include <fcntl.h>
 
-#ifdef __GNUC__
-# define EXPECT(x,y) __builtin_expect(x, y)
-#else
-# define EXPECT(x,y) x
-#endif
-
 // dirty hack for FreeBSD
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #define PTRACE_ATTACH PT_ATTACH
@@ -61,6 +55,7 @@
 #define PTRACE_POKEDATA PT_WRITE_D
 #endif
 
+#include "common.h"
 #include "value.h"
 #include "scanroutines.h"
 #include "scanmem.h"
@@ -187,7 +182,7 @@ extern inline bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, con
         long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
 
         /* check if ptrace() succeeded */
-        if (EXPECT(ptraced_long == -1L && errno != 0, false)) {
+        if (UNLIKELY(ptraced_long == -1L && errno != 0)) {
             /* it's possible i'm trying to read partially oob */
             if (errno == EIO || errno == EFAULT) {
                 
@@ -321,7 +316,7 @@ bool sm_checkmatches(globals_t *vars,
         void *address = reading_swath.first_byte_in_child + reading_iterator;
 
         /* read value from this address */
-        if (EXPECT(sm_peekdata(vars->target, address, old_length, &memory_ptr, &memlength) == false, false))
+        if (UNLIKELY(sm_peekdata(vars->target, address, old_length, &memory_ptr, &memlength) == false))
         {
             /* If we can't look at the data here, just abort the whole recording, something bad happened */
             required_extra_bytes_to_record = 0;
@@ -360,13 +355,13 @@ bool sm_checkmatches(globals_t *vars,
             --required_extra_bytes_to_record;
         }
 
-        if (EXPECT(bytes_scanned >= bytes_at_next_sample, false)) {
+        if (UNLIKELY(bytes_scanned >= bytes_at_next_sample)) {
             bytes_at_next_sample += bytes_per_sample;
             /* handle rounding */
-            if (EXPECT(--samples_remaining > 0, true)) {
+            if (LIKELY(--samples_remaining > 0)) {
                 /* for front-end, update percentage */
                 vars->scan_progress += PROGRESS_PER_SAMPLE;
-                if (EXPECT(--samples_to_dot == 0, false)) {
+                if (UNLIKELY(--samples_to_dot == 0)) {
                     samples_to_dot = SAMPLES_PER_DOT;
                     /* for user, just print a dot */
                     print_a_dot();
@@ -541,7 +536,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             long ptraced_long = ptrace(PTRACE_PEEKDATA, vars->target, ptrace_address, NULL);
 
             /* check if ptrace() succeeded */
-            if (EXPECT(ptraced_long == -1L && errno != 0, false)) {
+            if (UNLIKELY(ptraced_long == -1L && errno != 0)) {
                 /* interrupt the gathering process */
                 break;
             }
@@ -566,7 +561,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
             /* check if we have a match */
             match_length = (*sm_scan_routine)(memory_ptr, memlength, NULL, uservalue, &checkflags);
-            if (EXPECT(match_length > 0, false))
+            if (UNLIKELY(match_length > 0))
             {
                 assert(match_length <= memlength);
                 writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
@@ -584,10 +579,10 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
 
             /* print a simple progress meter */
-            if (EXPECT(offset >= bytes_at_next_dot, false)) {
+            if (UNLIKELY(offset >= bytes_at_next_dot)) {
                 bytes_at_next_dot += bytes_per_dot;
                 /* handle rounding */
-                if (EXPECT(--dots_remaining > 0, true)) {
+                if (LIKELY(--dots_remaining > 0)) {
                     /* for user, just print a dot */
                     print_a_dot();
                     /* for front-end, update percentage */
@@ -695,7 +690,7 @@ bool sm_read_array(pid_t target, const void *addr, char *buf, int len)
     {
         errno = 0;
         *((long *)(buf+i)) = ptrace(PTRACE_PEEKDATA, target, addr+i, NULL);
-        if (EXPECT((*((long *)(buf+i)) == -1L) && (errno != 0), false)) {
+        if (UNLIKELY((*((long *)(buf+i)) == -1L) && (errno != 0))) {
             sm_detach(target);
             return false;
         }
