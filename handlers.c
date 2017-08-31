@@ -245,14 +245,11 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     loc = nth_match(vars->matches, num);
                     if (loc.swath) {
                         value_t v;
-                        value_t old;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index);
 
-                        /* copy val onto v */
+                        v = data_to_val(loc.swath, loc.index);
+                        /* copy userval onto v */
                         /* XXX: valcmp? make sure the sizes match */
-                        old = data_to_val(loc.swath, loc.index);
-                        zero_value(&v);
-                        v.flags = old.flags = loc.swath->data[loc.index].match_info;
                         uservalue2value(&v, &userval);
                         
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
@@ -282,13 +279,10 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                     if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator);
-
-                        /* XXX: as above : make sure the sizes match */
-                                    
-                        value_t old = data_to_val(reading_swath_index, reading_iterator);
                         value_t v;
-                        zero_value(&v);
-                        v.flags = old.flags = reading_swath_index->data[reading_iterator].match_info;
+
+                        v = data_to_val(reading_swath_index, reading_iterator);
+                        /* XXX: as above : make sure the sizes match */
                         uservalue2value(&v, &userval);
 
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
@@ -410,7 +404,6 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             default: /* numbers */
                 ; /* cheat gcc */
                 value_t val = data_to_val(reading_swath_index, reading_iterator);
-                truncval_to_flags(&val, flags);
 
                 valtostr(&val, v, buf_len);
                 break;
@@ -1180,7 +1173,6 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     address = remote_address_of_nth_element(loc.swath, loc.index);
     
     val = data_to_val(loc.swath, loc.index);
-    truncval_to_flags(&val, loc.swath->data[loc.index].match_info);
 
     if (INTERRUPTABLE()) {
         (void) sm_detach(vars->target);

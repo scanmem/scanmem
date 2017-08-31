@@ -276,6 +276,9 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
         val.bytes[i] = swath->data[index + i].old_value;
     }
 
+    /* Truncate to the old flags, which are stored with the first matched byte */
+    val.flags.all_flags &= swath->data[index].match_info.all_flags;
+
     return val;
 }
 

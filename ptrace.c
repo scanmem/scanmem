@@ -332,7 +332,6 @@ bool sm_checkmatches(globals_t *vars,
         else if (old_flags.all_flags != 0) /* Test only valid old matches */
         {
             value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes);
-            truncval_to_flags(&old_val, old_flags);
             memlength = old_length < memlength ? old_length : memlength;
 
             zero_match_flags(&checkflags);

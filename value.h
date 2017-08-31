@@ -191,19 +191,4 @@ static inline void zero_uservalue(uservalue_t *val)
     memset(val, 0, sizeof(*val));
 }
 
-static inline void truncval_to_flags(value_t *dst, match_flags flags)
-{
-    assert(dst != NULL);
-
-    /* Act on all numeric flags in a single go */
-    dst->flags.all_flags &= flags.all_flags;
-}
-
-static inline void truncval(value_t *dst, const value_t *src)
-{
-    assert(src != NULL);
-
-    truncval_to_flags(dst, src->flags);
-}
-
 #endif /* VALUE_H */
