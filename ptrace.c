@@ -277,7 +277,7 @@ bool sm_checkmatches(globals_t *vars,
                      scan_match_type_t match_type,
                      const uservalue_t *uservalue)
 {
-    matches_and_old_values_swath *reading_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
 
     unsigned long bytes_scanned = 0;
@@ -307,7 +307,7 @@ bool sm_checkmatches(globals_t *vars,
     print_a_dot();
 
     unsigned int reading_iterator = 0;
-    matches_and_old_values_swath *writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
     
@@ -500,7 +500,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         return false;
     }
     
-    writing_swath_index = (matches_and_old_values_swath *)vars->matches->swaths;
+    writing_swath_index = vars->matches->swaths;
     
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;

@@ -117,7 +117,7 @@ remote_address_of_last_element (matches_and_old_values_swath *swath)
 static inline void *
 local_address_beyond_nth_element (matches_and_old_values_swath *swath, long n)
 {
-    return &((matches_and_old_values_swath *)swath)->data[n + 1];
+    return &(swath->data[n + 1]);
 }
 
 static inline void *
