@@ -350,8 +350,8 @@ bool sm_checkmatches(globals_t *vars,
                - We can get away with assuming that the pointers will stay valid,
                  because as we never add more data to the array than there was before, it will not reallocate. */
 
-            old_value_and_match_info new_value = { get_u8b(memory_ptr), checkflags };
-            writing_swath_index = add_element((&vars->matches), writing_swath_index, address, &new_value);
+            writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
+                                              get_u8b(memory_ptr), checkflags);
 
             ++vars->num_matches;
 
@@ -359,8 +359,8 @@ bool sm_checkmatches(globals_t *vars,
         }
         else if (required_extra_bytes_to_record)
         {
-            old_value_and_match_info new_value = { get_u8b(memory_ptr), zero_flag };
-            writing_swath_index = add_element(&vars->matches, writing_swath_index, address, &new_value);
+            writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
+                                              get_u8b(memory_ptr), zero_flag);
             --required_extra_bytes_to_record;
         }
 
@@ -577,8 +577,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             if (EXPECT(match_length > 0, false))
             {
                 assert(match_length <= memlength);
-                old_value_and_match_info new_value = { get_u8b(memory_ptr), checkflags };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start+offset, &new_value);
+                writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
+                                                  get_u8b(memory_ptr), checkflags);
                 
                 ++vars->num_matches;
                 
@@ -586,8 +586,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
             else if (required_extra_bytes_to_record)
             {
-                old_value_and_match_info new_value = { get_u8b(memory_ptr), zero_flag };
-                writing_swath_index = add_element((&vars->matches), writing_swath_index, r->start+offset, &new_value);
+                writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
+                                                  get_u8b(memory_ptr), zero_flag);
                 --required_extra_bytes_to_record;
             }
 

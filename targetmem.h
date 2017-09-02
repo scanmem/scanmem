@@ -179,7 +179,8 @@ static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
              matches_and_old_values_swath *swath,
              void *remote_address,
-             const old_value_and_match_info *new_element)
+             uint8_t new_byte,
+             match_flags new_flags)
 {
     if (swath->number_of_bytes == 0) {
         assert(swath->first_byte_in_child == NULL);
@@ -238,8 +239,9 @@ add_element (matches_and_old_values_array **array,
     }
 
     /* add me */
-    *(old_value_and_match_info *)local_address_beyond_last_element(swath) =
-        *new_element;
+    old_value_and_match_info *dataptr = local_address_beyond_last_element(swath);
+    dataptr->old_value = new_byte;
+    dataptr->match_info = new_flags;
     ++swath->number_of_bytes;
 
     return swath;

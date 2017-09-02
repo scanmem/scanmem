@@ -179,9 +179,9 @@ delete_in_address_range (matches_and_old_values_array *array,
         void *address = reading_swath.first_byte_in_child + reading_iterator;
 
         if (address < start_address || address >= end_address) {
-            match_flags flags;
+            old_value_and_match_info old_byte;
 
-            flags = reading_swath_index->data[reading_iterator].match_info;
+            old_byte = reading_swath_index->data[reading_iterator];
 
             /* Still a candidate. Write data.
                 (We can get away with overwriting in the same array because
@@ -192,10 +192,10 @@ delete_in_address_range (matches_and_old_values_array *array,
                  there was before, it will not reallocate.) */
             writing_swath_index = add_element(&array,
                                       writing_swath_index, address,
-                                      &reading_swath_index->data[reading_iterator]);
+                                      old_byte.old_value, old_byte.match_info);
 
             /* actual matches are recorded */
-            if (flags.all_flags != 0)
+            if (old_byte.match_info.all_flags != 0)
                 ++(*num_matches);
         }
 
