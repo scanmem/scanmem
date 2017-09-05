@@ -249,13 +249,13 @@ static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match
     {
         case BYTEARRAY:
         case STRING:
-            return flags.length;
+            return flags;
             break;
         default: /* numbers */
-                 if (flags.u64b || flags.s64b || flags.f64b) return 8;
-            else if (flags.u32b || flags.s32b || flags.f32b) return 4;
-            else if (flags.u16b || flags.s16b              ) return 2;
-            else if (flags.u8b  || flags.s8b               ) return 1;
+                 if (flags & flags_64b) return 8;
+            else if (flags & flags_32b) return 4;
+            else if (flags & flags_16b) return 2;
+            else if (flags & flags_8b ) return 1;
             else    /* it can't be a variable of any size */ return 0;
             break;
     }
@@ -300,10 +300,6 @@ bool sm_checkmatches(globals_t *vars,
     matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
-    
-    /* used to fill in non-match regions */
-    match_flags zero_flag;
-    zero_match_flags(&zero_flag);
 
     int required_extra_bytes_to_record = 0;
     vars->num_matches = 0;
@@ -330,12 +326,12 @@ bool sm_checkmatches(globals_t *vars,
             /* If we can't look at the data here, just abort the whole recording, something bad happened */
             required_extra_bytes_to_record = 0;
         }
-        else if (old_flags.all_flags != 0) /* Test only valid old matches */
+        else if (old_flags != flags_empty) /* Test only valid old matches */
         {
             value_t old_val = data_to_val_aux(reading_swath_index, reading_iterator, reading_swath.number_of_bytes);
             memlength = old_length < memlength ? old_length : memlength;
 
-            zero_match_flags(&checkflags);
+            checkflags = flags_empty;
 
             match_length = (*sm_scan_routine)(memory_ptr, memlength, &old_val, uservalue, &checkflags);
         }
@@ -360,7 +356,7 @@ bool sm_checkmatches(globals_t *vars,
         else if (required_extra_bytes_to_record)
         {
             writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
-                                              get_u8b(memory_ptr), zero_flag);
+                                              get_u8b(memory_ptr), flags_empty);
             --required_extra_bytes_to_record;
         }
 
@@ -448,10 +444,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     unsigned long total_scan_bytes = 0;
     unsigned char *data = NULL;
 
-    /* used to fill in non-match regions */
-    match_flags zero_flag;
-    zero_match_flags(&zero_flag);
-    
     if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false)
     {
         show_error("unsupported scan for current data type.\n"); 
@@ -570,7 +562,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             match_flags checkflags;
 
             /* initialize checkflags */
-            zero_match_flags(&checkflags);
+            checkflags = flags_empty;
 
             /* check if we have a match */
             match_length = (*sm_scan_routine)(memory_ptr, memlength, NULL, uservalue, &checkflags);
@@ -587,7 +579,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             else if (required_extra_bytes_to_record)
             {
                 writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
-                                                  get_u8b(memory_ptr), zero_flag);
+                                                  get_u8b(memory_ptr), flags_empty);
                 --required_extra_bytes_to_record;
             }
 

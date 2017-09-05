@@ -277,7 +277,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                 while (reading_swath_index->first_byte_in_child) {
 
                     /* only actual matches are considered */
-                    if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0)
+                    if (reading_swath_index->data[reading_iterator].match_info != flags_empty)
                     {
                         void *address = remote_address_of_nth_element(reading_swath_index, reading_iterator);
                         value_t v;
@@ -373,12 +373,12 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         match_flags flags = reading_swath_index->data[reading_iterator].match_info;
 
         /* only actual matches are considered */
-        if (flags.all_flags != 0)
+        if (flags != flags_empty)
         {
             switch(vars->options.scan_data_type)
             {
             case BYTEARRAY:
-                buf_len = flags.length * 3 + 32;
+                buf_len = flags * 3 + 32;
                 v = realloc(v, buf_len); /* for each byte and the suffix, this should be enough */
 
                 if (v == NULL)
@@ -386,19 +386,19 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                     show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags.length);
+                data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags);
                 assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, bytearray_suffix);
                 break;
             case STRING:
-                buf_len = flags.length + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
+                buf_len = flags + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
                 v = realloc(v, buf_len);
                 if (v == NULL)
                 {
                     show_error("memory allocation failed.\n");
                     return false;
                 }
-                data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags.length);
+                data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags);
                 assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
                 strcat(v, string_suffix);
                 break;
@@ -475,13 +475,13 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 
     while (reading_swath_index->first_byte_in_child) {
         /* only actual matches are considered */
-        if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0) {
+        if (reading_swath_index->data[reading_iterator].match_info != flags_empty) {
 
             if (match_counter++ == del_set.buf[set_idx]) {
                 /* It is not reasonable to check if the matches array can be
                  * downsized after the deletion.
                  * So just zero its flags, to mark it as not a REAL match */
-                zero_match_flags(&reading_swath_index->data[reading_iterator].match_info);
+                reading_swath_index->data[reading_iterator].match_info = flags_empty;
                 vars->num_matches--;
 
                 if (set_idx++ == del_set.size - 1) {
@@ -836,7 +836,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
 
     uservalue_t val;
     val.string_value = string_value;
-    val.flags.length = string_length;
+    val.flags = string_length;
  
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {
@@ -1199,8 +1199,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
             return false;
 
         /* check if the new value is different */
-        match_flags tmpflags;
-        zero_match_flags(&tmpflags);
+        match_flags tmpflags = flags_empty;
         if ((*valuecmp_routine)(memory_ptr, memlength, &val, NULL, &tmpflags)) {
 
             memcpy(val.bytes, memory_ptr, memlength);

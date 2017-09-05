@@ -260,17 +260,16 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
 
     /* Init all possible flags in a single go.
      * Also init length to the maximum possible value */
-    val.flags.all_flags = 0xffffu;
+    val.flags = 0xffffu;
 
-    /* NOTE: This does the right thing for VLT because the high flags are
-     * not in the least significant bits in the `length` union member,
-     * otherwise their zeroing would interfere with useful bits of `length`.
-     * This works on both endians, as the high flags are in the middle. */
+    /* NOTE: This does the right thing for VLT because the flags are in
+     * the same order as the number representation (for both endians), so
+     * that the zeroing of a flag does not change useful bits of `length`. */
     if (max_bytes > 8) max_bytes = 8;
-    if (max_bytes < 8) val.flags.u64b = val.flags.s64b = val.flags.f64b = 0;
-    if (max_bytes < 4) val.flags.u32b = val.flags.s32b = val.flags.f32b = 0;
-    if (max_bytes < 2) val.flags.u16b = val.flags.s16b                  = 0;
-    if (max_bytes < 1) val.flags.u8b  = val.flags.s8b                   = 0;
+    if (max_bytes < 8) val.flags &= ~flags_64b;
+    if (max_bytes < 4) val.flags &= ~flags_32b;
+    if (max_bytes < 2) val.flags &= ~flags_16b;
+    if (max_bytes < 1) val.flags = flags_empty;
 
     for (i = 0; i < max_bytes; ++i) {
         /* Both uint8_t, no explicit casting needed */
@@ -278,7 +277,7 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
     }
 
     /* Truncate to the old flags, which are stored with the first matched byte */
-    val.flags.all_flags &= swath->data[index].match_info.all_flags;
+    val.flags &= swath->data[index].match_info;
 
     return val;
 }

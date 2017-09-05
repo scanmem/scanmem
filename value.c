@@ -41,7 +41,10 @@ void valtostr(const value_t *val, char *str, size_t n)
     int max_bytes = 0;
     bool print_as_unsigned = false;
 
-#define FLAG_MACRO(bytes, string) (val->flags.u##bytes##b && val->flags.s##bytes##b) ? (string " ") : (val->flags.u##bytes##b) ? (string "u ") : (val->flags.s##bytes##b) ? (string "s ") : ""
+#define FLAG_MACRO(bytes, string) \
+    (val->flags & flag_u##bytes##b && val->flags & flag_s##bytes##b) ? (string " ") : \
+        (val->flags & flag_u##bytes##b) ? (string "u ") : \
+            (val->flags & flag_s##bytes##b) ? (string "s ") : ""
     
     /* set the flags */
     np = snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s]",
@@ -49,22 +52,22 @@ void valtostr(const value_t *val, char *str, size_t n)
          FLAG_MACRO(32, "I32"),
          FLAG_MACRO(16, "I16"),
          FLAG_MACRO(8,  "I8"),
-         val->flags.f64b ? "F64 " : "",
-         val->flags.f32b ? "F32 " : "");
+         (val->flags & flag_f64b) ? "F64 " : "",
+         (val->flags & flag_f32b) ? "F32 " : "");
     /* handle having no type at all */
     if (np <= 2) {
         show_debug("BUG: No type\n");
         goto err;
     }
 
-         if (val->flags.u64b) { max_bytes = 8; print_as_unsigned =  true; }
-    else if (val->flags.s64b) { max_bytes = 8; print_as_unsigned = false; }
-    else if (val->flags.u32b) { max_bytes = 4; print_as_unsigned =  true; }
-    else if (val->flags.s32b) { max_bytes = 4; print_as_unsigned = false; }
-    else if (val->flags.u16b) { max_bytes = 2; print_as_unsigned =  true; }
-    else if (val->flags.s16b) { max_bytes = 2; print_as_unsigned = false; }
-    else if (val->flags.u8b ) { max_bytes = 1; print_as_unsigned =  true; }
-    else if (val->flags.s8b ) { max_bytes = 1; print_as_unsigned = false; }
+         if (val->flags & flag_u64b) { max_bytes = 8; print_as_unsigned =  true; }
+    else if (val->flags & flag_s64b) { max_bytes = 8; print_as_unsigned = false; }
+    else if (val->flags & flag_u32b) { max_bytes = 4; print_as_unsigned =  true; }
+    else if (val->flags & flag_s32b) { max_bytes = 4; print_as_unsigned = false; }
+    else if (val->flags & flag_u16b) { max_bytes = 2; print_as_unsigned =  true; }
+    else if (val->flags & flag_s16b) { max_bytes = 2; print_as_unsigned = false; }
+    else if (val->flags & flag_u8b ) { max_bytes = 1; print_as_unsigned =  true; }
+    else if (val->flags & flag_s8b ) { max_bytes = 1; print_as_unsigned = false; }
 
     /* find the right format, considering different integer size implementations */
          if (max_bytes == sizeof(long long)) np = snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
@@ -72,8 +75,8 @@ void valtostr(const value_t *val, char *str, size_t n)
     else if (max_bytes == sizeof(int))       np = snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
     else if (max_bytes == sizeof(short))     np = snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
     else if (max_bytes == sizeof(char))      np = snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
-    else if (val->flags.f64b) np = snprintf(str, n, "%lg, %s", get_f64b(val), buf);
-    else if (val->flags.f32b) np = snprintf(str, n, "%g, %s", get_f32b(val), buf);
+    else if (val->flags & flag_f64b) np = snprintf(str, n, "%lg, %s", get_f64b(val), buf);
+    else if (val->flags & flag_f32b) np = snprintf(str, n, "%g, %s", get_f32b(val), buf);
     else {
         show_debug("BUG: No formatting found\n");
         goto err;
@@ -96,17 +99,17 @@ void valcpy(value_t * dst, const value_t * src)
 /* dst.flags must be set beforehand */
 void uservalue2value(value_t *dst, const uservalue_t *src)
 {
-    if(dst->flags.u8b) set_u8b(dst, get_u8b(src));
-    if(dst->flags.s8b) set_s8b(dst, get_s8b(src));
-    if(dst->flags.u16b) set_u16b(dst, get_u16b(src));
-    if(dst->flags.s16b) set_s16b(dst, get_s16b(src));
-    if(dst->flags.u32b) set_u32b(dst, get_u32b(src));
-    if(dst->flags.s32b) set_s32b(dst, get_s32b(src));
-    if(dst->flags.u64b) set_u64b(dst, get_u64b(src));
-    if(dst->flags.s64b) set_s64b(dst, get_s64b(src));
+    if (dst->flags & flag_u8b) set_u8b(dst, get_u8b(src));
+    if (dst->flags & flag_s8b) set_s8b(dst, get_s8b(src));
+    if (dst->flags & flag_u16b) set_u16b(dst, get_u16b(src));
+    if (dst->flags & flag_s16b) set_s16b(dst, get_s16b(src));
+    if (dst->flags & flag_u32b) set_u32b(dst, get_u32b(src));
+    if (dst->flags & flag_s32b) set_s32b(dst, get_s32b(src));
+    if (dst->flags & flag_u64b) set_u64b(dst, get_u64b(src));
+    if (dst->flags & flag_s64b) set_s64b(dst, get_s64b(src));
     /* I guess integer and float cannot be matched together */
-    if(dst->flags.f32b) set_f32b(dst, get_f32b(src));
-    if(dst->flags.f64b) set_f64b(dst, get_f64b(src));
+    if (dst->flags & flag_f32b) set_f32b(dst, get_f32b(src));
+    if (dst->flags & flag_f64b) set_f64b(dst, get_f64b(src));
 }
 
 /* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
@@ -154,7 +157,7 @@ bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *va
     /* everything is ok */
     val->bytearray_value = bytes_array;
     val->wildcard_value = wildcards_array;
-    val->flags.length = argc;
+    val->flags = argc;
     return true;
 
 err:
@@ -169,7 +172,7 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
     /* TODO multiple rounding method */
     if (parse_uservalue_int(nptr, val))
     {
-        val->flags.f32b = val->flags.f64b = 1;
+        val->flags |= flags_float;
         val->float32_value = (float) val->int64_value;
         val->float64_value = (double) val->int64_value;   
         return true;
@@ -177,14 +180,14 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
     else if(parse_uservalue_float(nptr, val))
     {
         double num = val->float64_value;
-        if (num >=        (double)(0) && num < (double)(1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)num); }
-        if (num >= (double)-(1LL<< 7) && num < (double)(1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)num); }
-        if (num >=        (double)(0) && num < (double)(1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)num); }
-        if (num >= (double)-(1LL<<15) && num < (double)(1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)num); }
-        if (num >=        (double)(0) && num < (double)(1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)num); }
-        if (num >= (double)-(1LL<<31) && num < (double)(1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)num); }
-        if (           (double)(true) &&          (double)(true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)num); }
-        if (           (double)(true) &&          (double)(true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)num); }
+        if (num >=        (double)(0) && num < (double)(1LL<< 8)) { val->flags |= flag_u8b; set_u8b(val, (uint8_t)num); }
+        if (num >= (double)-(1LL<< 7) && num < (double)(1LL<< 7)) { val->flags |= flag_s8b; set_s8b(val, (int8_t)num); }
+        if (num >=        (double)(0) && num < (double)(1LL<<16)) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)num); }
+        if (num >= (double)-(1LL<<15) && num < (double)(1LL<<15)) { val->flags |= flag_s16b; set_s16b(val, (int16_t)num); }
+        if (num >=        (double)(0) && num < (double)(1LL<<32)) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
+        if (num >= (double)-(1LL<<31) && num < (double)(1LL<<31)) { val->flags |= flag_s32b; set_s32b(val, (int32_t)num); }
+        if (           (double)(true) &&          (double)(true)) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
+        if (           (double)(true) &&          (double)(true)) { val->flags |= flag_s64b; set_s64b(val, (int64_t)num); }
         return true;
     }
 
@@ -212,14 +215,14 @@ bool parse_uservalue_int(const char *nptr, uservalue_t * val)
         return false;
 
     /* determine correct flags */
-    if (num >=        (0) && num < (1LL<< 8)) { val->flags.u8b  = 1; set_u8b(val, (uint8_t)num); }
-    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags.s8b  = 1; set_s8b(val, (int8_t)num); }
-    if (num >=        (0) && num < (1LL<<16)) { val->flags.u16b = 1; set_u16b(val, (uint16_t)num); }
-    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags.s16b = 1; set_s16b(val, (int16_t)num); }
-    if (num >=        (0) && num < (1LL<<32)) { val->flags.u32b = 1; set_u32b(val, (uint32_t)num); }
-    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags.s32b = 1; set_s32b(val, (int32_t)num); }
-    if (           (true) &&          (true)) { val->flags.u64b = 1; set_u64b(val, (uint64_t)num); }
-    if (           (true) &&          (true)) { val->flags.s64b = 1; set_s64b(val, (int64_t)num); }
+    if (num >=        (0) && num < (1LL<< 8)) { val->flags |= flag_u8b; set_u8b(val, (uint8_t)num); }
+    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags |= flag_s8b; set_s8b(val, (int8_t)num); }
+    if (num >=        (0) && num < (1LL<<16)) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)num); }
+    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags |= flag_s16b; set_s16b(val, (int16_t)num); }
+    if (num >=        (0) && num < (1LL<<32)) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
+    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags |= flag_s32b; set_s32b(val, (int32_t)num); }
+    if (           (true) &&          (true)) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
+    if (           (true) &&          (true)) { val->flags |= flag_s64b; set_s64b(val, (int64_t)num); }
 
     return true;
 }
@@ -241,7 +244,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
         return false;
     
     /* I'm not sure how to distinguish between float and double, but I guess it's not necessary here */
-    val->flags.f32b = val->flags.f64b = 1;
+    val->flags |= flags_float;
     val->float32_value = (float) num;
     val->float64_value =  num;   
     return true;

@@ -133,7 +133,7 @@ nth_match (matches_and_old_values_array *matches, size_t n)
 
     while (reading_swath_index->first_byte_in_child) {
         /* only actual matches are considered */
-        if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0) {
+        if (reading_swath_index->data[reading_iterator].match_info != flags_empty) {
 
             if (i == n)
                 return (match_location){reading_swath_index, reading_iterator};
@@ -195,7 +195,7 @@ delete_in_address_range (matches_and_old_values_array *array,
                                       old_byte.old_value, old_byte.match_info);
 
             /* actual matches are recorded */
-            if (old_byte.match_info.all_flags != 0)
+            if (old_byte.match_info != flags_empty)
                 ++(*num_matches);
         }
 

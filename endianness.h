@@ -95,11 +95,11 @@ static inline void fix_endianness(value_t *data_value, bool reverse_endianness)
     if (!reverse_endianness) {
         return;
     }
-    if (data_value->flags.u64b) {
+    if (data_value->flags & flags_64b) {
         data_value->uint64_value = swap_bytes64(data_value->uint64_value);
-    } else if (data_value->flags.u32b) {
+    } else if (data_value->flags & flags_32b) {
         data_value->uint32_value = swap_bytes32(data_value->uint32_value);
-    } else if (data_value->flags.u16b) {
+    } else if (data_value->flags & flags_16b) {
         data_value->uint16_value = swap_bytes16(data_value->uint16_value);
     }
     return;

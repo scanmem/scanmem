@@ -35,24 +35,41 @@
 
 /* some routines for working with value_t structures */
 
-/* this is memory-efficient but DANGEROUS */
-/* always keep in mind to not mess up with `length` when scanning for BYTEARRAY or STRING */
-typedef union {
-    struct __attribute__ ((packed)) {
-        unsigned  u8b:1;        /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
-        unsigned u16b:1;        /* could be an unsigned 16-bit variable (e.g. unsigned short)     */
-        unsigned u32b:1;        /* could be an unsigned 32-bit variable (e.g. unsigned int)       */
-        unsigned u64b:1;        /* could be an unsigned 64-bit variable (e.g. unsigned long long) */
-        unsigned  s8b:1;        /* could be a    signed  8-bit variable (e.g. signed char)        */
-        unsigned s16b:1;        /* could be a    signed 16-bit variable (e.g. short)              */
-        unsigned s32b:1;        /* could be a    signed 32-bit variable (e.g. int)                */
-        unsigned s64b:1;        /* could be a    signed 64-bit variable (e.g. long long)          */
-        unsigned f32b:1;        /* could be a 32-bit floating point variable (i.e. float)         */
-        unsigned f64b:1;        /* could be a 64-bit floating point variable (i.e. double)        */
-    };
+/* match_flags: they MUST be implemented as an `uint16_t`, the `__packed__` ensures so.
+ * They are reinterpreted as a normal integer when scanning for VLT, which is
+ * valid for both endians, as the flags are ordered from smaller to bigger.
+ * NAMING: Primitive, single-bit flags are called `flag_*`, while aggregates,
+ * defined for convenience, are called `flags_*`*/
+typedef enum __attribute__((__packed__)) {
+    flags_empty = 0,
 
-    uint16_t length;       /* used when search for an array of bytes or text, I guess uint16_t is enough */
-    uint16_t all_flags;    /* used to access the whole union for bitwise operations */
+    flag_u8b  = 1 << 0,  /* could be an unsigned  8-bit variable (e.g. unsigned char)      */
+    flag_s8b  = 1 << 1,  /* could be a    signed  8-bit variable (e.g. signed char)        */
+    flag_u16b = 1 << 2,  /* could be an unsigned 16-bit variable (e.g. unsigned short)     */
+    flag_s16b = 1 << 3,  /* could be a    signed 16-bit variable (e.g. short)              */
+    flag_u32b = 1 << 4,  /* could be an unsigned 32-bit variable (e.g. unsigned int)       */
+    flag_s32b = 1 << 5,  /* could be a    signed 32-bit variable (e.g. int)                */
+    flag_u64b = 1 << 6,  /* could be an unsigned 64-bit variable (e.g. unsigned long long) */
+    flag_s64b = 1 << 7,  /* could be a    signed 64-bit variable (e.g. long long)          */
+
+    flag_f32b = 1 << 8,  /* could be a 32-bit floating point variable (i.e. float)         */
+    flag_f64b = 1 << 9,  /* could be a 64-bit floating point variable (i.e. double)        */
+
+    flags_i8b  = flag_u8b  | flag_s8b,
+    flags_i16b = flag_u16b | flag_s16b,
+    flags_i32b = flag_u32b | flag_s32b,
+    flags_i64b = flag_u64b | flag_s64b,
+
+    flags_integer = flags_i8b | flags_i16b | flags_i32b | flags_i64b,
+    flags_float = flag_f32b | flag_f64b,
+    flags_all = flags_integer | flags_float,
+
+    flags_8b   = flags_i8b,
+    flags_16b  = flags_i16b,
+    flags_32b  = flags_i32b | flag_f32b,
+    flags_64b  = flags_i64b | flag_f64b,
+
+    flags_max = 0xffffU /* ensures we're using an uint16_t */
 } match_flags;
 
 /* this struct describes matched values */
@@ -172,18 +189,12 @@ DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
 DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
 
-static inline void zero_match_flags(match_flags *flags)
-{
-    /* It's faster than a 2 bytes memset() */
-    flags->all_flags = 0;
-}
-
 static inline void zero_value(value_t *val)
 {
     /* zero components separately -
        10 bytes memset() is too slow */
     val->int64_value = 0;               /* zero the whole union */
-    zero_match_flags(&val->flags);
+    val->flags = flags_empty;
 }
 
 static inline void zero_uservalue(uservalue_t *val)

@@ -33,8 +33,9 @@
 #define SCAN_ROUTINE_ARGUMENTS (const mem64_t *memory_ptr, size_t memlength, const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags)
 unsigned int (*sm_scan_routine) SCAN_ROUTINE_ARGUMENTS;
 
-#define MEMORY_COMP(value,field,op) ((value)->flags.field && (get_##field(memory_ptr) op get_##field(value)))
-#define SET_FLAG(f, field)          ((f)->field = 1)
+#define MEMORY_COMP(value,field,op)  (((value)->flags & flag_##field) && (get_##field(memory_ptr) op get_##field(value)))
+#define GET_FLAG(valptr, field)      ((valptr)->flags & flag_##field)
+#define SET_FLAG(flagsptr, field)    ((*(flagsptr)) |= flag_##field)
 
 
 /********************/
@@ -66,8 +67,8 @@ DEFINE_INTEGER_MATCHANY_ROUTINE(64)
     { \
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
-        if (old_value->flags.s##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
-        if (old_value->flags.u##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
+        if (GET_FLAG(old_value, s##DATAWIDTH##b)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
+        if (GET_FLAG(old_value, u##DATAWIDTH##b)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
         return ret; \
     }
 
@@ -148,7 +149,7 @@ DEFINE_FLOAT_MATCHANY_ROUTINE(64)
     { \
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
-        if (old_value->flags.f##DATAWIDTH##b) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
+        if (GET_FLAG(old_value, f##DATAWIDTH##b)) { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
         return ret; \
     }
 
@@ -202,10 +203,10 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPES(DECREASED, <, old_value, 0, )
     { \
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
-        if ((old_value->flags.s##DATAWIDTH##b) && (user_value->flags.s##DATAWIDTH##b) && \
+        if ((GET_FLAG(old_value, s##DATAWIDTH##b)) && (GET_FLAG(user_value, s##DATAWIDTH##b)) && \
             (get_s##DATAWIDTH##b(memory_ptr) == get_s##DATAWIDTH##b(old_value) OP get_s##DATAWIDTH##b(user_value))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
-        if ((old_value->flags.u##DATAWIDTH##b) && (user_value->flags.u##DATAWIDTH##b) && \
+        if ((GET_FLAG(old_value, u##DATAWIDTH##b)) && (GET_FLAG(user_value, u##DATAWIDTH##b)) && \
             (get_u##DATAWIDTH##b(memory_ptr) == get_u##DATAWIDTH##b(old_value) OP get_u##DATAWIDTH##b(user_value))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
         return ret; \
@@ -225,7 +226,7 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(64)
     { \
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
-        if ((old_value->flags.f##DATAWIDTH##b) && (user_value->flags.f##DATAWIDTH##b) && \
+        if ((GET_FLAG(old_value, f##DATAWIDTH##b)) && (GET_FLAG(user_value, f##DATAWIDTH##b)) && \
             (get_f##DATAWIDTH##b(memory_ptr) == get_f##DATAWIDTH##b(old_value) OP get_f##DATAWIDTH##b(user_value))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
         return ret; \
@@ -252,12 +253,12 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(64)
             memory_ptr = &val; \
         } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags.s##DATAWIDTH##b) && (user_value[1].flags.s##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_s##DATAWIDTH##b) && (user_value[1].flags & flag_s##DATAWIDTH##b) \
                 && (get_s##DATAWIDTH##b(memory_ptr) >= get_s##DATAWIDTH##b(&user_value[0])) \
                 && (get_s##DATAWIDTH##b(memory_ptr) <= get_s##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags.u##DATAWIDTH##b) && (user_value[1].flags.u##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_u##DATAWIDTH##b) && (user_value[1].flags & flag_u##DATAWIDTH##b) \
                 && (get_u##DATAWIDTH##b(memory_ptr) >= get_u##DATAWIDTH##b(&user_value[0])) \
                 && (get_u##DATAWIDTH##b(memory_ptr) <= get_u##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
@@ -282,7 +283,7 @@ DEFINE_INTEGER_RANGE_ROUTINE(64, 1, _REVENDIAN)
             memory_ptr = &val; \
         } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags.f##DATAWIDTH##b) && (user_value[1].flags.f##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_f##DATAWIDTH##b) && (user_value[1].flags & flag_f##DATAWIDTH##b) \
                 && (get_f##DATAWIDTH##b(memory_ptr) >= get_f##DATAWIDTH##b(&user_value[0])) \
                 && (get_f##DATAWIDTH##b(memory_ptr) <= get_f##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
@@ -350,13 +351,13 @@ DEFINE_ANYTYPE_ROUTINE(RANGE, _REVENDIAN)
 
 extern inline unsigned int scan_routine_VLT_ANY SCAN_ROUTINE_ARGUMENTS
 {
-   return saveflags->length = MIN(memlength, (uint16_t)(-1));
+   return *saveflags = MIN(memlength, (uint16_t)(-1));
 }
 
 extern inline unsigned int scan_routine_VLT_UPDATE SCAN_ROUTINE_ARGUMENTS
 {
     /* memlength here is already MIN(memlength, old_value->flags.length) */
-   return saveflags->length = memlength;
+   return *saveflags = memlength;
 }
 
 /*---------------*/
@@ -368,7 +369,7 @@ extern inline unsigned int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const uint8_t *bytes_array = user_value->bytearray_value;
     const wildcard_t *wildcards_array = user_value->wildcard_value;
-    uint length = user_value->flags.length;
+    uint length = user_value->flags;
     if (memlength < length ||
         *((uint64_t*)bytes_array) != (memory_ptr->uint64_value & *((uint64_t*)wildcards_array)))
     {
@@ -401,7 +402,7 @@ extern inline unsigned int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
     }
 
     /* matched */
-    saveflags->length = length;
+    *saveflags = length;
 
     return length;
 }
@@ -417,7 +418,7 @@ extern inline unsigned int scan_routine_BYTEARRAY_EQUALTO SCAN_ROUTINE_ARGUMENTS
               == *(uint##WIDTH##_t*)(user_value->bytearray_value))) \
         { \
             /* matched */ \
-            saveflags->length = (WIDTH)/8; \
+            *saveflags = (WIDTH)/8; \
             return (WIDTH)/8; \
         } \
         else \
@@ -452,7 +453,7 @@ DEFINE_BYTEARRAY_POW2_EQUALTO_ROUTINE(64)
             } \
         } \
         /* matched */ \
-        saveflags->length = (WIDTH)/8; \
+        *saveflags = (WIDTH)/8; \
         return (WIDTH)/8; \
     }
 
@@ -469,7 +470,7 @@ DEFINE_BYTEARRAY_SMALLOOP_EQUALTO_ROUTINE(56)
 extern inline unsigned int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
 {
     const char *scan_string = user_value->string_value;
-    uint length = user_value->flags.length;
+    uint length = user_value->flags;
     if(memlength < length ||
        memory_ptr->int64_value != *((int64_t*)scan_string))
     {
@@ -501,7 +502,7 @@ extern inline unsigned int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
     }
     
     /* matched */
-    saveflags->length = length;
+    *saveflags = length;
 
     return length;
 }
@@ -516,7 +517,7 @@ extern inline unsigned int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
             (get_s##WIDTH##b(memory_ptr) == *(int##WIDTH##_t*)(user_value->string_value))) \
         { \
             /* matched */ \
-            saveflags->length = (WIDTH)/8; \
+            *saveflags = (WIDTH)/8; \
             return (WIDTH)/8; \
         } \
         else \
@@ -550,7 +551,7 @@ DEFINE_STRING_POW2_EQUALTO_ROUTINE(64)
             } \
         } \
         /* matched */ \
-        saveflags->length = (WIDTH)/8; \
+        *saveflags = (WIDTH)/8; \
         return (WIDTH)/8; \
     }
 
@@ -650,13 +651,13 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHANY, ANY)
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHUPDATE, UPDATE)
     if (uflags) {
-        CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, uflags->length*8)
+        CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, (*uflags)*8)
     }
 
     CHOOSE_ROUTINE(STRING, VLT, MATCHANY, ANY)
     CHOOSE_ROUTINE(STRING, VLT, MATCHUPDATE, UPDATE)
     if (uflags) {
-        CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, uflags->length*8)
+        CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, (*uflags)*8)
     }
 
     return NULL;
