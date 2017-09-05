@@ -253,12 +253,12 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(64)
             memory_ptr = &val; \
         } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags & flag_s##DATAWIDTH##b) && (user_value[1].flags & flag_s##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_s##DATAWIDTH##b) \
                 && (get_s##DATAWIDTH##b(memory_ptr) >= get_s##DATAWIDTH##b(&user_value[0])) \
                 && (get_s##DATAWIDTH##b(memory_ptr) <= get_s##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags & flag_u##DATAWIDTH##b) && (user_value[1].flags & flag_u##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_u##DATAWIDTH##b) \
                 && (get_u##DATAWIDTH##b(memory_ptr) >= get_u##DATAWIDTH##b(&user_value[0])) \
                 && (get_u##DATAWIDTH##b(memory_ptr) <= get_u##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
@@ -283,7 +283,7 @@ DEFINE_INTEGER_RANGE_ROUTINE(64, 1, _REVENDIAN)
             memory_ptr = &val; \
         } \
         if ((memlength >= (DATAWIDTH)/8) \
-                && (user_value[0].flags & flag_f##DATAWIDTH##b) && (user_value[1].flags & flag_f##DATAWIDTH##b) \
+                && (user_value[0].flags & flag_f##DATAWIDTH##b) \
                 && (get_f##DATAWIDTH##b(memory_ptr) >= get_f##DATAWIDTH##b(&user_value[0])) \
                 && (get_f##DATAWIDTH##b(memory_ptr) <= get_f##DATAWIDTH##b(&user_value[1]))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
