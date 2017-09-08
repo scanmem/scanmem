@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <errno.h>
 #include <inttypes.h> /* for fixed-width formatters */
 
@@ -168,25 +169,30 @@ err:
 
 bool parse_uservalue_number(const char *nptr, uservalue_t * val)
 {
-    /* TODO multiple rounding method */
     if (parse_uservalue_int(nptr, val))
     {
         val->flags |= flags_float;
-        val->float32_value = (float) val->int64_value;
-        val->float64_value = (double) val->int64_value;   
+        if (val->flags & flag_s64b) {
+            val->float32_value = (float) val->int64_value;
+            val->float64_value = (double) val->int64_value;
+        }
+        else {
+            val->float32_value = (float) val->uint64_value;
+            val->float64_value = (double) val->uint64_value;
+        }
         return true;
     }
     else if(parse_uservalue_float(nptr, val))
     {
         double num = val->float64_value;
-        if (num >=        (double)(0) && num < (double)(1LL<< 8)) { val->flags |= flag_u8b; set_u8b(val, (uint8_t)num); }
-        if (num >= (double)-(1LL<< 7) && num < (double)(1LL<< 7)) { val->flags |= flag_s8b; set_s8b(val, (int8_t)num); }
-        if (num >=        (double)(0) && num < (double)(1LL<<16)) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)num); }
-        if (num >= (double)-(1LL<<15) && num < (double)(1LL<<15)) { val->flags |= flag_s16b; set_s16b(val, (int16_t)num); }
-        if (num >=        (double)(0) && num < (double)(1LL<<32)) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
-        if (num >= (double)-(1LL<<31) && num < (double)(1LL<<31)) { val->flags |= flag_s32b; set_s32b(val, (int32_t)num); }
-        if (           (double)(true) &&          (double)(true)) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
-        if (           (double)(true) &&          (double)(true)) { val->flags |= flag_s64b; set_s64b(val, (int64_t)num); }
+        if (num >=         0 && num <=  UINT8_MAX) { val->flags |= flag_u8b;  set_u8b(val,   (uint8_t)num); }
+        if (num >=  INT8_MIN && num <=   INT8_MAX) { val->flags |= flag_s8b;  set_s8b(val,    (int8_t)num); }
+        if (num >=         0 && num <= UINT16_MAX) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)num); }
+        if (num >= INT16_MIN && num <=  INT16_MAX) { val->flags |= flag_s16b; set_s16b(val,  (int16_t)num); }
+        if (num >=         0 && num <= UINT32_MAX) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
+        if (num >= INT32_MIN && num <=  INT32_MAX) { val->flags |= flag_s32b; set_s32b(val,  (int32_t)num); }
+        if (num >=         0 && num <= UINT64_MAX) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
+        if (num >= INT64_MIN && num <=  INT64_MAX) { val->flags |= flag_s64b; set_s64b(val,  (int64_t)num); }
         return true;
     }
 
@@ -195,7 +201,10 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
 
 bool parse_uservalue_int(const char *nptr, uservalue_t * val)
 {
-    int64_t num;
+    int64_t snum;
+    bool valid_sint;
+    uint64_t unum;
+    bool valid_uint;
     char *endptr;
 
     assert(nptr != NULL);
@@ -207,21 +216,28 @@ bool parse_uservalue_int(const char *nptr, uservalue_t * val)
     while (isspace(*nptr))
         ++nptr;
 
-    /* now parse it using strtoul */
+    /* parse it as signed int */
     errno = 0;
-    num = strtoll(nptr, &endptr, 0);
-    if ((errno != 0) || (*endptr != '\0'))
+    snum = strtoll(nptr, &endptr, 0);
+    valid_sint = (errno == 0) && (*endptr == '\0');
+
+    /* parse it as unsigned int */
+    errno = 0;
+    unum = strtoull(nptr, &endptr, 0);
+    valid_uint = (*nptr != '-') && (errno == 0) && (*endptr == '\0');
+
+    if (!valid_sint && !valid_uint)
         return false;
 
     /* determine correct flags */
-    if (num >=        (0) && num < (1LL<< 8)) { val->flags |= flag_u8b; set_u8b(val, (uint8_t)num); }
-    if (num >= -(1LL<< 7) && num < (1LL<< 7)) { val->flags |= flag_s8b; set_s8b(val, (int8_t)num); }
-    if (num >=        (0) && num < (1LL<<16)) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)num); }
-    if (num >= -(1LL<<15) && num < (1LL<<15)) { val->flags |= flag_s16b; set_s16b(val, (int16_t)num); }
-    if (num >=        (0) && num < (1LL<<32)) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
-    if (num >= -(1LL<<31) && num < (1LL<<31)) { val->flags |= flag_s32b; set_s32b(val, (int32_t)num); }
-    if (           (true) &&          (true)) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
-    if (           (true) &&          (true)) { val->flags |= flag_s64b; set_s64b(val, (int64_t)num); }
+    if (valid_uint &&                      unum <=  UINT8_MAX) { val->flags |= flag_u8b;  set_u8b(val,   (uint8_t)unum); }
+    if (valid_sint && snum >=  INT8_MIN && snum <=   INT8_MAX) { val->flags |= flag_s8b;  set_s8b(val,    (int8_t)snum); }
+    if (valid_uint &&                      unum <= UINT16_MAX) { val->flags |= flag_u16b; set_u16b(val, (uint16_t)unum); }
+    if (valid_sint && snum >= INT16_MIN && snum <=  INT16_MAX) { val->flags |= flag_s16b; set_s16b(val,  (int16_t)snum); }
+    if (valid_uint &&                      unum <= UINT32_MAX) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)unum); }
+    if (valid_sint && snum >= INT32_MIN && snum <=  INT32_MAX) { val->flags |= flag_s32b; set_s32b(val,  (int32_t)snum); }
+    if (valid_uint &&                      unum <= UINT64_MAX) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)unum); }
+    if (valid_sint && snum >= INT64_MIN && snum <=  INT64_MAX) { val->flags |= flag_s64b; set_s64b(val,  (int64_t)snum); }
 
     return true;
 }
