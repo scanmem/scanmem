@@ -199,39 +199,42 @@ add_element (matches_and_old_values_array **array,
         size_t local_address_excess =
             local_index_excess * sizeof(old_value_and_match_info);
 
-        size_t needed_size =
+        size_t needed_size_for_a_new_swath =
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info);
 
-        if (local_address_excess >= needed_size) {
-            /* it is most memory-efficient to start a new swath */
+        if (local_address_excess >= needed_size_for_a_new_swath) {
+            /* It is more memory-efficient to start a new swath.
+             * The equal case is decided for a new swath, so that
+             * later we don't needlessly iterate through a bunch
+             * of empty values */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
-                sizeof(matches_and_old_values_swath) +
-                sizeof(old_value_and_match_info), &swath);
+                needed_size_for_a_new_swath, &swath);
 
             swath = local_address_beyond_last_element(swath);
             swath->first_byte_in_child = remote_address;
             swath->number_of_bytes = 0;
 
         } else {
-            /* it is most memory-efficient to write over the intervening
+            /* It is more memory-efficient to write over the intervening
                space with null values */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 local_address_excess, &swath);
 
-            switch (local_address_excess) {
-            case 4 : /* = sizeof(old_value_and_match_info) */
-                memset(local_address_beyond_last_element(swath), 0, 4);
+            switch (local_index_excess) {
+            case 1:
+                /* do nothing, the new value is right after the old */
                 break;
-            case 8 : /* = 2*sizeof(old_value_and_match_info) */
-                memset(local_address_beyond_last_element(swath), 0, 8);
+            case 2:
+                memset(local_address_beyond_last_element(swath), 0,
+                       sizeof(old_value_and_match_info));
                 break;
             default:
                 /* slow due to unknown size to be zeroed */
                 memset(local_address_beyond_last_element(swath), 0,
-                       local_address_excess);
+                       local_address_excess - sizeof(old_value_and_match_info));
                 break;
             }
             swath->number_of_bytes += local_index_excess - 1;
