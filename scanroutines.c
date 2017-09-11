@@ -583,7 +583,9 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
 }
 
 
-bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags)
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval)
 {
-    return (sm_scan_routine = sm_get_scanroutine(dt, mt, uflags)) != NULL;
+    const match_flags *uflags = uval ? &(uval->flags) : NULL;
+    sm_scan_routine = sm_get_scanroutine(dt, mt, uflags);
+    return (sm_scan_routine != NULL);
 }

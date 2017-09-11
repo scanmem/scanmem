@@ -71,7 +71,7 @@ extern scan_routine_t sm_scan_routine;
  * Choose the global scanroutine according to the given parameters, sm_scan_routine will be set.
  * Returns whether a proper routine has been found.
  */
-bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags);
+bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval);
 
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags);
 
