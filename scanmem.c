@@ -194,6 +194,10 @@ void sm_cleanup(void)
     l_destroy(sm_globals.regions);
     l_destroy(sm_globals.commands);
 
+    /* free matches array */
+    if (sm_globals.matches)
+        free(sm_globals.matches);
+
     /* attempt to detach just in case */
     sm_detach(sm_globals.target);
 }
