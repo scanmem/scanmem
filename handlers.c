@@ -218,7 +218,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             /* check if specific match(s) were specified */
             if (settings[block].matchids != NULL) {
                 char *id, *lmatches = NULL;
-                unsigned num = 0;
+                size_t num = 0;
 
                 /* create local copy of the matchids for strtok() to modify */
                 lmatches = strdupa(settings[block].matchids);
@@ -271,7 +271,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
             } else {
                 
                 matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
-                unsigned int reading_iterator = 0;
+                size_t reading_iterator = 0;
 
                 /* user wants to set all matches */
                 while (reading_swath_index->first_byte_in_child) {
@@ -362,7 +362,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         np = vars->regions->head;
 
     matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
-    unsigned int reading_iterator = 0;
+    size_t reading_iterator = 0;
 
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
@@ -453,7 +453,7 @@ out_free:
 /* XXX: handle multiple deletes, eg delete !1 2 3 4 5 6 */
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned id;
+    size_t id;
     char *end = NULL;
     match_location loc;
 
@@ -1193,7 +1193,7 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 {
     value_t o, n;
-    unsigned id;
+    size_t id;
     char *end = NULL, buf[128], timestamp[64];
     time_t t;
     match_location loc;

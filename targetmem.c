@@ -34,10 +34,10 @@
 
 
 matches_and_old_values_array *
-allocate_array (matches_and_old_values_array *array, unsigned long max_bytes)
+allocate_array (matches_and_old_values_array *array, size_t max_bytes)
 {
     /* make enough space for the array header and a null first swath */
-    unsigned long bytes_to_allocate =
+    size_t bytes_to_allocate =
         sizeof(matches_and_old_values_array) +
         sizeof(matches_and_old_values_swath);
 
@@ -54,7 +54,7 @@ matches_and_old_values_array *
 null_terminate (matches_and_old_values_array *array,
                 matches_and_old_values_swath *swath)
 {
-    unsigned long bytes_needed;
+    size_t bytes_needed;
 
     if (swath->number_of_bytes == 0) {
         assert(swath->first_byte_in_child == NULL);
@@ -84,7 +84,7 @@ null_terminate (matches_and_old_values_array *array,
 
 void data_to_printable_string (char *buf, int buf_length,
                                matches_and_old_values_swath *swath,
-                               long index, int string_length)
+                               size_t index, int string_length)
 {
     long swath_length = swath->number_of_bytes - index;
     /* TODO: what if length is too large ? */
@@ -100,7 +100,7 @@ void data_to_printable_string (char *buf, int buf_length,
 
 void data_to_bytearray_text (char *buf, int buf_length,
                              matches_and_old_values_swath *swath,
-                             long index, int bytearray_length)
+                             size_t index, int bytearray_length)
 {
     int i;
     int bytes_used = 0;
@@ -121,13 +121,13 @@ void data_to_bytearray_text (char *buf, int buf_length,
 }
 
 match_location
-nth_match (matches_and_old_values_array *matches, unsigned n)
+nth_match (matches_and_old_values_array *matches, size_t n)
 {
-    unsigned i = 0;
+    size_t i = 0;
 
     matches_and_old_values_swath *reading_swath_index = matches->swaths;
 
-    unsigned int reading_iterator = 0;
+    size_t reading_iterator = 0;
 
     if (!matches)
         return (match_location){NULL, 0};
@@ -161,7 +161,7 @@ matches_and_old_values_array *
 delete_by_region (matches_and_old_values_array *matches,
                   unsigned long *num_matches, region_t *which, bool invert)
 {
-    unsigned int reading_iterator = 0;
+    size_t reading_iterator = 0;
     matches_and_old_values_swath *reading_swath_index = matches->swaths;
 
     matches_and_old_values_swath reading_swath = *reading_swath_index;

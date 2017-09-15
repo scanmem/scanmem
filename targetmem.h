@@ -50,29 +50,29 @@ typedef struct {
      takes up. It's the length of data. */
 typedef struct {
     void *first_byte_in_child;
-    unsigned long number_of_bytes;
+    size_t number_of_bytes;
     old_value_and_match_info data[0];
 } matches_and_old_values_swath;
 
 /* Master matches array, smartly resized, contains swaths.
    Both `bytes` values refer to real struct bytes this time. */
 typedef struct {
-    unsigned long bytes_allocated;
-    unsigned long max_needed_bytes;
+    size_t bytes_allocated;
+    size_t max_needed_bytes;
     matches_and_old_values_swath swaths[0];
 } matches_and_old_values_array;
 
 /* Location of a match in a matches_and_old_values_array */
 typedef struct {
     matches_and_old_values_swath *swath;
-    long index;
+    size_t index;
 } match_location;
 
 
 /* Public functions */
 
 matches_and_old_values_array *allocate_array (matches_and_old_values_array *array,
-                                              unsigned long max_bytes);
+                                              size_t max_bytes);
 
 matches_and_old_values_array *null_terminate (matches_and_old_values_array *array,
                                               matches_and_old_values_swath *swath);
@@ -80,14 +80,14 @@ matches_and_old_values_array *null_terminate (matches_and_old_values_array *arra
 /* for printable text representation */
 void data_to_printable_string (char *buf, int buf_length,
                                matches_and_old_values_swath *swath,
-                               long index, int string_length);
+                               size_t index, int string_length);
 
 /* for bytearray representation */
 void data_to_bytearray_text (char *buf, int buf_length,
                              matches_and_old_values_swath *swath,
-                             long index, int bytearray_length);
+                             size_t index, int bytearray_length);
 
-match_location nth_match (matches_and_old_values_array *matches, unsigned n);
+match_location nth_match (matches_and_old_values_array *matches, size_t n);
 
 matches_and_old_values_array *delete_by_region (matches_and_old_values_array *array,
                                                 unsigned long *num_matches,
@@ -96,14 +96,14 @@ matches_and_old_values_array *delete_by_region (matches_and_old_values_array *ar
 /* The following functions are called in the hot scanning path and were moved
    to this header from the .c file so that they could be inlined */
 
-static inline long
+static inline size_t
 index_of_last_element (matches_and_old_values_swath *swath)
 {
     return swath->number_of_bytes - 1;
 }
 
 static inline void *
-remote_address_of_nth_element (matches_and_old_values_swath *swath, long n)
+remote_address_of_nth_element (matches_and_old_values_swath *swath, size_t n)
 {
     return swath->first_byte_in_child + n;
 }
@@ -115,7 +115,7 @@ remote_address_of_last_element (matches_and_old_values_swath *swath)
 }
 
 static inline void *
-local_address_beyond_nth_element (matches_and_old_values_swath *swath, long n)
+local_address_beyond_nth_element (matches_and_old_values_swath *swath, size_t n)
 {
     return &(swath->data[n + 1]);
 }
@@ -131,7 +131,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
                           void *last_byte_to_reach_plus_one,
                           matches_and_old_values_swath **swath_pointer_to_correct)
 {
-    unsigned long bytes_needed = (last_byte_to_reach_plus_one - (void *)array);
+    size_t bytes_needed = last_byte_to_reach_plus_one - (void *)array;
 
     if (bytes_needed <= array->bytes_allocated) {
         return array;
@@ -141,7 +141,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
 
         /* allocate twice as much each time,
            so we don't have to do it too often */
-        unsigned long bytes_to_allocate = array->bytes_allocated;
+        size_t bytes_to_allocate = array->bytes_allocated;
         while (bytes_to_allocate < bytes_needed)
             bytes_to_allocate *= 2;
 
@@ -191,10 +191,10 @@ add_element (matches_and_old_values_array **array,
         swath->first_byte_in_child = remote_address;
 
     } else {
-        unsigned long local_index_excess =
+        size_t local_index_excess =
             remote_address - remote_address_of_last_element(swath);
 
-        unsigned long local_address_excess =
+        size_t local_address_excess =
             local_index_excess * sizeof(old_value_and_match_info);
 
         size_t needed_size =
@@ -249,11 +249,11 @@ add_element (matches_and_old_values_array **array,
    read them separately (for performance) */
 static inline value_t
 data_to_val_aux (matches_and_old_values_swath *swath,
-                 unsigned long index, unsigned long swath_length)
+                 size_t index, size_t swath_length)
 {
-    int i;
+    uint i;
     value_t val;
-    int max_bytes = swath_length - index;
+    size_t max_bytes = swath_length - index;
 
     zero_value(&val);
 
@@ -272,7 +272,7 @@ data_to_val_aux (matches_and_old_values_swath *swath,
 }
 
 static inline value_t
-data_to_val (matches_and_old_values_swath *swath, unsigned long index)
+data_to_val (matches_and_old_values_swath *swath, size_t index)
 {
     return data_to_val_aux(swath, index, swath->number_of_bytes);
 }

@@ -306,7 +306,7 @@ bool sm_checkmatches(globals_t *vars,
     /* for user, just print the first dot */
     print_a_dot();
 
-    unsigned int reading_iterator = 0;
+    size_t reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
