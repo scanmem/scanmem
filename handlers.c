@@ -336,12 +336,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     unsigned long num = 0;
     size_t buf_len = 128; /* will be realloc'd later if necessary */
     element_t *np = NULL;
-    char *v = malloc(buf_len);
-    if (v == NULL)
-    {
-        show_error("memory allocation failed.\n");
-        return false;
-    }
+    char *v;
     const char *bytearray_suffix = ", [bytearray]";
     const char *string_suffix = ", [string]";
 
@@ -356,7 +351,13 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     }
 
     if (!vars->matches)
-        goto out_free;
+        return false;
+
+    if ((v = malloc(buf_len)) == NULL)
+    {
+        show_error("memory allocation failed.\n");
+        return false;
+    }
 
     if (vars->regions)
         np = vars->regions->head;
@@ -367,7 +368,8 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
         if (num == max_to_print) {
-            show_user("[...]\n");
+            if (num < vars->num_matches)
+                show_user("[...]\n");
             break;
         }
 
@@ -445,7 +447,6 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         }
     }
 
-out_free:
     free(v);
     return true;
 }
