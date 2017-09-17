@@ -77,7 +77,7 @@ static inline bool inc_arr_sz(size_t **valarr, size_t *arr_maxsz, size_t maxsz)
     else
         *arr_maxsz *= 2;
 
-    if ((valarr_tmpptr = realloc(valarr, *arr_maxsz * sizeof(size_t))) == NULL)
+    if ((valarr_tmpptr = realloc(*valarr, *arr_maxsz * sizeof(size_t))) == NULL)
         return false;
 
     *valarr = valarr_tmpptr;
