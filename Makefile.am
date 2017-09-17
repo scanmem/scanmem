@@ -15,6 +15,7 @@ libscanmem_la_include_HEADERS = commands.h \
     maps.h \
     scanmem.h \
     scanroutines.h \
+    sets.h \
     show_message.h \
     targetmem.h \
     value.h
@@ -30,6 +31,7 @@ libscanmem_la_SOURCES = commands.c \
     maps.c \
     scanmem.c \
     scanroutines.c \
+    sets.c \
     show_message.c \
     targetmem.c \
     value.c 
