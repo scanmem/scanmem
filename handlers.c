@@ -454,8 +454,6 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
 
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 {
-    size_t id;
-    match_location loc;
     struct set del_set;
 
     if (argc != 2) {
@@ -473,24 +471,44 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    foreach_set_bw(i, &del_set) {
-        id  = del_set.buf[i];
-        loc = nth_match(vars->matches, id);
+    size_t match_counter = 0;
+    size_t set_idx = 0;
 
-        if (loc.swath) {
-            /* It is not convenient to check whether anything else relies on this,
-               so just mark it as not a REAL match */
-            zero_match_flags(&loc.swath->data[loc.index].match_info);
-            vars->num_matches--;
-        } else {
-            show_error("BUG: delete: id <%zu> match failure\n", id);
-            set_cleanup(&del_set);
-            return false;
+    matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
+
+    size_t reading_iterator = 0;
+
+    while (reading_swath_index->first_byte_in_child) {
+        /* only actual matches are considered */
+        if (reading_swath_index->data[reading_iterator].match_info.all_flags != 0) {
+
+            if (match_counter++ == del_set.buf[set_idx]) {
+                /* It is not reasonable to check if the matches array can be
+                 * downsized after the deletion.
+                 * So just zero its flags, to mark it as not a REAL match */
+                zero_match_flags(&reading_swath_index->data[reading_iterator].match_info);
+                vars->num_matches--;
+
+                if (set_idx++ == del_set.size - 1) {
+                    set_cleanup(&del_set);
+                    return true;
+                }
+            }
+        }
+
+        /* go on to the next one... */
+        ++reading_iterator;
+        if (reading_iterator >= reading_swath_index->number_of_bytes) {
+            reading_swath_index =
+                local_address_beyond_last_element(reading_swath_index);
+
+            reading_iterator = 0;
         }
     }
-    set_cleanup(&del_set);
 
-    return true;
+    show_error("BUG: delete: id <%zu> match failure\n", del_set.buf[set_idx]);
+    set_cleanup(&del_set);
+    return false;
 }
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
