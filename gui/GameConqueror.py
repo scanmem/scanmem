@@ -606,10 +606,9 @@ class GameConqueror():
 
     def scanresult_delete_selected_matches(self, menuitem, data=None):
         (model, pathlist) = self.scanresult_tv.get_selection().get_selected_rows()
-        match_id_list = [ model.get_value(model.get_iter(path), 6) for path in pathlist ]
+        match_id_list = ','.join(str(model.get_value(model.get_iter(path), 6)) for path in pathlist)
         self.command_lock.acquire()
-        for mid in sorted(match_id_list, reverse=True): # Start from the largest, so no match id gets invalidated
-            self.backend.send_command('delete %d' %(mid,))
+        self.backend.send_command('delete {}'.format(match_id_list))
         self.update_scan_result()
         self.command_lock.release()
 
