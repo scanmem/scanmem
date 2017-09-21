@@ -351,7 +351,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
         }
     }
 
-    if (!vars->matches)
+    if (vars->num_matches == 0)
         return false;
 
     if ((v = malloc(buf_len)) == NULL)
@@ -839,6 +839,10 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
     }
 
     if (vars->matches) {
+        if (vars->num_matches == 0) {
+            show_error("there are currently no matches.\n");
+            return false;
+        }
         if (sm_checkmatches(vars, m, &val) == false) {
             show_error("failed to search target address space.\n");
             return false;
@@ -1039,6 +1043,10 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
 
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
+        if (vars->num_matches == 0) {
+            show_error("there are currently no matches.\n");
+            goto retl;
+        }
         /* already know some matches */
         if (sm_checkmatches(vars, m, val) != true) {
             show_error("failed to search target address space.\n");
@@ -1070,7 +1078,7 @@ bool handler__update(globals_t *vars, char **argv, unsigned argc)
 {
 
     USEPARAMS();
-    if (vars->matches) {
+    if (vars->num_matches) {
         if (sm_checkmatches(vars, MATCHANY, NULL) == false) {
             show_error("failed to scan target address space.\n");
             return false;
