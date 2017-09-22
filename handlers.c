@@ -805,8 +805,6 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
     uservalue_t val;
     scan_match_type_t m;
 
-    USEPARAMS();
-
     if (argc == 1)
     {
         zero_uservalue(&val);
@@ -907,6 +905,8 @@ bool handler__version(globals_t *vars, char **argv, unsigned argc)
 
 bool handler__string(globals_t * vars, char **argv, unsigned argc)
 {
+    USEPARAMS();
+
     /* test scan_data_type */
     if (vars->options.scan_data_type != STRING)
     {
@@ -1003,8 +1003,6 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
     char *ustr = argv[0];
     char *pos;
     bool ret = false;
-
-    USEPARAMS();
 
     zero_uservalue(val);
 
