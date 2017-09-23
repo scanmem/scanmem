@@ -4,7 +4,8 @@ if ENABLE_GUI
   SUBDIRS = po gui
 endif
 
-AM_CFLAGS = -std=gnu99 -O2 -g -Wall
+# '-O2 -g' are added by `configure`, unless the user overrides CFLAGS
+AM_CFLAGS = -std=gnu99 -Wall
 
 lib_LTLIBRARIES = libscanmem.la
 
