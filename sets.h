@@ -29,7 +29,7 @@ struct set {
     size_t *buf;  /* value buffer       */
 };
 
-inline void set_cleanup(struct set *set)
+static inline void set_cleanup(struct set *set)
 {
     if (set)
         free(set->buf);
