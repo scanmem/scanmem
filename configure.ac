@@ -107,6 +107,7 @@ AC_DEFINE_UNQUOTED([GETTEXT_PACKAGE], ["$GETTEXT_PACKAGE"],
 
 AC_CONFIG_FILES([
   Makefile
+  test/Makefile
   po/Makefile.in
 ])
 

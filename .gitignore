@@ -27,6 +27,7 @@ missing
 py-compile
 stamp-h1
 tags
+test-driver
 
 # GameConqueror
 gui/GameConqueror.appdata.xml
