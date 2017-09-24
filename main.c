@@ -29,6 +29,7 @@
 #include "config.h"
 
 #include <unistd.h>
+#include <string.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <stdlib.h>
@@ -70,6 +71,7 @@ static const char help_text[] =
 "Interactively locate and modify variables in an executing process.\n"
 "\n"
 "-p, --pid=pid\t\tset the target process pid\n"
+"-c, --command\t\trun given commands (separated by `;`)\n"
 "-h, --help\t\tprint this message\n"
 "-v, --version\t\tprint version information\n"
 "\n"
@@ -87,10 +89,21 @@ static void printhelp(void)
     return;
 }
 
-static void parse_parameter(int argc, char **argv)
+static inline void show_user_quick_help(pid_t target)
+{
+    if (target == 0) {
+        show_user("Enter the pid of the process to search using the \"pid\" command.\n");
+        show_user("Enter \"help\" for other commands.\n");
+    } else {
+        show_user("Please enter current value, or \"help\" for other commands.\n");
+    }
+}
+
+static void parse_parameters(int argc, char **argv, char **initial_commands)
 {
     struct option longopts[] = {
         {"pid",     1, NULL, 'p'},      /* target pid */
+        {"command", 1, NULL, 'c'},      /* commands to run at the beginning */
         {"version", 0, NULL, 'v'},      /* print version */
         {"help",    0, NULL, 'h'},      /* print help summary */
         {"debug",   0, NULL, 'd'},      /* enable debug mode */
@@ -103,7 +116,7 @@ static void parse_parameter(int argc, char **argv)
 
     /* process command line */
     while (!done) {
-        switch (getopt_long(argc, argv, "vhdp:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhdp:c:", longopts, &optindex)) {
             case 'p':
                 vars->target = (pid_t) strtoul(optarg, &end, 0);
 
@@ -112,6 +125,9 @@ static void parse_parameter(int argc, char **argv)
                     show_error("invalid pid specified.\n");
                     exit(EXIT_FAILURE);
                 }
+                break;
+            case 'c':
+                *initial_commands = optarg;
                 break;
             case 'v':
                 printversion(stderr);
@@ -144,7 +160,8 @@ static void parse_parameter(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    parse_parameter(argc, argv);
+    char *initial_commands = NULL;
+    parse_parameters(argc, argv, &initial_commands);
 
     int ret = EXIT_SUCCESS;
     globals_t *vars = &sm_globals;
@@ -169,11 +186,27 @@ int main(int argc, char **argv)
     }
 
     /* check if there is a target already specified */
-    if (vars->target == 0) {
-        show_user("Enter the pid of the process to search using the \"pid\" command.\n");
-        show_user("Enter \"help\" for other commands.\n");
-    } else {
-        show_user("Please enter current value, or \"help\" for other commands.\n");
+    show_user_quick_help(vars->target);
+
+    /* execute commands passed by `-c`, if any */
+    char *saveptr = NULL;
+    const char sep[] = ";\n";
+    for (char *line = strtok_r(initial_commands, sep, &saveptr);
+         line != NULL; line = strtok_r(NULL, sep, &saveptr))
+    {
+        if (vars->matches) {
+            show_user("%ld> %s\n", vars->num_matches, line);
+        } else {
+            show_user("> %s\n", line);
+        }
+
+        /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
+        if (sm_execcommand(vars, line) == false) {
+            show_user_quick_help(vars->target);
+        }
+
+        fflush(stdout);
+        fflush(stderr);
     }
 
     /* main loop, read input and process commands */
@@ -189,12 +222,7 @@ int main(int argc, char **argv)
 
         /* sm_execcommand() returning failure is not fatal, it just means the command could not complete. */
         if (sm_execcommand(vars, line) == false) {
-            if (vars->target == 0) {
-                show_user("Enter the pid of the process to search using the \"pid\" command.\n");
-                show_user("Enter \"help\" for other commands.\n");
-            } else {
-                show_user("Please enter current value or \"help\" for other commands.\n");
-            }
+            show_user_quick_help(vars->target);
         }
 
         free(line);
