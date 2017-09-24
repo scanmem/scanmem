@@ -1452,6 +1452,48 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+/* Returns (scan_data_type_t)(-1) on parse failure */
+static inline scan_data_type_t parse_scan_data_type(const char *str)
+{
+    /* Anytypes */
+    if ((strcasecmp(str, "number") == 0)  || (strcasecmp(str, "anynumber") == 0))
+        return ANYNUMBER;
+    if ((strcasecmp(str, "int") == 0)     || (strcasecmp(str, "anyint") == 0) ||
+        (strcasecmp(str, "integer") == 0) || (strcasecmp(str, "anyinteger") == 0))
+        return ANYINTEGER;
+    if ((strcasecmp(str, "float") == 0)   || (strcasecmp(str, "anyfloat") == 0))
+        return ANYFLOAT;
+
+    /* Ints */
+    if ((strcasecmp(str, "i8") == 0)  || (strcasecmp(str, "int8") == 0)  ||
+        (strcasecmp(str, "integer8") == 0))
+        return INTEGER8;
+    if ((strcasecmp(str, "i16") == 0) || (strcasecmp(str, "int16") == 0) ||
+        (strcasecmp(str, "integer16") == 0))
+        return INTEGER16;
+    if ((strcasecmp(str, "i32") == 0) || (strcasecmp(str, "int32") == 0) ||
+        (strcasecmp(str, "integer32") == 0))
+        return INTEGER32;
+    if ((strcasecmp(str, "i64") == 0) || (strcasecmp(str, "int64") == 0) ||
+        (strcasecmp(str, "integer64") == 0))
+        return INTEGER64;
+
+    /* Floats */
+    if ((strcasecmp(str, "f32") == 0) || (strcasecmp(str, "float32") == 0))
+        return FLOAT32;
+    if ((strcasecmp(str, "f64") == 0) || (strcasecmp(str, "float64") == 0) ||
+        (strcasecmp(str, "double") == 0))
+        return FLOAT64;
+
+    /* VLT */
+    if (strcasecmp(str, "bytearray") == 0) return BYTEARRAY;
+    if (strcasecmp(str, "string") == 0)    return STRING;
+
+    /* Not a valid type */
+    return (scan_data_type_t)(-1);
+}
+
+/* write value_type address value */
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
 {
     int data_width = 0;
@@ -1470,55 +1512,51 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         goto retl;
     }
 
+    scan_data_type_t st = parse_scan_data_type(argv[1]);
+
     /* try int first */
-    if ((strcasecmp(argv[1], "i8") == 0)
-      ||(strcasecmp(argv[1], "int8") == 0))
+    if (st == INTEGER8)
     {
         data_width = 1;
         datatype = 0;
         fmt = "%"PRId8;
     }
-    else if ((strcasecmp(argv[1], "i16") == 0)
-           ||(strcasecmp(argv[1], "int16") == 0))
+    else if (st == INTEGER16)
     {
         data_width = 2;
         datatype = 0;
         fmt = "%"PRId16;
     }
-    else if ((strcasecmp(argv[1], "i32") == 0)
-           ||(strcasecmp(argv[1], "int32") == 0))
+    else if (st == INTEGER32)
     {
         data_width = 4;
         datatype = 0;
         fmt = "%"PRId32;
     }
-    else if ((strcasecmp(argv[1], "i64") == 0)
-           ||(strcasecmp(argv[1], "int64") == 0))
+    else if (st == INTEGER64)
     {
         data_width = 8;
         datatype = 0;
         fmt = "%"PRId64;
     }
-    else if ((strcasecmp(argv[1], "f32") == 0)
-           ||(strcasecmp(argv[1], "float32") == 0))  
+    else if (st == FLOAT32)
     {
         data_width = 4;
         datatype = 0;
         fmt = "%f";
     }
-    else if ((strcasecmp(argv[1], "f64") == 0)
-           ||(strcasecmp(argv[1], "float64") == 0))
+    else if (st == FLOAT64)
     {
         data_width = 8;
         datatype = 0;
         fmt = "%lf";
     }
-    else if (strcasecmp(argv[1], "bytearray") == 0)
+    else if (st == BYTEARRAY)
     {
         data_width = argc - 3;
         datatype = 1;
     }
-    else if (strcasecmp(argv[1], "string") == 0)
+    else if (st == STRING)
     {
         /* locate the string parameter, say locate the beginning of the 4th parameter (2 characters after the end of the 3rd paramter)*/
         int i;
@@ -1654,17 +1692,10 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
 
     if (strcasecmp(argv[1], "scan_data_type") == 0)
     {
-        if (strcasecmp(argv[2], "number") == 0) { vars->options.scan_data_type = ANYNUMBER; }
-        else if (strcasecmp(argv[2], "int") == 0) { vars->options.scan_data_type = ANYINTEGER; }
-        else if (strcasecmp(argv[2], "int8") == 0) { vars->options.scan_data_type = INTEGER8; }
-        else if (strcasecmp(argv[2], "int16") == 0) { vars->options.scan_data_type = INTEGER16; }
-        else if (strcasecmp(argv[2], "int32") == 0) { vars->options.scan_data_type = INTEGER32; }
-        else if (strcasecmp(argv[2], "int64") == 0) { vars->options.scan_data_type = INTEGER64; }
-        else if (strcasecmp(argv[2], "float") == 0) { vars->options.scan_data_type = ANYFLOAT; }
-        else if (strcasecmp(argv[2], "float32") == 0) { vars->options.scan_data_type = FLOAT32; }
-        else if (strcasecmp(argv[2], "float64") == 0) { vars->options.scan_data_type = FLOAT64; }
-        else if (strcasecmp(argv[2], "bytearray") == 0) { vars->options.scan_data_type = BYTEARRAY; }
-        else if (strcasecmp(argv[2], "string") == 0) { vars->options.scan_data_type = STRING; }
+        scan_data_type_t st = parse_scan_data_type(argv[2]);
+        if (st != (scan_data_type_t)(-1)) {
+            vars->options.scan_data_type = st;
+        }
         else
         {
             show_error("bad value for scan_data_type, see `help option`.\n");
