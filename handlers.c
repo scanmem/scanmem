@@ -936,6 +936,10 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
 
     /* user has specified an exact value of the variable to find */
     if (vars->matches) {
+        if (vars->num_matches == 0) {
+            show_error("there are currently no matches.\n");
+            return false;
+        }
         /* already know some matches */
         if (sm_checkmatches(vars, MATCHEQUALTO, &val) != true) {
             show_error("failed to search target address space.\n");
