@@ -632,7 +632,7 @@ DEFINE_STRING_SMALLOOP_EQUALTO_ROUTINE(56)
     }
 
 
-scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags, bool reverse_endianness)
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, match_flags uflags, bool reverse_endianness)
 {
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHANY, ANY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHUPDATE, UPDATE)
@@ -650,23 +650,53 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, con
 
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHANY, ANY)
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHUPDATE, UPDATE)
-    if (uflags) {
-        CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, (*uflags)*8)
-    }
+    CHOOSE_ROUTINE_VLT(BYTEARRAY, BYTEARRAY, MATCHEQUALTO, EQUALTO, uflags*8)
 
     CHOOSE_ROUTINE(STRING, VLT, MATCHANY, ANY)
     CHOOSE_ROUTINE(STRING, VLT, MATCHUPDATE, UPDATE)
-    if (uflags) {
-        CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, (*uflags)*8)
-    }
+    CHOOSE_ROUTINE_VLT(STRING, STRING, MATCHEQUALTO, EQUALTO, uflags*8)
 
     return NULL;
 }
 
+/* Possible flags per scan data type: if an incoming uservalue has none of the
+ * listed flags we're sure it's not going to be matched by the scan,
+ * so we reject it without even trying */
+static match_flags possible_flags_for_scan_data_type[] = {
+    [ANYNUMBER]  = flags_all,
+    [ANYINTEGER] = flags_integer,
+    [ANYFLOAT]   = flags_float,
+    [INTEGER8]   = flags_i8b,
+    [INTEGER16]  = flags_i16b,
+    [INTEGER32]  = flags_i32b,
+    [INTEGER64]  = flags_i64b,
+    [FLOAT32]    = flag_f32b,
+    [FLOAT64]    = flag_f64b,
+    [BYTEARRAY]  = flags_max,
+    [STRING]     = flags_max
+};
 
 bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval, bool reverse_endianness)
 {
-    const match_flags *uflags = uval ? &(uval->flags) : NULL;
+    match_flags uflags = uval ? uval->flags : flags_empty;
+
+    /* Check scans that need an uservalue */
+    if (mt == MATCHEQUALTO     ||
+        mt == MATCHNOTEQUALTO  ||
+        mt == MATCHGREATERTHAN ||
+        mt == MATCHLESSTHAN    ||
+        mt == MATCHRANGE       ||
+        mt == MATCHINCREASEDBY ||
+        mt == MATCHDECREASEDBY)
+    {
+        match_flags possible_flags = possible_flags_for_scan_data_type[dt];
+        if ((possible_flags & uflags) == flags_empty) {
+            /* There's no possibility to have a match, just abort */
+            sm_scan_routine = NULL;
+            return false;
+        }
+    }
+
     sm_scan_routine = sm_get_scanroutine(dt, mt, uflags, reverse_endianness);
     return (sm_scan_routine != NULL);
 }

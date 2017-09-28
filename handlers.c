@@ -1256,7 +1256,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     show_info("%s monitoring %10p for changes until interrupted...\n", timestamp, address);
 
-    valuecmp_routine = sm_get_scanroutine(ANYNUMBER, MATCHCHANGED, NULL, vars->options.reverse_endianness);
+    valuecmp_routine = sm_get_scanroutine(ANYNUMBER, MATCHCHANGED, flags_empty, vars->options.reverse_endianness);
     while (true) {
         const mem64_t *memory_ptr;
         size_t memlength;

@@ -76,6 +76,6 @@ extern scan_routine_t sm_scan_routine;
  */
 bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const uservalue_t* uval, bool reverse_endianness);
 
-scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const match_flags* uflags, bool reverse_endianness);
+scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, match_flags uflags, bool reverse_endianness);
 
 #endif /* SCANROUTINES_H */
