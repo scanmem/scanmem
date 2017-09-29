@@ -30,6 +30,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <errno.h>
+#include <inttypes.h> /* for fixed-width formatters */
 
 #include "value.h"
 #include "show_message.h"
@@ -38,8 +39,6 @@ void valtostr(const value_t *val, char *str, size_t n)
 {
     char buf[128];
     int np = 0;
-    int max_bytes = 0;
-    bool print_as_unsigned = false;
 
 #define FLAG_MACRO(bytes, string) \
     (val->flags & flag_u##bytes##b && val->flags & flag_s##bytes##b) ? (string " ") : \
@@ -60,21 +59,14 @@ void valtostr(const value_t *val, char *str, size_t n)
         goto err;
     }
 
-         if (val->flags & flag_u64b) { max_bytes = 8; print_as_unsigned =  true; }
-    else if (val->flags & flag_s64b) { max_bytes = 8; print_as_unsigned = false; }
-    else if (val->flags & flag_u32b) { max_bytes = 4; print_as_unsigned =  true; }
-    else if (val->flags & flag_s32b) { max_bytes = 4; print_as_unsigned = false; }
-    else if (val->flags & flag_u16b) { max_bytes = 2; print_as_unsigned =  true; }
-    else if (val->flags & flag_s16b) { max_bytes = 2; print_as_unsigned = false; }
-    else if (val->flags & flag_u8b ) { max_bytes = 1; print_as_unsigned =  true; }
-    else if (val->flags & flag_s8b ) { max_bytes = 1; print_as_unsigned = false; }
-
-    /* find the right format, considering different integer size implementations */
-         if (max_bytes == sizeof(long long)) np = snprintf(str, n, print_as_unsigned ? "%llu, %s" : "%lld, %s", print_as_unsigned ? get_ulonglong(val) : get_slonglong(val), buf);
-    else if (max_bytes == sizeof(long))      np = snprintf(str, n, print_as_unsigned ? "%lu, %s"  : "%ld, %s" , print_as_unsigned ? get_ulong(val) : get_slong(val), buf);
-    else if (max_bytes == sizeof(int))       np = snprintf(str, n, print_as_unsigned ? "%u, %s"   : "%d, %s"  , print_as_unsigned ? get_uint(val) : get_sint(val), buf);
-    else if (max_bytes == sizeof(short))     np = snprintf(str, n, print_as_unsigned ? "%hu, %s"  : "%hd, %s" , print_as_unsigned ? get_ushort(val) : get_sshort(val), buf);
-    else if (max_bytes == sizeof(char))      np = snprintf(str, n, print_as_unsigned ? "%hhu, %s" : "%hhd, %s", print_as_unsigned ? get_uchar(val) : get_schar(val), buf);
+         if (val->flags & flag_u64b) np = snprintf(str, n, "%" PRIu64 ", %s", get_u64b(val), buf);
+    else if (val->flags & flag_s64b) np = snprintf(str, n, "%" PRId64 ", %s", get_s64b(val), buf);
+    else if (val->flags & flag_u32b) np = snprintf(str, n, "%" PRIu32 ", %s", get_u32b(val), buf);
+    else if (val->flags & flag_s32b) np = snprintf(str, n, "%" PRId32 ", %s", get_s32b(val), buf);
+    else if (val->flags & flag_u16b) np = snprintf(str, n, "%" PRIu16 ", %s", get_u16b(val), buf);
+    else if (val->flags & flag_s16b) np = snprintf(str, n, "%" PRId16 ", %s", get_s16b(val), buf);
+    else if (val->flags & flag_u8b)  np = snprintf(str, n, "%" PRIu8 ", %s",  get_u8b(val),  buf);
+    else if (val->flags & flag_s8b)  np = snprintf(str, n, "%" PRId8 ", %s",  get_s8b(val),  buf);
     else if (val->flags & flag_f64b) np = snprintf(str, n, "%lg, %s", get_f64b(val), buf);
     else if (val->flags & flag_f32b) np = snprintf(str, n, "%g, %s", get_f32b(val), buf);
     else {
@@ -258,22 +250,3 @@ void free_uservalue(uservalue_t *uval)
     if (uval->wildcard_value)
         free((void*)uval->wildcard_value);
 }
-
-#define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(type, typename, signedness_letter) \
-type get_##signedness_letter##typename (const value_t* val) \
-{ \
-	     if (sizeof(type) <= 1) return (type)get_##signedness_letter##8b(val); \
-	else if (sizeof(type) <= 2) return (type)get_##signedness_letter##16b(val); \
-	else if (sizeof(type) <= 4) return (type)get_##signedness_letter##32b(val); \
-	else if (sizeof(type) <= 8) return (type)get_##signedness_letter##64b(val); \
-	else assert(false); \
-}
-#define DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(type, typename) \
-	DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(unsigned type, typename, u) \
-	DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTION(signed type, typename, s)
-
-DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(char, char)
-DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short)
-DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int)
-DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long)
-DEFINE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong)

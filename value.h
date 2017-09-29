@@ -179,16 +179,6 @@ void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must 
 #define set_f32b(val, v) (((val)->float32_value) = v)
 #define set_f64b(val, v) (((val)->float64_value) = v)
 
-#define DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(type, typename) \
-    unsigned type get_u##typename (const value_t *val); \
-    signed type get_s##typename (const value_t *val);
-
-DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(char, char);
-DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(short, short);
-DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(int, int);
-DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long, long);
-DECLARE_GET_BY_SYSTEM_DEPENDENT_TYPE_FUNCTIONS(long long, longlong);
-
 static inline void zero_value(value_t *val)
 {
     /* zero components separately -
