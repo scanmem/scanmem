@@ -996,6 +996,13 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
             ustr = pos + 2;
             if (!parse_uservalue_default(ustr, &vals[1]))
                 goto retl;
+
+            /* Check that the range is nonempty */
+            if (vals[0].float64_value > vals[1].float64_value) {
+                show_error("Empty range\n");
+                goto retl;
+            }
+
             /* Store the bitwise AND of both flags in the first value,
              * so that range scanroutines need only one flag testing. */
             vals[0].flags &= vals[1].flags;
