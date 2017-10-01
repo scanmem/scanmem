@@ -189,24 +189,26 @@ int main(int argc, char **argv)
     show_user_quick_help(vars->target);
 
     /* execute commands passed by `-c`, if any */
-    char *saveptr = NULL;
-    const char sep[] = ";\n";
-    for (char *line = strtok_r(initial_commands, sep, &saveptr);
-         line != NULL; line = strtok_r(NULL, sep, &saveptr))
-    {
-        if (vars->matches) {
-            show_user("%ld> %s\n", vars->num_matches, line);
-        } else {
-            show_user("> %s\n", line);
-        }
+    if (initial_commands) {
+        char *saveptr = NULL;
+        const char sep[] = ";\n";
+        for (char *line = strtok_r(initial_commands, sep, &saveptr);
+             line != NULL; line = strtok_r(NULL, sep, &saveptr))
+        {
+            if (vars->matches) {
+                show_user("%ld> %s\n", vars->num_matches, line);
+            } else {
+                show_user("> %s\n", line);
+            }
 
-        /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
-        if (sm_execcommand(vars, line) == false) {
-            show_user_quick_help(vars->target);
-        }
+            /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
+            if (sm_execcommand(vars, line) == false) {
+                show_user_quick_help(vars->target);
+            }
 
-        fflush(stdout);
-        fflush(stderr);
+            fflush(stdout);
+            fflush(stderr);
+        }
     }
 
     /* main loop, read input and process commands */
