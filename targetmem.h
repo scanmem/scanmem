@@ -47,7 +47,7 @@ typedef struct {
    - the number_of_bytes refers to the number of bytes in the child
      process's memory that are covered, not the number of bytes the struct
      takes up. It's the length of data. */
-typedef struct {
+typedef struct __attribute__((packed,aligned(sizeof(old_value_and_match_info)))) {
     void *first_byte_in_child;
     size_t number_of_bytes;
     old_value_and_match_info data[0];
