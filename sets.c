@@ -41,6 +41,7 @@
  * Sets support ranges. See the `delete` longdoc for more information.
  *
  * Restrictions of our set data-type:
+ * - No infinite sets.
  * - No empty sets.
  * - No duplicate elements.
  * - All the elements must be of the same type.
@@ -89,7 +90,7 @@ bool parse_uintset(const char *lptr, struct set *set, size_t maxsz)
 {
     const char        *tok, *tmpnum = NULL, *tmpnum_end;
     char              *tmpnum_endptr = NULL, *fail_reason = "BUG";
-    bool               got_num, is_hex = false;
+    bool               got_num, is_hex = false, invert = false;
     size_t             last_num = 0, arr_szfilled, arr_maxsz;
     size_t            *valarr;
     size_t             vaidx = 0;
@@ -134,6 +135,13 @@ bool parse_uintset(const char *lptr, struct set *set, size_t maxsz)
             }
 
         switch (*tok) {
+        case '!':
+            if (last_type != NIL) {
+                fail_reason = "inversion only allowed at beginning of set";
+                goto error;
+            }
+            invert = true;
+            continue;
         case ',':
             if (last_type == RANGE_TOK) {
                 fail_reason = "invalid range";
@@ -290,12 +298,34 @@ bool parse_uintset(const char *lptr, struct set *set, size_t maxsz)
         goto error;
     }
 
-    size_t *tmp_vaptr;
-    if ((tmp_vaptr = realloc(valarr, arr_szfilled * sizeof(size_t))) == NULL) {
-        fail_reason = "couldn't deallocate possibly unused end of the buffer";
-        goto error;
+    /* handle inverted sets */
+    if (invert) {
+        size_t *inv_valarr;
+        if (arr_szfilled == maxsz) {
+            fail_reason = "cannot invert the entire set!";
+            goto error;
+        }
+        if ((inv_valarr = malloc((maxsz - arr_szfilled) * sizeof(size_t))) == NULL) {
+            fail_reason = "OOM (Out Of Memory)";
+            goto error;
+        }
+        for (size_t matchid = 0, va_idx = 0, inv_idx = 0; matchid < maxsz; matchid++) {
+            if (va_idx == arr_szfilled || valarr[va_idx] > matchid)
+                inv_valarr[inv_idx++] = matchid;
+            else
+                va_idx++;
+        }
+        free(valarr);
+        valarr       = inv_valarr;
+        arr_szfilled = maxsz - arr_szfilled;
+    } else {
+        size_t *tmp_vaptr;
+        if ((tmp_vaptr = realloc(valarr, arr_szfilled * sizeof(size_t))) == NULL) {
+            fail_reason = "couldn't deallocate possibly unused end of the buffer";
+            goto error;
+        }
+        valarr = tmp_vaptr;
     }
-    valarr = tmp_vaptr;
 
     set->buf  = valarr;
     set->size = arr_szfilled;
