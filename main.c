@@ -99,7 +99,7 @@ static inline void show_user_quick_help(pid_t target)
     }
 }
 
-static void parse_parameters(int argc, char **argv, char **initial_commands)
+static void parse_parameters(int argc, char **argv, char **initial_commands, bool *exit_on_error)
 {
     struct option longopts[] = {
         {"pid",     1, NULL, 'p'},      /* target pid */
@@ -107,6 +107,7 @@ static void parse_parameters(int argc, char **argv, char **initial_commands)
         {"version", 0, NULL, 'v'},      /* print version */
         {"help",    0, NULL, 'h'},      /* print help summary */
         {"debug",   0, NULL, 'd'},      /* enable debug mode */
+        {"errexit", 0, NULL, 'e'},      /* exit on initial command failure */
         {NULL, 0, NULL, 0},
     };
     char *end;
@@ -116,7 +117,7 @@ static void parse_parameters(int argc, char **argv, char **initial_commands)
 
     /* process command line */
     while (!done) {
-        switch (getopt_long(argc, argv, "vhdp:c:", longopts, &optindex)) {
+        switch (getopt_long(argc, argv, "vhdep:c:", longopts, &optindex)) {
             case 'p':
                 vars->target = (pid_t) strtoul(optarg, &end, 0);
 
@@ -137,6 +138,9 @@ static void parse_parameters(int argc, char **argv, char **initial_commands)
                 exit(EXIT_FAILURE);
             case 'd':
                 vars->options.debug = 1;
+                break;
+            case 'e':
+                *exit_on_error = true;
                 break;
             case -1:
                 done = true;
@@ -161,7 +165,8 @@ static void parse_parameters(int argc, char **argv, char **initial_commands)
 int main(int argc, char **argv)
 {
     char *initial_commands = NULL;
-    parse_parameters(argc, argv, &initial_commands);
+    bool exit_on_error = false;
+    parse_parameters(argc, argv, &initial_commands, &exit_on_error);
 
     int ret = EXIT_SUCCESS;
     globals_t *vars = &sm_globals;
@@ -201,8 +206,8 @@ int main(int argc, char **argv)
                 show_user("> %s\n", line);
             }
 
-            /* sm_execcommand() returning failure is not fatal, just the command could not complete. */
             if (sm_execcommand(vars, line) == false) {
+                if (exit_on_error) goto end;
                 show_user_quick_help(vars->target);
             }
 
