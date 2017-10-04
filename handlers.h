@@ -89,7 +89,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc);
                 "To delete all matches associated with a particular library, see the\n" \
                 "`dregion` command, which will also remove any associated matches.\n\n" \
                 "The Set Format:\n" \
-                "[..a](,b..c | d, ...)[e..]\n" \
+                "[!][..a](,b..c | d, ...)[e..]\n" \
                 "The beginning and end of the set may include an optional \"open-ended\" range -\n" \
                 "`..a` means a range starting at match-id `0` to match-id `a`. `e..` means a range starting at\n" \
                 "match-id `e` to the last match-id. The rest is the same as the standard format.\n\n" \
