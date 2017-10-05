@@ -34,7 +34,7 @@ msgstr "Adresse zur Anzeige eingeben"
 
 #: ../gui/GameConqueror.ui.h:5
 msgid "Jump to address (CTRL+ENTER)"
-msgstr "Springe zu Adresse (CTRL+INVIO)"
+msgstr "Springe zu Adresse (CTRL+EINGABE)"
 
 #: ../gui/GameConqueror.ui.h:6
 msgid "_Refresh (CTRL+R)"
@@ -512,7 +512,7 @@ msgstr ""
 "scanmem ist ein einfaches interaktives Dienstprogramm, das verwendet wird, um "
 "die Adresse einer Variablen in einem Prozess zu finden. Dies kann für die "
 "Analyse oder Veränderung eines feindlichen Prozesses auf einer kompromittierten Maschine, "
-"Reverse Engineering, oder als "Pokefinder", um bei Videospielen zu betrügen, verwendet werden. "
+"Reverse Engineering, oder als \"Pokefinder\", um bei Videospielen zu betrügen, verwendet werden. "
 "Das Ziel von GameConqueror ist eine benutzerfreundliche und einfach zu bedienende "
 "CheatEngine-ähnliche Schnittstelle für scanmem bereitzustellen. "
  
@@ -523,7 +523,7 @@ msgstr "Funktionen:"
 
 #: ../gui/GameConqueror.appdata.xml.in.h:5
 msgid "Locking on multiple variables"
-msgstr "Überwache mehrere Variablen"
+msgstr "Mehrere Variablen einfrieren"
 
 #: ../gui/GameConqueror.appdata.xml.in.h:6
 msgid "Memory Viewer/Editor"
