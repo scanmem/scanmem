@@ -89,9 +89,11 @@ void data_to_bytearray_text (char *buf, int buf_length,
 
 match_location nth_match (matches_and_old_values_array *matches, size_t n);
 
-matches_and_old_values_array *delete_by_region (matches_and_old_values_array *array,
-                                                unsigned long *num_matches,
-                                                region_t *which, bool invert);
+/* deletes matches in [start, end) and resizes the matches array */
+matches_and_old_values_array *
+delete_in_address_range (matches_and_old_values_array *array,
+                         unsigned long *num_matches,
+                         void *start_address, void *end_address);
 
 /* The following functions are called in the hot scanning path and were moved
    to this header from the .c file so that they could be inlined */

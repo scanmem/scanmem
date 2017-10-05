@@ -648,7 +648,11 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
         {
             region_t *reg_to_delete = np->data;
 
-            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, reg_to_delete, false)))
+            void *start_address = reg_to_delete->start;
+            void *end_address = reg_to_delete->start + reg_to_delete->size;
+            vars->matches = delete_in_address_range(vars->matches, &vars->num_matches,
+                                                    start_address, end_address);
+            if (vars->matches == NULL)
             {
                 show_error("memory allocation error while deleting matches\n");
             }

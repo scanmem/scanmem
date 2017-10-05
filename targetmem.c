@@ -156,16 +156,20 @@ nth_match (matches_and_old_values_array *matches, size_t n)
     return (match_location){ NULL, 0 };
 }
 
+/* deletes matches in [start, end) and resizes the matches array */
 matches_and_old_values_array *
-delete_by_region (matches_and_old_values_array *matches,
-                  unsigned long *num_matches, region_t *which, bool invert)
+delete_in_address_range (matches_and_old_values_array *array,
+                         unsigned long *num_matches,
+                         void *start_address, void *end_address)
 {
+    assert(array);
+
     size_t reading_iterator = 0;
-    matches_and_old_values_swath *reading_swath_index = matches->swaths;
+    matches_and_old_values_swath *reading_swath_index = array->swaths;
 
     matches_and_old_values_swath reading_swath = *reading_swath_index;
 
-    matches_and_old_values_swath *writing_swath_index = matches->swaths;
+    matches_and_old_values_swath *writing_swath_index = array->swaths;
 
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
@@ -174,10 +178,8 @@ delete_by_region (matches_and_old_values_array *matches,
 
     while (reading_swath.first_byte_in_child) {
         void *address = reading_swath.first_byte_in_child + reading_iterator;
-        bool in_region = (address >= which->start &&
-                          address < which->start + which->size);
 
-        if ((in_region && invert) || (!in_region && !invert)) {
+        if (address < start_address || address >= end_address) {
             match_flags flags;
 
             flags = reading_swath_index->data[reading_iterator].match_info;
@@ -189,7 +191,7 @@ delete_by_region (matches_and_old_values_array *matches,
                 (We can get away with assuming that the pointers will stay
                  valid, because as we never add more data to the array than
                  there was before, it will not reallocate.) */
-            writing_swath_index = add_element(&matches,
+            writing_swath_index = add_element(&array,
                                       writing_swath_index, address,
                                       &reading_swath_index->data[reading_iterator]);
 
@@ -211,10 +213,5 @@ delete_by_region (matches_and_old_values_array *matches,
         }
     }
 
-    matches = null_terminate(matches, writing_swath_index);
-
-    if (!matches)
-        return NULL;
-
-    return matches;
+    return null_terminate(array, writing_swath_index);
 }
