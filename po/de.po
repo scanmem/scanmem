@@ -26,7 +26,7 @@ msgstr "_Adresse:"
 
 #: ../gui/GameConqueror.ui.h:3
 msgid "Target address here (CTRL+L)"
-msgstr "Zieladresse auswählen (CTRL+L)"
+msgstr "Zieladresse auswählen (STRG+L)"
 
 #: ../gui/GameConqueror.ui.h:4
 msgid "Enter address to view"
@@ -34,11 +34,11 @@ msgstr "Adresse zur Anzeige eingeben"
 
 #: ../gui/GameConqueror.ui.h:5
 msgid "Jump to address (CTRL+ENTER)"
-msgstr "Springe zu Adresse (CTRL+EINGABE)"
+msgstr "Springe zu Adresse (STRG+EINGABE)"
 
 #: ../gui/GameConqueror.ui.h:6
 msgid "_Refresh (CTRL+R)"
-msgstr "Aktualisieren (CTRL+R)"
+msgstr "Aktualisieren (STRG+R)"
 
 #: ../gui/GameConqueror.ui.h:7
 msgid "GameConqueror"
@@ -119,19 +119,19 @@ msgstr "_Wert: <span color=\"blue\"><u>?</u></span>"
 
 #: ../gui/GameConqueror.ui.h:38
 msgid "Enter search value here (CTRL+K/L)"
-msgstr "Suchwert hier eingeben (CTRL+K/L)"
+msgstr "Suchwert hier eingeben (STRG+K/L)"
 
 #: ../gui/GameConqueror.ui.h:39
 msgid "Insert value to search for (CTRL+K/L)"
-msgstr "Wert zum Suchen eingeben (CTRL+K/L)"
+msgstr "Wert zum Suchen eingeben (STRG+K/L)"
 
 #: ../gui/GameConqueror.ui.h:40
 msgid "Scan (CTRL+ENTER)"
-msgstr "Suchen (CTRL+INVIO)"
+msgstr "Suchen (STRG+EINGABE)"
 
 #: ../gui/GameConqueror.ui.h:41
 msgid "Reset (CTRL+R)"
-msgstr "Zurücksetzen (CTRL+R)"
+msgstr "Zurücksetzen (STRG+R)"
 
 #: ../gui/GameConqueror.ui.h:42
 msgid "Stop scan"
@@ -143,7 +143,7 @@ msgstr "Info"
 
 #: ../gui/GameConqueror.ui.h:44
 msgid "Select a process (CTRL+F)"
-msgstr "Prozess auswählen (CTRL+F)"
+msgstr "Prozess auswählen (STRG+F)"
 
 #: ../gui/GameConqueror.ui.h:45 ../gui/GameConqueror.py:928
 msgid "Select a process"
@@ -177,23 +177,23 @@ msgstr "_Suchumfang:"
 
 #: ../gui/GameConqueror.ui.h:53
 msgid "Memory Editor (CTRL+SHIFT+M)"
-msgstr "Speichereditor (CTRL+SHIFT+M)"
+msgstr "Speichereditor (STRG+UMSCHALT+M)"
 
 #: ../gui/GameConqueror.ui.h:54
 msgid "Save address list to file (CTRL+S)"
-msgstr "Adressliste in Datei speichern (CTRL+S)"
+msgstr "Adressliste in Datei speichern (STRG+S)"
 
 #: ../gui/GameConqueror.ui.h:55
 msgid "Load address list from file (CTRL+O)"
-msgstr "Adressliste aus Datei lesen (CTRL+O)"
+msgstr "Adressliste aus Datei lesen (STRG+O)"
 
 #: ../gui/GameConqueror.ui.h:56
 msgid "Remove all entries (CTRL+D)"
-msgstr "Alle Einträge entfernen (CTRL+D)"
+msgstr "Alle Einträge entfernen (STRG+D)"
 
 #: ../gui/GameConqueror.ui.h:57
 msgid "Manually add an entry (CTRL+M)"
-msgstr "Eintrag manuell hinzufügen (CTRL+M)"
+msgstr "Eintrag manuell hinzufügen (STRG+M)"
 
 #: ../gui/GameConqueror.ui.h:58
 msgid ""
