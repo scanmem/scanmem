@@ -587,15 +587,10 @@ bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
     return true;
 }
 
-/* dregion [!][x][,x,...] */
+/* dregion <region-id set> */
 bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
 {
-    unsigned id;
-    bool invert = false;
-    char *end = NULL, *idstr = NULL, *block = NULL;
-    element_t *np, *pp;
-    list_t *keep = NULL;
-    region_t *save;
+    struct set reg_set;
 
     /* need an argument */
     if (argc < 2) {
@@ -603,70 +598,39 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
         return false;
     }
 
-     /* check that there is a process known */
+    /* check that there is a process known */
     if (vars->target == 0) {
         show_error("no target specified, see `help pid`\n");
         return false;
     }
-    
-    /* check for an inverted match */
-    if (*argv[1] == '!') {
-        invert = true;
-        /* create a copy of the argument for strtok(), +1 to skip '!' */
-        block = strdupa(argv[1] + 1);
-        
-        /* check for a lone '!' */
-        if (*block == '\0') {
-            show_error("inverting an empty set, maybe try `reset` instead?\n");
-            return false;
-        }
-        
-        /* create a list to keep the specified regions */
-        if ((keep = l_init()) == NULL) {
-            show_error("memory allocation error.\n");
-            return false;
-        }
-        
-    } else {
-        invert = false;
-        block = strdupa(argv[1]);
+
+    /* check if there are any regions at all */
+    if (vars->regions->size == 0) {
+        show_error("no regions are known.\n");
+        return false;
     }
 
-    /* loop for every number specified, eg "1,2,3,4,5" */
-    while ((idstr = strtok(block, ",")) != NULL) {
-        region_t *r = NULL;
-        
-        /* set block to NULL for strtok() */
-        block = NULL;
-        
-        /* attempt to parse as a regionid */
-        id = strtoul(idstr, &end, 0x00);
+    size_t last_region_id = ((region_t*)(vars->regions->tail->data))->id;
 
-        /* check if that worked, "1,abc,4,,5,6foo" */
-        if (*end != '\0' || *idstr == '\0') {
-            show_error("could not parse argument %s.\n", idstr);
-            if (invert) {
-                if (l_concat(vars->regions, &keep) == -1) {
-                    show_error("there was a problem restoring saved regions.\n");
-                    l_destroy(vars->regions);
-                    l_destroy(keep);
-                    return false;
-                }
-            }
-            assert(keep == NULL);
-            return false;
-        }
+    if (!parse_uintset(argv[1], &reg_set, last_region_id + 1)) {
+        show_error("failed to parse the set, try `help dregion`.\n");
+        return false;
+    }
+
+    /* loop for every reg_id in the set */
+    for (size_t set_idx = 0; set_idx < reg_set.size; set_idx++) {
+        size_t reg_id = reg_set.buf[set_idx];
         
         /* initialize list pointers */
-        np = vars->regions->head;
-        pp = NULL;
+        element_t *np = vars->regions->head;
+        element_t *pp = NULL;
         
         /* find the correct region node */
         while (np) {
-            r = np->data;
+            region_t *r = np->data;
             
             /* compare the node id to the id the user specified */
-            if (r->id == id)
+            if (r->id == reg_id)
                 break;
             
             pp = np; /* keep track of prev for l_remove() */
@@ -675,76 +639,22 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
 
         /* check if a match was found */
         if (np == NULL) {
-            show_error("no region matching %u, or already moved.\n", id);
-            if (invert) {
-                if (l_concat(vars->regions, &keep) == -1) {
-                    show_error("there was a problem restoring saved regions.\n");
-                    l_destroy(vars->regions);
-                    l_destroy(keep);
-                    return false;
-                }
-            }
-            if (keep)
-                l_destroy(keep);
-            return false;
-        }
-        
-        np = pp;
-        
-        /* save this region if the match is inverted */
-        if (invert) {
-            
-            assert(keep != NULL);
-            
-            l_remove(vars->regions, np, (void *) &save);
-            if (l_append(keep, keep->tail, save) == -1) {
-                show_error("sorry, there was an internal memory error.\n");
-                free(save);
-                l_destroy(keep);
-                return false;
-            }
+            show_warn("no region matching %u, or already removed.\n", reg_id);
             continue;
         }
         
         /* check for any affected matches before removing it */
         if(vars->num_matches > 0)
         {
-            region_t *s;
+            region_t *reg_to_delete = np->data;
 
-            /* determine the correct pointer we're supposed to be checking */
-            if (np) {
-                assert(np->next);
-                s = np->next->data;
-            } else {
-                /* head of list */
-                s = vars->regions->head->data;
-            }
-            
-            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, false)))
+            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, reg_to_delete, false)))
             {
                 show_error("memory allocation error while deleting matches\n");
             }
         }
 
-        l_remove(vars->regions, np, NULL);
-    }
-
-    if (invert) {
-        region_t *s = keep->head->data;
-        
-        if (vars->num_matches > 0)
-        {
-            if (!(vars->matches = delete_by_region(vars->matches, &vars->num_matches, s, true)))
-            {
-                show_error("memory allocation error while deleting matches\n");
-            }
-        }
-            
-        /* okay, done with the regions list */
-        l_destroy(vars->regions);
-        
-        /* and switch to the keep list */
-        vars->regions = keep;
+        l_remove(vars->regions, pp, NULL);
     }
 
     return true;

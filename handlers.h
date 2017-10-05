@@ -137,10 +137,11 @@ bool handler__pid(globals_t *vars, char **argv, unsigned argc);
 bool handler__snapshot(globals_t *vars, char **argv, unsigned argc);
 
 #define DREGION_SHRTDOC "delete a known region by region-id"
-#define DREGION_LONGDOC "usage: dregion [!]region-id[,region-id[,...]]\n" \
-                "Remove the region `region-id` from the regions list, along with any matches\n" \
-                "affected from the match list. The `region-id` can be found using the `lregions`\n" \
-                "command. A leading `!` indicates the list should be inverted.\n" 
+#define DREGION_LONGDOC "usage: dregion <region-id set>\n" \
+                "Remove a set of region-id from the regions list,\n" \
+                "along with any matches affected from the match list.\n" \
+                "The `region-id` can be found using the `lregions` command.\n\n" \
+                SET_FORMAT_DOC
 
 bool handler__dregion(globals_t *vars, char **argv, unsigned argc);
 
