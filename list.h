@@ -26,7 +26,7 @@ typedef struct element {
 } element_t;
 
 typedef struct {
-    unsigned size;
+    size_t size;
     element_t *head;
     element_t *tail;
 } list_t;
@@ -44,7 +44,7 @@ int l_append(list_t * list, element_t * element, void *data);
 void l_remove(list_t * list, element_t * element, void **data);
 
 /* remove the nth element from head */
-void l_remove_nth(list_t * list, unsigned n, void **data);
+void l_remove_nth(list_t * list, size_t n, void **data);
 
 /* remove all elements from *src, and append to dst */
 int l_concat(list_t *dst, list_t **src);

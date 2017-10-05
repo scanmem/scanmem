@@ -147,7 +147,7 @@ void l_remove(list_t * list, element_t * element, void **data)
 }
 
 /* remove the nth element */
-void l_remove_nth(list_t * list, unsigned n, void **data)
+void l_remove_nth(list_t * list, size_t n, void **data)
 {
     element_t *np = list->head;
     
