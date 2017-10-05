@@ -29,6 +29,17 @@
 
 #include "scanmem.h"
 
+/* Common documentations */
+
+#define SET_FORMAT_DOC \
+    "The Set Format:\n" \
+    "[!][..a](,b..c | d, ...)[e..]\n" \
+    "An optional `!` at the beginning inverts the defined set.\n" \
+    "The beginning and end of the set may include an optional \"open-ended\" range:\n" \
+    "`..a` means a range starting at `0` to `a`.\n" \
+    "`e..` means a range starting at `e` to the last valid value.\n" \
+    "The rest is the same as the standard format.\n\n"
+
 /*
  * SHRTDOC's are one line descriptions of the supported command (shown with `help`).
  * LONGDOC's are detailed descriptions (shown with `help command`) (wrap them before column 80).
@@ -88,16 +99,14 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc);
                 "the `reset` command.\n" \
                 "To delete all matches associated with a particular library, see the\n" \
                 "`dregion` command, which will also remove any associated matches.\n\n" \
-                "The Set Format:\n" \
-                "[..a](,b..c | d, ...)[e..]\n" \
-                "The beginning and end of the set may include an optional \"open-ended\" range -\n" \
-                "`..a` means a range starting at match-id `0` to match-id `a`. `e..` means a range starting at\n" \
-                "match-id `e` to the last match-id. The rest is the same as the standard format.\n\n" \
+                SET_FORMAT_DOC \
                 "Examples:\n" \
-                "\tdelete ..5,10..15 - delete matches 0 through 5 and 10 through 15\n" \
-                "\tdelete ..5,14,20.. - delete matches 0 through 5, 14, and 20 through the last match\n\n" \
+                "\tdelete ..5,10..15  - delete matches 0 through 5 and 10 through 15\n" \
+                "\tdelete ..5,14,20.. - delete matches 0 through 5, 14, and 20 through the last match\n" \
+                "\tdelete !4..8,11    - delete all matches except for 4 through 8 and 11\n\n" \
                 "NOTE: Match-ids may be recalculated after matches are removed or added. However, the set\n" \
                 "      of matches is guaranteed to be deleted properly."
+
 
 bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
