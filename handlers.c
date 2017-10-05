@@ -92,7 +92,6 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
     char *delay = NULL;
-    char *end;
     bool cont = false;
     struct setting {
         char *matchids;
@@ -220,30 +219,17 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
             /* check if specific match(s) were specified */
             if (settings[block].matchids != NULL) {
-                char *id, *lmatches = NULL;
-                size_t num = 0;
+                struct set match_set;
+                match_location loc;
 
-                /* create local copy of the matchids for strtok() to modify */
-                lmatches = strdupa(settings[block].matchids);
+                if (parse_uintset(settings[block].matchids, &match_set, vars->num_matches)
+                        == false) {
+                    show_error("failed to parse the set, try `help set`.\n");
+                    goto fail;
+                }
 
-                /* now separate each match, separated by commas */
-                while ((id = strtok(lmatches, ",")) != NULL) {
-                    match_location loc;
-
-                    /* set to NULL for strtok() */
-                    lmatches = NULL;
-
-                    /* parse this id */
-                    num = strtoul(id, &end, 0x00);
-
-                    /* check if that succeeded */
-                    if (*id == '\0' || *end != '\0') {
-                        show_error("could not parse match id `%s`\n", id);
-                        goto fail;
-                    }
-
-                    /* check this is a valid match-id */
-                    loc = nth_match(vars->matches, num);
+                foreach_set_fw(i, &match_set) {
+                    loc = nth_match(vars->matches, match_set.buf[i]);
                     if (loc.swath) {
                         value_t v;
                         void *address = remote_address_of_nth_element(loc.swath, loc.index);
@@ -259,17 +245,17 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         fix_endianness(&v, vars->options.reverse_endianness);
                         if (sm_setaddr(vars->target, address, &v) == false) {
                             show_error("failed to set a value.\n");
+                            set_cleanup(&match_set);
                             goto fail;
                         }
-
                     } else {
-                        /* match-id > than number of matches */
-                        show_error("found an invalid match-id `%s`\n", id);
+                        show_error("BUG: set: id <%zu> match failure\n", match_set.buf[i]);
+                        set_cleanup(&match_set);
                         goto fail;
                     }
                 }
+                set_cleanup(&match_set);
             } else {
-                
                 matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
                 size_t reading_iterator = 0;
 
