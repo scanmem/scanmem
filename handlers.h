@@ -56,22 +56,25 @@
  */
 
 #define SET_SHRTDOC "change known matches to specified value"
-#define SET_LONGDOC "usage: set [match-id[,match-id,...]=]n[/d] [...]\n" \
-					"Inject the value `n` into the match numbers `match-id`, or if just `n` is\n" \
+#define SET_LONGDOC "usage: set <[match-id set=]n [...]>\n" \
+               "Inject the value `n` into `match-id set`, or if just `n` is\n" \
                "specified, all known matches. `n` can be specified in standard C language\n" \
                "notation, a leading 0x for hexadecimal, leading 0 for octal, and everything\n" \
                "else is assumed to be decimal. All known matches, along with their match-ids\n" \
                "can be displayed with the `list` command. Multiple match-ids can be specified,\n" \
-               "separated with commas and terminated with an '=' sign.\n" \
+               "as a set data-type, terminated with a '=' sign. See below for a description of\n" \
+               "the set data-type.\n" \
                "To set a value continually, for example to prevent a counter from decreasing,\n" \
                "suffix the command with '/', followed by the number of seconds to wait between\n" \
                "sets. Interrupt scanmem with ^C to stop the setting.\n\n" \
                "Note that this command cannot work for bytearray or string.\n\n" \
+               SET_FORMAT_DOC \
                "Examples:\n" \
                "\tset 10 - set all known matches to 10\n" \
                "\tset 0=0x03 - set match 0 to 0x03.\n" \
-               "\tset 0,1,2,7=0x32 - set matches 0,1,2 and 7 to 0x32\n" \
+               "\tset ..7=0x32 - set matches 0 through 7 to 0x32\n" \
                "\tset 0,3=42/8 - set matches 0 and 3 to 42 every 8 seconds\n" \
+               "\tset !4..12=5 - set all matches except 4 through 12 to 5" \
                "\tset 12,13,14=0x23/2 23,19=0/8 6=4 0 - complex example, can be combined" \
 
 bool handler__set(globals_t *vars, char **argv, unsigned argc);
