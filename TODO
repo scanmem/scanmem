@@ -1,7 +1,9 @@
 Current
 =======
 * option: whether to search in readonly regions
-* bytearray flag check (truncval_to_flags, checkmatches, update command for bytearray&string)
+* reduce memory consumption (e.g. OVaMI padding)
+* completely centralize the printing in `show_message`, so that printing to
+  some other output stream is easy to add
 
 * see: https://github.com/scanmem/scanmem/issues for further TODOs
 
@@ -9,7 +11,7 @@ Future
 ======
 * use PT_IO on freebsd, instead of PT_READ/WRITE_D
 * add working freebsd support
-* in target_memory_info_array.c, need check return value of allocate_enough_to_reach everywhere
+* in targetmem.c, check return value of allocate_enough_to_reach everywhere
 * search for values in files? (eg saved state)
 * macro support
 * automatically support zero and one based values.
