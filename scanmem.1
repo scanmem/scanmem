@@ -1,6 +1,6 @@
-.TH scanmem 1 "2017-04-15" "scanmem-0.17"
+.TH scanmem 1 "2017-10-11" "scanmem-0.17"
 .SH NAME
-scanmem - locate and modify a variable in an executing process.
+scanmem \- locate and modify variables in an executing process.
 
 .SH SYNOPSIS
 .B scanmem
@@ -12,15 +12,14 @@ scanmem - locate and modify a variable in an executing process.
 .B scanmem
 is an interactive debugging utility that can be used to isolate the address of a variable
 in an executing process by successively scanning the process' address space looking for
-matching values. By informing
-.B scanmem
+matching values.
+.br
+.RB "By informing " scanmem
 how the value of the variable changes over time, it can determine the actual location (or
 locations) of the variable by successively eliminating non-matches.
-.B scanmem
-determines where to look by searching for mappings with
-.I read
-/
-.I write
+.br
+.BR scanmem " determines where to look by searching for mappings with
+.IR read "/" write
 permission, these are referred to as regions. Users can eliminate regions they believe are
 likely unrelated to the target variable (for example, located in a shared library unrelated to
 the variable in question), this will improve the speed of the scan, which can initially be quite
@@ -38,50 +37,54 @@ this function is a good demonstration of how to use
 
 .SH USAGE
 .B scanmem
-should be invoked with the process id of the program you wish to debug as an argument. Once
-started,
-.B scanmem
-accepts interactive commands. These are described below, however entering
-.IR help
-at the
-.B >
-prompt will allow you to access
-.BR scanmem "'s"
-online documentation.
+should be invoked with the process id of the program you wish to debug as an argument.
+.RB "Once started, " scanmem " accepts interactive commands.
+These are described below, however entering
+.BR help " at the
+.BR > " prompt will allow you to access
+.BR scanmem "'s online documentation.
 
-The
-.IR target-program-pid
+.RI The " target-program-pid
 can be specified in decimal, hexadecimal, or octal using the standard C language notation
 (leading 0x for hexadecimal, leading 0 for octal, anything else is assumed to be decimal).
 
+.TP
 .BI "\-p, \-\-pid=" pid
-
 Set the
 .IR "target-program-pid".
 
-.B "\-v, \-\-version"
+.TP
+.BI "\-c, \-\-command=" cmd1[;cmd2][;...]
+Run given commands (separated by ";") before starting the interactive shell.
 
+.TP
+.B "\-v, \-\-version"
 Print version and exit.
 
+.TP
 .B "\-h, \-\-help"
-
 Print a short description of command line options then exit.
 
+.TP
 .B "\-d, \-\-debug"
-
 Run in debug mode, more information will be outputted.
+
+.TP
+.B "\-e, \-\-errexit"
+Exit on initial commands error, ignored during interactive mode.
 
 .SH COMMANDS
 
 While in interactive mode,
 .BR scanmem " prints a decimal number followed by " > ", the number is the current number of"
-possible candidates for the target variable that are known. 0 indicates that no possible variables
-have been eliminated yet.
+possible candidates for the target variable that are known. The absence of said number
+indicates that no possible variables have been eliminated yet.
+.br
 The default scan data type is "int".
 .RB "It can be changed with the " option " command."
 
+.TP
 .B n
-
 Where
 .B n
 represents any number in decimal, octal or hexadecimal, this command tells
@@ -92,8 +95,8 @@ that the current value of the target variable is exactly
 will begin a search of the entire address space, or the existing known matches (if any),
 eliminating any variable that does not have this value.
 
+.TP
 .B n..m
-
 This is like the
 .B n
 command but
@@ -104,153 +107,145 @@ and
 .B m
 inclusive instead.
 
-.BR ">", " <", " =", " !=" ", ..."
-
-The following commands are extremely useful for locating a variable where we cannot see its
-exact value but we can see for example how it changes over time like with a health bar. These
-commands usually cannot be used for the first scan but there are some exceptions:
+.TP
+.BR ">", " <", " +", " -", " =", " !="
+The following commands are extremely useful for locating a variable whose
+exact value we cannot see, but we can see how it changes over time, e.g. an health bar.
+These commands usually cannot be used for the first scan but there are some exceptions:
 .BR "> " n, " < " n, " = " "n and" " != " n.
 
+.RS
+.TP
 .BI "> " [n]
-
 .RI "If " n " is given, match values that are greater than " n "."
 .RB "Otherwise match all values that have increased."
 
+.TP
 .BI "< " [n]
-
 .RI "If " n " is given, match values that are less than " n "."
 .RB "Otherwise match all values that have decreased."
 
+.TP
 .BI "+ " [n]
-
 .RI "If " n " is given, match values that have been increased by " n "."
 .RB "Otherwise match all values that have increased (same as " > ")."
 
+.TP
 .BI "- " [n]
-
 .RI "If " n " is given, match values that have been decreased by " n "."
 .RB "Otherwise match all values that have decreased (same as " < ")."
 
+.TP
 .BI "= " [n]
+.RI "If " n " is given, match values that are equal to " n "
+.RB "(same as " n "). Otherwise match all values that have not changed."
 
-.RI "If " n " is given, match values that are equal to " n " (same as " n ")."
-.RB "Otherwise match all values that have not changed."
-
+.TP
 .BI "!= " [n]
-
 .RI "If " n " is given, match values that are different from " n "."
 .RB "Otherwise match all values that have changed."
+.RE
 
+.TP
 .B snapshot
-
 Match any value. This is useful when an initial value or range is not known for
 subsequent scans with
 .BR > ", " < ", " + ", " - ", " = ", and " != "."
 
+.TP
 .BI "\(dq " text
-
 Search for the provided
 .I text
 in memory if the scan data type is set to "string".
 
+.TP
 .B update
-
 Scans the current process, getting the current values of all matches. These values can be viewed with
 .BR list ", and are also the old values that " scanmem " compares to when using"
 .BR > ", " < ", or " = "."
 This command is equivalent to a search command that all current results match.
 
-.B list
-
-List all the possible candidates currently known, including their address, region id, match offset,
-region type, last known value and possible value types.
+.TP
+.BI list " [max_to_print]
+.RI "List up to " max_to_print " (default: " 10k ") possible candidates currently known,
+including their address, region id, match offset, region type, last known value and possible value types.
 The value in the first column is the match id, and can be used in conjunction with the
 .B delete
 command to eliminate matches.
 
-For experts: The match offset is determined by subtracting the load address of the associated
+The match offset is determined by subtracting the load address of the associated
 ELF file or region from the address. It can be used to bypass Address Space Layout Randomization
 (ASLR).
 
-.B delete
-.I match-id
+.TP
+.BI delete " match-id_set
+.RI "Delete matches in the " match-id_set ".
+.RI "The " match-ids " can be found from the output of the
+.BR list " command.
+.RI "Set notation: " "[!][..a](,b..c | d, ...)[e..]".
+.br
+.RB "To delete all known matches, see the " reset " command.
+.br
+To delete all the matches associated with a particular library, see the
+.BR dregion " command, which also removes any associated matches.
+.br
+Please note that match-ids may be recalculated after matches are removed or added.
 
-Delete match
-.IR match-id ", which can be found from the output of the"
-.B list
-command. To delete all matches, see the
-.B reset
-command, or to delete all matches associated with a particular library, see the
-.B dregion
-command, which also removes any associated matches. Please note that match-ids may be
-recalculated after matches are removed or added.
-
-.B watch
-.I match-id
-
+.TP
+.BI watch " match-id
 Monitor the value of
 .IR match-id ", and print its value as it changes. Every change is printed along with a timestamp,"
 you can interrupt this command with ^C to stop monitoring.
 
-.B set
-.I [match-id][,match-id,...]=]value[/delay] [...]
-
-Set the value
-.IR value " into the match numbers " match-id ", or if just "
-.IR value " is specified, all known matches."
-.I value
-can be specified in standard C language notation. All known matches, along with their
-match-id's can be displayed using the
-.B list
-command. Multiple
-.IR match-id's " can be specified, separated with commas and terminated with an "
-.IR = " sign. To set a value continually, suffix the command with " /
+.TP
+.BI set " [match-id_set=]value[/delay] [...]
+.RI "Set the value " value " into the match numbers specified in " match-id_set ",
+.RI "or if just " value " is specified, all known matches."
+.IR value " can be specified in standard C language notation.
+All known matches, along with their match-id's can be displayed using the
+.BR list " command.
+.RI Multiple " match-id_set" "s can be specified, terminated with an " = " sign.
+.RI "Set notation: " "[!][..a](,b..c | d, ...)[e..]".
+.br
+.RI "To set a value continually, suffix the command with " /
 followed by the number of seconds to wait between sets. You can interrupt the set command
 with ^C to return to the
-.B scanmem
-prompt. This can be used to sustain the value of a variable which decreases overtime, for
+.BR scanmem " prompt.
+This can be used to sustain the value of a variable which decreases over time, for
 example a timer that is decremented every second can be set to 100 every 10 seconds to
 prevent some property from ever changing.
 
 This command is used to change the value of the variable(s) once found by elimination.
 Please note, some applications will store values in multiple locations.
 
-.B write
-.I value_type address value
-
+.TP
+.BI write " value_type address value
 Manually set the value of the variable at the specified address.
-
-Names of
-.I value_type
+.br
+.RI "Names of " value_type
 are subject to change in different versions of
 .BR scanmem ","
 see more info using the `help write` command.
 
-.B dump
-.I address length [filename]
-
-Dump the memory region starting from
-.I address
-of length
-.I length
+.TP
+.BI dump " address length [filename]
+.RI "Dump the memory region starting from " address " of length " length
 in a human-readable format.
 
-If
-.I filename
-is given, data will be saved into the file, otherwise data will be displayed on stdout.
+.RI "If " filename " is given,
+data will be saved into the file, otherwise data will be displayed on stdout.
 
-.B pid
-.I [new-pid]
-
+.TP
+.BI pid " [new-pid]
 Print out the process id of the current target program, or change the target to
 .IR new-pid ", which will reset existing regions and matches."
 
+.TP
 .B reset
-
 Forget all known regions and matches and start again.
 
+.TP
 .B lregions
-
 List all the known regions, this can be used in combination with the
 .B dregion
 command to eliminate regions that the user believes are not related to the variable in question,
@@ -268,50 +263,41 @@ where an ELF file (exe/lib) has been loaded to. This helps to convert between th
 and in the associated ELF file. If the region does not belong to an ELF file, then it is the same as
 the start address.
 
-.B dregion
-.I [!]region-id[,region-id][,...]
+.TP
+.BI dregion " region-id_set
+.RI "Delete the regions in " region-id_set ", along with any matches from the match list.
+.RI "Set notation: " "[!][..a](,b..c | d, ...)[e..]".
+.br
+.RI "The " region-id "'s can be found in the output of the
+.BR lregions " command.
 
-Delete the region
-.IR region-id ", along with any matches from the match list. The"
-.I region-id
-can be found in the output of the
-.B lregions
-command. A leading
-.I !
-indicates the list should be inverted.
-
-.B option
-.I name value
-
+.TP
+.BI option " name value
 Change options at runtime. E.g. the scan data type can be changed.
 See `help option` for all possible names/values.
 
-.B shell
-.I shell-command
+.TP
+.BI shell " shell-command
+.RI "Execute " shell-command " using /bin/sh, then return.
 
-Execute
-.I shell-command
-using /bin/sh, then return.
-
-.B show
-.I info
-
+.TP
+.BI show " info
 Display information relating to
 .I info
 - see `help show` for details.
 
+.TP
 .B version
-
 Print the version of
 .B scanmem
 in use.
 
+.TP
 .B help
-
 Print a short summary of available commands.
 
-.BR exit
-
+.TP
+.B exit
 Detach from the target program and exit immediately.
 
 .SH EXAMPLES
@@ -319,7 +305,7 @@ Cheat at nethack, on systems where nethack is not installed sgid.
 
 .B ATTENTION: scanmem
 usually requires root privileges. See
-.B BUGS
+.B KNOWN ISSUES
 for details.
 
 .nf
@@ -451,7 +437,7 @@ Address Space Layout Randomization (ASLR) together with position-independent exe
 be loaded to different memory addresses at every game start. Advanced game trainers like
 ugtrain are required to periodically refill variables is such memory regions.
 
-.SH BUGS
+.SH KNOWN ISSUES
 
 .B scanmem
 usually requires root privileges for
@@ -476,7 +462,6 @@ in future, perhaps by assuming all integers are aligned by default. Suggestions 
 The
 .B snapshot
 command uses memory inefficiently, and should probably not be used on large programs.
-In future this will use a more intelligent format.
 
 .SH HOMEPAGE
 
@@ -491,12 +476,14 @@ Eli   Dupree  <elidupree(a)charter.net>
 WANG  Lu      <coolwanglu(a)gmail.com>
 .br
 Sebastian Parschauer <s.parschauer(a)gmx.de>
+.br
+Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
 
 All bug reports, suggestions or feedback welcome.
 
 .SH SEE ALSO
 gameconqueror(1)
-gdb(1)
 ptrace(2)
+proc(5)
 nethack(6)
 pidof(8)
