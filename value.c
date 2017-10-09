@@ -88,20 +88,27 @@ void valcpy(value_t * dst, const value_t * src)
     return;
 }
 
-/* dst.flags must be set beforehand */
+/* dst.flags must be set beforehand. Prefer setting floats to ints */
 void uservalue2value(value_t *dst, const uservalue_t *src)
 {
-    if (dst->flags & flag_u8b) set_u8b(dst, get_u8b(src));
-    if (dst->flags & flag_s8b) set_s8b(dst, get_s8b(src));
-    if (dst->flags & flag_u16b) set_u16b(dst, get_u16b(src));
-    if (dst->flags & flag_s16b) set_s16b(dst, get_s16b(src));
-    if (dst->flags & flag_u32b) set_u32b(dst, get_u32b(src));
-    if (dst->flags & flag_s32b) set_s32b(dst, get_s32b(src));
-    if (dst->flags & flag_u64b) set_u64b(dst, get_u64b(src));
-    if (dst->flags & flag_s64b) set_s64b(dst, get_s64b(src));
-    /* I guess integer and float cannot be matched together */
-    if (dst->flags & flag_f32b) set_f32b(dst, get_f32b(src));
-    if (dst->flags & flag_f64b) set_f64b(dst, get_f64b(src));
+    /* Zero whole value union, in case high bytes won't be set */
+    dst->uint64_value = 0;
+
+         if (dst->flags & flag_f64b) set_f64b(dst, get_f64b(src));
+    else if (dst->flags & flag_u64b) set_u64b(dst, get_u64b(src));
+    else if (dst->flags & flag_s64b) set_s64b(dst, get_s64b(src));
+
+    else if (dst->flags & flag_f32b) set_f32b(dst, get_f32b(src));
+    else if (dst->flags & flag_u32b) set_u32b(dst, get_u32b(src));
+    else if (dst->flags & flag_s32b) set_s32b(dst, get_s32b(src));
+
+    else if (dst->flags & flag_u16b) set_u16b(dst, get_u16b(src));
+    else if (dst->flags & flag_s16b) set_s16b(dst, get_s16b(src));
+
+    else if (dst->flags & flag_u8b)  set_u8b (dst, get_u8b(src));
+    else if (dst->flags & flag_s8b)  set_s8b (dst, get_s8b(src));
+
+    else assert(false);
 }
 
 /* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
