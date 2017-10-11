@@ -2,6 +2,7 @@
 
 [![Build Status](https://travis-ci.org/scanmem/scanmem.svg?branch=master)](https://travis-ci.org/scanmem/scanmem)
 [![Coverity Status](https://scan.coverity.com/projects/8565/badge.svg?flat=1")](https://scan.coverity.com/projects/scanmem)
+[![Chat on Slack](https://img.shields.io/badge/chat-on%20slack-blue.svg)](https://join.slack.com/t/scanmem/shared_invite/enQtMjU0OTE5NjczNjk4LWI1ZjEyNzMzZTdiMTZhOTUyNDRmMWFmNDQ3YTJhOWE5MDZmMjUzZmM1MzgzN2ViM2MzYmMzM2QzMWIxNDdiMjk)
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
 variable in an executing process. scanmem simply needs to be told the pid of
