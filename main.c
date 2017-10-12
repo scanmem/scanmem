@@ -44,10 +44,9 @@
 
 
 static const char copy_text[] =
-"Copyright (C) 2006-2009 Tavis Ormandy\n"
-"Copyright (C) 2009,2010 Tavis Ormandy, Eli Dupree, WANG Lu\n"
-"Copyright (C) 2011-2015 WANG Lu\n"
-"Copyright (C) 2015-2016 Sebastian Parschauer\n"
+"Copyright (C) 2006-2017 Scanmem authors\n"
+"See https://github.com/scanmem/scanmem/blob/master/AUTHORS for a full author list\n"
+"\n"
 "scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"
 "This is free software, and you are welcome to redistribute it\n"
 "under certain conditions; type `show copying' for details.\n\n";
