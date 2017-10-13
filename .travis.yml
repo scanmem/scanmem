@@ -12,7 +12,7 @@ env:
   - UBSAN_OPTIONS='halt_on_error=1'
 
 before_install:
-  - if [ "${COVERITY_SCAN_BRANCH}" == 1 ]; then echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca- ; fi
+  - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 addons:
   apt:
@@ -26,7 +26,7 @@ addons:
       name: "scanmem/scanmem"
       description: "Build submitted via Travis CI"
     notification_email: andreastacchiotti@gmail.com
-    build_command_prepend: "./autogen.sh && ./configure"
+    build_command_prepend: "./autogen.sh && ./configure CC=gcc"
     build_command: "make"
     branch_pattern: coverity_scan
 
