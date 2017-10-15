@@ -23,7 +23,7 @@
   </ul>
   </description>
   <screenshots>
-    <screenshot type="default" width="627" height="457">https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png</screenshot>
+    <screenshot type="default" width="550" height="587">https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png</screenshot>
   </screenshots>
   <url type="homepage">https://github.com/scanmem/scanmem</url>
   <updatecontact>i.gnatenko.brain@gmail.com</updatecontact>
