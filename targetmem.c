@@ -123,13 +123,11 @@ match_location
 nth_match (matches_and_old_values_array *matches, size_t n)
 {
     size_t i = 0;
-
-    matches_and_old_values_swath *reading_swath_index = matches->swaths;
-
+    matches_and_old_values_swath *reading_swath_index;
     size_t reading_iterator = 0;
 
-    if (!matches)
-        return (match_location){NULL, 0};
+    assert(matches);
+    reading_swath_index = matches->swaths;
 
     while (reading_swath_index->first_byte_in_child) {
         /* only actual matches are considered */
