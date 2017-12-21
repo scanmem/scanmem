@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -91,7 +92,7 @@
 #endif
 
 /* pager support */
-static FILE *get_pager(void)
+static FILE *get_pager(FILE *fallback_output)
 {
     const char *pager;
     pid_t pgpid;
@@ -101,6 +102,11 @@ static FILE *get_pager(void)
     FILE *retfd = NULL;
     char *const emptyvec[1] = { NULL };
 
+    assert(fallback_output != NULL);
+
+    if (sm_globals.options.backend)
+        return fallback_output;
+
     if ((pager = getenv("PAGER")) == NULL || *pager == '\0') {
         show_warn("get_pager(): couldn't get $PAGER, falling back to `more`\n");
         pager = "more";
@@ -108,7 +114,7 @@ static FILE *get_pager(void)
 
     if (pipe2(pgpipe, O_NONBLOCK) == -1) {
         show_error("get_pager(): pipe2() error `%s`. falling back to normal output\n", strerror(errno));
-        return stderr;
+        return fallback_output;
     }
     /*
      * we write here to ensure we will always
@@ -121,7 +127,7 @@ retry:
     switch ((pgpid = fork())) {
     case -1:
         show_warn("get_pager(): fork() failed. falling back to normal output\n");
-        return stderr;
+        return fallback_output;
     case 0:
         execvp(pager, emptyvec);
         /*
@@ -141,18 +147,18 @@ retry:
         if (waitpid(pgpid, &pgret, 0) == -1) {
             show_debug("pager: waitpid() error `%s`\n", strerror(errno));
             show_warn("pager: waitpid() error. falling back to normal output\n");
-            return stderr;
+            return fallback_output;
         } else {
             pgret = WEXITSTATUS(pgret);
             if (read(pgpipe[0], &pgcmdfail, 1) == -1) {
                 show_error("pager: pipe read() error `%s`. falling back to normal output\n", strerror(errno));
-                return stderr;
+                return fallback_output;
             }
             if (pgcmdfail) {
                 show_debug("pager: execvp(pg=%s) ret -> %d (%s)\n", pager, pgret, strerror(pgret));
                 if (!strcmp(pager, "more")) {
                     show_warn("pager: sh failed to execute more. falling back to normal output\n");
-                    return stderr;
+                    return fallback_output;
                 } else {
                     show_warn("pager: sh failed to execute `%s`. trying `more`...\n", pager);
                     pager = "more";
@@ -164,12 +170,28 @@ retry:
 
     if ((retfd = popen(pager, "w")) == NULL) {
         show_warn("pager: couldn't popen() pager, falling back to normal output\n");
-        return stderr;
+        return fallback_output;
     }
+
+    /*
+     * we need to ignore SIGPIPE in case the pager exits wihout draining the
+     * pipe (less seems to do this if you exit a large listing without
+     *       scrolling down)
+     */
+    signal(SIGPIPE, SIG_IGN);
 
     assert(retfd != NULL);
 
     return retfd;
+}
+
+static inline void close_pager(FILE *pager)
+{
+    if (pager != stdout && pager != stderr) {
+        if (pclose(pager) == -1 && errno != EPIPE)
+            show_warn("pclose() error: %s\n", strerror(errno));
+        signal(SIGPIPE, SIG_DFL);
+    }
 }
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
@@ -403,9 +425,11 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     unsigned long num = 0;
     size_t buf_len = 128; /* will be realloc'd later if necessary */
     element_t *np = NULL;
-    char *v;
+    char *v = NULL;
     const char *bytearray_suffix = ", [bytearray]";
     const char *string_suffix = ", [string]";
+    struct winsize w;
+    FILE *pager;
 
     unsigned long max_to_print = 10000;
     if (argc > 1) {
@@ -432,11 +456,20 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
     size_t reading_iterator = 0;
 
+    if (ioctl(STDOUT_FILENO, TIOCGWINSZ, &w) == -1) {
+        if (!vars->options.backend)
+            show_warn("handler__list(): couldn't get terminal size.\n");
+        pager = get_pager(stdout);
+    } else {
+        /* check if the output fits in the terminal window */
+        pager = (w.ws_row >= MIN(max_to_print, vars->num_matches)) ? stdout : get_pager(stdout);
+    }
+
     /* list all known matches */
     while (reading_swath_index->first_byte_in_child) {
         if (num == max_to_print) {
-            if (num < vars->num_matches)
-                show_user("[...]\n");
+            if (num < vars->num_matches && !vars->options.backend)
+                fprintf(pager, "[...]\n");
             break;
         }
 
@@ -454,7 +487,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 if (v == NULL)
                 {
                     show_error("memory allocation failed.\n");
-                    return false;
+                    goto fail;
                 }
                 data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags);
                 assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
@@ -466,7 +499,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 if (v == NULL)
                 {
                     show_error("memory allocation failed.\n");
-                    return false;
+                    goto fail;
                 }
                 data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags);
                 assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
@@ -500,7 +533,7 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 }
                 np = np->next;
             }
-            printf("[%2lu] "POINTER_FMT", %2u + "POINTER_FMT", %5s, %s\n",
+            fprintf(pager, "[%2lu] "POINTER_FMT", %2u + "POINTER_FMT", %5s, %s\n",
                    num++, address_ul, region_id, match_off, region_type, v);
         }
 
@@ -514,7 +547,12 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
     }
 
     free(v);
+    close_pager(pager);
     return true;
+fail:
+    free(v);
+    close_pager(pager);
+    return false;
 }
 
 bool handler__delete(globals_t * vars, char **argv, unsigned argc)
@@ -1101,18 +1139,18 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
     list_t *commands = vars->commands;
     element_t *np = NULL;
     command_t *def = NULL;
-    FILE *outfd;
+    FILE *pager;
     assert(commands != NULL);
     assert(argc >= 1);
 
     np = commands->head;
 
-    outfd = get_pager();
+    pager = get_pager(stderr);
 
     /* print version information for generic help */
     if (argv[1] == NULL) {
-        vars->printversion(outfd);
-        fprintf(outfd, "\n");
+        vars->printversion(pager);
+        fprintf(pager, "\n");
     }
 
     /* traverse the commands list, printing out the relevant documentation */
@@ -1132,12 +1170,12 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
             }
 
             /* print out command name */
-            fprintf(outfd, "%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
+            fprintf(pager, "%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
 
             /* detailed information requested about specific command */
         } else if (command->command
                    && strcasecmp(argv[1], command->command) == 0) {
-            fprintf(outfd, "%s\n", command->longdoc ? command-> longdoc : "missing documentation");
+            fprintf(pager, "%s\n", command->longdoc ? command-> longdoc : "missing documentation");
             ret = true;
             goto retl;
         }
@@ -1149,15 +1187,14 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
         show_error("unknown command `%s`\n", argv[1]);
         ret = false;
     } else if (def) {
-        fprintf(outfd, "\n%s\n", def->longdoc ? def->longdoc : "");
+        fprintf(pager, "\n%s\n", def->longdoc ? def->longdoc : "");
         ret = true;
     }
     
     ret = true;
 
 retl:
-    if (outfd != stderr)
-        pclose(outfd);
+    close_pager(pager);
 
     return ret;
 }
