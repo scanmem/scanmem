@@ -31,7 +31,7 @@
 
 static sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
 static sighandler_t oldsig;     /* reinstalled before longjmp */
-static unsigned intused;
+static unsigned intr_used;
 
 /* signal handler used to handle an interrupt during commands */
 static void interrupted(int n)
@@ -40,7 +40,7 @@ static void interrupted(int n)
     siglongjmp(jmpbuf, 1);
 }
 
-#define INTERRUPTABLE() ((oldsig = signal(SIGINT, interrupted)), intused = 1, sigsetjmp(jmpbuf, 1))
-#define ENDINTERRUPTABLE() (intused ? ((void) signal(SIGINT, oldsig), intused = 0) : (intused = 0))
+#define INTERRUPTABLE() ((oldsig = signal(SIGINT, interrupted)), intr_used = 1, sigsetjmp(jmpbuf, 1))
+#define ENDINTERRUPTABLE() (intr_used ? ((void) signal(SIGINT, oldsig), intr_used = 0) : (intr_used = 0))
 
 #endif /* INTERRUPT_H */
