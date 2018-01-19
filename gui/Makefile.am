@@ -21,7 +21,7 @@ EXTRA_DIST = gameconqueror.in consts.py.in
 
 desktopdir=$(datadir)/applications
 polkitdir=$(datadir)/polkit-1/actions
-appdatadir=$(datadir)/appdata
+appdatadir=$(datadir)/metainfo
 
 install-data-hook:
 	chmod +x $(DESTDIR)$(gameconquerordir)/GameConqueror.py
