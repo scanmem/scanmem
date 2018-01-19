@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Copyright 2014 Igor Gnatenko <i.gnatenko.brain@gmail.com> -->
-<application>
-  <id type="desktop">GameConqueror.desktop</id>
+<component type="desktop">
+  <id>org.scanmem.gameconqueror</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0+</project_license>
   <_name>Game Conqueror</_name>
@@ -23,8 +23,12 @@
   </ul>
   </description>
   <screenshots>
-    <screenshot type="default" width="550" height="587">https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png</screenshot>
+    <screenshot type="default">
+      <image type="source" width="550" height="587">
+        https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png
+      </image>
+    </screenshot>
   </screenshots>
   <url type="homepage">https://github.com/scanmem/scanmem</url>
-  <updatecontact>i.gnatenko.brain@gmail.com</updatecontact>
-</application>
+  <update_contact>i.gnatenko.brain@gmail.com</update_contact>
+</component>
