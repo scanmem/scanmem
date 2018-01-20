@@ -483,11 +483,11 @@ msgstr "%s è troppo grande per %s"
 msgid "Cannot locate item: %s"
 msgstr "Impossibile trovare: %s"
 
-#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1 ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
 msgid "Game Conqueror"
 msgstr "Game Conqueror"
 
-#: ../gui/GameConqueror.desktop.in.h:2
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:2
 msgid "A game hacking tool. A GUI front-end for scanmem."
 msgstr "Uno strumento per barare ai videogiochi. Una GUI per scanmem."
 
@@ -499,11 +499,11 @@ msgstr "Avvia Game Conqueror"
 msgid "Authentication is required to run Game Conqueror"
 msgstr "È necessario autenticarsi per avviare Game Conqueror"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:2
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:2
 msgid "Game hacking tool. GUI front-end for scanmem."
 msgstr "Uno strumento per barare ai videogiochi. GUI per scanmem."
 
-#: ../gui/GameConqueror.appdata.xml.in.h:3
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:3
 msgid ""
 "scanmem is a simple interactive debugging utility, used to locate the "
 "address of a variable in an executing process. This can be used for the "
@@ -519,18 +519,18 @@ msgstr ""
 "GameConqueror mira a fornire un'interfaccia per scanmem, simile a "
 "CheatEngine, è user-friendly e semplice da usare."
 
-#: ../gui/GameConqueror.appdata.xml.in.h:4
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:4
 msgid "Features:"
 msgstr "Caratteristiche:"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:5
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:5
 msgid "Locking on multiple variables"
 msgstr "Blocco di multiple variabili"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:6
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:6
 msgid "Memory Viewer/Editor"
 msgstr "Editor di memoria"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:7
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:7
 msgid "... many to be done"
 msgstr "... e molto altro"

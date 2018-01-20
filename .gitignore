@@ -30,8 +30,8 @@ tags
 test-driver
 
 # GameConqueror
-gui/GameConqueror.appdata.xml
-gui/GameConqueror.desktop
+gui/org.scanmem.gameconqueror.metainfo.xml
+gui/org.scanmem.gameconqueror.desktop
 gui/consts.py
 gui/*.pyc
 gui/*.pyo

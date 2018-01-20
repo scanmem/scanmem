@@ -477,11 +477,11 @@ msgstr "%s es muy grande para %s"
 msgid "Cannot locate item: %s"
 msgstr "No puede encontrar item: %s"
 
-#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1 ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
 msgid "Game Conqueror"
 msgstr "Game Conqueror"
 
-#: ../gui/GameConqueror.desktop.in.h:2
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:2
 msgid "A game hacking tool. A GUI front-end for scanmem."
 msgstr "Una herramienta de hackeo de juegos. Una interfaz gráfica para scanmem."
 
@@ -493,11 +493,11 @@ msgstr "Ejecutar Game Conqueror"
 msgid "Authentication is required to run Game Conqueror"
 msgstr "Se requiere autenticación para correr Game Conqueror"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:2
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:2
 msgid "Game hacking tool. GUI front-end for scanmem."
 msgstr "Herramienta de hackeo de juegos. Interfaz gráfica para scanmem."
 
-#: ../gui/GameConqueror.appdata.xml.in.h:3
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:3
 msgid ""
 "scanmem is a simple interactive debugging utility, used to locate the "
 "address of a variable in an executing process. This can be used for the "
@@ -513,18 +513,18 @@ msgstr ""
 "GameConqueror busca proveer una interfaz estilo CheatEngine para scanmem, "
 "es amigable y fácil de usar."
 
-#: ../gui/GameConqueror.appdata.xml.in.h:4
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:4
 msgid "Features:"
 msgstr "Características:"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:5
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:5
 msgid "Locking on multiple variables"
 msgstr "Bloqueo en mútliples variables"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:6
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:6
 msgid "Memory Viewer/Editor"
 msgstr "Visor/Editor de memoria"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:7
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:7
 msgid "... many to be done"
 msgstr "... muchas a completar"
