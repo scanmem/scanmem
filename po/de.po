@@ -480,11 +480,11 @@ msgstr "%s ist zu groß für %s"
 msgid "Cannot locate item: %s"
 msgstr "Kann %s nicht finden"
 
-#: ../gui/GameConqueror.desktop.in.h:1 ../gui/GameConqueror.appdata.xml.in.h:1
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1 ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
 msgid "Game Conqueror"
 msgstr "Game Conqueror"
 
-#: ../gui/GameConqueror.desktop.in.h:2
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:2
 msgid "A game hacking tool. A GUI front-end for scanmem."
 msgstr "Eine grafische Oberfläche für scanmem, ein Werkzeug zur Speichermanipulation"
 
@@ -496,11 +496,11 @@ msgstr "GameConqueror ausführen"
 msgid "Authentication is required to run Game Conqueror"
 msgstr "Authorisierung ist notwendig für Game Conqueror"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:2
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:2
 msgid "Game hacking tool. GUI front-end for scanmem."
 msgstr "Eine grafische Oberfläche für scanmem, ein Werkzeug zur Speichermanipulation"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:3
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:3
 msgid ""
 "scanmem is a simple interactive debugging utility, used to locate the "
 "address of a variable in an executing process. This can be used for the "
@@ -517,18 +517,18 @@ msgstr ""
 "CheatEngine-ähnliche Schnittstelle für scanmem bereitzustellen. "
  
 
-#: ../gui/GameConqueror.appdata.xml.in.h:4
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:4
 msgid "Features:"
 msgstr "Funktionen:"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:5
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:5
 msgid "Locking on multiple variables"
 msgstr "Mehrere Variablen einfrieren"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:6
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:6
 msgid "Memory Viewer/Editor"
 msgstr "Speichereditor"
 
-#: ../gui/GameConqueror.appdata.xml.in.h:7
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:7
 msgid "... many to be done"
 msgstr "... viele weitere"
