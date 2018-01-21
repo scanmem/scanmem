@@ -206,6 +206,7 @@ bool getcommand(globals_t *vars, char **line)
                 show_error("sorry, there was a memory allocation error.\n");
                 return false;
             }
+            return true; /* exit immediately to not commit `__eof` to history */
         }
 
         if (strlen(*line)) {

@@ -34,6 +34,11 @@ extern rl_completion_func_t *rl_attempted_completion_function;
 char **rl_completion_matches(const char *text, rl_compentry_func_t
                              *entry_function);
 char *readline(const char *prompt);
+
+/* History, all doing nothing */
 void add_history(const char *line);
+int read_history (const char *filename);
+int write_history (const char *filename);
+int history_truncate_file (const char *filename, int nlines);
 
 #endif /* READLINE_H */

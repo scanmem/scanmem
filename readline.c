@@ -53,6 +53,7 @@ char *readline(const char *prompt)
 }
 
 /* don't maintain a history */
-void add_history(const char *line)
-{
-}
+void add_history(const char *line) {}
+int read_history (const char *filename) { return 0; }
+int write_history (const char *filename) { return 0; }
+int history_truncate_file (const char *filename, int nlines) { return 0; }

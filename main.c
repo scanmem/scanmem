@@ -28,14 +28,25 @@
 
 #include "config.h"
 
-#include <unistd.h>
+#include <errno.h>
 #include <string.h>
 #include <stdio.h>
-#include <sys/types.h>
 #include <stdlib.h>
 #include <getopt.h>
 #include <stdbool.h>
 
+#include <pwd.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
+#if HAVE_LIBREADLINE
+# include <readline/history.h>
+#else
+# include "readline.h"
+#endif
+
+#include "common.h"
 #include "scanmem.h"
 #include "commands.h"
 #include "show_message.h"
@@ -96,6 +107,61 @@ static inline void show_user_quick_help(pid_t target)
     } else {
         show_user("Please enter current value, or \"help\" for other commands.\n");
     }
+}
+
+static inline char *get_config_dir(void)
+{
+    /*
+     * Try to find our config folder in order:
+     * - XDG config dir
+     * - $HOME/.config
+     * - <system-given home>/.config
+     *
+     * In normal cases the dir will end up being: $HOME/.config/scanmem
+     */
+
+    char *sm_config_dir;
+
+    const char *config_dir = util_getenv("XDG_CONFIG_HOME");
+    if (config_dir == NULL) {
+        const char *home_dir = util_getenv("HOME");
+        if (home_dir == NULL) {
+            home_dir = getpwuid(getuid())->pw_dir;
+        }
+
+        size_t sm_config_dir_len = strlen(home_dir) + strlen("/.config/scanmem") + 1;
+        sm_config_dir = malloc(sm_config_dir_len * sizeof(char));
+        if (sm_config_dir == NULL)
+            return NULL;
+        snprintf(sm_config_dir, sm_config_dir_len, "%s/.config/scanmem", home_dir);
+    }
+    else {
+        size_t sm_config_dir_len = strlen(config_dir) + strlen("/scanmem") + 1;
+        sm_config_dir = malloc(sm_config_dir_len * sizeof(char));
+        if (sm_config_dir == NULL)
+            return NULL;
+        snprintf(sm_config_dir, sm_config_dir_len, "%s/scanmem", config_dir);
+    }
+
+    return sm_config_dir;
+}
+
+/* Recursive `mkdir()` implementation, from
+ * https://stackoverflow.com/a/9210960/3288954
+ * Takes a full file path as input */
+static inline int mkpath(const char *file_path, mode_t mode)
+{
+    assert(file_path != NULL);
+    char* p;
+    for (p = strchr(file_path + 1, '/'); p != NULL; p = strchr(p + 1, '/')) {
+        *p = '\0';
+        if (mkdir(file_path, mode) == -1 && errno != EEXIST) {
+            *p='/';
+            return -1;
+        }
+        *p = '/';
+    }
+    return 0;
 }
 
 static void parse_parameters(int argc, char **argv, char **initial_commands, bool *exit_on_error)
@@ -214,9 +280,30 @@ int main(int argc, char **argv)
             fflush(stderr);
         }
     }
+    if (vars->exit)
+        goto end;
+
+    /* Start of interactive mode: recover history from history file */
+    const unsigned int hist_max_size = 1000;
+    char *sm_config_dir = get_config_dir();
+    if (sm_config_dir == NULL) {
+        show_error("Couldn't allocate memory");
+        goto end;
+    }
+
+    size_t hist_file_len = strlen(sm_config_dir) + strlen("/history") + 1;
+    char * hist_file = malloc(hist_file_len * sizeof(char));
+    if (hist_file == NULL) {
+        show_error("Couldn't allocate memory");
+        goto end;
+    }
+    snprintf(hist_file, hist_file_len, "%s/history", sm_config_dir);
+    free(sm_config_dir);
+
+    read_history(hist_file);
 
     /* main loop, read input and process commands */
-    while (!vars->exit) {
+    while (true) {
         char *line;
 
         /* reads in a commandline from the user and returns a pointer to it in *line */
@@ -235,6 +322,19 @@ int main(int argc, char **argv)
 
         fflush(stdout);
         fflush(stderr);
+
+        if (vars->exit) {
+            /* write history: create directory if needed.
+             * Permissions used are mandated by the FD spec:
+             * https://standards.freedesktop.org/basedir-spec/latest/ar01s04.html
+             */
+            if (mkpath(hist_file, 0700) == 0) {
+                write_history(hist_file);
+                history_truncate_file(hist_file, hist_max_size);
+            }
+            free(hist_file);
+            break;
+        }
     }
 
 end:
