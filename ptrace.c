@@ -61,6 +61,7 @@
 #include "scanmem.h"
 #include "show_message.h"
 #include "targetmem.h"
+#include "interrupt.h"
 
 /* progress handling */
 #define NUM_DOTS (10)
@@ -305,6 +306,8 @@ bool sm_checkmatches(globals_t *vars,
     if (sm_attach(vars->target) == false)
         return false;
 
+    INTERRUPTABLESCAN();
+
     while (reading_swath.first_byte_in_child) {
         unsigned int match_length = 0;
         const mem64_t *memory_ptr;
@@ -367,7 +370,10 @@ bool sm_checkmatches(globals_t *vars,
                     print_a_dot();
                 }
                 /* stop scanning if asked to */
-                if (vars->stop_flag) break;
+                if (vars->stop_flag) {
+                    printf("\n");
+                    break;
+                }
             }
         }
         ++bytes_scanned;
@@ -383,7 +389,9 @@ bool sm_checkmatches(globals_t *vars,
             required_extra_bytes_to_record = 0; /* just in case */
         }
     }
-    
+
+    ENDINTERRUPTABLE();
+
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index)))
     {
         show_error("memory allocation error while reducing matches-array size\n");
@@ -458,6 +466,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         show_info("use the \"reset\" command to refresh regions.\n");
         return sm_detach(vars->target);
     }
+
+    INTERRUPTABLESCAN();
     
     total_size = sizeof(matches_and_old_values_array);
 
@@ -596,10 +606,15 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         free(data);
         vars->scan_progress += progress_per_dot;
         /* stop scanning if asked to */
-        if (vars->stop_flag) break;
+        if (vars->stop_flag) {
+            printf("\n");
+            break;
+        }
         n = n->next;
         show_user("ok\n");
     }
+
+    ENDINTERRUPTABLE();
 
     /* tell front-end we've finished */
     vars->scan_progress = MAX_PROGRESS;

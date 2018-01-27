@@ -44,7 +44,7 @@ typedef struct {
     matches_and_old_values_array *matches;
     unsigned long num_matches;
     double scan_progress;
-    bool stop_flag;
+    volatile bool stop_flag;
     list_t *regions;
     list_t *commands;              /* command handlers */
     const char *current_cmdline;   /* the command being executed */
