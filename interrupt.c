@@ -17,9 +17,6 @@
     along with this library.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef INTERRUPT_H
-#define INTERRUPT_H
-
 #ifndef _GNU_SOURCE
 # define _GNU_SOURCE    /* for sighandler_t */
 #endif
@@ -27,18 +24,23 @@
 #include <setjmp.h>
 #include <signal.h>
 
-extern sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
-extern sighandler_t oldsig;     /* reinstalled before longjmp */
-extern unsigned intr_used;
+#include "scanmem.h"
+#include "interrupt.h"
+
+sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
+sighandler_t oldsig;     /* reinstalled before longjmp */
+unsigned intr_used;
 
 /* signal handler used to handle an interrupt during commands */
-void interrupted(int);
+void interrupted(int n)
+{
+    (void) n;
+    siglongjmp(jmpbuf, 1);
+}
 
 /* signal handler used to handle an interrupt during scans */
-void interrupt_scan(int);
-
-#define INTERRUPTABLE() ((oldsig = signal(SIGINT, interrupted)), intr_used = 1, sigsetjmp(jmpbuf, 1))
-#define INTERRUPTABLESCAN() ((oldsig = signal(SIGINT, interrupt_scan)), intr_used = 1)
-#define ENDINTERRUPTABLE() (intr_used ? ((void) signal(SIGINT, oldsig), intr_used = 0) : (intr_used = 0))
-
-#endif /* INTERRUPT_H */
+void interrupt_scan(int n)
+{
+    (void) n;
+    sm_set_stop_flag(true);
+}

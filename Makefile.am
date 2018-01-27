@@ -21,14 +21,15 @@ libscanmem_la_include_HEADERS = commands.h \
     sets.h \
     show_message.h \
     targetmem.h \
-    value.h
+    value.h \
+    interrupt.h
 
 libscanmem_la_SOURCES = commands.c \
     common.h \
     ptrace.c \
     handlers.h \
     handlers.c \
-    interrupt.h \
+    interrupt.c \
     list.c \
     licence.h \
     maps.c \
