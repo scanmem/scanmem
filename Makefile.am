@@ -30,7 +30,6 @@ libscanmem_la_SOURCES = commands.c \
     handlers.h \
     handlers.c \
     interrupt.c \
-    list.c \
     licence.h \
     maps.c \
     scanmem.c \
