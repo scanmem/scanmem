@@ -2,7 +2,8 @@
     Prompt and command completion.
 
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
-    Copyright (C) 2010,2011 Lu Wang <coolwanglu@gmail.com>
+    Copyright (C) 2010,2011      Lu Wang <coolwanglu@gmail.com>
+    Copyright (C) 2018           Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of scanmem.
 
@@ -41,29 +42,81 @@
 #endif
 
 #include "menu.h"
+#include "list.h"
 #include "getline.h"
 #include "scanmem.h"
 #include "commands.h"
 #include "show_message.h"
 
-/* command generator for readline completion */
-static char *commandgenerator(const char *text, int state)
+/* sub-command generator for readline completion */
+static char *subcommandgenerator(char *start, int state, list_t *list,
+                                 unsigned *index)
 {
-    static unsigned index = 0;
+    unsigned i;
+    element_t *np;
+    size_t len;
+    char *spos = strchr(start, ' ');
+
+    len = strlen(start);
+    if (spos)
+        len = spos - start;
+
+    /* reset generator if state == 0, otherwise continue from last time */
+    *index = (state && !spos) ? *index : 0;
+
+    np = list->head;
+
+    /* skip to the last node checked */
+    for (i = 0; np && i < *index; i++)
+        np = np->next;
+
+    /* traverse the completion list, checking for matches */
+    while (np) {
+        completion_t *compl = np->data;
+
+        np = np->next;
+
+        /* record progress */
+        (*index)++;
+
+        if (compl == NULL || compl->word == NULL)
+            continue;
+
+        /* check if we have a match */
+        if (strncmp(start, compl->word, len) == 0) {
+            if (!spos)
+                return strdup(compl->word);
+            if (!compl->list)
+                return NULL;
+            while (*spos == ' ')
+                spos++;
+            return subcommandgenerator(spos, state, compl->list, &compl->index);
+        }
+    }
+
+    return NULL;
+}
+
+static char *find_command(const char *start, int state, unsigned *index,
+                          bool is_subcmd)
+{
     unsigned i;
     size_t len;
     element_t *np;
     globals_t *vars = &sm_globals;
+    char *spos = strchr(start, ' ');
 
     /* reset generator if state == 0, otherwise continue from last time */
-    index = state ? index : 0;
+    *index = (state && !spos) ? *index : 0;
 
     np = vars->commands ? vars->commands->head : NULL;
 
-    len = strlen(text);
+    len = strlen(start);
+    if (spos)
+        len = spos - start;
 
     /* skip to the last node checked */
-    for (i = 0; np && i < index; i++)
+    for (i = 0; np && i < *index; i++)
         np = np->next;
 
     /* traverse the commands list, checking for matches */
@@ -73,7 +126,7 @@ static char *commandgenerator(const char *text, int state)
         np = np->next;
 
         /* record progress */
-        index++;
+        (*index)++;
 
         /* if shortdoc is NULL, this is not supposed to be user visible */
         if (command == NULL || command->command == NULL
@@ -81,12 +134,32 @@ static char *commandgenerator(const char *text, int state)
             continue;
 
         /* check if we have a match */
-        if (strncmp(text, command->command, len) == 0) {
-            return strdup(command->command);
+        if (strncmp(start, command->command, len) == 0) {
+            if (!spos)
+                return strdup(command->command);
+            if (!command->completions || is_subcmd)
+                return NULL;
+            while (*spos == ' ')
+                spos++;
+            if (strncmp(command->command, "help", sizeof("help") - 1) == 0)
+                return find_command(spos, state, &command->complidx, true);
+            return subcommandgenerator(spos, state, command->completions,
+                                       &command->complidx);
         }
     }
 
     return NULL;
+}
+
+/* command generator for readline completion */
+static char *commandgenerator(const char *text, int state)
+{
+    char *start = rl_line_buffer;
+    static unsigned index = 0;
+
+    while (*start == ' ')
+        start++;
+    return find_command(start, state, &index, false);
 }
 
 /* custom completor program for readline */
@@ -97,8 +170,8 @@ static char **commandcompletion(const char *text, int start, int end)
     /* never use default completer (filenames), even if I dont generate any matches */
     rl_attempted_completion_over = 1;
 
-    /* only complete on the first word, the command */
-    return start ? NULL : rl_completion_matches(text, commandgenerator);
+    /* complete everything */
+    return rl_completion_matches(text, commandgenerator);
 }
 
 

@@ -128,62 +128,70 @@ bool sm_init(void)
 
     /* NULL shortdoc means don't display this command in `help` listing */
     sm_registercommand("set", handler__set, vars->commands, SET_SHRTDOC,
-                       SET_LONGDOC);
+                       SET_LONGDOC, NULL);
     sm_registercommand("list", handler__list, vars->commands, LIST_SHRTDOC,
-                       LIST_LONGDOC);
+                       LIST_LONGDOC, NULL);
     sm_registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
-                       DELETE_LONGDOC);
+                       DELETE_LONGDOC, NULL);
     sm_registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-                       RESET_LONGDOC);
+                       RESET_LONGDOC, NULL);
     sm_registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
-                       PID_LONGDOC);
+                       PID_LONGDOC, NULL);
     sm_registercommand("snapshot", handler__snapshot, vars->commands,
-                       SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC);
+                       SNAPSHOT_SHRTDOC, SNAPSHOT_LONGDOC, NULL);
     sm_registercommand("dregion", handler__dregion, vars->commands,
-                       DREGION_SHRTDOC, DREGION_LONGDOC);
+                       DREGION_SHRTDOC, DREGION_LONGDOC, NULL);
     sm_registercommand("dregions", handler__dregion, vars->commands,
-                       NULL, DREGION_LONGDOC);
+                       NULL, DREGION_LONGDOC, NULL);
     sm_registercommand("lregions", handler__lregions, vars->commands,
-                       LREGIONS_SHRTDOC, LREGIONS_LONGDOC);
+                       LREGIONS_SHRTDOC, LREGIONS_LONGDOC, NULL);
     sm_registercommand("version", handler__version, vars->commands,
-                       VERSION_SHRTDOC, VERSION_LONGDOC);
+                       VERSION_SHRTDOC, VERSION_LONGDOC, NULL);
     sm_registercommand("=", handler__operators, vars->commands, NOTCHANGED_SHRTDOC,
-                       NOTCHANGED_LONGDOC);
+                       NOTCHANGED_LONGDOC, NULL);
     sm_registercommand("!=", handler__operators, vars->commands, CHANGED_SHRTDOC,
-                       CHANGED_LONGDOC);
+                       CHANGED_LONGDOC, NULL);
     sm_registercommand("<", handler__operators, vars->commands, LESSTHAN_SHRTDOC,
-                       LESSTHAN_LONGDOC);
+                       LESSTHAN_LONGDOC, NULL);
     sm_registercommand(">", handler__operators, vars->commands, GREATERTHAN_SHRTDOC,
-                       GREATERTHAN_LONGDOC);
+                       GREATERTHAN_LONGDOC, NULL);
     sm_registercommand("+", handler__operators, vars->commands, INCREASED_SHRTDOC,
-                       INCREASED_LONGDOC);
+                       INCREASED_LONGDOC, NULL);
     sm_registercommand("-", handler__operators, vars->commands, DECREASED_SHRTDOC,
-                       DECREASED_LONGDOC);
+                       DECREASED_LONGDOC, NULL);
     sm_registercommand("\"", handler__string, vars->commands, STRING_SHRTDOC,
-                       STRING_LONGDOC);
+                       STRING_LONGDOC, NULL);
     sm_registercommand("update", handler__update, vars->commands, UPDATE_SHRTDOC,
-                       UPDATE_LONGDOC);
+                       UPDATE_LONGDOC, NULL);
     sm_registercommand("exit", handler__exit, vars->commands, EXIT_SHRTDOC,
-                       EXIT_LONGDOC);
-    sm_registercommand("quit", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
-    sm_registercommand("q", handler__exit, vars->commands, NULL, EXIT_LONGDOC);
+                       EXIT_LONGDOC, NULL);
+    sm_registercommand("quit", handler__exit, vars->commands, NULL,
+                       EXIT_LONGDOC, NULL);
+    sm_registercommand("q", handler__exit, vars->commands, NULL,
+                       EXIT_LONGDOC, NULL);
     sm_registercommand("help", handler__help, vars->commands, HELP_SHRTDOC,
-                    HELP_LONGDOC);
-    sm_registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC, SHELL_LONGDOC);
-    sm_registercommand("!", handler__shell, vars->commands, NULL, SHELL_LONGDOC);
+                       HELP_LONGDOC, HELP_COMPLETE);
+    sm_registercommand("shell", handler__shell, vars->commands, SHELL_SHRTDOC,
+                       SHELL_LONGDOC, NULL);
+    sm_registercommand("!", handler__shell, vars->commands, NULL, SHELL_LONGDOC,
+                       NULL);
     sm_registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
-                    WATCH_LONGDOC);
-    sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC, SHOW_LONGDOC);
-    sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC, DUMP_LONGDOC);
-    sm_registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC, WRITE_LONGDOC);
-    sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC, OPTION_LONGDOC);
+                       WATCH_LONGDOC, NULL);
+    sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC,
+                       SHOW_LONGDOC, SHOW_COMPLETE);
+    sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC,
+                       DUMP_LONGDOC, NULL);
+    sm_registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC,
+                       WRITE_LONGDOC, WRITE_COMPLETE);
+    sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC,
+                       OPTION_LONGDOC, OPTION_COMPLETE);
 
     /* commands beginning with __ have special meaning */
-    sm_registercommand("__eof", handler__eof, vars->commands, NULL, NULL);
+    sm_registercommand("__eof", handler__eof, vars->commands, NULL, NULL, NULL);
 
     /* special value NULL means no other matches */
     sm_registercommand(NULL, handler__default, vars->commands, DEFAULT_SHRTDOC,
-                       DEFAULT_LONGDOC);
+                       DEFAULT_LONGDOC, NULL);
 
     return true;
 }
@@ -192,6 +200,8 @@ void sm_cleanup(void)
 {
     /* free any allocated memory used */
     l_destroy(sm_globals.regions);
+    if (sm_globals.commands)
+        sm_free_all_completions(sm_globals.commands);
     l_destroy(sm_globals.commands);
 
     /* free matches array */
