@@ -25,6 +25,8 @@
 typedef char *rl_compentry_func_t(const char *, int);
 typedef char **rl_completion_func_t(const char *, int, int);
 
+static char *rl_line_buffer = "";
+
 extern int rl_attempted_completion_over;
 extern const char *rl_readline_name;
 extern rl_completion_func_t *rl_attempted_completion_function;

@@ -4,6 +4,7 @@
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
+    Copyright (C) 2018           Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of libscanmem.
 
@@ -38,6 +39,133 @@
 #include "common.h"
 #include "show_message.h"
 
+static void free_completions(list_t *list)
+{
+    element_t *np = list->head;
+    completion_t *compl = NULL;
+
+    while (np) {
+        compl = np->data;
+        np = np->next;
+        if (!compl)
+            continue;
+        if (compl->list) {
+            free_completions(compl->list);
+            l_destroy(compl->list);
+            compl->list = NULL;
+        }
+        if (compl->word) {
+            free(compl->word);
+            compl->word = NULL;
+        }
+    }
+}
+
+void sm_free_all_completions(list_t *commands)
+{
+    element_t *np = commands->head;
+    command_t *command = NULL;
+
+    while (np) {
+        command = np->data;
+        np = np->next;
+        if (command && command->completions) {
+            free_completions(command->completions);
+            l_destroy(command->completions);
+        }
+    }
+}
+
+static bool add_completion(list_t *wlist, char **start, size_t wlen)
+{
+    char *word = NULL;
+    completion_t *compl = NULL;
+
+    word = malloc(wlen + 1);
+    if (!word)
+        goto err;
+    compl = calloc(1, sizeof(completion_t));
+    if (!compl)
+        goto err_free;
+    memcpy(word, *start, wlen);
+    word[wlen] = '\0';
+    *start += wlen + 1;
+    compl->word = word;
+    if (l_append(wlist, NULL, compl) == -1)
+        goto err_free;
+
+    return true;
+err_free:
+    if (compl)
+        free(compl);
+    if (word)
+        free(word);
+err:
+    return false;
+}
+
+static list_t *init_subcmdlist(command_t *command, const char *complstr)
+{
+    char *cpos, *bopos = NULL, *bcpos = NULL;
+    char *start = (char *)complstr;
+    bool in_sublist = false;
+    list_t *wlist = NULL, *list;
+    completion_t *compl = NULL;
+
+    wlist = l_init();
+    if (!wlist)
+        return NULL;
+    list = wlist;
+
+    bopos = strchr(start, '{');
+    while ((cpos = strchr(start, ','))) {
+        if (in_sublist) {
+            bcpos = strchr(start, '}');
+            if (bcpos && cpos > bcpos) {
+                if (cpos != bcpos + 1)
+                    goto err;
+                cpos = bcpos;
+                in_sublist = false;
+                bopos = strchr(start, '{');
+            }
+        } else if (bopos && cpos > bopos) {
+            cpos = bopos;
+            in_sublist = true;
+            bopos = NULL;
+        }
+        if (!add_completion(list, &start, cpos - start))
+            goto err;
+        if (list == wlist && in_sublist && list->head->data) {
+            compl = list->head->data;
+            compl->list = l_init();
+            list = compl->list;
+        } else if (list != wlist && !in_sublist) {
+            list = wlist;
+            if (bcpos && cpos && cpos == bcpos)
+                start++;
+            bcpos = NULL;
+        }
+    }
+    if (in_sublist) {
+        bcpos = strchr(start, '}');
+        if (!bcpos)
+            goto err;
+        if (!add_completion(list, &start, strlen(start) - 1))
+            goto err;
+    } else {
+        if (!add_completion(wlist, &start, strlen(start)))
+            goto err;
+    }
+
+    command->completions = wlist;
+    return wlist;
+
+err:
+    free_completions(wlist);
+    l_destroy(wlist);
+    return NULL;
+}
+
 /*
  * sm_registercommand - add the command and a pointer to its handler to the commands list.
  *
@@ -48,7 +176,7 @@
  */
 
 bool sm_registercommand(const char *command, handler_ptr handler, list_t *commands,
-                        char *shortdoc, char *longdoc)
+                        char *shortdoc, char *longdoc, const char *complstr)
 {
     command_t *data;
 
@@ -74,6 +202,8 @@ bool sm_registercommand(const char *command, handler_ptr handler, list_t *comman
     data->handler = handler;
     data->shortdoc = shortdoc;
     data->longdoc = longdoc;
+    data->completions = (complstr) ? init_subcmdlist(data, complstr) : NULL;
+    data->complidx = 0;
 
     /* add new command to list */
     if (l_append(commands, NULL, data) == -1) {

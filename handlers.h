@@ -209,6 +209,23 @@ bool handler__version(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__exit(globals_t *vars, char **argv, unsigned argc);
 
+/*
+ * Completion string syntax:
+ * Separate words in the first level of the sub-command list with ',' without
+ * any spaces in between. Example: "word1,word2,word3".
+ *
+ * Add another list right behind a word in the first level surrounded by
+ * '{' and '}'. Place the ',' to mark the end of the first level completion
+ * word right behind '}'. More levels than two are currently not supported.
+ * Example: "word1{word1.1,word1.2},word2{word2.1,word2.2}"
+ *
+ * Special words are surrounded by '<' and '>'. The completer reacts on them
+ * by filling in the requested data. Currently, only "<command>" is supported
+ * to fill in the commands as a parameter for the "help" command. No further
+ * sub-commands are allowed for this. For the help command it is actually
+ * easier to compare the command name with "help" to do this trick.
+ */
+#define HELP_COMPLETE "<command>"
 #define HELP_SHRTDOC "access online documentation, use `help command` for specific help"
 #define HELP_LONGDOC "usage: help [command]\n" \
                 "If `command` is specified, print detailed information about command `command`\n" \
@@ -277,6 +294,7 @@ bool handler__shell(globals_t *vars, char **argv, unsigned argc);
 bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
 /*XXX: improve this */
+#define SHOW_COMPLETE "copying,warranty,version"
 #define SHOW_SHRTDOC "display information about scanmem."
 #define SHOW_LONGDOC "usage: show <info>\n" \
                 "Display information relating to <info>.\n" \
@@ -292,6 +310,8 @@ bool handler__show(globals_t *vars, char **argv, unsigned argc);
     
 bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
+#define VALUE_TYPES "int8,int16,int32,int64,float32,float64,bytearray,string"
+#define WRITE_COMPLETE VALUE_TYPES
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
                 "\n" \
@@ -310,6 +330,8 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
+#define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
+    "},region_scan_level{1,2,3},dump_with_ascii{0,1},endianness{0,1,2}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
