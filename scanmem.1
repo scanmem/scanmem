@@ -300,6 +300,14 @@ Print a short summary of available commands.
 .B exit
 Detach from the target program and exit immediately.
 
+.SH HISTORY
+.RB "In interactive mode " scanmem " will retrieve the previous commands history
+at startup and update it at closure.
+.RI "The file used by default is " $XDG_CONFIG_HOME/scanmem/history " , which
+.RI "will be " ~/.config/scanmem/history " under normal configurations.
+.br
+The maximum size of the history is currently 1000 lines.
+
 .SH EXAMPLES
 Cheat at nethack, on systems where nethack is not installed sgid.
 
