@@ -11,7 +11,7 @@ LT_INIT
 IT_PROG_INTLTOOL
 AM_PROG_CC_C_O
 
-AC_CHECK_FUNCS(memset strcasecmp strchr strdup strerror strtoul getline)
+AC_CHECK_FUNCS(getline secure_getenv)
 
 if test "x$ac_cv_func_getline" = "xno"; then
   AC_CHECK_FUNCS(fgetln)
