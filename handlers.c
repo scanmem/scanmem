@@ -107,7 +107,7 @@ static FILE *get_pager(FILE *fallback_output)
     if (sm_globals.options.backend)
         return fallback_output;
 
-    if ((pager = getenv("PAGER")) == NULL || *pager == '\0') {
+    if ((pager = util_getenv("PAGER")) == NULL || *pager == '\0') {
         show_warn("get_pager(): couldn't get $PAGER, falling back to `more`\n");
         pager = "more";
     }
