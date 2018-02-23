@@ -23,7 +23,7 @@ if test "x$ac_cv_func_getline" = "xno"; then
 fi
 AM_CONDITIONAL([HAVE_GETLINE], [test "x$ac_cv_func_getline" != "xno"])
 
-AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/time.h)
+AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/ioctl.h sys/time.h)
 
 AC_FUNC_ALLOCA
 AC_FUNC_STRTOD
@@ -86,6 +86,14 @@ AS_IF([test "x$android" = "xno"], [
   # /proc/pid/mem is there but reading interesting data fails
   AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
 ])
+
+# Allows disabling procmem support
+AC_ARG_ENABLE(procmem, [AS_HELP_STRING([--disable-procmem],
+                         [forcefully disable proc/pid/mem support])])
+AS_IF([test "x$enable_procmem" = "xno"], [
+  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
+])
+
 
 # Check for termcap and readline or bypass checking for the libraries.
 AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
