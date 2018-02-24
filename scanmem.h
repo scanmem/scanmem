@@ -91,7 +91,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type,
                       const uservalue_t *uservalue);
 bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength);
 bool sm_attach(pid_t target);
-bool sm_read_array(pid_t target, const void *addr, char *buf, int len);
-bool sm_write_array(pid_t target, void *addr, const void *data, int len);
+bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
+bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
 
 #endif /* SCANMEM_H */

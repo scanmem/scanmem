@@ -5,7 +5,7 @@
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
     Copyright (C) 2015           Sebastian Parschauer <s.parschauer@gmx.de>
-    Copyright (C) 2017           Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
+    Copyright (C) 2017-2018      Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
  
     This file is part of libscanmem.
 
@@ -75,13 +75,22 @@
 
 /* ptrace peek buffer, used by peekdata() as a mirror of the process memory.
  * Max size is the maximum allowed rounded VLT scan length, aka UINT16_MAX,
- * plus a `long` for shifting efficiency */
-#define MAX_PEEKBUF_SIZE ((1<<16) + sizeof(long))
+ * plus a `PEEKDATA_CHUNK`, to store a full extra chunk for maneuverability */
+#if HAVE_PROCMEM
+# define PEEKDATA_CHUNK 2048
+#else
+# define PEEKDATA_CHUNK sizeof(long)
+#endif
+#define MAX_PEEKBUF_SIZE ((1<<16) + PEEKDATA_CHUNK)
 static struct {
     uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from ptrace()  */
-    unsigned size;              /* number of entries (in bytes) */
+    unsigned size;              /* amount of valid memory stored (in bytes) */
     const char *base;           /* base address of cached region */
-    pid_t pid;                  /* what pid this applies to */
+#if HAVE_PROCMEM
+    int procmem_fd;             /* file descriptor of the opened `/proc/<pid>/mem` file */
+#else
+    pid_t pid;                  /* pid of scanned process */
+#endif
 } peekbuf;
 
 
@@ -102,8 +111,28 @@ bool sm_attach(pid_t target)
         return false;
     }
 
-    /* flush the peek buffer */
-    memset(&peekbuf, 0x00, sizeof(peekbuf));
+    /* reset the peek buffer */
+    peekbuf.size = 0;
+    peekbuf.base = NULL;
+
+#if HAVE_PROCMEM
+    { /* open the `/proc/<pid>/mem` file */
+        char mem[32];
+        int fd;
+
+        /* print the path to mem file */
+        snprintf(mem, sizeof(mem), "/proc/%d/mem", target);
+
+        /* attempt to open the file */
+        if ((fd = open(mem, O_RDONLY)) == -1) {
+            show_error("unable to open %s.\n", mem);
+            return false;
+        }
+        peekbuf.procmem_fd = fd;
+    }
+#else
+    peekbuf.pid = target;
+#endif
 
     /* everything looks okay */
     return true;
@@ -112,30 +141,97 @@ bool sm_attach(pid_t target)
 
 bool sm_detach(pid_t target)
 {
-    // addr is ignored on Linux, but should be 1 on FreeBSD in order to let the child process continue execution where it had been interrupted
+#if HAVE_PROCMEM
+    /* close the mem file before detaching */
+    close(peekbuf.procmem_fd);
+#endif
+
+    /* addr is ignored on Linux, but should be 1 on FreeBSD in order to let
+     * the child process continue execution where it had been interrupted */
     return ptrace(PTRACE_DETACH, target, 1, 0) == 0;
 }
 
 
+/* Reads data from the target process, and places it on the `dest_buffer`
+ * using either `ptrace` or `pread` on `/proc/pid/mem`.
+ * The target process is not passed, but read from the static peekbuf.
+ * `sm_attach()` MUST be called before this function. */
+static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address, size_t size)
+{
+    size_t nread = 0;
+
+#if HAVE_PROCMEM
+    do {
+        ssize_t ret = pread(peekbuf.procmem_fd, dest_buffer + nread,
+                            size - nread, (unsigned long)(target_address + nread));
+        if (ret == -1) {
+            /* we can't read further, report what was read */
+            return nread;
+        }
+        else {
+            /* some data was read */
+            nread += ret;
+        }
+    } while (nread < size);
+#else
+    /* Read the memory with `ptrace()`: the API specifies that `ptrace()` returns a `long`, which
+     * is the size of a word for the current architecture, so this section will deal in `long`s */
+    assert(size % sizeof(long) == 0);
+    errno = 0;
+    for (nread = 0; nread < size; nread += sizeof(long)) {
+        const char *ptrace_address = target_address + nread;
+        long ptraced_long = ptrace(PTRACE_PEEKDATA, peekbuf.pid, ptrace_address, NULL);
+
+        /* check if ptrace() succeeded */
+        if (UNLIKELY(ptraced_long == -1L && errno != 0)) {
+            /* it's possible i'm trying to read partially oob */
+            if (errno == EIO || errno == EFAULT) {
+                int j;
+                /* read backwards until we get a good read, then shift out the right value */
+                for (j = 1, errno = 0; j < sizeof(long); j++, errno = 0) {
+                    /* try for a shifted ptrace - 'continue' (i.e. try an increased shift) if it fails */
+                    ptraced_long = ptrace(PTRACE_PEEKDATA, peekbuf.pid, ptrace_address - j, NULL);
+                    if ((ptraced_long == -1L) && (errno == EIO || errno == EFAULT))
+                        continue;
+
+                    /* store it with the appropriate offset */
+                    uint8_t* new_memory_ptr = (uint8_t*)(&ptraced_long) + j;
+                    memcpy(dest_buffer + nread, new_memory_ptr, sizeof(long) - j);
+                    nread += sizeof(long) - j;
+
+                    /* interrupt the partial gathering process */
+                    break;
+                }
+            }
+            /* interrupt the gathering process */
+            break;
+        }
+        /* otherwise, ptrace() worked - store the data */
+        memcpy(dest_buffer + nread, &ptraced_long, sizeof(long));
+    }
+#endif
+    return nread;
+}
+
 /*
- * sm_peekdata - caches overlapping ptrace reads to improve performance.
+ * sm_peekdata - fills the peekbuf cache with memory from the process
  * 
- * This routine calls `ptrace(PEEKDATA, ...)`, and fills the peekbuf cache,
- * to make a local mirror of the process memory we're interested in.
+ * This routine calls either `ptrace(PEEKDATA, ...)` or `pread(...)`,
+ * and fills the peekbuf cache, to make a local mirror of the process memory we're interested in.
  */
 
 extern inline bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength)
 {
     const char *reqaddr = addr;
-    int i, j;
-    unsigned int missing_bytes = 0;
+    unsigned int i;
+    unsigned int missing_bytes;
 
     assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
     assert(result_ptr != NULL);
     assert(memlength != NULL);
 
-    /* check if we have a cache hit */
-    if (pid == peekbuf.pid &&
+    /* check if we have a full cache hit */
+    if (peekbuf.base != NULL &&
         reqaddr >= peekbuf.base &&
         (unsigned long) (reqaddr + length - peekbuf.base) <= peekbuf.size)
     {
@@ -143,23 +239,23 @@ extern inline bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, con
         *memlength = peekbuf.base - reqaddr + peekbuf.size;
         return true;
     }
-    else if (pid == peekbuf.pid &&
+    else if (peekbuf.base != NULL &&
              reqaddr >= peekbuf.base &&
              (unsigned long) (reqaddr - peekbuf.base) < peekbuf.size)
     {
-
         assert(peekbuf.size != 0);
 
         /* partial hit, we have some of the data but not all, so remove old entries - shift the frame by as far as is necessary */
-        /* missing bytes: round up to nearest long size for ptrace efficiency */
         missing_bytes = (reqaddr + length) - (peekbuf.base + peekbuf.size);
-        missing_bytes = sizeof(long) * (1 + (missing_bytes-1) / sizeof(long));
+        /* round up to the nearest PEEKDATA_CHUNK multiple, that is what could
+         * potentially be read and we have to fit it all */
+        missing_bytes = PEEKDATA_CHUNK * (1 + (missing_bytes-1) / PEEKDATA_CHUNK);
 
         /* head shift if necessary */
         if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE)
         {
-            int shift_size = reqaddr-peekbuf.base;
-            shift_size = sizeof(long) * (shift_size / sizeof(long));
+            unsigned int shift_size = reqaddr - peekbuf.base;
+            shift_size = PEEKDATA_CHUNK * (shift_size / PEEKDATA_CHUNK);
 
             memmove(peekbuf.cache, &peekbuf.cache[shift_size], peekbuf.size-shift_size);
 
@@ -170,63 +266,33 @@ extern inline bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, con
     else {
         /* cache miss, invalidate the cache */
         missing_bytes = length;
-        peekbuf.pid = pid;
         peekbuf.size = 0;
-        peekbuf.base = addr;
+        peekbuf.base = reqaddr;
     }
-    /* we need a ptrace() to complete the request */
-    errno = 0;
-    
-    for (i = 0; i < missing_bytes; i += sizeof(long))
+
+    /* we need to retrieve memory to complete the request */
+    for (i = 0; i < missing_bytes; i += PEEKDATA_CHUNK)
     {
-        const char *ptrace_address = peekbuf.base + peekbuf.size;
-        long ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address, NULL);
+        const char *target_address = peekbuf.base + peekbuf.size;
+        size_t len = readmemory(&peekbuf.cache[peekbuf.size], target_address, PEEKDATA_CHUNK);
 
-        /* check if ptrace() succeeded */
-        if (UNLIKELY(ptraced_long == -1L && errno != 0)) {
-            /* it's possible i'm trying to read partially oob */
-            if (errno == EIO || errno == EFAULT) {
-                
-                /* read backwards until we get a good read, then shift out the right value */
-                for (j = 1, errno = 0; j < sizeof(long); j++, errno = 0) {
-                
-                    /* try for a shifted ptrace - 'continue' (i.e. try an increased shift) if it fails */
-                    if ((ptraced_long = ptrace(PTRACE_PEEKDATA, pid, ptrace_address - j, NULL)) == -1L && 
-                        (errno == EIO || errno == EFAULT))
-                            continue;
-                    
-                    /* cache it with the appropriate offset */
-                    if(peekbuf.size >= j)
-                    {
-                        memcpy(&peekbuf.cache[peekbuf.size - j], &ptraced_long, sizeof(long));
-                    }
-                    else
-                    {
-                        memcpy(&peekbuf.cache[0], &ptraced_long, sizeof(long));
-                        peekbuf.base -= j;
-                    }
-                    peekbuf.size += sizeof(long) - j;
-                    
-                    /* interrupt the gathering process */
-                    break;
-                }
-
-                /* partial success */
-                goto end;
+        /* check if the read succeeded */
+        if (UNLIKELY(len < PEEKDATA_CHUNK)) {
+            if (len == 0) {
+                /* hard failure to retrieve memory */
+                *result_ptr = NULL;
+                *memlength = 0;
+                return false;
             }
-            
-            /* I wont print a message here, would be very noisy if a region is unmapped */
-            *result_ptr = NULL;
-            *memlength = 0;
-            return false;
+            /* go ahead with the partial read and stop the gathering process */
+            peekbuf.size += len;
+            break;
         }
         
-        /* otherwise, ptrace() worked - cache the data and increase the size */
-        memcpy(&peekbuf.cache[peekbuf.size], &ptraced_long, sizeof(long));
-        peekbuf.size += sizeof(long);
+        /* otherwise, the read worked */
+        peekbuf.size += PEEKDATA_CHUNK;
     }
 
-end:
     /* return result to caller */
     *result_ptr = (mem64_t*)&peekbuf.cache[reqaddr - peekbuf.base];
     *memlength = peekbuf.base - reqaddr + peekbuf.size;
@@ -409,31 +475,6 @@ bool sm_checkmatches(globals_t *vars,
     return sm_detach(vars->target);
 }
 
-/* read region using /proc/pid/mem */
-static inline ssize_t readregion(pid_t target, void *buf, size_t count, unsigned long offset)
-{
-    char mem[32];
-    int fd;
-    ssize_t len;
-    
-    /* print the path to mem file */
-    snprintf(mem, sizeof(mem), "/proc/%d/mem", target);
-    
-    /* attempt to open the file */
-    if ((fd = open(mem, O_RDONLY)) == -1) {
-        show_error("unable to open %s.\n", mem);
-        return -1;
-    }
-
-    /* try to honor the request */
-    len = pread(fd, buf, count, offset);
-    
-    /* clean up */
-    close(fd);
-    
-    return len;
-}
-    
 
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
 bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
@@ -525,36 +566,13 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
-#if HAVE_PROCMEM
-        ssize_t len = 0;
-        /* keep reading until completed */
-        while (nread < r->size) {
-            if ((len = readregion(vars->target, data+nread, r->size-nread, (unsigned long)(r->start+nread))) == -1) {
-                /* no, continue with whatever data was read */
-                break;
-            } else {
-                /* some data was read */
-                nread += len;
-            }
+        /* read region into the `data` array */
+        nread = readmemory(data, r->start, r->size);
+        if (nread == -1) {
+            show_error("reading region %02u failed.\n", regnum);
+            return false;
         }
 
-#else
-        /* Read the region with `ptrace()`: the API specifies that `ptrace()` returns a `long`, which
-         * is the size of a word for the current architecture, so this section will deal in `long`s */
-        for (nread = 0; nread < r->size; nread += sizeof(long)) {
-            const char *ptrace_address = r->start + nread;
-            long ptraced_long = ptrace(PTRACE_PEEKDATA, vars->target, ptrace_address, NULL);
-
-            /* check if ptrace() succeeded */
-            if (UNLIKELY(ptraced_long == -1L && errno != 0)) {
-                /* interrupt the gathering process */
-                break;
-            }
-
-            /* otherwise, ptrace() worked - store the data */
-            memcpy(data+nread, &ptraced_long, sizeof(long));
-        }
-#endif
         /* region has been read, tell user */
         print_a_dot();
 
@@ -671,25 +689,13 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
     return sm_detach(target);
 }
 
-bool sm_read_array(pid_t target, const void *addr, char *buf, int len)
+bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len)
 {
     if (sm_attach(target) == false) {
         return false;
     }
 
-#if HAVE_PROCMEM
-    unsigned nread=0;
-    ssize_t tmpl;
-    while (nread < len) {
-        if ((tmpl = readregion(target, buf+nread, len-nread, (unsigned long)(addr+nread))) == -1) {
-            /* no, continue with whatever data was read */
-            break;
-        } else {
-            /* some data was read */
-            nread += tmpl;
-        }
-    }
-
+    size_t nread = readmemory(buf, addr, len);
     if (nread < len)
     {
         sm_detach(target);
@@ -697,25 +703,10 @@ bool sm_read_array(pid_t target, const void *addr, char *buf, int len)
     }
 
     return sm_detach(target);
-#else
-    int i;
-    /* here we just read long by long, this should be ok for most of time */
-    /* partial hit is not handled */
-    for(i = 0; i < len; i += sizeof(long))
-    {
-        errno = 0;
-        *((long *)(buf+i)) = ptrace(PTRACE_PEEKDATA, target, addr+i, NULL);
-        if (UNLIKELY((*((long *)(buf+i)) == -1L) && (errno != 0))) {
-            sm_detach(target);
-            return false;
-        }
-    }
-    return sm_detach(target);
-#endif
 }
 
 /* TODO: may use /proc/<pid>/mem here */
-bool sm_write_array(pid_t target, void *addr, const void *data, int len)
+bool sm_write_array(pid_t target, void *addr, const void *data, size_t len)
 {
     int i,j;
     long peek_value;
