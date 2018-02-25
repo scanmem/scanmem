@@ -1306,7 +1306,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         if (sm_attach(vars->target) == false)
             return false;
 
-        if (sm_peekdata(vars->target, address, sizeof(uint64_t), &memory_ptr, &memlength) == false)
+        if (sm_peekdata(address, sizeof(uint64_t), &memory_ptr, &memlength) == false)
             return false;
 
         /* check if the new value is different */
