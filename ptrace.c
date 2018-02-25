@@ -218,9 +218,10 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
  * 
  * This routine calls either `ptrace(PEEKDATA, ...)` or `pread(...)`,
  * and fills the peekbuf cache, to make a local mirror of the process memory we're interested in.
+ * `sm_attach()` MUST be called before this function.
  */
 
-extern inline bool sm_peekdata(pid_t pid, const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength)
+extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength)
 {
     const char *reqaddr = addr;
     unsigned int i;
@@ -385,7 +386,7 @@ bool sm_checkmatches(globals_t *vars,
         void *address = reading_swath.first_byte_in_child + reading_iterator;
 
         /* read value from this address */
-        if (UNLIKELY(sm_peekdata(vars->target, address, old_length, &memory_ptr, &memlength) == false))
+        if (UNLIKELY(sm_peekdata(address, old_length, &memory_ptr, &memlength) == false))
         {
             /* If we can't look at the data here, just abort the whole recording, something bad happened */
             required_extra_bytes_to_record = 0;
@@ -653,24 +654,22 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 bool sm_setaddr(pid_t target, void *addr, const value_t *to)
 {
     unsigned int i;
-    const mem64_t *memory_ptr;
+    uint8_t memarray[sizeof(uint64_t)] = {0};
     size_t memlength;
 
     if (sm_attach(target) == false) {
         return false;
     }
 
-    if (sm_peekdata(target, addr, sizeof(uint64_t), &memory_ptr, &memlength) == false) {
+    memlength = readmemory(memarray, addr, sizeof(uint64_t));
+    if (memlength == 0) {
         show_error("couldn't access the target address %10p\n", addr);
         return false;
     }
 
-    /* Assume `sizeof(uint64_t)` is a multiple of `sizeof(long)` */
-    long memarray[sizeof(uint64_t)/sizeof(long)] = {0};
     uint val_length = flags_to_memlength(ANYNUMBER, to->flags);
     if (val_length > 0) {
         /* Basically, overwrite as much of the data as makes sense, and no more. */
-        memcpy(memarray, memory_ptr, memlength);
         memcpy(memarray, to->bytes, val_length);
     }
     else {
@@ -679,9 +678,10 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
     }
 
     /* TODO: may use /proc/<pid>/mem here */
-    for (i = 0; i < sizeof(uint64_t)/sizeof(long); i++)
+    /* Assume `sizeof(uint64_t)` is a multiple of `sizeof(long)` */
+    for (i = 0; i < sizeof(uint64_t); i += sizeof(long))
     {
-        if (ptrace(PTRACE_POKEDATA, target, addr + i*sizeof(long), memarray[i]) == -1L) {
+        if (ptrace(PTRACE_POKEDATA, target, addr + i, *(long*)(memarray + i)) == -1L) {
             return false;
         }
     }
