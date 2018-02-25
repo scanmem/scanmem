@@ -80,7 +80,6 @@ void sm_backend_exec_cmd(const char *commandline);
 unsigned long sm_get_num_matches(void);
 const char *sm_get_version(void);
 double sm_get_scan_progress(void);
-void sm_reset_scan_progress(void);
 void sm_set_stop_flag(bool stop_flag);
 
 /* ptrace.c */
