@@ -426,7 +426,7 @@ static inline ssize_t readregion(pid_t target, void *buf, size_t count, unsigned
     }
 
     /* try to honor the request */
-    len = pread(fd, buf, count, offset);
+    len = pread64(fd, buf, count, offset);
     
     /* clean up */
     close(fd);
