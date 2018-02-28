@@ -234,7 +234,7 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
     /* check if we have a full cache hit */
     if (peekbuf.base != NULL &&
         reqaddr >= peekbuf.base &&
-        (unsigned long) (reqaddr + length - peekbuf.base) <= peekbuf.size)
+        peekbuf.base - reqaddr + peekbuf.size - length >= 0)
     {
         *result_ptr = (mem64_t*)&peekbuf.cache[reqaddr - peekbuf.base];
         *memlength = peekbuf.base - reqaddr + peekbuf.size;
@@ -242,7 +242,7 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
     }
     else if (peekbuf.base != NULL &&
              reqaddr >= peekbuf.base &&
-             (unsigned long) (reqaddr - peekbuf.base) < peekbuf.size)
+             peekbuf.base - reqaddr + peekbuf.size > 0)
     {
         assert(peekbuf.size != 0);
 
@@ -569,7 +569,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
         /* read region into the `data` array */
         nread = readmemory(data, r->start, r->size);
-        if (nread == -1) {
+        if (nread == 0) {
             show_error("reading region %02u failed.\n", regnum);
             return false;
         }
