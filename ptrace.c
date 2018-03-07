@@ -571,6 +571,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         nread = readmemory(data, r->start, r->size);
         if (nread == 0) {
             show_error("reading region %02u failed.\n", regnum);
+            free(data);
             return false;
         }
 
