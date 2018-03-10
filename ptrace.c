@@ -234,7 +234,7 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
     /* check if we have a full cache hit */
     if (peekbuf.base != NULL &&
         reqaddr >= peekbuf.base &&
-        peekbuf.base - reqaddr + peekbuf.size - length >= 0)
+        (unsigned long) (reqaddr + length - peekbuf.base) <= peekbuf.size)
     {
         *result_ptr = (mem64_t*)&peekbuf.cache[reqaddr - peekbuf.base];
         *memlength = peekbuf.base - reqaddr + peekbuf.size;
@@ -242,7 +242,7 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
     }
     else if (peekbuf.base != NULL &&
              reqaddr >= peekbuf.base &&
-             peekbuf.base - reqaddr + peekbuf.size > 0)
+             (unsigned long) (reqaddr - peekbuf.base) < peekbuf.size)
     {
         assert(peekbuf.size != 0);
 
