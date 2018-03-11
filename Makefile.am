@@ -11,7 +11,8 @@ AM_CFLAGS = -std=gnu99 -Wall
 
 # Utilities library, statically linked in sm and libsm
 noinst_LTLIBRARIES = libutil.la
-libutil_la_SOURCES = show_message.c
+libutil_la_SOURCES = common.h \
+    show_message.c
 
 # libscanmem
 lib_LTLIBRARIES = libscanmem.la
@@ -28,7 +29,6 @@ libscanmem_la_include_HEADERS = commands.h \
     value.h
 
 libscanmem_la_SOURCES = commands.c \
-    common.h \
     ptrace.c \
     handlers.h \
     handlers.c \

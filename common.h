@@ -62,4 +62,11 @@
     })
 #endif
 
+/* Use the best `getenv()` implementation we have */
+#if HAVE_SECURE_GETENV
+# define util_getenv secure_getenv
+#else
+# define util_getenv getenv
+#endif
+
 #endif /* COMMON_H */

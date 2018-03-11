@@ -36,12 +36,6 @@
 #include "value.h"
 #include "targetmem.h"
 
-#if HAVE_SECURE_GETENV
-#define util_getenv secure_getenv
-#else
-#define util_getenv getenv
-#endif
-
 
 /* global settings */
 typedef struct {
