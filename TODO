@@ -2,8 +2,6 @@ Current
 =======
 * option: whether to search in readonly regions
 * reduce memory consumption (e.g. OVaMI padding)
-* completely centralize the printing in `show_message`, so that printing to
-  some other output stream is easy to add
 
 * see: https://github.com/scanmem/scanmem/issues for further TODOs
 
