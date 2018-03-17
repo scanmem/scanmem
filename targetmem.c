@@ -28,7 +28,6 @@
 #include <ctype.h>
 
 #include "targetmem.h"
-#include "show_message.h"
 #include "value.h"
 
 

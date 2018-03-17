@@ -35,6 +35,11 @@
 #ifndef SHOW_MESSAGE_H
 #define SHOW_MESSAGE_H
 
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+#include <errno.h>
+
 /* prepend 'info: ', output to stderr */
 void show_info(const char *fmt, ...);
 /* prepend 'error: ', output to stderr */
@@ -47,5 +52,17 @@ void show_debug(const char *fmt, ...);
 
 /* display message only when not running as a backend */
 void show_user(const char *fmt, ...);
+
+/* pager support routines */
+FILE *get_pager(FILE *fallback_output);
+
+static inline void close_pager(FILE *pager)
+{
+    if (pager != stdout && pager != stderr) {
+        if (pclose(pager) == -1 && errno != EPIPE)
+            show_warn("pclose() error: %s\n", strerror(errno));
+        signal(SIGPIPE, SIG_DFL);
+    }
+}
 
 #endif /* SHOW_MESSAGE_H */
