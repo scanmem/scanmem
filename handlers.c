@@ -617,17 +617,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
-
-    /* reset scan progress */
-    vars->scan_progress = 0;
-
-    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
-
-    /* refresh list of regions */
-    l_destroy(vars->regions);
-
-    /* create a new linked list of regions */
-    if ((vars->regions = l_init()) == NULL) {
+    if(!sm_reset(vars)) {
         show_error("sorry, there was a problem allocating memory.\n");
         return false;
     }
