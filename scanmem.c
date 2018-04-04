@@ -244,3 +244,21 @@ void sm_set_stop_flag(bool stop_flag)
 {
     sm_globals.stop_flag = stop_flag;
 }
+
+bool sm_reset(globals_t* vars)
+{
+    /* reset scan progress */
+    vars->scan_progress = 0;
+
+    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+
+    /* refresh list of regions */
+    l_destroy(vars->regions);
+
+    /* create a new linked list of regions */
+    if ((vars->regions = l_init()) == NULL) {
+        return false;
+    }
+
+    return true;
+}

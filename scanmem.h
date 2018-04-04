@@ -94,4 +94,6 @@ bool sm_attach(pid_t target);
 bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
 bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
 
+bool sm_reset(globals_t* vars);
+
 #endif /* SCANMEM_H */
