@@ -67,6 +67,7 @@ typedef struct {
         unsigned short dump_with_ascii;
         unsigned short reverse_endianness;
     } options;
+    volatile bool scan_in_progress;
 } globals_t;
 
 /* global settings */

@@ -247,6 +247,11 @@ void sm_set_stop_flag(bool stop_flag)
 
 bool sm_reset(globals_t* vars)
 {
+    if(vars->scan_in_progress) {
+        show_info("Cannot reset state when there is a scan in progress.");
+        return false;
+    }
+
     /* reset scan progress */
     vars->scan_progress = 0;
 

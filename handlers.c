@@ -194,7 +194,7 @@ static inline void close_pager(FILE *pager)
     }
 }
 
-bool handler__set(globals_t * vars, char **argv, unsigned argc)
+static inline bool handler__set_unsafe(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds = 1;
     char *delay = NULL;
@@ -414,6 +414,14 @@ fail:
     ENDINTERRUPTABLE();
     return false;
     
+}
+
+bool handler__set(globals_t * vars, char **argv, unsigned argc)
+{
+    vars->scan_in_progress = true;
+    bool retval = handler__set_unsafe(vars, argv, argc);
+    vars->scan_in_progress = false;
+    return retval;
 }
 
 /* Accepts a numerical argument to print up to N matches, defaults to 10k
