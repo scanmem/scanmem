@@ -67,6 +67,7 @@ typedef struct {
         unsigned short dump_with_ascii;
         unsigned short reverse_endianness;
     } options;
+    volatile bool scan_in_progress;
 } globals_t;
 
 /* global settings */
@@ -93,5 +94,7 @@ bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, 
 bool sm_attach(pid_t target);
 bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
 bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
+
+bool sm_reset(globals_t* vars);
 
 #endif /* SCANMEM_H */
