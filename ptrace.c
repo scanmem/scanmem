@@ -543,47 +543,76 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
     /* check every memory region */
     while (n) {
-        size_t nread = 0;
-        int dots_remaining = NUM_DOTS;
-        size_t bytes_at_next_dot;
+        size_t bytes_remaining;
         size_t bytes_per_dot;
         double progress_per_dot;
 
         /* load the next region */
         r = n->data;
         bytes_per_dot = r->size / NUM_DOTS;
-        bytes_at_next_dot = bytes_per_dot;
+        bytes_remaining = bytes_per_dot * NUM_DOTS;
         progress_per_dot = (double)bytes_per_dot / total_scan_bytes;
 
+/* The maximum logical size is a comfortable 1MiB (increasing it does not help).
+ * The actual allocation is that plus the rounded size of the maximum possible VLT.
+ * This is needed because the last byte might be scanned as max size VLT,
+ * thus need (2^16 - 2) extra bytes after it */
+#define MAX_BUFFER_SIZE (1<<20)
+#define MAX_ALLOC_SIZE  (MAX_BUFFER_SIZE + (1<<16))
+
         /* allocate data array */
-        if ((data = malloc(r->size * sizeof(char))) == NULL) {
+        size_t alloc_size = MIN(r->size, MAX_ALLOC_SIZE);
+        if ((data = malloc(alloc_size * sizeof(char))) == NULL) {
             show_error("sorry, there was a memory allocation error.\n");
             return false;
         }
 
         /* print a progress meter so user knows we haven't crashed */
-        /* cannot use show_info here because it'll append a '\n' */
         show_user("%02u/%02u searching %#10lx - %#10lx", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
-        /* read region into the `data` array */
-        nread = readmemory(data, r->start, r->size);
-        if (nread == 0) {
-            show_error("reading region %02u failed.\n", regnum);
-            free(data);
-            return false;
-        }
+        /* For every offset, check if we have a match. */
+        size_t memlength = r->size;
+        size_t buffer_size = 0;
+        void *reg_pos = r->start;
+        const uint8_t *buf_pos = NULL;
+        for ( ; ; memlength--, buffer_size--, reg_pos++, buf_pos++) {
 
-        /* region has been read, tell user */
-        print_a_dot();
+            /* check if the buffer is finished (or we just started) */
+            if (UNLIKELY(buffer_size == 0)) {
 
-        /* For every offset, check if we have a match.
-         * Testing `memlength > 0` is much faster than `offset < nread` */
-        size_t memlength, offset;
-        for (memlength = nread, offset = 0; memlength > 0; memlength--, offset++) {
+                /* print a simple progress meter */
+                for ( ; memlength < bytes_remaining; bytes_remaining -= bytes_per_dot) {
+                    /* for user, just print a dot */
+                    print_a_dot();
+                    /* for front-end, update percentage */
+                    vars->scan_progress += progress_per_dot;
+                }
+
+                /* the whole region is finished */
+                if (memlength == 0) break;
+
+                /* stop scanning if asked to */
+                if (vars->stop_flag) break;
+
+                /* load the next buffer block */
+                size_t read_size = MIN(memlength, MAX_ALLOC_SIZE);
+                size_t nread = readmemory(data, reg_pos, read_size);
+                if (nread < read_size) {
+                    /* the region ends here, update `memlength` */
+                    memlength = nread;
+                }
+                /* If less than `MAX_ALLOC_SIZE` bytes remain, we have all of them
+                 * in the buffer, so go all the way.
+                 * Otherwise we need to stop at `MAX_BUFFER_SIZE`, so that
+                 * the last byte we look at has a full VLT after it */
+                buffer_size = memlength <= MAX_ALLOC_SIZE ? memlength : MAX_BUFFER_SIZE;
+                buf_pos = data;
+            }
+
+            const mem64_t* memory_ptr = (mem64_t*)buf_pos;
             unsigned int match_length;
-            const mem64_t* memory_ptr = (mem64_t*)(data+offset);
             match_flags checkflags;
 
             /* initialize checkflags */
@@ -594,7 +623,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             if (UNLIKELY(match_length > 0))
             {
                 assert(match_length <= memlength);
-                writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
+                writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
                                                   get_u8b(memory_ptr), checkflags);
                 
                 ++vars->num_matches;
@@ -603,28 +632,15 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
             else if (required_extra_bytes_to_record)
             {
-                writing_swath_index = add_element(&(vars->matches), writing_swath_index, r->start+offset,
+                writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
                                                   get_u8b(memory_ptr), flags_empty);
                 --required_extra_bytes_to_record;
             }
 
-            /* print a simple progress meter */
-            if (UNLIKELY(offset >= bytes_at_next_dot)) {
-                bytes_at_next_dot += bytes_per_dot;
-                /* handle rounding */
-                if (LIKELY(--dots_remaining > 0)) {
-                    /* for user, just print a dot */
-                    print_a_dot();
-                    /* for front-end, update percentage */
-                    vars->scan_progress += progress_per_dot;
-                    /* stop scanning if asked to */
-                    if (vars->stop_flag) break;
-                }
-            }
         }
 
         free(data);
-        vars->scan_progress += progress_per_dot;
+
         /* stop scanning if asked to */
         if (vars->stop_flag) {
             printf("\n");
