@@ -12,6 +12,7 @@ AM_CFLAGS = -std=gnu99 -Wall
 # Utilities library, statically linked in sm and libsm
 noinst_LTLIBRARIES = libutil.la
 libutil_la_SOURCES = common.h \
+    common.c \
     show_message.c
 
 # libscanmem
