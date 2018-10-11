@@ -1,5 +1,5 @@
 /*
-    Common macro and helpers.
+    Common macros and helpers.
 
     Copyright (C) 2017 Andrea Stacchiotti  <andreastacchiotti(a)gmail.com>
 
@@ -21,6 +21,9 @@
 
 #ifndef COMMON_H
 #define COMMON_H
+
+#include <stdbool.h>
+#include <sys/types.h>
 
 #ifndef MIN
 # define MIN(a,b) ((a) < (b) ? (a) : (b))
@@ -68,5 +71,8 @@
 #else
 # define util_getenv getenv
 #endif
+
+/* Function declarations */
+bool sm_process_is_dead(pid_t pid);
 
 #endif /* COMMON_H */

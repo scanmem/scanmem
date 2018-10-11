@@ -294,6 +294,11 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
         if (cont) {
             sleep(1);
+            if (sm_process_is_dead(vars->target)) {
+                vars->target = 0;
+                show_info("target process died, interrupting set operation.\n");
+                break;
+            }
         } else {
             break;
         }
