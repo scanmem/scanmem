@@ -5,7 +5,7 @@
     Copyright (C) 2009-2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
     Copyright (C) 2013 Mattias Muenster <mattiasmun(a)gmail.com>
-    Copyright (C) 2014-2016 Sebastian Parschauer <s.parschauer(a)gmx.de>
+    Copyright (C) 2014-2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
     Copyright (C) 2016-2017 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
     
     This program is free software: you can redistribute it and/or modify
@@ -1059,7 +1059,7 @@ class GameConqueror():
     def update_scan_result(self):
         match_count = self.backend.get_match_count()
         self.found_count_label.set_text(_('Found: %d') % (match_count,))
-        if (match_count > SCAN_RESULT_LIST_LIMIT):
+        if (match_count > SCAN_RESULT_LIST_LIMIT) or (self.backend.process_is_dead(self.pid)):
             self.scanresult_liststore.clear()
         else:
             self.command_lock.acquire()
@@ -1107,7 +1107,9 @@ class GameConqueror():
 
     # read/write data periodically
     def data_worker(self):
-        if (not self.is_scanning) and (self.pid != 0) and self.command_lock.acquire(0): # non-blocking
+        if (self.is_scanning) or (self.pid == 0) or (self.backend.process_is_dead(self.pid)):
+            return not self.exit_flag
+        if self.command_lock.acquire(0): # non-blocking
             Gdk.threads_enter()
 
             # Write to memory locked values in cheat list
