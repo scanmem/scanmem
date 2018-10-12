@@ -1,7 +1,8 @@
 """
-    GameConquerorBackend: communication with scanmem
+    GameConquerorBackend: communication with libscanmem
     
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
+    Copyright (C) 2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -33,7 +34,8 @@ class GameConquerorBackend():
         'sm_get_num_matches' : (ctypes.c_ulong, ),
         'sm_get_version' : (ctypes.c_char_p, ),
         'sm_get_scan_progress' : (ctypes.c_double, ),
-        'sm_set_stop_flag' : (ctypes.c_bool, )
+        'sm_set_stop_flag' : (None, ctypes.c_bool),
+        'sm_process_is_dead' : (ctypes.c_bool, ctypes.c_int32)
     }
 
     def __init__(self, libpath='libscanmem.so'):
@@ -81,3 +83,6 @@ class GameConquerorBackend():
 
     def exit_cleanup(self):
         self.lib.sm_cleanup()
+
+    def process_is_dead(self, pid):
+        return self.lib.sm_process_is_dead(pid)
