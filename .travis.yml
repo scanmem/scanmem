@@ -1,38 +1,46 @@
 language: c
 sudo: required
-compiler: gcc-6
+
+services:
+  - docker
 
 env:
   global:
   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
   #   via the "travis encrypt" command using the project repo's public key
   - secure: "C3Gd8W9U0yQIxnUkcKlzicB2iOeZ42NPpVXTOnigjoc2UoI4eVYlDjEZjccZAIn0wHUguircvBt0eyLD7cuNf2mTozJ21BG0NpMdYbG1n/aVchnJBr6rldb2X3kVmQCj50LQKm+aINbK1qSs56VIUwNepPiul+HPMV6sL5sQ5M0="
-  - PATH=/usr/lib/binutils-2.26/bin:${PATH}
-  - ASAN_OPTIONS='halt_on_error=1'
-  - UBSAN_OPTIONS='halt_on_error=1'
+  # Docker Ubuntu distribution and project directory in Docker container
+  - DUDIST="bionic"
+  - DPRJDIR="/scanmem"
+  - DEXEC="docker exec ${DUDIST} /bin/bash -c"
 
 before_install:
   - echo -n | openssl s_client -connect scan.coverity.com:443 | sed -ne '/-BEGIN CERTIFICATE-/,/-END CERTIFICATE-/p' | sudo tee -a /etc/ssl/certs/ca-
 
 addons:
   apt:
-    sources:
-    - ubuntu-toolchain-r-test
     packages:
-    - gcc-6 binutils-2.26 intltool
+    - gcc binutils intltool
   # Coverity scan add-on, fires only when pushing to the `coverity_scan` branch
   coverity_scan:
     project:
       name: "scanmem/scanmem"
       description: "Build submitted via Travis CI"
     notification_email: andreastacchiotti@gmail.com
-    build_command_prepend: "./autogen.sh && ./configure CC=gcc"
+    build_command_prepend: "./autogen.sh && ./configure"
     build_command: "make"
     branch_pattern: coverity_scan
 
 script:
   - if [ "${COVERITY_SCAN_BRANCH}" == 1 ]; then exit ; fi
-  - ./autogen.sh && ./configure --enable-gui
-  - make CFLAGS='-O2 -fsanitize=address,undefined'
-  # Testing requires `sudo` for `ptrace()`
-  - sudo make check VERBOSE=1
+  - docker pull ubuntu:${DUDIST}
+  # mount the project git directory to the container and
+  # use it as working directory
+  - docker run -t -d --name="${DUDIST}" -v /home/travis/build/${PROJECT_NAME}:${DPRJDIR} -w ${DPRJDIR} ubuntu:${DUDIST} /bin/bash
+  - docker ps
+  - ${DEXEC} "apt-get update && apt-get upgrade -y"
+  - ${DEXEC} "apt-get install -y git gcc binutils libtool intltool make libreadline-dev python"
+  - ${DEXEC} "gcc --version"
+  - ${DEXEC} "./autogen.sh && ./configure --enable-gui"
+  - ${DEXEC} "make CFLAGS='-O2 -fsanitize=address,undefined'"
+  - ${DEXEC} "export ASAN_OPTIONS='halt_on_error=1'; export UBSAN_OPTIONS='halt_on_error=1'; make check VERBOSE=1"
