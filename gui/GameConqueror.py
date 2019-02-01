@@ -910,7 +910,16 @@ class GameConqueror():
     def get_process_list(self):
         plist = []
         for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
-            (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
+            try:
+                (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
+            # process name may be empty, but not the name of the executable
+            except (ValueError):
+                (pid, user) = [tok.strip() for tok in proc.split(None, 1)]
+                exelink = os.path.join("/proc", pid, "exe")
+                if os.path.exists(exelink):
+                    pname = os.path.realpath(exelink)
+                else:
+                    pname = ''
             plist.append((int(pid), user, pname))
         return plist
 
@@ -1199,6 +1208,10 @@ if __name__ == '__main__':
     # Attach to given pid (if any)
     if (args.pid is not None) :
         process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
+        if process_name == '':
+            exelink = os.path.join("/proc", str(args.pid), "exe")
+            if os.path.exists(exelink):
+                process_name = os.path.realpath(exelink)
         gc_instance.select_process(args.pid, process_name)
 
     # Prefill the search box (if asked)
