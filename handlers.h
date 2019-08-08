@@ -330,6 +330,21 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
+#define READ_COMPLETE VALUE_TYPES
+#define READ_SHRTDOC "read value of a specific memory location"
+#define READ_LONGDOC "usage: write <value_type> <address>\n" \
+                "\n" \
+                "Read <value_type> from <address>\n" \
+                "<value_type> should be one of:\n" \
+                "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tfloat{32|64} (or f{32|64} for short)\n" \
+                "\n" \
+                "Example:\n" \
+                "\tread i16 60103e\n" \
+                "\tread float32 60103e\n" 
+
+bool handler__read(globals_t *vars, char **argv, unsigned argc);
+
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3},dump_with_ascii{0,1},endianness{0,1,2}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"

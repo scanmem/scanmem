@@ -1615,6 +1615,109 @@ retl:
     return ret;
 }
 
+
+/* read value_type address */
+bool handler__read(globals_t * vars, char **argv, unsigned argc)
+{
+	FILE* pager = get_pager(stdout);
+	
+	int data_width = 0;
+    const char *fmt = NULL;
+		void* buf = NULL;
+    void *addr;
+    bool ret;
+    int datatype;
+    char *endptr;
+
+    if (argc != 3)
+    {
+        show_error("bad arguments, see `help read`.\n");
+        ret = false;
+        goto retl;
+    }
+
+    scan_data_type_t st = parse_scan_data_type(argv[1]);
+
+    /* try int first */
+    if (st == INTEGER8)
+    {
+        data_width = 1;
+        datatype = 0;
+        fmt = "%"PRId8;
+    }
+    else if (st == INTEGER16)
+    {
+        data_width = 2;
+        datatype = 0;
+        fmt = "%"PRId16;
+    }
+    else if (st == INTEGER32)
+    {
+        data_width = 4;
+        datatype = 0;
+        fmt = "%"PRId32;
+    }
+    else if (st == INTEGER64)
+    {
+        data_width = 8;
+        datatype = 0;
+        fmt = "%"PRId64;
+    }
+    else if (st == FLOAT32)
+    {
+        data_width = 4;
+        datatype = 0;
+        fmt = "%f";
+    }
+    else if (st == FLOAT64)
+    {
+        data_width = 8;
+        datatype = 0;
+        fmt = "%lf";
+    }
+    else
+    {
+        show_error("bad data_type, see `help r`.\n");
+        ret = false;
+        goto retl;
+    }
+	
+
+  	errno = 0;
+    addr = (void *)(strtoll(argv[2], &endptr, 16));
+    if ((errno != 0) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help read`.\n");
+        ret = false;
+        goto retl;
+    }
+  	st = parse_scan_data_type(argv[1]);
+	
+		(void) datatype;
+	
+		buf = malloc(data_width);
+	
+		if (!sm_read_array(vars->target, addr, buf, data_width))
+    {
+        show_error("read memory failed.\n");
+        ret = false;
+        goto retl;
+    }
+    if (st == INTEGER8) fprintf(pager, fmt, *(int8_t*)buf);
+    if (st == INTEGER16) fprintf(pager, fmt, *(int16_t*)buf);
+    if (st == INTEGER32) fprintf(pager, fmt, *(int32_t*)buf);
+    if (st == INTEGER64) fprintf(pager, fmt, *(int64_t*)buf);
+    if (st == FLOAT32) fprintf(pager, fmt, *(float*)buf);
+    if (st == FLOAT64) fprintf(pager, fmt, *(double*)buf);
+	
+	retl:
+	
+		close_pager(pager);
+    if(buf)
+        free(buf);
+    return ret;
+}
+
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
     /* this might need to change */
