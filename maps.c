@@ -252,7 +252,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
         }
     }
 
-    show_info("%d suitable regions found.\n", regions->size);
+    show_info("%lu suitable regions found.\n", regions->size);
     
     /* release memory allocated */
     free(line);

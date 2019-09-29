@@ -640,7 +640,7 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
 
         /* check if a match was found */
         if (np == NULL) {
-            show_warn("no region matching %u, or already removed.\n", reg_id);
+            show_warn("no region matching %lu, or already removed.\n", reg_id);
             continue;
         }
         
@@ -1176,7 +1176,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 
     /* check that this is a valid match-id */
     if (!loc.swath) {
-        show_error("you specified a non-existent match `%u`.\n", id);
+        show_error("you specified a non-existent match `%lu`.\n", id);
         show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }

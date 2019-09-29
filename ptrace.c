@@ -483,7 +483,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
     unsigned long total_size = 0;
-    unsigned regnum = 0;
+    unsigned long regnum = 0;
     element_t *n = vars->regions->head;
     region_t *r;
     unsigned long total_scan_bytes = 0;
@@ -568,7 +568,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         }
 
         /* print a progress meter so user knows we haven't crashed */
-        show_user("%02u/%02u searching %#10lx - %#10lx", ++regnum,
+        show_user("%02lu/%02lu searching %#10lx - %#10lx", ++regnum,
                 vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
         fflush(stderr);
 
