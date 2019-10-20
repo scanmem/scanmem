@@ -23,8 +23,8 @@ addons:
       name: "scanmem/scanmem"
       description: "Build submitted via Travis CI"
     notification_email: andreastacchiotti@gmail.com
-    build_command_prepend: "./autogen.sh && ./configure"
-    build_command: "make"
+    build_command_prepend: "./autogen.sh && ./configure --enable-gui"
+    build_command: "--fs-capture-search ./gui/ make"
     branch_pattern: coverity_scan
 
 script:
