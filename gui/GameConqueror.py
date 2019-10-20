@@ -883,8 +883,7 @@ class GameConqueror():
         # set editable flag
         self.memoryeditor_hexview.editable = (selected_region['flags'][1] == 'w')
 
-        if addr is not None:
-            self.memoryeditor_hexview.show_addr(addr)
+        self.memoryeditor_hexview.show_addr(addr)
         self.memoryeditor_window.show()
 
     # this callback will be called from other thread
