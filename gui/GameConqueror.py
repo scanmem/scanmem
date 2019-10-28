@@ -1065,7 +1065,7 @@ class GameConqueror():
             if misc.PY3K:
                 addr = GObject.Value(GObject.TYPE_UINT64)
                 off = GObject.Value(GObject.TYPE_UINT64)
-            line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), + \d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
+            line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
             for line in lines:
                 (mid_str, addr_str, off_str, rt, val, t) = line_regex.match(line).groups()
                 if t == 'unknown':
