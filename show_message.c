@@ -98,9 +98,9 @@ FILE *get_pager(FILE *fallback_output)
     FILE *retfd = NULL;
     char *const emptyvec[1] = { NULL };
 
-    assert(fallback_output != NULL);
+    assert(fallback_output != NULL && fileno(fallback_output) != -1);
 
-    if (sm_globals.options.backend)
+    if (sm_globals.options.backend || !isatty(fileno(fallback_output)))
         return fallback_output;
 
     if ((pager = util_getenv("PAGER")) == NULL || *pager == '\0') {
