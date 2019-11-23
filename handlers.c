@@ -1036,30 +1036,30 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
     list_t *commands = vars->commands;
     element_t *np = NULL;
     command_t *def = NULL;
-    FILE *pager;
+    FILE *pager = NULL;
+
     assert(commands != NULL);
     assert(argc >= 1);
 
     np = commands->head;
 
-    pager = get_pager(stderr);
-
-    /* print version information for generic help */
-    if (argv[1] == NULL) {
-        vars->printversion(pager);
-        fprintf(pager, "\n");
+    if (argc > 2) {
+        show_error("too many arguments.\n");
+        goto retl;
     }
 
-    /* traverse the commands list, printing out the relevant documentation */
-    while (np) {
-        command_t *command = np->data;
+    /* generic help requested */
+    if (argc == 1) {
+        pager = get_pager(stderr);
+        vars->printversion(pager);
+        fprintf(pager, "\n");
+        while (np) {
+            command_t *command = np->data;
 
-        /* remember the default command */
-        if (command->command == NULL)
-            def = command;
+            /* remember the default command */
+            if (command->command == NULL)
+                def = command;
 
-        /* just `help` with no argument */
-        if (argv[1] == NULL) {
             /* NULL shortdoc means don't print in the help listing */
             if (command->shortdoc == NULL) {
                 np = np->next;
@@ -1067,27 +1067,35 @@ bool handler__help(globals_t *vars, char **argv, unsigned argc)
             }
 
             /* print out command name */
-            fprintf(pager, "%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default", command->shortdoc);
+            fprintf(pager, "%-*s%s\n", DOC_COLUMN, command->command ? command->command : "default",
+                    command->shortdoc);
 
-            /* detailed information requested about specific command */
-        } else if (command->command
-                   && strcasecmp(argv[1], command->command) == 0) {
-            fprintf(pager, "%s\n", command->longdoc ? command-> longdoc : "missing documentation");
-            ret = true;
-            goto retl;
+            np = np->next;
+        }
+        if (def)
+            fprintf(pager, "\n%s\n", def->longdoc ? def->longdoc : "");
+    } else {
+        /* detailed information requested about specific command */
+        while (np) {
+            command_t *command = np->data;
+
+            if (command->command
+                && strcasecmp(argv[1], command->command) == 0) {
+                pager = get_pager(stderr);
+                fprintf(pager, "%s\n", command->longdoc ? command-> longdoc : "missing documentation");
+                ret = true;
+                goto retl;
+            }
+
+            np = np->next;
         }
 
-        np = np->next;
-    }
-
-    if (argc > 1) {
+        /* couldn't find requested command */
         show_error("unknown command `%s`\n", argv[1]);
         ret = false;
-    } else if (def) {
-        fprintf(pager, "\n%s\n", def->longdoc ? def->longdoc : "");
-        ret = true;
+        goto retl;
     }
-    
+
     ret = true;
 
 retl:

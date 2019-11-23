@@ -58,7 +58,7 @@ FILE *get_pager(FILE *fallback_output);
 
 static inline void close_pager(FILE *pager)
 {
-    if (pager != stdout && pager != stderr) {
+    if (pager != NULL && pager != stdout && pager != stderr) {
         if (pclose(pager) == -1 && errno != EPIPE)
             show_warn("pclose() error: %s\n", strerror(errno));
         signal(SIGPIPE, SIG_DFL);
