@@ -31,7 +31,6 @@
 #include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
-#include <alloca.h>
 #include <stdbool.h>
 #include <unistd.h>
 
@@ -88,15 +87,12 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
     while (getline(&line, &len, maps) != -1) {
         unsigned long start, end;
         region_t *map = NULL;
-        char read, write, exec, cow, *filename;
+        char read, write, exec, cow;
         int offset, dev_major, dev_minor, inode;
         region_type_t type = REGION_TYPE_MISC;
 
         /* slight overallocation */
-        if ((filename = alloca(len)) == NULL) {
-            show_error("failed to allocate %lu bytes for filename.\n", (unsigned long)len);
-            goto error;
-        }
+        char filename[len];
 
         /* initialise to zero */
         memset(filename, '\0', len);
