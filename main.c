@@ -207,6 +207,9 @@ static void parse_parameters(int argc, char **argv, char **initial_commands, boo
             case 'e':
                 *exit_on_error = true;
                 break;
+            case 'n':
+                vars->options.no_ptrace = 1;
+                break;
             case -1:
                 done = true;
                 break;
@@ -244,6 +247,18 @@ int main(int argc, char **argv)
         ret = EXIT_FAILURE;
         goto end;
     }
+
+#if !HAVE_PROCMEM
+    if (sm_globals.options.no_ptrace)
+    {
+        show_error("\nThe option noptrace is not supported on your system.\n"
+                   "You might need to upgrade or reconfigure your kernel" 
+                   " to support reading and writing to /proc/pid/mem.\n");
+
+        ret = EXIT_FAILURE;
+        goto end;
+    }   
+#endif
 
     if (getuid() != 0) {
         show_warn("Run scanmem as root if memory regions are missing. "

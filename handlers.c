@@ -1674,6 +1674,23 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             return false;
         }
     }
+    else if (strcasecmp(argv[1], "noptrace") == 0)
+    {
+#if HAVE_PROCMEM
+        if (strcmp(argv[2], "0") == 0) {vars->options.no_ptrace = 0; }
+        else if (strcmp(argv[2], "1") == 0) {vars->options.no_ptrace = 1; }
+        else
+        {
+            show_error("bad value for noptrace, see `help option`.\n");
+            return false;      
+        }
+#else
+        show_error("\nThe option noptrace is not supported on your system.\n"
+                   "You might need to upgrade or reconfigure your kernel" 
+                   " to support reading and writing to /proc/pid/mem.\n");
+        return false;
+#endif
+    }
     else
     {
         show_error("unknown option specified, see `help option`.\n");

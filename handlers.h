@@ -331,7 +331,8 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
-    "},region_scan_level{1,2,3},dump_with_ascii{0,1},endianness{0,1,2}"
+    "},region_scan_level{1,2,3},dump_with_ascii{0,1},endianness{0,1,2}," \
+    "noptrace{0,1}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -372,6 +373,12 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\t0:\thost endian\n" \
                  "\t1:\tlittle endian\n" \
                  "\t2:\tbig endian\n" \
+                 "\n" \
+                 "noptrace\tread/write without ptrace using /proc/pid/mem or using ptrace\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\tpossibles values:\n"\
+                 "\t0:\tuse ptrace\n" \
+                 "\t1:\tno ptrace\n" \
                  "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
