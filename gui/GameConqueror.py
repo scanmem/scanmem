@@ -404,7 +404,7 @@ class GameConqueror():
                 with open(dialog.get_filename(), 'r') as f:
                     obj = json.load(f)
                     for row in obj['cheat_list']:
-                        self.add_to_cheat_list(row[3],row[5],row[4],row[2],True)
+                        self.add_to_cheat_list(row[2],row[4],row[3],row[1],True)
             except:
                 pass
         dialog.destroy()
