@@ -60,6 +60,7 @@ typedef struct {
         region_scan_level_t region_scan_level;
         unsigned short dump_with_ascii;
         unsigned short reverse_endianness;
+        unsigned short no_ptrace;
     } options;
 } globals_t;
 

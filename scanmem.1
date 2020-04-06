@@ -471,6 +471,41 @@ The
 .B snapshot
 command uses memory inefficiently, and should probably not be used on large programs.
 
+The option
+.B noptrace
+which uses /proc/pid/mem could be replaced by process_vm_readv/process_vm_writev system calls instead.
+.TP
+.br
+.B For more informations to this noptrace option:
+.br
+ 
+.br
+For now it runs by reading/writing only to /proc/pid/mem if available without having ptrace attached to the process.
+.br
+This is useful if you want to have a debugger attached to the targeted process and scanmem behind.
+.br
+You must have a recent kernel (Linux >= 3.2.2) to run with this option,
+.br
+in order to have permissions to read/write to /proc/pid/mem.
+.br
+ 
+.br
+.B Here is the details for the linux kernel if you want to know why:
+.RS
+.IP
+
+.br
+For linux kernel under versions 3.2.2,
+.br
+there was a check inside for the function(s) mem_read/mem_write,
+.br
+called previously check_mem_permission inside fs/proc/base.c,
+.br
+which needed ptrace permissions (process being attached to the targeted process).
+.br
+This has been removed after this version, and supported modifications to /proc/pid/mem directly with root.
+.RE
+
 .SH HOMEPAGE
 
 https://github.com/scanmem/scanmem
