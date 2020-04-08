@@ -41,7 +41,7 @@ from gi.repository import GLib
 
 from consts import *
 from hexview import HexView
-from backend import GameConquerorBackend
+from scanmem import Scanmem
 import misc
 
 import locale
@@ -320,7 +320,7 @@ class GameConqueror():
         self.is_scanning = False
         self.exit_flag = False # currently for data_worker only, other 'threads' may also use this flag
 
-        self.backend = GameConquerorBackend(os.path.join(LIBDIR, 'libscanmem.so.1'))
+        self.backend = Scanmem(os.path.join(LIBDIR, 'libscanmem.so.1'))
         self.check_backend_version()
         self.is_first_scan = True
         GLib.timeout_add(DATA_WORKER_INTERVAL, self.data_worker)
@@ -1055,9 +1055,8 @@ class GameConqueror():
             self.scanresult_liststore.clear()
         else:
             self.command_lock.acquire()
-            list_bytes = self.backend.send_command('list', get_output=True)
+            matches = self.backend.matches()
             self.command_lock.release()
-            lines = filter(None, misc.decode(list_bytes).split('\n'))
 
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
@@ -1065,9 +1064,7 @@ class GameConqueror():
             if misc.PY3K:
                 addr = GObject.Value(GObject.TYPE_UINT64)
                 off = GObject.Value(GObject.TYPE_UINT64)
-            line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
-            for line in lines:
-                (mid_str, addr_str, off_str, rt, val, t) = line_regex.match(line).groups()
+            for (mid_str, addr_str, off_str, rt, val, t) in matches:
                 if t == 'unknown':
                     continue
                 mid = int(mid_str)
@@ -1167,7 +1164,7 @@ class GameConqueror():
         Gtk.main_quit()
 
     def check_backend_version(self):
-        if self.backend.get_version() != VERSION:
+        if self.backend.version != VERSION:
             self.show_error(_('Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same version of GameConqueror as scanmem.'))
 
 

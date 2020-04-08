@@ -1,8 +1,9 @@
 """
-    GameConquerorBackend: communication with libscanmem
+    scanmem.py: python wrapper for libscanmem
     
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
+    Copyright (C) 2020 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -18,15 +19,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
-import os
 import ctypes
+import os
+import re
+import sys
 import tempfile
 
 import misc
 
-class GameConquerorBackend():
-    BACKEND_FUNCS = {
+class Scanmem():
+    """Wrapper for libscanmem."""
+    
+    LIBRARY_FUNCS = {
         'sm_init' : (ctypes.c_bool, ),
         'sm_cleanup' : (None, ),
         'sm_set_backend' : (None, ),
@@ -39,50 +43,71 @@ class GameConquerorBackend():
     }
 
     def __init__(self, libpath='libscanmem.so'):
-        self.lib = ctypes.CDLL(libpath)
-        self.init_lib_functions()
-        self.lib.sm_set_backend()
-        self.lib.sm_init()
+        self._lib = ctypes.CDLL(libpath)
+        self._init_lib_functions()
+        self._lib.sm_set_backend()
+        self._lib.sm_init()
         self.send_command('reset')
-        self.version = ''
+        self.version = misc.decode(self._lib.sm_get_version())
 
-    def init_lib_functions(self):
-        for k,v in GameConquerorBackend.BACKEND_FUNCS.items():
-            f = getattr(self.lib, k)
+    def _init_lib_functions(self):
+        for k,v in Scanmem.LIBRARY_FUNCS.items():
+            f = getattr(self._lib, k)
             f.restype = v[0]
             f.argtypes = v[1:]
 
-    # `get_output` will return in a string what libscanmem would print to stdout
     def send_command(self, cmd, get_output = False):
+        """
+        Execute command using libscanmem.
+        This function is NOT thread safe, send only one command at a time.
+        
+        cmd: command to run
+        get_output: if True, return in a string what libscanmem would print to stdout
+        """
         if get_output:
             with tempfile.TemporaryFile() as directed_file:
                 backup_stdout_fileno = os.dup(sys.stdout.fileno())
                 os.dup2(directed_file.fileno(), sys.stdout.fileno())
 
-                self.lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+                self._lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
                 os.dup2(backup_stdout_fileno, sys.stdout.fileno())
                 os.close(backup_stdout_fileno)
                 directed_file.seek(0)
                 return directed_file.read()
         else:
-
-            self.lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
+            self._lib.sm_backend_exec_cmd(ctypes.c_char_p(misc.encode(cmd)))
 
     def get_match_count(self):
-        return self.lib.sm_get_num_matches()
-
-    def get_version(self):
-        return misc.decode(self.lib.sm_get_version())
+        return self._lib.sm_get_num_matches()
 
     def get_scan_progress(self):
-        return self.lib.sm_get_scan_progress()
+        return self._lib.sm_get_scan_progress()
 
     def set_stop_flag(self, stop_flag):
-        self.lib.sm_set_stop_flag(stop_flag)
+        """
+        Sets the flag to interrupt the current scan at the next opportunity
+        """
+        self._lib.sm_set_stop_flag(stop_flag)
 
     def exit_cleanup(self):
-        self.lib.sm_cleanup()
+        """
+        Frees resources allocated by libscanmem, should be called before disposing of this instance
+        """
+        self._lib.sm_cleanup()
 
     def process_is_dead(self, pid):
-        return self.lib.sm_process_is_dead(pid)
+        return self._lib.sm_process_is_dead(pid)
+    
+    def matches(self):
+        """
+        Returns a generator of (match_id_str, addr_str, off_str, region_type, value, types_str) for each match, all strings.
+        The function executes commands internally, it is NOT thread safe
+        """
+        list_bytes = self.send_command('list', get_output=True)
+        lines = filter(None, misc.decode(list_bytes).split('\n'))
+        
+        line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
+        for line in lines:
+            yield line_regex.match(line).groups()
+        
