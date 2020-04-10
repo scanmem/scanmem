@@ -30,6 +30,7 @@ from gi.repository import Pango
 from gi.repository import GObject
 from gi.repository import GLib
 
+
 class BaseText(Gtk.TextView):
     __gtype_name__ = 'BaseText'
 
@@ -43,7 +44,9 @@ class BaseText(Gtk.TextView):
         self.texttag = self.buffer.create_tag(None)
         self.texttag.set_property('fallback', False)
 
+
 GObject.type_register(BaseText)
+
 
 class OffsetText(BaseText):
     __gtype_name__ = 'OffsetText'
@@ -76,11 +79,11 @@ class OffsetText(BaseText):
         if len(txt) % bpl != 0:
             tot_lines += 1
 
-        self.off_len = len('%x'%(base_addr+len(txt),))
+        self.off_len = len('%x' % (base_addr + len(txt),))
         output = []
 
         for i in range(tot_lines):
-            output.append(("%0" + str(self.off_len) + "x") % (base_addr + i*bpl))
+            output.append(("%0" + str(self.off_len) + "x") % (base_addr + i * bpl))
 
         if output:
             self.buffer.insert_with_tags(
@@ -100,16 +103,18 @@ class OffsetText(BaseText):
         w = char_width_pango * self.off_len
         w += 2
 
-        return w,w 
+        return w, w
 
     def do_get_preferred_height(self):
-        return 0,0
+        return 0, 0
+
 
 class AsciiText(BaseText):
     __gtype_name__ = 'AsciiText'
-    _printable = \
-        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%" \
+    _printable = (
+        "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%"
         "&'()*+,-./:;<=>?@[\]^_`{|}~ "
+    )
 
     def __init__(self, parent):
         super(AsciiText, self).__init__(parent)
@@ -125,6 +130,7 @@ class AsciiText(BaseText):
             self.get_style().text_aa[Gtk.StateType.NORMAL]
         )
         """
+
     def __on_move_cursor(self, textview, step_size, count, extend_selection, data=None):
         buffer = self.get_buffer()
         insert_mark = buffer.get_insert()
@@ -139,14 +145,14 @@ class AsciiText(BaseText):
                     insert_iter.backward_char()
                 else:
                     # move forward
-                    if (insert_off+1) % (self._parent.bpl+1) == 0:
+                    if (insert_off + 1) % (self._parent.bpl + 1) == 0:
                         insert_iter.forward_char()
             elif count < 0:
                 # try to move backward
                 if not insert_iter.is_start() and \
                    step_size == Gtk.MovementStep.VISUAL_POSITIONS:
                     # move backward (at start or line up: stay)
-                    if (insert_off+1) % (self._parent.bpl+1) == 1:
+                    if (insert_off + 1) % (self._parent.bpl + 1) == 1:
                         insert_iter.backward_char()
                     insert_iter.backward_char()
             # set end always to one char in front of start
@@ -170,7 +176,7 @@ class AsciiText(BaseText):
                 off = iter.get_offset()
                 org_off = off - int(off / (self._parent.bpl + 1))
                 self._parent.emit('char-changed', org_off, c)
-                self.select_a_char(buffer.get_iter_at_offset(off+1))
+                self.select_a_char(buffer.get_iter_at_offset(off + 1))
             return True
         return False
 
@@ -183,12 +189,12 @@ class AsciiText(BaseText):
         return False
 
     # we want at least one char is selected all the time
-    def select_a_char(self, insert_iter = None):
+    def select_a_char(self, insert_iter=None):
         buffer = self.get_buffer()
         if insert_iter is None:
             insert_iter = buffer.get_iter_at_mark(buffer.get_insert())
         insert_off = insert_iter.get_offset()
-        if (insert_off+1) % (self._parent.bpl+1) == 0:
+        if (insert_off + 1) % (self._parent.bpl + 1) == 0:
             if insert_iter.is_end():
                 end_iter = insert_iter.copy()
                 insert_iter.backward_char()
@@ -213,8 +219,8 @@ class AsciiText(BaseText):
 
         output = []
 
-        convert = lambda i: "".join(
-            [chr(x) if (chr(x) in AsciiText._printable) else ('.') for x in list(i)])
+        def convert(i):
+            return "".join([chr(x) if (chr(x) in AsciiText._printable) else ('.') for x in list(i)])
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
@@ -244,10 +250,10 @@ class AsciiText(BaseText):
         w = char_width_pango * self._parent.bpl
         w += 2
 
-        return w,w
+        return w, w
 
     def do_get_preferred_height(self):
-        return 0,0
+        return 0, 0
 
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
@@ -267,8 +273,8 @@ class AsciiText(BaseText):
             return
 
         bpl = self._parent.bpl
-        start += start/bpl
-        end += end/bpl
+        start += start / bpl
+        end += end / bpl
 
         if self.prev_start and self.prev_end:
             if self.buffer.get_iter_at_mark(self.prev_start).get_offset() == start \
@@ -333,17 +339,16 @@ class HexText(BaseText):
                 pos = off % 3
                 org_off = int(off / 3)
                 txt = buffer.get_text(
-                        buffer.get_iter_at_offset(org_off*3),
-                        buffer.get_iter_at_offset(org_off*3+2),
-                        True)
+                    buffer.get_iter_at_offset(org_off * 3),
+                    buffer.get_iter_at_offset(org_off * 3 + 2),
+                    True)
                 if pos < 2:
                     l = list(txt)
                     l[pos] = c
-                    self._parent.emit('char-changed', org_off, int(''.join(l),16))
-                    self.select_a_char(buffer.get_iter_at_offset(off+1))
+                    self._parent.emit('char-changed', org_off, int(''.join(l), 16))
+                    self.select_a_char(buffer.get_iter_at_offset(off + 1))
             return True
         return False
-
 
     def __on_button_release(self, widget, event, data=None):
         buffer = self.get_buffer()
@@ -354,7 +359,7 @@ class HexText(BaseText):
         return False
 
     # we want at least one char is selected all the time
-    def select_a_char(self, insert_iter = None):
+    def select_a_char(self, insert_iter=None):
         buffer = self.get_buffer()
         if insert_iter is None:
             insert_iter = buffer.get_iter_at_mark(buffer.get_insert())
@@ -421,7 +426,9 @@ class HexText(BaseText):
             tot_lines += 1
 
         output = []
-        convert = lambda x: '%02X'%(x,)
+
+        def convert(x):
+            return '%02X' % (x,)
 
         for i in range(tot_lines):
             if i * bpl + bpl > len(txt):
@@ -450,10 +457,10 @@ class HexText(BaseText):
 
         w = char_width_pango * self._parent.bpl * 3
         w += 2
-        return w,w
+        return w, w
 
     def do_get_preferred_height(self):
-        return 0,0
+        return 0, 0
 
     # start and end are offset to the original text
     def select_blocks(self, start=None, end=None):
@@ -472,8 +479,8 @@ class HexText(BaseText):
             return
 
         start *= 3
-        end = end * 3 -1
-        
+        end = end * 3 - 1
+
         if self.prev_start and self.prev_end:
             if self.buffer.get_iter_at_mark(self.prev_start).get_offset() == start \
                and self.buffer.get_iter_at_mark(self.prev_end).get_offset() == end:
@@ -497,10 +504,11 @@ class HexText(BaseText):
         else:
             self.prev_end = self.buffer.create_mark(None, end_iter, False)
 
+
 class HexView(Gtk.Box):
     __gtype_name__ = 'HexView'
     __gsignals__ = {
-        'char-changed' : (GObject.SignalFlags.RUN_LAST, GObject.TYPE_BOOLEAN, (int,int))
+        'char-changed': (GObject.SignalFlags.RUN_LAST, GObject.TYPE_BOOLEAN, (int, int))
     }
 
     def __init__(self):
@@ -510,12 +518,11 @@ class HexView(Gtk.Box):
         self._bpl = 16
         self._font = "Monospace 10"
         self._payload = ""
-        self._base_addr = 0;
+        self._base_addr = 0
         self.editable = False
 
         self.vadj = Gtk.Adjustment()
         self.vscroll = Gtk.Scrollbar.new(Gtk.Orientation.VERTICAL, self.vadj)
-
 
         self.offset_text = OffsetText(self)
         self.hex_text = HexText(self)
@@ -571,13 +578,12 @@ class HexView(Gtk.Box):
         buf = self.hex_text.get_buffer()
         buf_iter = buf.get_iter_at_mark(buf.get_insert())
         off = buf_iter.get_offset()
-        return off//3 + self._base_addr
+        return off // 3 + self._base_addr
 
     def do_realize(self):
         Gtk.Box.do_realize(self)
         # set font
         self.modify_font(self._font)
-
 
     def __on_hex_change(self, buffer, iter, mark):
         return True
@@ -593,7 +599,7 @@ class HexView(Gtk.Box):
         iter1 = hex_buffer.get_iter_at_offset(offset * 3)
         iter2 = hex_buffer.get_iter_at_offset(offset * 3 + 2)
         hex_buffer.delete(iter1, iter2)
-        hex_buffer.insert(iter1, '%02X'%(charval,))
+        hex_buffer.insert(iter1, '%02X' % (charval,))
         # set ascii
         iter1 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl)
         iter2 = ascii_buffer.get_iter_at_offset(offset + offset / self._bpl + 1)
@@ -604,6 +610,7 @@ class HexView(Gtk.Box):
 
     def get_payload(self):
         return self._payload
+
     def set_payload(self, val):
         self._payload = val
 
@@ -631,6 +638,7 @@ class HexView(Gtk.Box):
 
     def get_bpl(self):
         return self._bpl
+
     def set_bpl(self, val):
         self._bpl = val
         # Redraw!
@@ -638,6 +646,7 @@ class HexView(Gtk.Box):
 
     def get_base_addr(self):
         return self._base_addr
+
     def set_base_addr(self, val):
         self._base_addr = val
         view = self.offset_text
@@ -649,23 +658,23 @@ class HexView(Gtk.Box):
 
         view.render(self._payload)
 
-
     payload = property(get_payload, set_payload)
     font = property(get_font, modify_font)
     bpl = property(get_bpl, set_bpl)
     base_addr = property(get_base_addr, set_base_addr)
 
+
 GObject.type_register(HexView)
 
 if __name__ == "__main__":
     def char_changed_handler(hexview, offset, charval):
-        #print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
+        # print 'handler:','%X' % (offset,), chr(charval), '%02X' % (charval,)
         return False
     w = Gtk.Window()
-    w.resize(500,500)
+    w.resize(500, 500)
     view = HexView()
-    view.payload = "Woo welcome this is a simple read/only HexView widget for PacketManipulator"*16
-    view.base_addr = 0x6fff000000000000;
+    view.payload = "Woo welcome this is a simple read/only HexView widget for PacketManipulator" * 16
+    view.base_addr = 0x6fff000000000000
 #    view.connect('char-changed', char_changed_handler)
     view.editable = True
     w.add(view)

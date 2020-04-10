@@ -1,4 +1,4 @@
-# constants 
+# constants
 # should be defined by autotools
 
 VERSION = '@VERSION@'
@@ -7,7 +7,8 @@ LOCALEDIR = '@LOCALEDIR@'
 GETTEXT_PACKAGE = '@GETTEXT_PACKAGE@'
 PACKAGE_BUGREPORT = '@PACKAGE_BUGREPORT@'
 
-SETTINGS = {'scan_data_type':'int32'
-           ,'lock_data_type':'int32'
-           ,'search_scope'  : 1      # normal
-           }
+SETTINGS = {
+    'scan_data_type': 'int32',
+    'lock_data_type': 'int32',
+    'search_scope': 1      # normal
+}
