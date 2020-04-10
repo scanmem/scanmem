@@ -1,7 +1,7 @@
 SUBDIRS = icons
 
 gameconquerordir=$(datadir)/gameconqueror
-python_PYTHON = backend.py consts.py misc.py hexview.py GameConqueror.py
+python_PYTHON = scanmem.py consts.py misc.py hexview.py GameConqueror.py
 pythondir = $(gameconquerordir)
 dist_bin_SCRIPTS = gameconqueror
 dist_gameconqueror_DATA = GameConqueror.ui GameConqueror_128x128.png \
