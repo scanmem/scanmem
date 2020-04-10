@@ -92,8 +92,11 @@ class OffsetText(BaseText):
         ctx = self.get_pango_context()
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
+        char_width_pango = max(
+            metric.get_approximate_char_width(),
+            metric.get_approximate_digit_width()) / Pango.SCALE
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * (self.off_len + 1)
+        w = char_width_pango * self.off_len
         w += 2
 
         return w,w 
@@ -233,8 +236,11 @@ class AsciiText(BaseText):
         ctx = self.get_pango_context()
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
+        char_width_pango = max(
+            metric.get_approximate_char_width(),
+            metric.get_approximate_digit_width()) / Pango.SCALE
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * self._parent.bpl
+        w = char_width_pango * self._parent.bpl
         w += 2
 
         return w,w
@@ -437,9 +443,11 @@ class HexText(BaseText):
         ctx = self.get_pango_context()
         font = ctx.load_font(Pango.FontDescription(self._parent.font))
         metric = font.get_metrics(ctx.get_language())
+        char_width_pango = max(
+            metric.get_approximate_char_width(),
+            metric.get_approximate_digit_width()) / Pango.SCALE
 
-        w = metric.get_approximate_char_width() / Pango.SCALE * \
-                        (self._parent.bpl * 3 - 1)
+        w = char_width_pango * self._parent.bpl * 3
         w += 2
         return w,w
 
