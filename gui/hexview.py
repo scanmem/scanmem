@@ -41,6 +41,7 @@ class BaseText(Gtk.TextView):
         self.override_font(Pango.FontDescription(parent.font))
         self.set_editable(False)
         self.texttag = self.buffer.create_tag(None)
+        self.texttag.set_property('fallback', False)
 
 GObject.type_register(BaseText)
 
