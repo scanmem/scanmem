@@ -90,9 +90,10 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned block;
+	volatile unsigned seconds = 1;
     char *delay = NULL;
-    bool cont = false;
+    volatile bool cont = false;
     struct setting {
         char *matchids;
         char *value;
