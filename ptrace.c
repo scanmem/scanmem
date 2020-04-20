@@ -753,7 +753,7 @@ bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len)
 /* TODO: may use /proc/<pid>/mem here */
 bool sm_write_array(pid_t target, void *addr, const void *data, size_t len)
 {
-    int i,j;
+    unsigned i,j;
     long peek_value;
 
     if (sm_attach(target) == false) {

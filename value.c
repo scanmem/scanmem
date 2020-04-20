@@ -74,7 +74,7 @@ void valtostr(const value_t *val, char *str, size_t n)
         show_debug("BUG: No formatting found\n");
         goto err;
     }
-    if (np <= 0 || np >= (n - 1))
+    if (np <= 0 || (size_t)np >= (n - 1))
         goto err;
 
     return;
@@ -115,7 +115,7 @@ void uservalue2value(value_t *dst, const uservalue_t *src)
 /* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
 bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *val)
 {
-    int i,j;
+    unsigned i,j;
     uint8_t *bytes_array = malloc(argc*sizeof(uint8_t));
     wildcard_t *wildcards_array = malloc(argc*sizeof(wildcard_t));
 

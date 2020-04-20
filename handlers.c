@@ -1271,7 +1271,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     void *addr;
     char *endptr;
     char *buf = NULL;
-    int len;
+    unsigned len;
     bool dump_to_file = false;
     FILE *dump_f = NULL;
 
@@ -1349,7 +1349,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
         else
         {
             /* print it out nicely */
-            int i,j;
+            unsigned i,j;
             int buf_idx = 0;
             for (i = 0; i + 16 < len; i += 16)
             {
