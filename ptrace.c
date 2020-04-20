@@ -612,6 +612,11 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 if (nread < read_size) {
                     /* the region ends here, update `memlength` */
                     memlength = nread;
+                    if ((nread == 0) && (reg_pos == r->start)) {
+                        /* Failed on first read, which means region not exist. */
+                        show_warn("FIXME: region(%p) not exist(Maps changed). Region skipped.\n", reg_pos);
+                        break;
+                    }
                 }
                 /* If less than `MAX_ALLOC_SIZE` bytes remain, we have all of them
                  * in the buffer, so go all the way.
