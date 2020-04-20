@@ -64,9 +64,10 @@ globals_t sm_globals = {
         0,                      /* debug */
         0,                      /* backend */
         ANYINTEGER,             /* scan_data_type */
-        REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */ 
+        REGION_HEAP_STACK_EXECUTABLE_BSS, /* region_detail_level */
         1,                      /* dump_with_ascii */
         0,                      /* reverse_endianness */
+        0,                      /* no_ptrace */
     }
 };
 
