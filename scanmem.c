@@ -5,7 +5,7 @@
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009-2013      WANG Lu <coolwanglu@gmail.com>
     Copyright (C) 2016           Sebastian Parschauer <s.parschauer@gmx.de>
- 
+
     This file is part of libscanmem.
 
     This library is free software: you can redistribute it and/or modify

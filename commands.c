@@ -252,11 +252,11 @@ bool sm_execcommand(globals_t *vars, const char *commandline)
     /* just leading whitespace? */
     if (argv[0] == NULL) {
         free(argv);
-        
+
         /* legal I guess, just don't do anything */
         return true;
     }
-    
+
     /* search commands list for appropriate handler */
     while (np) {
         command_t *command = np->data;

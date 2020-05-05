@@ -500,7 +500,7 @@ extern inline unsigned int scan_routine_STRING_EQUALTO SCAN_ROUTINE_ARGUMENTS
             }
         }
     }
-    
+
     /* matched */
     *saveflags = length;
 

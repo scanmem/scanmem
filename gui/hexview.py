@@ -100,7 +100,7 @@ class OffsetText(BaseText):
         w = char_width_pango * self.off_len
         w += 2
 
-        return w,w 
+        return w,w
 
     def do_get_preferred_height(self):
         return 0,0
@@ -473,7 +473,7 @@ class HexText(BaseText):
 
         start *= 3
         end = end * 3 -1
-        
+
         if self.prev_start and self.prev_end:
             if self.buffer.get_iter_at_mark(self.prev_start).get_offset() == start \
                and self.buffer.get_iter_at_mark(self.prev_end).get_offset() == end:

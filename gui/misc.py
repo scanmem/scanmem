@@ -1,6 +1,6 @@
 """
     Misc functions for Game Conqueror
-    
+
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2013 Mattias <mattiasmun(a)gmail.com>
     Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>

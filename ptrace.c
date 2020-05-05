@@ -1,12 +1,12 @@
 /*
     Functions to access the memory of the target process.
- 
+
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
     Copyright (C) 2015           Sebastian Parschauer <s.parschauer@gmx.de>
     Copyright (C) 2017-2018      Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
- 
+
     This file is part of libscanmem.
 
     This library is free software: you can redistribute it and/or modify
@@ -225,7 +225,7 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
 
 /*
  * sm_peekdata - fills the peekbuf cache with memory from the process
- * 
+ *
  * This routine calls either `ptrace(PEEKDATA, ...)` or `pread(...)`,
  * and fills the peekbuf cache, to make a local mirror of the process memory we're interested in.
  * `sm_attach()` MUST be called before this function.
@@ -299,7 +299,7 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
             peekbuf.size += len;
             break;
         }
-        
+
         /* otherwise, the read worked */
         peekbuf.size += PEEKDATA_CHUNK;
     }
@@ -454,7 +454,7 @@ bool sm_checkmatches(globals_t *vars,
             }
         }
         ++bytes_scanned;
-        
+
         /* go on to the next one... */
         ++reading_iterator;
         if (reading_iterator >= reading_swath.number_of_bytes)
@@ -501,7 +501,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
     if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false)
     {
-        show_error("unsupported scan for current data type.\n"); 
+        show_error("unsupported scan for current data type.\n");
         return false;
     }
 
@@ -511,7 +511,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     if (sm_attach(vars->target) == false)
         return false;
 
-   
+
     /* make sure we have some regions to search */
     if (vars->regions->size == 0) {
         show_warn("no regions defined, perhaps you deleted them all?\n");
@@ -520,16 +520,16 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     }
 
     INTERRUPTABLESCAN();
-    
+
     total_size = sizeof(matches_and_old_values_array);
 
     while (n) {
         total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
         n = n->next;
     }
-    
+
     total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
-    
+
     show_debug("allocate array, max size %ld\n", total_size);
 
     if (!(vars->matches = allocate_array(vars->matches, total_size)))
@@ -537,12 +537,12 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         show_error("could not allocate match array\n");
         return false;
     }
-    
+
     writing_swath_index = vars->matches->swaths;
-    
+
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
-    
+
     /* get total number of bytes */
     for(n = vars->regions->head; n; n = n->next)
         total_scan_bytes += ((region_t *)n->data)->size;
@@ -640,9 +640,9 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 assert(match_length <= memlength);
                 writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
                                                   get_u8b(memory_ptr), checkflags);
-                
+
                 ++vars->num_matches;
-                
+
                 required_extra_bytes_to_record = match_length - 1;
             }
             else if (required_extra_bytes_to_record)
@@ -669,7 +669,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
     /* tell front-end we've finished */
     vars->scan_progress = MAX_PROGRESS;
-    
+
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index)))
     {
         show_error("memory allocation error while reducing matches-array size\n");

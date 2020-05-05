@@ -1,6 +1,6 @@
 """
     scanmem.py: python wrapper for libscanmem
-    
+
     Copyright (C) 2010,2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
     Copyright (C) 2020 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
@@ -29,7 +29,7 @@ import misc
 
 class Scanmem():
     """Wrapper for libscanmem."""
-    
+
     LIBRARY_FUNCS = {
         'sm_init' : (ctypes.c_bool, ),
         'sm_cleanup' : (None, ),
@@ -60,7 +60,7 @@ class Scanmem():
         """
         Execute command using libscanmem.
         This function is NOT thread safe, send only one command at a time.
-        
+
         cmd: command to run
         get_output: if True, return in a string what libscanmem would print to stdout
         """
@@ -98,7 +98,7 @@ class Scanmem():
 
     def process_is_dead(self, pid):
         return self._lib.sm_process_is_dead(pid)
-    
+
     def matches(self):
         """
         Returns a generator of (match_id_str, addr_str, off_str, region_type, value, types_str) for each match, all strings.
@@ -106,8 +106,8 @@ class Scanmem():
         """
         list_bytes = self.send_command('list', get_output=True)
         lines = filter(None, misc.decode(list_bytes).split('\n'))
-        
+
         line_regex = re.compile(r'^\[ *(\d+)\] +([\da-f]+), +\d+ \+ +([\da-f]+), +(\w+), (.*), +\[([\w ]+)\]$')
         for line in lines:
             yield line_regex.match(line).groups()
-        
+

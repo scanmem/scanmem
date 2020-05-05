@@ -63,7 +63,7 @@
  * This file defines all the command handlers used, each one is registered using
  * registercommand(). When a matching command is entered, the commandline is
  * tokenized and parsed into an argv/argc.
- * 
+ *
  * argv[0] will contain the command entered, so one handler can handle multiple
  * commands by checking what's in there. You still need seperate documentation
  * for each command when you register it.
@@ -183,7 +183,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
     /* --- setup a longjmp to handle interrupt --- */
     if (INTERRUPTABLE()) {
-        
+
         /* control returns here when interrupted */
 // settings is allocated with alloca, do not free it
 //        free(settings);
@@ -238,7 +238,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                         /* copy userval onto v */
                         /* XXX: valcmp? make sure the sizes match */
                         uservalue2value(&v, &userval);
-                        
+
                         show_info("setting *%p to %#"PRIx64"...\n", address, v.int64_value);
 
                         /* set the value specified */
@@ -280,7 +280,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
                             goto fail;
                         }
                     }
-                     
+
                      /* go on to the next one... */
                     ++reading_iterator;
                     if (reading_iterator >= reading_swath_index->number_of_bytes)
@@ -312,7 +312,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 fail:
     ENDINTERRUPTABLE();
     return false;
-    
+
 }
 
 /* Accepts a numerical argument to print up to N matches, defaults to 10k
@@ -572,7 +572,7 @@ bool handler__pid(globals_t * vars, char **argv, unsigned argc)
 bool handler__snapshot(globals_t *vars, char **argv, unsigned argc)
 {
     USEPARAMS();
-    
+
 
     /* check that a pid has been specified */
     if (vars->target == 0) {
@@ -624,19 +624,19 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
     /* loop for every reg_id in the set */
     for (size_t set_idx = 0; set_idx < reg_set.size; set_idx++) {
         size_t reg_id = reg_set.buf[set_idx];
-        
+
         /* initialize list pointers */
         element_t *np = vars->regions->head;
         element_t *pp = NULL;
-        
+
         /* find the correct region node */
         while (np) {
             region_t *r = np->data;
-            
+
             /* compare the node id to the id the user specified */
             if (r->id == reg_id)
                 break;
-            
+
             pp = np; /* keep track of prev for l_remove() */
             np = np->next;
         }
@@ -646,7 +646,7 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
             show_warn("no region matching %lu, or already removed.\n", reg_id);
             continue;
         }
-        
+
         /* check for any affected matches before removing it */
         if(vars->num_matches > 0)
         {
@@ -682,12 +682,12 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
     if (vars->regions->size == 0) {
         show_info("no regions are known.\n");
     }
-    
+
     /* print a list of regions that have been searched */
     while (np) {
         region_t *region = np->data;
 
-        fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "POINTER_FMT", %c%c%c, %s\n", 
+        fprintf(stderr, "[%2u] "POINTER_FMT", %7lu bytes, %5s, "POINTER_FMT", %c%c%c, %s\n",
                 region->id,
                 (unsigned long)region->start, region->size,
                 region_type_names[region->type], region->load_addr,
@@ -847,7 +847,7 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
     uservalue_t val;
     val.string_value = string_value;
     val.flags = string_length;
- 
+
     /* need a pid for the rest of this to work */
     if (vars->target == 0) {
         goto fail;
@@ -1182,7 +1182,7 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
                 argv[1]);
         return false;
     }
-    
+
     loc = nth_match(vars->matches, id);
 
     /* check that this is a valid match-id */
@@ -1191,9 +1191,9 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         show_info("use \"list\" to list matches, or \"help\" for other commands.\n");
         return false;
     }
-    
+
     address = remote_address_of_nth_element(loc.swath, loc.index);
-    
+
     val = data_to_val(loc.swath, loc.index);
 
     if (INTERRUPTABLE()) {
@@ -1246,12 +1246,12 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
 bool handler__show(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
-    
+
     if (argv[1] == NULL) {
         show_error("expecting an argument.\n");
         return false;
     }
-    
+
     if (strcmp(argv[1], "copying") == 0)
         show_user(SM_COPYING);
     else if (strcmp(argv[1], "warranty") == 0)
@@ -1262,7 +1262,7 @@ bool handler__show(globals_t * vars, char **argv, unsigned argc)
         show_error("unrecognized show command `%s`\n", argv[1]);
         return false;
     }
-    
+
     return true;
 }
 
@@ -1280,7 +1280,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
         show_error("bad argument, see `help dump`.\n");
         return false;
     }
-    
+
     /* check address */
     errno = 0;
     addr = (void *)(strtoll(argv[1], &endptr, 16));
@@ -1337,7 +1337,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
             show_error("write to file failed.\n");
             free(buf);
             return false;
-        }  
+        }
     }
     else
     {

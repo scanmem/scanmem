@@ -81,14 +81,14 @@ typedef struct {
         uint16_t uint16_value;
         int32_t int32_value;
         uint32_t uint32_value;
-        int64_t int64_value;  
-        uint64_t uint64_value;  
+        int64_t int64_value;
+        uint64_t uint64_value;
         float float32_value;
         double float64_value;
         uint8_t bytes[sizeof(int64_t)];
         char chars[sizeof(int64_t)];
     };
-    
+
     match_flags flags;
 } value_t;
 

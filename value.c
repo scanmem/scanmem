@@ -45,7 +45,7 @@ void valtostr(const value_t *val, char *str, size_t n)
     (val->flags & flag_u##bytes##b && val->flags & flag_s##bytes##b) ? (string " ") : \
         (val->flags & flag_u##bytes##b) ? (string "u ") : \
             (val->flags & flag_s##bytes##b) ? (string "s ") : ""
-    
+
     /* set the flags */
     np = snprintf(buf, sizeof(buf), "[%s%s%s%s%s%s]",
          FLAG_MACRO(64, "I64"),
@@ -257,11 +257,11 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val)
     num = strtod(nptr, &endptr);
     if ((errno != 0) || (*endptr != '\0'))
         return false;
-    
+
     /* I'm not sure how to distinguish between float and double, but I guess it's not necessary here */
     val->flags |= flags_float;
     val->float32_value = (float) num;
-    val->float64_value =  num;   
+    val->float64_value =  num;
     return true;
 }
 

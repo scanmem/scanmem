@@ -43,7 +43,7 @@
 /*
  * SHRTDOC's are one line descriptions of the supported command (shown with `help`).
  * LONGDOC's are detailed descriptions (shown with `help command`) (wrap them before column 80).
- * 
+ *
  * The DOC's are passed to the registercommand() routine, and are read by the help
  * command. You can define SHRTDOC as NULL and help will not print it.
  * However, a NULL longdoc will print "missing documentation" if specific help is requested.
@@ -302,12 +302,12 @@ bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__show(globals_t *vars, char **argv, unsigned argc);
 
-#define DUMP_SHRTDOC "dump a memory region to screen or a file" 
+#define DUMP_SHRTDOC "dump a memory region to screen or a file"
 #define DUMP_LONGDOC "usage: dump <address> <length> [<filename>]\n" \
                 "\n" \
                 "If <filename> is given, save the region of memory to the file \n" \
                 "Otherwise display it in a human-readable format.\n"
-    
+
 bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
 #define VALUE_TYPES "int8,int16,int32,int64,float32,float64,bytearray,string"

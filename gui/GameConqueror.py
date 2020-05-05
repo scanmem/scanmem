@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
-    
+
     Copyright (C) 2009-2011,2013 Wang Lu <coolwanglu(a)gmail.com>
     Copyright (C) 2010 Bryan Cain
     Copyright (C) 2013 Mattias Muenster <mattiasmun(a)gmail.com>
     Copyright (C) 2014-2018 Sebastian Parschauer <s.parschauer(a)gmx.de>
     Copyright (C) 2016-2017 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>
-    
+
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
@@ -89,7 +89,7 @@ TYPENAMES_S2G = {'I64':'int64'
                 ,'F64':'float64'
                 ,'bytearray':'bytearray'
                 ,'string':'string'
-                }   
+                }
 
 # convert our typenames into struct format characters
 TYPENAMES_G2STRUCT = {'int8':'b'
@@ -103,7 +103,7 @@ TYPENAMES_G2STRUCT = {'int8':'b'
                      ,'float32':'f'
                      ,'float64':'d'
                      }
-        
+
 # sizes in bytes of integer and float types
 TYPESIZES = {'int8':1
             ,'uint8':1
@@ -145,7 +145,7 @@ class GameConqueror():
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
         self.value_input = self.builder.get_object('Value_Input')
-        
+
         self.scanoption_frame = self.builder.get_object('ScanOption_Frame')
         self.scanprogress_progressbar = self.builder.get_object('ScanProgress_ProgressBar')
         self.input_box = self.builder.get_object('Value_Input')
@@ -207,7 +207,7 @@ class GameConqueror():
                                         ,attributes = (('active',0),)
                                         ,properties = (('activatable', True)
                                                       ,('radio', False)
-                                                      ,('inconsistent', False)) 
+                                                      ,('inconsistent', False))
                                         ,signals = (('toggled', self.cheatlist_toggle_lock_cb),)
                                    )
         # Description
@@ -235,7 +235,7 @@ class GameConqueror():
                                                     ('editing-started', self.cheatlist_edit_start),
                                                     ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
-        # Value 
+        # Value
         misc.treeview_append_column(self.cheatlist_tv, _('Value'), 4
                                         ,attributes = (('text',4),)
                                         ,properties = (('editable', True)
@@ -548,7 +548,7 @@ class GameConqueror():
     def memoryeditor_hexview_char_changed_cb(self, hexview, offset, charval):
         addr = hexview.base_addr + offset
         self.write_value(addr, 'int8', charval)
-        # return False such that the byte the default handler will be called, and will be displayed correctly 
+        # return False such that the byte the default handler will be called, and will be displayed correctly
         return False
 
     def memoryeditor_key_press_event_cb(self, window, event, data=None):
@@ -660,7 +660,7 @@ class GameConqueror():
         (model, pathlist) = self.cheatlist_tv.get_selection().get_selected_rows()
         if data == 'remove_entry':
             for path in reversed(pathlist):
-                self.cheatlist_liststore.remove(model.get_iter(path)) 
+                self.cheatlist_liststore.remove(model.get_iter(path))
             return True
         addr = model.get_value(model.get_iter(pathlist[0]), 2)
         if data == 'browse_this_address':
@@ -760,7 +760,7 @@ class GameConqueror():
                 self.processfilter_input.get_text().lower() in process.lower() and \
                 user is not None and \
                 self.userfilter_input.get_text().lower() in user.lower()
-        
+
 
 
     ############################
@@ -787,7 +787,7 @@ class GameConqueror():
                 return bitn
         except:
             return None
-        
+
     # return the size in bytes of the value in memory
     def get_type_size(self, typename, value):
         if typename in TYPESIZES: # int or float type; fixed length
@@ -863,7 +863,7 @@ class GameConqueror():
             return
         self.memoryeditor_hexview.payload = misc.str2bytes(data)
         self.memoryeditor_hexview.base_addr = start_addr
-        
+
         # set editable flag
         self.memoryeditor_hexview.editable = (selected_region['flags'][1] == 'w')
 
@@ -957,7 +957,7 @@ class GameConqueror():
     def reset_scan(self):
         # reset search type and value type
         self.scanresult_liststore.clear()
-        
+
         self.command_lock.acquire()
         self.backend.send_command('reset')
         self.update_scan_result()
@@ -985,7 +985,7 @@ class GameConqueror():
         self.backend.send_command('reset')
         self.command_lock.release()
 
-    
+
     # perform scanning through backend
     # set GUI if needed
     def do_scan(self):
@@ -995,7 +995,7 @@ class GameConqueror():
         assert(self.scan_data_type_combobox.get_active() >= 0)
         data_type = self.scan_data_type_combobox.get_active_text()
         cmd = self.value_input.get_text()
-   
+
         try:
             cmd = misc.check_scan_command(data_type, cmd, self.is_first_scan)
         except Exception as e:
@@ -1009,7 +1009,7 @@ class GameConqueror():
         # disable set of widgets interfering with the scan
         for wid in self.disablelist:
             wid.set_sensitive(False)
-        
+
         # Replace scan_button with stop_button
         self.scan_button.set_visible(False)
         self.stop_button.set_visible(True)
@@ -1133,7 +1133,7 @@ class GameConqueror():
 
     def read_value(self, addr, typestr, prev_value):
         return self.bytes2value(typestr, self.read_memory(addr, self.get_type_size(typestr, prev_value)))
-    
+
     # addr could be int or str
     def read_memory(self, addr, length):
         if not isinstance(addr,str):
@@ -1148,7 +1148,7 @@ class GameConqueror():
             # self.show_error('Cannot access target memory')
             data = None
         return data
-            
+
     # addr could be int or str
     def write_value(self, addr, typestr, value):
         if not isinstance(addr,str):

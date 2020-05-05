@@ -70,7 +70,7 @@ typedef unsigned int (*scan_routine_t)(const mem64_t *memory_ptr, size_t memleng
                                        const value_t *old_value, const uservalue_t *user_value, match_flags *saveflags);
 extern scan_routine_t sm_scan_routine;
 
-/* 
+/*
  * Choose the global scanroutine according to the given parameters, sm_scan_routine will be set.
  * Returns whether a proper routine has been found.
  */

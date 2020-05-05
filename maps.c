@@ -238,7 +238,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
                 /* add a unique identifier */
                 map->id = regions->size;
-                
+
                 /* okay, add this guy to our list */
                 if (l_append(regions, regions->tail, map) == -1) {
                     show_error("failed to save region.\n");
@@ -249,7 +249,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
     }
 
     show_info("%lu suitable regions found.\n", regions->size);
-    
+
     /* release memory allocated */
     free(line);
     fclose(maps);
