@@ -258,7 +258,7 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
                  size_t index, size_t swath_length)
 {
     unsigned int i;
-    value_t val;
+    volatile value_t val;
     size_t max_bytes = swath_length - index;
 
     /* Init all possible flags in a single go.

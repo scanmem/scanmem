@@ -90,9 +90,9 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned block, seconds;
     char *delay = NULL;
-    bool cont = false;
+    bool cont;
     struct setting {
         char *matchids;
         char *value;
@@ -128,6 +128,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     settings = calloca(argc - 1, sizeof(struct setting));
 
     /* parse every block into a settings struct */
+    cont = false;
     for (block = 0; block < argc - 1; block++) {
 
         /* first separate the block into matches and value, which are separated by '=' */
@@ -194,6 +195,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
     /* --- execute the parsed setting structs --- */
 
+    seconds = 1;
     while (true) {
         uservalue_t userval;
 
