@@ -2,21 +2,23 @@
 # Copyright (C) 2009-2014 Wang Lu <coolwanglu(a)gmail.com>
 # This file is distributed under the same license as Game Conqueror.
 # Igor Gnatenko <i.gnatenko.brain@gmail.com>, 2014.
+# M0nkey <sadm0nkeydev@gmail.com>, 2020.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: scanmem 0.14\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-07-17 22:08+0200\n"
-"PO-Revision-Date: 2020-05-23 02:13+0300\n"
-"Last-Translator: Igor Gnatenko <i.gnatenko.brain@gmail.com>\n"
-"Language-Team: Russian Fedora\n"
+"PO-Revision-Date: 2020-05-23 23:04+0300\n"
+"Last-Translator: M0nkey <sadm0nkeydev@gmail.com>\n"
+"Language-Team: Russian <->\n"
 "Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 2.2.1\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n"
+"%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2)\n"
+"X-Generator: Gtranslator 3.30.1\n"
 
 #: ../gui/GameConqueror.ui.h:1
 msgid "GameConqueror - Memory Editor"
@@ -75,7 +77,8 @@ msgid ""
 " 5.67\n"
 " (- 8 * 9)</span>\n"
 "\n"
-" For bytearray: use 2-char hexadecimal notation for each byte, separated by spaces\n"
+" For bytearray: use 2-char hexadecimal notation for each byte, separated by "
+"spaces\n"
 " e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
 " <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
 "\n"
@@ -98,14 +101,15 @@ msgstr ""
 " <b>- N</b>       Уменьшились by N\n"
 " <b>!= N</b>       Отличные от N\n"
 "</span>\n"
-" где N может быть число или простое математическое выражение, выделенное в (), напр.\n"
+" где N может быть число или простое математическое выражение, выделенное в "
+"(), напр.\n"
 "<span font_family=\"monospace\"> 12\n"
 " 0x34\n"
 " 5.67\n"
 " (- 8 * 9)</span>\n"
 "\n"
-" Для массива байтов: используйте 2-разрядный шестнадцатеричный формат для каждого байта, разделённые "
-"пробелами\n"
+" Для массива байтов: используйте 2-разрядный шестнадцатеричный формат для "
+"каждого байта, разделённые пробелами\n"
 " напр. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
 " <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
 "\n"
@@ -204,11 +208,13 @@ msgid ""
 msgstr ""
 "Copyright (C) 2009-2014 ВАНГ Лу (WANG Lu)<coolwanglu@gmail.com>\n"
 "Copyright (C) 2010 Брайан Кейн (Bryan Cain)\n"
-"Copyright (C) 2015-2016 Себастиан Паурсчер (Sebastian Parschauer)<s.parschauer@gmx.de>\n"
-"Copyright (C) 2016 Анрея Стачиоти (Andrea Stacchiotti)<andreastacchiotti(a)gmail.com>\n"
+"Copyright (C) 2015-2016 Себастиан Паурсчер (Sebastian Parschauer)<s."
+"parschauer@gmx.de>\n"
+"Copyright (C) 2016 Анрея Стачиоти (Andrea "
+"Stacchiotti)<andreastacchiotti(a)gmail.com>\n"
 "\n"
-"Особое спасибо : Егору Гнатенко (Igor Gnatenko), Матиасу Муенштеру (Mattias Muenster), Чангу Дже "
-"( Zhang Zhe)"
+"Особое спасибо : Егору Гнатенко (Igor Gnatenko), Матиасу Муенштеру (Mattias "
+"Muenster), Чангу Дже ( Zhang Zhe)"
 
 #: ../gui/GameConqueror.ui.h:64
 msgid "A graphical frontend of scanmem"
@@ -252,7 +258,8 @@ msgstr "_Тип:"
 
 #: ../gui/GameConqueror.ui.h:74
 msgid "Specify data length (string/bytearray only)"
-msgstr "Определите длину данных(только для строк/массивов_байтов string/bytearray)"
+msgstr ""
+"Определите длину данных(только для строк/массивов_байтов string/bytearray)"
 
 #: ../gui/GameConqueror.ui.h:75
 msgid "_Length:"
@@ -362,7 +369,8 @@ msgstr "Копировать адрес"
 msgid "Remove this entry"
 msgstr "Удалить этот элемент"
 
-#: ../gui/GameConqueror.py:349 ../gui/GameConqueror.py:537 ../gui/GameConqueror.py:1001
+#: ../gui/GameConqueror.py:349 ../gui/GameConqueror.py:537
+#: ../gui/GameConqueror.py:1001
 msgid "Please select a process"
 msgstr "Пожалуйста выберите процесс"
 
@@ -400,11 +408,11 @@ msgstr "Неизвестная архитектура, вы могли бы со
 
 #: ../gui/GameConqueror.py:846 ../gui/GameConqueror.py:929
 msgid ""
-"Cannot retrieve memory maps of that process, maybe it has exited (crashed), or you don't have enough "
-"privileges"
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
 msgstr ""
-"Невозможно получить маппинги памяти для этого процесса, возможно он больше не существует(упал) или у "
-"вас не хватает прав"
+"Невозможно получить маппинги памяти для этого процесса, возможно он больше "
+"не существует(упал) или у вас не хватает прав"
 
 #. not readable
 #: ../gui/GameConqueror.py:857
@@ -428,11 +436,11 @@ msgstr "Найдено: %d"
 
 #: ../gui/GameConqueror.py:1177
 msgid ""
-"Version of scanmem mismatched, you may encounter problems. Please make sure you are using the same "
-"version of GameConqueror as scanmem."
+"Version of scanmem mismatched, you may encounter problems. Please make sure "
+"you are using the same version of GameConqueror as scanmem."
 msgstr ""
-"Используемая версия scanmem несовместима, могут быть проблемы. Убедитесь, что вы используете "
-"одинаковые версии GameConqueror и scanmem."
+"Используемая версия scanmem несовместима, могут быть проблемы. Убедитесь, "
+"что вы используете одинаковые версии GameConqueror и scanmem."
 
 #: ../gui/GameConqueror.py:1183
 msgid "A GUI for scanmem, a game hacking tool"
@@ -479,7 +487,8 @@ msgstr "%s слишком большой для %s"
 msgid "Cannot locate item: %s"
 msgstr "Невозможно найти запись: %s"
 
-#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1 ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
 msgid "Game Conqueror"
 msgstr ""
 
@@ -493,7 +502,8 @@ msgstr "Запуск Game Conqueror"
 
 #: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:2
 msgid "Authentication is required to run Game Conqueror"
-msgstr "Для запуска Game Conqueror требуется подтверждение подлинности пользователя"
+msgstr ""
+"Для запуска Game Conqueror требуется подтверждение подлинности пользователя"
 
 #: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:2
 msgid "Game hacking tool. GUI front-end for scanmem."
@@ -501,17 +511,20 @@ msgstr "Инструмент для взлома игр (графический 
 
 #: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:3
 msgid ""
-"scanmem is a simple interactive debugging utility, used to locate the address of a variable in an "
-"executing process. This can be used for the analysis or modification of a hostile process on a "
-"compromised machine, reverse engineering, or as a \"pokefinder\" to cheat at video games. "
-"GameConqueror aims to provide a CheatEngine-alike interface for scanmem, it's user-friendly and easy "
-"to use."
+"scanmem is a simple interactive debugging utility, used to locate the "
+"address of a variable in an executing process. This can be used for the "
+"analysis or modification of a hostile process on a compromised machine, "
+"reverse engineering, or as a \"pokefinder\" to cheat at video games. "
+"GameConqueror aims to provide a CheatEngine-alike interface for scanmem, "
+"it's user-friendly and easy to use."
 msgstr ""
-"scanmem это простая интерактивная утилита, используемая для поиска адресов переменных в "
-"выполняющемся процессе. Она может быть использована для анализа или модификации зловредных процессов "
-"на скомпрометированной машине, реверсинжиниринга , или \"ковырялку\" для \"взлома\" видео-игр. "
-"GameConqueror пытается предоставить похожий на CheatEngine интерфейс для scanmem, при этом старается "
-"оставатся удобным для пользователем и простым в использовании."
+"scanmem это простая интерактивная утилита, используемая для поиска адресов "
+"переменных в выполняющемся процессе. Она может быть использована для анализа "
+"или модификации зловредных процессов на скомпрометированной машине, "
+"реверсинжиниринга , или \"ковырялку\" для \"взлома\" видео-игр. "
+"GameConqueror пытается предоставить похожий на CheatEngine интерфейс для "
+"scanmem, при этом старается оставатся удобным для пользователем и простым в "
+"использовании."
 
 #: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:4
 msgid "Features:"
