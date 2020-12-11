@@ -2,6 +2,12 @@ language: c
 sudo: required
 dist: bionic
 
+jobs:
+  include:
+    - arch: amd64
+      dist: bionic
+    - arch: ppc64le
+      dist: focal   
 env:
   global:
   # The next declaration is the encrypted COVERITY_SCAN_TOKEN, created
