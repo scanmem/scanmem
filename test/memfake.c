@@ -25,7 +25,7 @@
 
 int main(int argc, char **argv)
 {
-    uint MB_to_allocate = 1;
+    unsigned int MB_to_allocate = 1;
     bool add_randomness = false;
 
     if (argc >= 2) MB_to_allocate = atoi(argv[1]);
