@@ -59,7 +59,16 @@ case "$host_os" in
     ;;
 esac
 
+# Allows disabling procmem support
+AC_ARG_ENABLE(procmem, [AS_HELP_STRING([--disable-procmem],
+                         [forcefully disable proc/pid/mem support])])
+AS_IF([test "x$enable_procmem" = "xno"], [
+  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
+])
+
 AS_IF([test "x$android" = "xno"], [
+  AS_IF([test "x$enable_procmem" != "xno"],
+		[
   # also need to check if the file is zero'ed (some hardened systems)
   AC_CHECK_FILE([/proc/self/maps], [], [
     echo "This system does not seem to have /proc/pid/maps files."
@@ -76,7 +85,7 @@ AS_IF([test "x$android" = "xno"], [
     echo "This system does not seem to have /proc/pid/mem files."
     echo "Falling back to ptrace() only support."
     AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
-  ])
+  ])])
   # malloc optimizations without Android
   AC_FUNC_MALLOC
   AC_FUNC_REALLOC
@@ -84,13 +93,6 @@ AS_IF([test "x$android" = "xno"], [
   # supported on Android
   AC_SYS_LARGEFILE
   # /proc/pid/mem is there but reading interesting data fails
-  AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
-])
-
-# Allows disabling procmem support
-AC_ARG_ENABLE(procmem, [AS_HELP_STRING([--disable-procmem],
-                         [forcefully disable proc/pid/mem support])])
-AS_IF([test "x$enable_procmem" = "xno"], [
   AC_DEFINE(HAVE_PROCMEM, [0], [Enable /proc/pid/mem support])
 ])
 
