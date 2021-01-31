@@ -51,6 +51,9 @@ globals_t sm_globals = {
     0,                          /* exit flag */
     0,                          /* pid target */
     NULL,                       /* matches */
+    NULL,                       /* current */
+    TAILQ_HEAD_INITIALIZER(sm_globals.match_history), /* history */
+    0,                          /* history_length */
     0,                          /* match count */
     0,                          /* scan progress */
     false,                      /* stop flag */
@@ -60,6 +63,7 @@ globals_t sm_globals = {
     sm_printversion,            /* printversion() pointer */
     /* options */
     {
+        0,                      /* undo limit */
         1,                      /* alignment */
         0,                      /* debug */
         0,                      /* backend */
@@ -108,7 +112,7 @@ out:
 bool sm_init(void)
 {
     globals_t *vars = &sm_globals;
-
+    TAILQ_INIT(&vars->match_history);
     /* before attaching to target, install signal handler to detach on error */
     if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
     {
@@ -186,7 +190,10 @@ bool sm_init(void)
                        WRITE_LONGDOC, WRITE_COMPLETE);
     sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC,
                        OPTION_LONGDOC, OPTION_COMPLETE);
-
+    sm_registercommand("undo", handler__undo, vars->commands, 
+                       UNDO_SHORTDOC, UNDO_LONGDOC, UNDO_COMPLETE);
+    sm_registercommand("redo", handler__redo, vars->commands, 
+                       REDO_SHORTDOC, REDO_LONGDOC, REDO_COMPLETE);
     /* commands beginning with __ have special meaning */
     sm_registercommand("__eof", handler__eof, vars->commands, NULL, NULL, NULL);
 
@@ -209,6 +216,16 @@ void sm_cleanup(void)
     if (sm_globals.matches)
         free(sm_globals.matches);
 
+    if(!TAILQ_EMPTY(&sm_globals.match_history)) {
+        struct history_entry_t *next = NULL, *iterator = TAILQ_FIRST(&sm_globals.match_history);
+        while(iterator != NULL) {
+            next = TAILQ_NEXT(iterator, list);
+            free(iterator->matches);
+            free(iterator);
+            iterator = next;    
+        }
+
+    }
     /* attempt to detach just in case */
     sm_detach(sm_globals.target);
 }
@@ -244,4 +261,12 @@ double sm_get_scan_progress(void)
 void sm_set_stop_flag(bool stop_flag)
 {
     sm_globals.stop_flag = stop_flag;
+}
+
+bool sm_undo_scan(void) {
+    return true;
+}
+
+bool sm_redo_scan(void) {
+    return true;
 }

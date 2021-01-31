@@ -385,4 +385,14 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__option(globals_t *vars, char **argv, unsigned argc);
 
+#define UNDO_SHORTDOC "undo a scan"
+#define UNDO_LONGDOC    "Setting the option undo_limit to a value between 1-65536 enables"\
+                        "the ability to undo a scan; e.g. if you search by mistake the wrong thing"
+#define UNDO_COMPLETE "undo"
+#define REDO_SHORTDOC "redo a scan"
+#define REDO_LONGDOC "redoes the scan that you've undone"
+#define REDO_COMPLETE "redo"
+bool handler__undo(globals_t *vars, char **argv, unsigned argc);
+bool handler__redo(globals_t *vars, char **argv, unsigned argc);
+
 #endif /* HANDLERS_H */
