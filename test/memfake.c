@@ -22,19 +22,21 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <assert.h>
 
 int main(int argc, char **argv)
 {
-    uint MB_to_allocate = 1;
+    size_t MB_to_allocate = 1;
     bool add_randomness = false;
 
-    if (argc >= 2) MB_to_allocate = atoi(argv[1]);
-    if (argc >= 3) add_randomness = atoi(argv[2]);
+    if (argc >= 2) MB_to_allocate = strtoul(argv[1], NULL, 10);
+    if (argc >= 3) add_randomness = strtoul(argv[2], NULL, 10);
     if (argc >= 4) return 1;
 
     size_t array_size = MB_to_allocate * 1024 * 1024 / sizeof(int);
 
     int* array = calloc(array_size, sizeof(int));
+    assert(array != NULL);
 
     // Fill half with random values and leave an half of zeroes, if asked to
     if (add_randomness) {
