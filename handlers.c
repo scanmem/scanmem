@@ -1271,7 +1271,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
     void *addr;
     char *endptr;
     char *buf = NULL;
-    int len;
+    size_t len;
     bool dump_to_file = false;
     FILE *dump_f = NULL;
 
@@ -1292,7 +1292,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
 
     /* check length */
     errno = 0;
-    len = strtoll(argv[2], &endptr, 0);
+    len = strtoul(argv[2], &endptr, 0);
     if ((errno != 0) || (*endptr != '\0'))
     {
         show_error("bad length, see `help dump`.\n");
@@ -1349,7 +1349,7 @@ bool handler__dump(globals_t * vars, char **argv, unsigned argc)
         else
         {
             /* print it out nicely */
-            int i,j;
+            unsigned int i,j;
             int buf_idx = 0;
             for (i = 0; i + 16 < len; i += 16)
             {
