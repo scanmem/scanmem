@@ -4,7 +4,7 @@
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
-    Copyright (C) 2014-2016      Sebastian Parschauer <s.parschauer@gmx.de>
+    Copyright (C) 2014-2019      Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of libscanmem.
 
@@ -429,7 +429,11 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 if (address_ul < region_start + region->size &&
                   address_ul >= region_start) {
                     region_id = region->id;
-                    match_off = address_ul - region->load_addr;
+                    if (region->type == REGION_TYPE_STACK &&
+                      region->load_addr > region_start)
+                        match_off = region->load_addr - address_ul;
+                    else
+                        match_off = address_ul - region->load_addr;
                     region_type = region_type_names[region->type];
                     break;
                 }
