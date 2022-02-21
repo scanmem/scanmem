@@ -17,4 +17,4 @@ else
     SU_CMD=/bin/false
 fi
 
-$(command $SU_CMD) "$DATADIR"/GameConqueror.py "$@"
+"$SU_CMD" "$DATADIR"/GameConqueror.py "$@"
