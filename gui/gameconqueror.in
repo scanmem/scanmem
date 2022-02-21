@@ -1,10 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 DATADIR=@PKGDATADIR@
 
-PKEXEC=$(command -v "pkexec")
-if [ -n "$PKEXEC" ]; then
-    $PKEXEC $DATADIR/GameConqueror.py "$@"
+SU_CMD_KDE=$(command -v kdesu)
+SU_CMD_LXQT=$(command -v lxsudo)
+SU_CMD_PK=$(command -v pkexec)
+
+if [[ $XDG_CURRENT_DESKTOP == *KDE* && -n "$SU_CMD_KDE" ]]; then
+    SU_CMD="$SU_CMD_KDE"
+elif [[ $XDG_CURRENT_DESKTOP == *LXQt* && -n "$SU_CMD_LXQT" ]]; then
+    SU_CMD="$SU_CMD_LXQT"
+elif [[ -n "$SU_CMD_PK" ]]; then
+    SU_CMD="$SU_CMD_PK"
 else
-    echo "install policykit!"
+    echo "Privilege escalation required. Install kdesu, lxqt-sudo, or policykit."
+    SU_CMD=/bin/false
 fi
+
+$(command $SU_CMD) "$DATADIR"/GameConqueror.py "$@"
