@@ -32,7 +32,8 @@
 
 /* determine which regions we need */
 typedef enum {
-    REGION_ALL,                            /* each of them */
+    REGION_ALL,                            /* All regions, including non-writable regions */
+    REGION_ALL_RW,                         /* each of them */
     REGION_HEAP_STACK_EXECUTABLE,          /* heap, stack, executable */
     REGION_HEAP_STACK_EXECUTABLE_BSS       /* heap, stack, executable, bss */
 } region_scan_level_t;

@@ -1651,7 +1651,8 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
     {
         if (strcmp(argv[2], "1") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE; }
         else if (strcmp(argv[2], "2") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE_BSS; }
-        else if (strcmp(argv[2], "3") == 0) {vars->options.region_scan_level = REGION_ALL; }
+        else if (strcmp(argv[2], "3") == 0) {vars->options.region_scan_level = REGION_ALL_RW; }
+        else if (strcmp(argv[2], "4") == 0) {vars->options.region_scan_level = REGION_ALL; }
         else
         {
             show_error("bad value for region_scan_level, see `help option`.\n");

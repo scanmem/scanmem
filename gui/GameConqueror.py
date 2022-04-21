@@ -70,7 +70,7 @@ MEMORY_TYPES = ['int8', 'uint8',
                 'float32', 'float64',
                 'bytearray', 'string']
 
-SEARCH_SCOPE_NAMES = [_('Basic'), _('Normal'), _('Full')]
+SEARCH_SCOPE_NAMES = [_('Basic'), _('Normal'), _('ReadOnly'), _('Full')]
 
 # convert type names used by scanmem into ours
 TYPENAMES_S2G = {'I64':'int64'

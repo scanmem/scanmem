@@ -331,7 +331,7 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
-    "},region_scan_level{1,2,3},dump_with_ascii{0,1},endianness{0,1,2}," \
+    "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
     "noptrace{0,1}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
@@ -357,7 +357,8 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\tPossible Values:\n" \
                  "\t1:\theap, stack and executable only\n" \
                  "\t2:\theap, stack executable and bss only\n" \
-                 "\t3:\teverything(e.g. other libs)\n" \
+                 "\t3:\tall writable memory (including other libs)\n" \
+                 "\t4:\teverything\n" \
                  "\n" \
                  "dump_with_ascii\twhether to print ascii characters with a memory dump\n" \
                  "\t\t\tDefault:1\n" \
