@@ -169,7 +169,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
             prev_end = end;
 
             /* must have permissions to read and write, and be non-zero size */
-            if ((write == 'w') && (read == 'r') && ((end - start) > 0)) {
+            if ((read == 'r') && ((end - start) > 0)) {
                 bool useful = false;
 
                 /* determine region type */
@@ -188,22 +188,28 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
                     case REGION_ALL:
                         useful = true;
                         break;
+                    case REGION_ALL_RW:
+                        if (write == 'w')
+                        {
+                            useful = true;
+                        }
+                        break;
                     case REGION_HEAP_STACK_EXECUTABLE_BSS:
-                        if (filename[0] == '\0')
+                        if (filename[0] == '\0' && write == 'w')
                         {
                             useful = true;
                             break;
                         }
                         /* fall through */
                     case REGION_HEAP_STACK_EXECUTABLE:
-                        if (type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK)
+                        if ((type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK) && (write == 'w'))
                         {
                             useful = true;
                             break;
                         }
                         /* test if the region is mapped to the executable */
-                        if (type == REGION_TYPE_EXE ||
-                          strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
+                        if ((type == REGION_TYPE_EXE ||
+                          strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0) && (write == 'w'))
                             useful = true;
                     break;
                 }
@@ -219,7 +225,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
                 /* initialize this region */
                 map->flags.read = true;
-                map->flags.write = true;
+                map->flags.write = (write == 'w');
                 map->start = (void *) start;
                 map->size = (unsigned long) (end - start);
                 map->type = type;
@@ -238,7 +244,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
                 /* add a unique identifier */
                 map->id = regions->size;
-                
+
                 /* okay, add this guy to our list */
                 if (l_append(regions, regions->tail, map) == -1) {
                     show_error("failed to save region.\n");
@@ -249,7 +255,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
     }
 
     show_info("%lu suitable regions found.\n", regions->size);
-    
+
     /* release memory allocated */
     free(line);
     fclose(maps);
