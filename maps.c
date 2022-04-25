@@ -168,7 +168,7 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
             }
             prev_end = end;
 
-            /* must have permissions to read and write, and be non-zero size */
+            /* must have permissions to read and be non-zero size */
             if ((read == 'r') && ((end - start) > 0)) {
                 bool useful = false;
 
@@ -182,6 +182,11 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
                 else if (!strcmp(filename, "[stack]"))
                     type = REGION_TYPE_STACK;
 
+                if (region_scan_level != REGION_ALL && write != 'w') {
+                    /* Only REGION_ALL scans non-writable memory regions */
+                    continue;
+                }
+
                 /* determine if this region is useful */
                 switch (region_scan_level)
                 {
@@ -189,27 +194,24 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
                         useful = true;
                         break;
                     case REGION_ALL_RW:
-                        if (write == 'w')
-                        {
-                            useful = true;
-                        }
+                        useful = true;
                         break;
                     case REGION_HEAP_STACK_EXECUTABLE_BSS:
-                        if (filename[0] == '\0' && write == 'w')
+                        if (filename[0] == '\0')
                         {
                             useful = true;
                             break;
                         }
                         /* fall through */
                     case REGION_HEAP_STACK_EXECUTABLE:
-                        if ((type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK) && (write == 'w'))
+                        if (type == REGION_TYPE_HEAP || type == REGION_TYPE_STACK)
                         {
                             useful = true;
                             break;
                         }
                         /* test if the region is mapped to the executable */
-                        if ((type == REGION_TYPE_EXE ||
-                          strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0) && (write == 'w'))
+                        if (type == REGION_TYPE_EXE ||
+                          strncmp(filename, exename, MAX_LINKBUF_SIZE) == 0)
                             useful = true;
                     break;
                 }
