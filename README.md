@@ -18,12 +18,12 @@ GameConqueror is a GUI front-end for scanmem, providing more features, such as:
   * Better process finder
   * Memory browser/editor
 
-See [gui/README](gui/README) for more details.
+See [gui/README.md](gui/README.md) for more details.
 
 ## Requirements
 
 scanmem requires libreadline to read commands interactively, and `/proc` must be
-mounted. GameConqueror requirements are documented in [gui/README](gui/README).
+mounted. GameConqueror requirements are documented in [gui/README.md](gui/README.md).
 
 ## Documentation
 
