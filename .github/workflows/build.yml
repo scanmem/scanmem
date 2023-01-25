@@ -1,7 +1,7 @@
 name: build-scanmem-gui
 run-name: ${{ github.actor }} requested a build action.
 
-on: [push]
+on: [push,workflow_dispatch]
 
 jobs:
   build:
