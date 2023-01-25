@@ -1,4 +1,4 @@
-# ![](https://raw.githubusercontent.com/scanmem/scanmem/master/gui/GameConqueror_48x48.png) GameConqueror
+# ![](https://raw.githubusercontent.com/scanmem/scanmem/main/gui/GameConqueror_48x48.png) GameConqueror
 
 Game Conqueror is a graphical game cheating tool under Linux, a frontend for scanmem.
 
@@ -27,7 +27,7 @@ The interface is similar to the Windows-only Cheat Engine.
 
 ## Screenshot
 
-![](https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png)
+![](https://raw.githubusercontent.com/scanmem/scanmem/main/gui/screenshot.png)
 
 ## Authors
 

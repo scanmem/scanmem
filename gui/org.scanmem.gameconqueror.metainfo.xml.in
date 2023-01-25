@@ -25,7 +25,7 @@
   <screenshots>
     <screenshot type="default">
       <image type="source" width="550" height="587">
-        https://raw.githubusercontent.com/scanmem/scanmem/master/gui/screenshot.png
+        https://raw.githubusercontent.com/scanmem/scanmem/main/gui/screenshot.png
       </image>
     </screenshot>
   </screenshots>

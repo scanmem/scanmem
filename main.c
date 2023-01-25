@@ -56,7 +56,7 @@
 
 static const char copy_text[] =
 "Copyright (C) 2006-2017 Scanmem authors\n"
-"See https://github.com/scanmem/scanmem/blob/master/AUTHORS for a full author list\n"
+"See https://github.com/scanmem/scanmem/blob/main/AUTHORS for a full author list\n"
 "\n"
 "scanmem comes with ABSOLUTELY NO WARRANTY; for details type `show warranty'.\n"
 "This is free software, and you are welcome to redistribute it\n"

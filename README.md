@@ -1,6 +1,6 @@
-# ![](https://raw.githubusercontent.com/scanmem/scanmem/master/gui/GameConqueror_72x72.png)scanmem & GameConqueror
+# ![](https://raw.githubusercontent.com/scanmem/scanmem/main/gui/GameConqueror_72x72.png)scanmem & GameConqueror
 
-[![Build Status](https://travis-ci.org/scanmem/scanmem.svg?branch=master)](https://travis-ci.org/scanmem/scanmem)
+[![Build Status](https://travis-ci.org/scanmem/scanmem.svg?branch=main)](https://travis-ci.org/scanmem/scanmem)
 [![Coverity Status](https://scan.coverity.com/projects/8565/badge.svg?flat=1")](https://scan.coverity.com/projects/scanmem)
 
 scanmem is a debugging utility designed to isolate the address of an arbitrary
