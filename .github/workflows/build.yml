@@ -1,0 +1,40 @@
+name: build-scanmem-gui
+run-name: ${{ github.actor }} is learning GitHub Actions
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Update packages
+        run: apt --assume-yes update
+      - name: Upgrade packages
+        run: apt --assume-yes upgrade
+      - name: Autoremove packages
+        run: apt --assume-yes autoremove
+      - name: Install required packages
+        run: apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
+      - name: Run auto generate
+        run: ./autogen.sh
+      - name: Run the configuration
+        run: ./configure --enable-gui
+      - name: Make the binary
+        run: make CFLAGS='-O2 -fsanitize=address,undefined'
+      - name: Testing requires `sudo` for `ptrace()`
+        run: make check VERBOSE=1
+      - name: Install Scanmem
+        run: make install
+      - name: github.actor
+        run: echo ${{ github.actor }}
+      - name: github.repository
+        run: echo ${{ github.repository }}
+      - name: project
+        run: echo "project=${{ github.repository }}" | sed -e 's:/:%2F:g' -e 's/ /%20/g'
+      - uses: vapier/coverity-scan-action@v1
+        with:
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+#      - name: Wait forever
+#        run: while :; do echo 'Hello'; sleep 5 ; done
