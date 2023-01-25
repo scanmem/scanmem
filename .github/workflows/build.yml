@@ -1,5 +1,5 @@
 name: build-scanmem-gui
-run-name: ${{ github.actor }} is learning GitHub Actions
+run-name: ${{ github.actor }} requested a build action.
 
 on: [push]
 
@@ -9,14 +9,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Update packages
-        run: apt --assume-yes update
+        run: sudo apt --assume-yes update
       - name: Upgrade packages
-        run: apt --assume-yes upgrade
-      - name: Autoremove packages
-        run: apt --assume-yes autoremove
+        run: sudo apt --assume-yes upgrade
+      - name: Auto-remove packages
+        run: sudo apt --assume-yes autoremove
       - name: Install required packages
-        run: apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
-      - name: Run auto generate
+        run: sudo apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
+      - name: Run auto-generate
         run: ./autogen.sh
       - name: Run the configuration
         run: ./configure --enable-gui
@@ -25,7 +25,7 @@ jobs:
       - name: Testing requires `sudo` for `ptrace()`
         run: make check VERBOSE=1
       - name: Install Scanmem
-        run: make install
+        run: sudo make install
       - name: github.actor
         run: echo ${{ github.actor }}
       - name: github.repository
