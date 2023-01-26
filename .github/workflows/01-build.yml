@@ -1,0 +1,16 @@
+name: build-gui
+run-name: Build GUI by ${{ github.actor }}
+
+on: [push,workflow_dispatch]
+
+jobs:
+  build-gui:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Linux set up
+        uses: ./.github/actions/linux-setup
+      - name: Make the binary
+        run: make CFLAGS='-O2 -fsanitize=address,undefined'
+      - name: Install Scanmem
+        run: sudo make install

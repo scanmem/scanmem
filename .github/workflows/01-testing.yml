@@ -1,10 +1,10 @@
-name: build-gui
-run-name: Build GUI by ${{ github.actor }}
+name: testing
+run-name: Testing by ${{ github.actor }}
 
 on: [push,workflow_dispatch]
 
 jobs:
-  build-gui:
+  testing:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
@@ -13,6 +13,6 @@ jobs:
       - name: Make the binary
         run: make CFLAGS='-O2 -fsanitize=address,undefined'
       - name: Testing requires `sudo` for `ptrace()`
-        run: make check VERBOSE=1
-      - name: Install Scanmem
-        run: sudo make install
+        run: sudo make check VERBOSE=1
+      - name: Testing
+        run: cd test && ./sm_test.sh
