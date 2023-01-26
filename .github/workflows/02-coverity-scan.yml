@@ -1,5 +1,5 @@
 name: coverity-scan
-run-name: ${{ github.actor }} run coverity scan
+run-name: Coverity scan by ${{ github.actor }}
 
 on: [push,workflow_dispatch]
 
@@ -8,20 +8,10 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
-      - name: Current directory
-        run: pwd
-      - name: Github actions
-        run: ls -lhaR .github/
-      - name: Github branch
-        run: git branch -a
-      - uses: ./.github/actions/linux-setup
-      - name: Create file
-        run: touch 02-coverity-scan
+      - name: Linux set up
+        uses: ./.github/actions/linux-setup
       - name: Coverity scan
-        continue-on-error: true
         uses: vapier/coverity-scan-action@v1
         with:
           email: ${{ secrets.COVERITY_SCAN_EMAIL }}
           token: ${{ secrets.COVERITY_SCAN_TOKEN }}
-      - name: List file
-        run: ls -lha .
