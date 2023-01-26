@@ -3,8 +3,15 @@ run-name: ${{ github.actor }} set up the Linux VM
 
 jobs:
   linux-setup:
+    runs-on: composite
     steps:
       - uses: actions/checkout@v3
+      - name: Current directory
+        run: pwd
+      - name: Github actions
+        run: ls -lhaR .
+      - name: Github branch
+        run: git branch -a
       - name: Create file
         run: touch 01-linux-setup
       - name: Update packages

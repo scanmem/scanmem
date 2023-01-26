@@ -11,8 +11,6 @@ jobs:
         run: pwd
       - name: Github actions
         run: ls -lhaR .
-      - name: Github branch
-        run: git branch -a
       - uses: ./.github/actions/linux-setup
       - name: Create file
         run: touch 02-02-build
