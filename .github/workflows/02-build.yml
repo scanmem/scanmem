@@ -1,0 +1,23 @@
+name: build-gui
+run-name: ${{ github.actor }} build GUI action
+
+on: [push,workflow_dispatch]
+
+jobs:
+  build-gui:
+    uses: ./.github/workflows/01-linux-setup.yml
+    steps:
+      - name: Create file
+        run: touch 02-02-build
+      - name: Run auto-generate
+        run: ./autogen.sh
+      - name: Run the configuration
+        run: ./configure --enable-gui
+      - name: Make the binary
+        run: make CFLAGS='-O2 -fsanitize=address,undefined'
+      - name: Testing requires `sudo` for `ptrace()`
+        run: make check VERBOSE=1
+      - name: Install Scanmem
+        run: sudo make install
+      - name: List file
+        run: ls -lha .

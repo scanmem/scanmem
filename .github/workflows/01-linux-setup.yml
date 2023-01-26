@@ -1,0 +1,22 @@
+name: linux-setup
+run-name: ${{ github.actor }} set up the Linux VM
+
+on: [workflow_call]
+
+jobs:
+  linux-setup:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create file
+        run: touch 01-linux-setup
+      - name: Update packages
+        run: sudo apt --assume-yes update
+      - name: Upgrade packages
+        run: sudo apt --assume-yes upgrade
+      - name: Auto-remove packages
+        run: sudo apt --assume-yes autoremove
+      - name: Install required packages
+        run: sudo apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
+      - name: List file
+        run: ls -lha .

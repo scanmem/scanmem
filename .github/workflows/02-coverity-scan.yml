@@ -1,0 +1,17 @@
+name: coverity-scan
+run-name: ${{ github.actor }} run coverity scan
+
+on: [push,workflow_dispatch]
+
+jobs:
+  coverity-scan:
+    uses: ./.github/workflows/01-linux-setup.yml
+    steps:
+      - name: Create file
+        run: touch 02-01-coverity-scan
+      - uses: vapier/coverity-scan-action@v1
+        with:
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+      - name: List file
+        run: ls -lha .
