@@ -16,8 +16,10 @@ jobs:
         run: git branch -a
       - uses: ./.github/actions/linux-setup
       - name: Create file
-        run: touch 02-01-coverity-scan
-      - uses: vapier/coverity-scan-action@v1
+        run: touch 02-coverity-scan
+      - name: Coverity scan
+        uses: vapier/coverity-scan-action@v1
+        if: always()
         with:
           email: ${{ secrets.COVERITY_SCAN_EMAIL }}
           token: ${{ secrets.COVERITY_SCAN_TOKEN }}

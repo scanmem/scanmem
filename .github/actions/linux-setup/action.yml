@@ -4,21 +4,25 @@ description: Set up the Linux VM
 runs:
   using: 'composite'
   steps:
+    # Linux version
+    - run: uname -a
+    # Linux version
+    - run: lsb_release -a
+    # Current directory
     - run: pwd
-      shell: bash
+    # Github actions
     - run: ls -lhaR .github/
-      shell: bash
+    # Github branch
     - run: git branch -a
-      shell: bash
+    # Create file
     - run: touch 01-linux-setup
-      shell: bash
+    # Update packages
     - run: sudo apt --assume-yes update
-      shell: bash
+    # Upgrade packages
     - run: sudo apt --assume-yes upgrade
-      shell: bash
+    # Auto-remove packages
     - run: sudo apt --assume-yes autoremove
-      shell: bash
+    # Install required packages
     - run: sudo apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
-      shell: bash
+    # List file
     - run: ls -lha .
-      shell: bash
