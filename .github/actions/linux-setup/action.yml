@@ -1,7 +1,8 @@
 name: linux-setup
+description: Set up the Linux VM
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
     - name: Current directory
       run: pwd
