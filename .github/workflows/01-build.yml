@@ -1,7 +1,11 @@
 name: build-gui
 run-name: Build GUI by ${{ github.actor }}
 
-on: [push,workflow_dispatch]
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   build-gui:
