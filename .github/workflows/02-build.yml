@@ -5,8 +5,9 @@ on: [push,workflow_dispatch]
 
 jobs:
   build-gui:
+    runs-on: ubuntu-22.04
     steps:
-      - uses: ./.github/actions/linux-setup.yml
+      - uses: ./.github/actions/linux-setup
       - name: Create file
         run: touch 02-02-build
       - name: Run auto-generate
