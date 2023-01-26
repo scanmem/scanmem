@@ -7,7 +7,10 @@ jobs:
   coverity-scan:
     runs-on: ubuntu-22.04
     steps:
-      - uses: ./.github/actions/linux-setup
+      - name: Current directory
+        run: pwd
+      - name: Github actions
+        run: ls -lhaR ./.github/      - uses: ./.github/actions/linux-setup
       - name: Create file
         run: touch 02-01-coverity-scan
       - uses: vapier/coverity-scan-action@v1

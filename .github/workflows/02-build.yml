@@ -7,6 +7,10 @@ jobs:
   build-gui:
     runs-on: ubuntu-22.04
     steps:
+      - name: Current directory
+        run: pwd
+      - name: Github actions
+        run: ls -lhaR ./.github/
       - uses: ./.github/actions/linux-setup
       - name: Create file
         run: touch 02-02-build
