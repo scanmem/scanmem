@@ -12,5 +12,7 @@ jobs:
         uses: ./.github/actions/linux-setup
       - name: Make the binary
         run: make CFLAGS='-O2 -fsanitize=address,undefined'
+      - name: Testing: requires `sudo` for `ptrace()`
+        run: sudo make check VERBOSE=1
       - name: Install Scanmem
         run: sudo make install
