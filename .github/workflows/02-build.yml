@@ -12,7 +12,7 @@ jobs:
         run: pwd
       - name: Github actions
         run: ls -lhaR .github/
-      - uses: .github/actions/linux-setup
+      - uses: ./.github/actions/linux-setup
       - name: Github branch
         run: git branch -a
       - name: Create file

@@ -14,7 +14,7 @@ jobs:
         run: ls -lhaR .github/
       - name: Github branch
         run: git branch -a
-      - uses: .github/actions/linux-setup
+      - uses: ./.github/actions/linux-setup
       - name: Create file
         run: touch 02-01-coverity-scan
       - uses: vapier/coverity-scan-action@v1
