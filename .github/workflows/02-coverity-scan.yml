@@ -5,8 +5,8 @@ on: [push,workflow_dispatch]
 
 jobs:
   coverity-scan:
-    uses: ./.github/workflows/01-linux-setup.yml
     steps:
+      - uses: ./.github/actions/linux-setup.yml
       - name: Create file
         run: touch 02-01-coverity-scan
       - uses: vapier/coverity-scan-action@v1

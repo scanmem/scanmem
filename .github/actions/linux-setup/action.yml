@@ -1,11 +1,8 @@
 name: linux-setup
 run-name: ${{ github.actor }} set up the Linux VM
 
-on: [workflow_call]
-
 jobs:
   linux-setup:
-    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v3
       - name: Create file
