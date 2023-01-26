@@ -10,10 +10,6 @@ jobs:
       - uses: actions/checkout@v3
       - name: Linux set up
         uses: ./.github/actions/linux-setup
-      - name: Run auto-generate
-        run: ./autogen.sh
-      - name: Run the configuration
-        run: ./configure --enable-gui
       - name: Make the binary
         run: make CFLAGS='-O2 -fsanitize=address,undefined'
       - name: Testing requires `sudo` for `ptrace()`
