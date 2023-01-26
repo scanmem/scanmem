@@ -1,5 +1,4 @@
 name: linux-setup
-run-name: ${{ github.actor }} set up the Linux VM
 
 jobs:
   linux-setup:
@@ -8,7 +7,7 @@ jobs:
       - name: Current directory
         run: pwd
       - name: Github actions
-        run: ls -lhaR .
+        run: ls -lhaR .github/
       - name: Github branch
         run: git branch -a
       - name: Create file
