@@ -1,7 +1,11 @@
 name: coverity-scan
 run-name: Coverity scan by ${{ github.actor }}
 
-on: [push,pull_request,workflow_dispatch]
+on:
+  push:
+    branches:
+      - '**coverity**'
+  workflow_dispatch:
 
 jobs:
   coverity-scan:
