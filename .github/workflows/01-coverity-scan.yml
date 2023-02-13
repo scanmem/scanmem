@@ -1,0 +1,24 @@
+name: coverity-scan
+run-name: Coverity scan by ${{ github.actor }}
+
+on:
+  push:
+    branches:
+      - '**coverity**'
+  workflow_dispatch:
+
+jobs:
+  coverity-scan:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v3
+      - name: Linux set up
+        uses: ./.github/actions/linux-setup
+      - name: Make clean
+        run: make clean
+      - name: Coverity scan
+        uses: vapier/coverity-scan-action@v1
+        with:
+          email: ${{ secrets.COVERITY_SCAN_EMAIL }}
+          token: ${{ secrets.COVERITY_SCAN_TOKEN }}
+          command: '--fs-capture-search ./gui/ make'

@@ -1,0 +1,21 @@
+name: linux-setup
+description: Set up the Linux VM
+
+runs:
+  using: 'composite'
+  steps:
+    # Update packages
+    - run: sudo apt --assume-yes update
+      shell: bash
+    # Upgrade packages
+    - run: sudo apt --assume-yes upgrade
+      shell: bash
+    # Install required packages
+    - run: sudo apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
+      shell: bash
+    # Run auto-generate
+    - run: ./autogen.sh
+      shell: bash
+    # Run the configuration
+    - run: ./configure --enable-gui
+      shell: bash
