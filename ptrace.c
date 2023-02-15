@@ -392,7 +392,7 @@ bool sm_checkmatches(globals_t *vars,
         match_flags checkflags;
 
         match_flags old_flags = reading_swath_index->data[reading_iterator].match_info;
-        uint old_length = flags_to_memlength(vars->options.scan_data_type, old_flags);
+        unsigned int old_length = flags_to_memlength(vars->options.scan_data_type, old_flags);
         void *address = reading_swath.first_byte_in_child + reading_iterator;
 
         /* read value from this address */
@@ -699,7 +699,7 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
         return false;
     }
 
-    uint val_length = flags_to_memlength(ANYNUMBER, to->flags);
+    unsigned int val_length = flags_to_memlength(ANYNUMBER, to->flags);
     if (val_length > 0) {
         /* Basically, overwrite as much of the data as makes sense, and no more. */
         memcpy(memarray, to->bytes, val_length);
