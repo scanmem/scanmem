@@ -165,6 +165,7 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 #define CHANGED_SHRTDOC     "match values that have changed or different from some number"
 #define INCREASED_SHRTDOC   "match values that have increased at all or by some number"
 #define DECREASED_SHRTDOC   "match values that have decreased at all or by some number"
+#define XOR_SHRTDOC         "match values that when xor'd equal the xor of both arguments"
 
 #define GREATERTHAN_LONGDOC "usage: > [n]\n" \
                 "If n is given, match values that are greater than n.\n" \
@@ -193,6 +194,12 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
                 "If n is given, match values that have been decreased by n\n" \
                 "Otherwise match all values that have decreased. (same as `<`)\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
+
+#define XOR_LONGDOC "usage: ^ n [m]\n" \
+                "Takes the value of the previous round (a^x) and the current round (b^x)\n" \
+                "If m is given, match all values where (a^x^b^x)==(n^m)\n" \
+                "Otherwise match all values where (a^x^b^x)==n\n" \
+                "You can use this if memory has been xor'd and you know both clear values."
 
 
 bool handler__operators(globals_t *vars, char **argv, unsigned argc);
