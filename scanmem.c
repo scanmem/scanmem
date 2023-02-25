@@ -178,6 +178,8 @@ bool sm_init(void)
                        NULL);
     sm_registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                        WATCH_LONGDOC, NULL);
+    sm_registercommand("memdiff", handler__memdiff, vars->commands, MEMDIFF_SHRTDOC,
+                       MEMDIFF_LONGDOC, NULL);
     sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC,
                        SHOW_LONGDOC, SHOW_COMPLETE);
     sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC,
