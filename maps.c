@@ -4,7 +4,7 @@
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
-    Copyright (C) 2014-2016      Sebastian Parschauer <s.parschauer@gmx.de>
+    Copyright (C) 2014-2019      Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of libscanmem.
 
@@ -33,6 +33,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <errno.h>
 
 #include "list.h"
 #include "maps.h"
@@ -40,6 +41,114 @@
 #include "show_message.h"
 
 const char *region_type_names[] = REGION_TYPE_NAMES;
+
+/*
+ * Calling strchr() is too expensive as it does not have a built-in.
+ * So avoid this function.
+ */
+#define STRCHR(__code)                           \
+do {                                             \
+    for (; ; epos++) {                           \
+        if (*epos == '\0')                       \
+            goto parse_err;                      \
+        __code                                   \
+    }                                            \
+} while (0)
+
+/*
+ * Read the stack end from /proc/$pid/stat
+ *
+ * The process name may contain spaces. This is rather an optional
+ * feature. So handle errors gracefully by falling back to the stack
+ * region start.
+ */
+static unsigned long
+get_stack_end(pid_t target, unsigned long start, unsigned long end)
+{
+    FILE *stat_file;
+    char stat_path[128];
+    char *line = NULL, *spos, *epos;  /* start and end positions */
+    size_t len = 0;
+    unsigned long stack_end = start;
+    /*
+     *  The stack end is the 28th value. So go to 27th space.
+     *  See "man 5 proc".
+     */
+    const int stack_end_idx = 27;
+    int i;
+
+    /* construct the stat file path */
+    snprintf(stat_path, sizeof(stat_path), "/proc/%u/stat", target);
+
+    /* attempt to open the stat file */
+    stat_file = fopen(stat_path, "r");
+    if (!stat_file) {
+        show_debug("failed to open stat file %s.\n", stat_path);
+        goto out;
+    }
+    /* read stat file */
+    if (getline(&line, &len, stat_file) < 0) {
+        if (line)
+            free(line);
+        fclose(stat_file);
+        show_debug("failed to read stat file %s.\n", stat_path);
+        goto out;
+    }
+
+    /* move to the end of the process name first */
+    epos = line;
+    STRCHR(
+        if (*epos == '(') {
+            epos++;
+            break;
+        }
+    );
+    STRCHR(
+        if (*epos == ')') {
+            epos++;
+            break;
+        }
+    );
+
+    /* get the stack end */
+    i = 1;
+    /* start at 1 due to space between pid and proc name */
+    STRCHR(
+        if (*epos == ' ') {
+            i++;
+            if (i == stack_end_idx) {
+                spos = ++epos;
+                break;
+            }
+        }
+    );
+    STRCHR(
+        if (*epos == ' ')
+            break;
+    );
+    *epos = '\0';
+    errno = 0;
+    stack_end = strtoul(spos, NULL, 10);
+    if (errno) {
+        stack_end = start;
+        goto parse_err;
+    }
+
+    free(line);
+    fclose(stat_file);
+
+    /* stack end needs to be in limits and in the upper half */
+    if (stack_end < start || stack_end > end ||
+            stack_end < (start + ((end - start) >> 1)))
+        stack_end = start;
+out:
+    return stack_end;
+parse_err:
+    free(line);
+    fclose(stat_file);
+    show_debug("failed to parse stat file.\n");
+    goto out;
+}
 
 bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level)
 {
@@ -218,6 +327,9 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
 
                 if (!useful)
                     continue;
+
+                if (type == REGION_TYPE_STACK)
+                    load_addr = get_stack_end(target, start, end);
 
                 /* allocate a new region structure */
                 if ((map = calloc(1, sizeof(region_t) + strlen(filename))) == NULL) {
