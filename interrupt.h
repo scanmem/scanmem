@@ -29,7 +29,7 @@
 
 extern sigjmp_buf jmpbuf;       /* used when aborting a command due to an interrupt */
 extern sighandler_t oldsig;     /* reinstalled before longjmp */
-extern unsigned intr_used;
+extern volatile sig_atomic_t intr_used;
 
 /* signal handler used to handle an interrupt during commands */
 void interrupted(int);
