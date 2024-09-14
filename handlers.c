@@ -542,6 +542,15 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
+    /* reset history */
+    struct history_entry_t *cur = NULL, *next = NULL;
+    cur = TAILQ_FIRST(&vars->match_history);
+    while(cur != NULL) {
+        next = TAILQ_NEXT(cur, list);
+        free(cur);
+        cur = next;
+    }
+    TAILQ_INIT(&vars->match_history);
     return true;
 }
 
@@ -997,7 +1006,43 @@ bool handler__default(globals_t * vars, char **argv, unsigned argc)
         show_info("match identified, use \"set\" to modify value.\n");
         show_info("enter \"help\" for other commands.\n");
     }
+    if(vars->options.undo_limit > 0) {
+        if (vars->matches != NULL) {
+            if (vars->history_length >= vars->options.undo_limit) {
+                struct history_entry_t *first = TAILQ_FIRST(&vars->match_history);
+                TAILQ_REMOVE(&vars->match_history, first, list);
+                free(first);
+                vars->history_length--;
+            }
+            struct history_entry_t *entry = malloc(sizeof(struct history_entry_t));
+            matches_and_old_values_array *matches = vars->matches;
+            matches_and_old_values_array *match_copy = malloc(matches->bytes_allocated);
 
+            if (match_copy != NULL) {
+                memcpy(match_copy, matches, matches->bytes_allocated);
+                entry->num_matches = vars->num_matches;
+                entry->matches = match_copy;
+
+                if (!TAILQ_EMPTY(&vars->match_history)) {
+                    /* remove all the ones that would be overwritten first */
+                    struct history_entry_t *next = 
+                                        TAILQ_NEXT(vars->current, list), *tmp;
+                    while(next != NULL) { 
+                        tmp = TAILQ_NEXT(next, list);
+                        free(next->matches);
+                        TAILQ_REMOVE(&vars->match_history, next, list);
+                        free(next);
+                        next = tmp;
+                    }
+                    TAILQ_INSERT_AFTER(&vars->match_history, vars->current, entry, list);
+                } else {
+                    TAILQ_INSERT_TAIL(&vars->match_history, entry, list);
+                }
+                vars->current = entry;
+                vars->history_length++;
+            }
+        }
+    }
     ret = true;
 
 retl:
@@ -1647,6 +1692,15 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             return false;
         }
     }
+    else if (strcasecmp(argv[1], "undo_limit") == 0) {
+        errno = 0;
+        unsigned long n = strtol(argv[2], NULL, 10);
+        if(errno) {
+            show_error("error parsing number, see `help option`\n");
+            return false;
+        }
+        vars->options.undo_limit = (unsigned short) n;
+    }
     else if (strcasecmp(argv[1], "region_scan_level") == 0)
     {
         if (strcmp(argv[2], "1") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE; }
@@ -1705,5 +1759,59 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         show_error("unknown option specified, see `help option`.\n");
         return false;
     }
+    return true;
+}
+
+bool handler__undo(globals_t * vars, char **argv, unsigned argc) {
+    if(TAILQ_EMPTY(&vars->match_history)) {
+        show_error("nothing to undo\n");
+        return false;
+    }
+    if (vars->current != NULL) {
+        struct history_entry_t *previous = TAILQ_PREV(vars->current, history_list_t, list);
+
+        if(previous != NULL) {
+            matches_and_old_values_array *tmp = realloc(vars->matches,
+                                                        previous->matches->bytes_allocated);
+            if(tmp != NULL) {
+                vars->matches = tmp;
+            } else {
+                show_error("could not allocate memory");
+                return false;
+            }
+            vars->current = previous;
+            /* copy since the array would be resized by null_terminate which would
+             * cause use after free at some point */ 
+            memcpy(vars->matches, previous->matches, previous->matches->bytes_allocated);
+            vars->num_matches = previous->num_matches;
+        } else {
+            show_error("error undoing\n");
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool handler__redo(globals_t * vars, char **argv, unsigned argc) {
+    if(vars->current == NULL) {
+        return false;
+    }
+    struct history_entry_t *next = TAILQ_NEXT(vars->current, list);
+    if (next == NULL) {
+        show_error("nothing to redo");
+        return false;
+    }
+    matches_and_old_values_array *tmp = realloc(vars->matches, next->matches->bytes_allocated);
+    if(tmp == NULL) {
+        show_error("could not allocate memory");
+        return false;
+    }
+    vars->current = next;
+    vars->matches = tmp;
+    /* copy since the array would be resized by null_terminate which would
+     * cause use after free at some point */ 
+    memcpy(vars->matches, next->matches, next->matches->bytes_allocated);
+    vars->num_matches = next->num_matches;
     return true;
 }
