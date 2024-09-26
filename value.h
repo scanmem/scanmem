@@ -156,6 +156,7 @@ bool parse_uservalue_float(const char *nptr, uservalue_t * val);
 void free_uservalue(uservalue_t *uval);
 void valcpy(value_t * dst, const value_t * src);
 void uservalue2value(value_t * dst, const uservalue_t * src); /* dst.flags must be set beforehand */
+void xor_uservalue(uservalue_t * dst, const uservalue_t * src);
 
 #define get_s8b(val) ((val)->int8_value)
 #define get_u8b(val) ((val)->uint8_value)

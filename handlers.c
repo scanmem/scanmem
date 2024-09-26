@@ -705,29 +705,46 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
+    uservalue_t val2;
     scan_match_type_t m;
 
-    if (argc == 1)
+    printf("parsing %d arguments\n", argc);
+
+    switch (argc)
     {
-        zero_uservalue(&val);
-    }
-    else if (argc > 2)
-    {
-        show_error("too many values specified, see `help %s`", argv[0]);
-        return false;
-    }
-    else
-    {
-        if (!parse_uservalue_number(argv[1], &val)) {
-            show_error("bad value specified, see `help %s`", argv[0]);
-            return false;
+        case 3:
+        {
+            if (!parse_uservalue_number(argv[2], &val2)) {
+                show_error("bad 2nd value specified, see `help %s`", argv[0]);
+                return false;
+            }
+            /* Falls through to 2, to collect both arguments. */
         }
+        case 2:
+        {
+            if (!parse_uservalue_number(argv[1], &val)) {
+                show_error("bad value specified, see `help %s`", argv[0]);
+                return false;
+            }
+            break;
+        }
+        case 1:
+        {
+            zero_uservalue(&val);
+            break;
+        }
+        default:
+        {
+            show_error("too many values specified, see `help %s`", argv[0]);
+            return false;
+        }    
     }
 
 
     if (strcmp(argv[0], "=") == 0)
     {
         m = (argc == 1) ? MATCHNOTCHANGED : MATCHEQUALTO;
+        // TODO: warn if 3rd argument is set
     }
     else if (strcmp(argv[0], "!=") == 0)
     {
@@ -749,6 +766,22 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
     {
         m = (argc == 1) ? MATCHDECREASED : MATCHDECREASEDBY;
     }
+    else if (strcmp(argv[0], "^") == 0)
+    {
+        if (argc == 2) {
+            m = MATCHXORBY;
+            /* Assumes that val already contains the XOR of both clear values. */
+        } 
+        else if (argc == 3) {
+            m = MATCHXORBY;
+            /* XORs val2 into val, so only &val needs to be passed into handler. */
+            xor_uservalue(&val, &val2);
+        } 
+        else {
+            show_error("operator %% must have 2 arguments, but was given %d.\n", argc-1);
+            return false;
+        }
+    }
     else
     {
         show_error("unrecognized operator seen at handler_operators: \"%s\".\n", argv[0]);
@@ -766,7 +799,7 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
         }
     } else {
         /* Cannot be used on first scan:
-         *   =, !=, <, >, +, + N, -, - N
+         *   =, !=, <, >, +, + N, -, - N, % N M
          * Can be used on first scan:
          *   = N, != N, < N, > N
          */
@@ -775,7 +808,8 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
             m == MATCHDECREASED   ||
             m == MATCHINCREASED   ||
             m == MATCHDECREASEDBY ||
-            m == MATCHINCREASEDBY )
+            m == MATCHINCREASEDBY ||
+            m == MATCHXORBY       )
         {
             show_error("cannot use that search without matches\n");
             return false;
