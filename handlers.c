@@ -1241,6 +1241,204 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     }
 }
 
+bool handler__memdiff(globals_t * vars, char **argv, unsigned argc)
+{
+    void *addr;
+    char *endptr;
+    char *buf = NULL;
+    char *prev_buf = NULL;
+    char *start_buf = NULL;
+    char use_list_output = 0;
+    size_t len;
+
+    if (argc < 3 || argc > 4)
+    {
+        show_error("bad argument, see `help memdiff`.\n");
+        return false;
+    }
+
+    /* check address */
+    errno = 0;
+    addr = (void *)(strtoll(argv[1], &endptr, 16));
+    if ((errno != 0) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help memdiff`.\n");
+        return false;
+    }
+
+    /* check length */
+    errno = 0;
+    len = strtoul(argv[2], &endptr, 0);
+    if ((errno != 0) || (*endptr != '\0'))
+    {
+        show_error("bad length, see `help memdiff`.\n");
+        return false;
+    }
+
+    /* check output format */
+    if (argc == 4)
+    {
+        if (strncmp(argv[3], "list", 4) == 0)
+            use_list_output = 1;
+    }
+
+    buf = malloc(len + sizeof(long));
+    prev_buf = malloc(len + sizeof(long));
+    start_buf = malloc(len + sizeof(long));
+    if (buf == NULL || prev_buf == NULL || start_buf == NULL)
+    {
+        show_error("memory allocation failed.\n");
+        return false;
+    }
+
+    if (!sm_read_array(vars->target, addr, buf, len))
+    {
+        show_error("read memory failed.\n");
+        free(buf);
+        free(prev_buf);
+        free(start_buf);
+        return false;
+    }
+
+    // init compare buffers for showing diffs
+    memcpy(start_buf, buf, len + sizeof(long));
+    memcpy(prev_buf, buf, len + sizeof(long));
+
+    if (INTERRUPTABLE())
+    {
+        /* control returns here when interrupted */
+        sm_detach(vars->target);
+        ENDINTERRUPTABLE();
+
+        free(buf);
+        free(prev_buf);
+        free(start_buf);
+
+        return true;
+    }
+
+
+    while (true)
+    {
+
+        if (sm_process_is_dead(vars->target)) {
+            vars->target = 0;
+            show_info("target process died, interrupting set operation.\n");
+            break;
+        }
+
+
+        if (!sm_read_array(vars->target, addr, buf, len))
+        {
+            show_error("read memory failed.\n");
+            free(buf);
+            free(prev_buf);
+            free(start_buf);
+            return false;
+        }
+
+
+        /* print it in list format */
+        if (use_list_output)
+        {
+            unsigned int i;
+
+            for (i = 0; i < len; i++) {
+                // value different than last read
+                if (buf[i] != prev_buf[i]) {
+                    printf("%p: 0x%02X => 0x%02X\n", addr+i, (unsigned char)(prev_buf[i]), (unsigned char)(buf[i]));
+                    prev_buf[i] = buf[i];
+                }
+            }
+        }
+        /* print it in table format */
+        else
+        {
+            unsigned int i,j;
+            int buf_idx = 0;
+            for (i = 0; i + 16 < len; i += 16)
+            {
+                printf("%p: ", addr+i);
+                for (j = 0; j < 16; ++j)
+                {
+                    buf_idx++;
+                    // value different than last read
+                    if (buf[buf_idx] != prev_buf[buf_idx]) {
+                        printf("\033[0;32m%02X\033[0m ", (unsigned char)(buf[buf_idx]));
+                        prev_buf[buf_idx] = buf[buf_idx];
+                    }
+                    // value different than initial
+                    else if (buf[buf_idx] != start_buf[buf_idx]) {
+                        printf("\033[0;33m%02X\033[0m ", (unsigned char)(buf[buf_idx]));
+                    }
+                    // value is unchanged
+                    else {
+                        printf("%02X ", (unsigned char)(buf[buf_idx]));
+                    }
+
+                }
+                if(vars->options.dump_with_ascii == 1)
+                {
+                    for (j = 0; j < 16; ++j)
+                    {
+                        char c = buf[i+j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
+                }
+                printf("\n");
+            }
+            if (i < len)
+            {
+                printf("%p: ", addr+i);
+                for (j = i; j < len; ++j)
+                {
+                    buf_idx++;
+                    // value different than last read
+                    if (buf[buf_idx] != prev_buf[buf_idx]) {
+                        printf("\033[0;32m%02X\033[0m ", (unsigned char)(buf[buf_idx]));
+                        prev_buf[buf_idx] = buf[buf_idx];
+                    }
+                    // value different than initial
+                    else if (buf[buf_idx] != start_buf[buf_idx]) {
+                        printf("\033[0;33m%02X\033[0m ", (unsigned char)(buf[buf_idx]));
+                    }
+                    // value is unchanged
+                    else {
+                        printf("%02X ", (unsigned char)(buf[buf_idx]));
+                    }
+
+                }
+                if(vars->options.dump_with_ascii == 1)
+                {
+                    while(j%16 !=0) // skip "empty" numbers
+                    {
+                        printf("   ");
+                        ++j;
+                    }
+                    for (j = 0; i+j < len; ++j)
+                    {
+                        char c = buf[i+j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        sleep(1);
+    }
+
+    free(buf);
+    free(prev_buf);
+    free(start_buf);
+
+    ENDINTERRUPTABLE();
+
+    return true;
+}
+
+
 #include "licence.h"
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc)
