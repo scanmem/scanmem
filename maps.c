@@ -27,6 +27,7 @@
 #endif
 
 #include <stdio.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -83,22 +84,22 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
         exename[0] = 0;
     }
 
+    char filename[PATH_MAX];
+
     /* read every line of the maps file */
     while (getline(&line, &len, maps) != -1) {
         unsigned long start, end;
         region_t *map = NULL;
         char read, write, exec, cow;
-        int offset, dev_major, dev_minor, inode;
+        unsigned long offset, inode;
+        unsigned int dev_major, dev_minor;
         region_type_t type = REGION_TYPE_MISC;
 
-        /* slight overallocation */
-        char filename[len];
-
         /* initialise to zero */
-        memset(filename, '\0', len);
+        memset(filename, '\0', sizeof(filename));
 
         /* parse each line */
-        if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %[^\n]", &start, &end, &read,
+        if (sscanf(line, "%lx-%lx %c%c%c%c %lx %x:%x %lu %[^\n]", &start, &end, &read,
                 &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
             /*
              * get the load address for regions of the same ELF file
