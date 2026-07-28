@@ -148,6 +148,23 @@ fi
 if [ "$(uname -s)" = "Darwin" ]; then
   PATH=/usr/local/opt/gettext/bin:${PATH} # brew install gettext
 fi
+
+# NDK llvm toolchains need an explicit cross compiler or configure picks the host.
+if [ -z "${CC}" ]; then
+  if command -v "${HOST}-clang" >/dev/null 2>&1; then
+    export CC="${HOST}-clang"
+  elif command -v "${HOST}21-clang" >/dev/null 2>&1; then
+    export CC="${HOST}21-clang"
+  elif command -v "${HOST}-gcc" >/dev/null 2>&1; then
+    export CC="${HOST}-gcc"
+  else
+    echo "Error: no cross compiler found for HOST=${HOST}" 1>&2
+    exit 1
+  fi
+fi
+export AR="${AR:-${HOST}-ar}"
+export RANLIB="${RANLIB:-${HOST}-ranlib}"
+
 LIBS="-lncurses -lm" ./configure --host="${HOST}" --prefix="${SYSROOT}/usr" \
     --enable-static --disable-shared
 [ "$?" != "0" ] && exit 1
