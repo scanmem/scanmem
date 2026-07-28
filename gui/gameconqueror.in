@@ -2,9 +2,15 @@
 
 DATADIR=@PKGDATADIR@
 
-PKEXEC=$(command -v "pkexec")
+PYTHON3=$(command -v python3)
+if [ -z "$PYTHON3" ]; then
+    echo "python3 not found in PATH" 1>&2
+    exit 1
+fi
+
+PKEXEC=$(command -v pkexec)
 if [ -n "$PKEXEC" ]; then
-    $PKEXEC $DATADIR/GameConqueror.py "$@"
+    $PKEXEC "$PYTHON3" "$DATADIR/GameConqueror.py" "$@"
 else
     echo "install policykit!"
 fi
