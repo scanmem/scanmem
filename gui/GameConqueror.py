@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
@@ -141,6 +141,8 @@ class GameConqueror():
         self.memoryeditor_hexview.show_all()
         self.memoryeditor_address_entry = self.builder.get_object('MemoryEditor_Address_Entry')
         self.memoryeditor_hexview.connect('char-changed', self.memoryeditor_hexview_char_changed_cb)
+        self.editmemory_dialog = self.builder.get_object('EditMemoryDialog')
+        self.memoryeditor_value_type  = self.builder.get_object('DisplayType_ComboBoxText')
 
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
@@ -333,6 +335,28 @@ class GameConqueror():
 
     # Memory editor
 
+    def MemoryEditor_EditView_cb(self, widget, data=None):
+        self.editmemory_dialog.show()
+
+    def CloseMemoryDialog_cb(self,widget,data=None):
+        self.editmemory_dialog.hide()
+
+    def SaveMemoryDialog_cb(self,widget,data=None):
+        txt = self.memoryeditor_value_type.get_active_text().strip()
+        self.memoryeditor_hexview.display_type = txt;
+        self.editmemory_dialog.hide()
+
+        dlength = len(self.memoryeditor_hexview.payload)
+        data = self.read_memory(self.memoryeditor_hexview.base_addr, dlength)
+        if data is None:
+            self.memoryeditor_window.hide()
+            self.show_error(_('Cannot read memory'))
+            return
+        old_addr = self.memoryeditor_hexview.get_current_addr()
+        self.memoryeditor_hexview.payload = misc.str2bytes(data)
+        self.memoryeditor_hexview.show_addr(old_addr)
+
+        
     def MemoryEditor_Button_clicked_cb(self, button, data=None):
         if self.pid == 0:
             self.show_error(_('Please select a process'))
@@ -570,7 +594,7 @@ class GameConqueror():
         self.memoryeditor_hexview.payload = misc.str2bytes(data)
         self.memoryeditor_hexview.show_addr(old_addr)
 
-
+    
     # Manually add cheat
 
     def focus_on_next_widget_cb(self, widget, data=None):
