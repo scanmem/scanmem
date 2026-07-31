@@ -1,1 +1,24 @@
-See https://github.com/scanmem/scanmem/releases for news.
+scanmem 0.18.0 (2026-08-01)
+===========================
+
+Security and stability
+----------------------
+* Harden printable-string and bytearray formatting bounds (#449)
+* Cap /proc maps pathname buffer; fix sscanf field types (#452)
+* Clamp ptrace poke length to mapped buffer size
+* Replace shell command with execvp for the shell handler
+* Read process list from /proc instead of ps popen (#434)
+
+Compiler / portability
+----------------------
+* Silence -Wclobbered in handler__set (#381)
+* Use sig_atomic_t for interrupt flag
+* Mark data_to_val_aux scratch value as volatile
+* Require Gtk 3 before PyGI imports (#398)
+* Launch GameConqueror with python3 (#438)
+* Pick Android cross compiler from HOST (#441)
+
+GUI
+---
+* Memory viewer display type selector (#448)
+* Georgian translation (#426)
