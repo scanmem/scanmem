@@ -122,7 +122,7 @@ def _read_proc_cmdline(pid):
     cmdline_path = os.path.join('/proc', str(pid), 'cmdline')
     try:
         with open(cmdline_path, 'rb') as fh:
-            raw = fh.read()
+            raw = fh.read(4096)
     except OSError:
         raw = b''
     if raw:

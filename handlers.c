@@ -406,13 +406,18 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             switch(vars->options.scan_data_type)
             {
             case BYTEARRAY:
-                buf_len = flags * 3 + 32;
-                v = realloc(v, buf_len); /* for each byte and the suffix, this should be enough */
-
-                if (v == NULL)
                 {
-                    show_error("memory allocation failed.\n");
-                    goto fail;
+                    char *grown;
+
+                    buf_len = flags * 3 + 32;
+                    grown = realloc(v, buf_len);
+
+                    if (grown == NULL)
+                    {
+                        show_error("memory allocation failed.\n");
+                        goto fail;
+                    }
+                    v = grown;
                 }
                 data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags);
                 if (!append_suffix(&v, &buf_len, bytearray_suffix))
@@ -422,12 +427,17 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 }
                 break;
             case STRING:
-                buf_len = flags + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
-                v = realloc(v, buf_len);
-                if (v == NULL)
                 {
-                    show_error("memory allocation failed.\n");
-                    goto fail;
+                    char *grown;
+
+                    buf_len = flags + strlen(string_suffix) + 32;
+                    grown = realloc(v, buf_len);
+                    if (grown == NULL)
+                    {
+                        show_error("memory allocation failed.\n");
+                        goto fail;
+                    }
+                    v = grown;
                 }
                 data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags);
                 if (!append_suffix(&v, &buf_len, string_suffix))
@@ -1172,8 +1182,16 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+    if (!WIFEXITED(status)) {
+        show_error("shell command terminated abnormally.\n");
         return false;
+    }
+    if (WEXITSTATUS(status) == 127) {
+        show_error("execvp() failed, command was not executed.\n");
+        return false;
+    }
+    if (WEXITSTATUS(status) != 0)
+        show_warn("shell command exited with status %d.\n", WEXITSTATUS(status));
 
     return true;
 }
