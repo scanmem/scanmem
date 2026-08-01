@@ -46,6 +46,7 @@ import misc
 
 import locale
 import gettext
+import pwd
 
 # In some locale, ',' is used in float numbers
 locale.setlocale(locale.LC_NUMERIC, 'C')
@@ -116,6 +117,38 @@ TYPESIZES = {'int8':1
             ,'float32':4
             ,'float64':8
             }
+
+def _read_proc_cmdline(pid):
+    cmdline_path = os.path.join('/proc', str(pid), 'cmdline')
+    try:
+        with open(cmdline_path, 'rb') as fh:
+            raw = fh.read()
+    except OSError:
+        raw = b''
+    if raw:
+        return raw.replace(b'\0', b' ').decode('utf-8', 'replace').strip()
+    exelink = os.path.join('/proc', str(pid), 'exe')
+    if os.path.exists(exelink):
+        return os.path.realpath(exelink)
+    return ''
+
+
+def _read_proc_username(pid):
+    status_path = os.path.join('/proc', str(pid), 'status')
+    try:
+        with open(status_path, 'r', encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                if line.startswith('Uid:'):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        try:
+                            return pwd.getpwuid(int(parts[1])).pw_name
+                        except (KeyError, ValueError):
+                            return parts[1]
+    except OSError:
+        pass
+    return ''
+
 
 class GameConqueror():
     def __init__(self):
@@ -916,18 +949,14 @@ class GameConqueror():
 
     def get_process_list(self):
         plist = []
-        for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
-            try:
-                (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
-            # process name may be empty, but not the name of the executable
-            except (ValueError):
-                (pid, user) = [tok.strip() for tok in proc.split(None, 1)]
-                exelink = os.path.join("/proc", pid, "exe")
-                if os.path.exists(exelink):
-                    pname = os.path.realpath(exelink)
-                else:
-                    pname = ''
-            plist.append((int(pid), user, pname))
+        for entry in os.listdir('/proc'):
+            if not entry.isdigit():
+                continue
+            pid = int(entry)
+            user = _read_proc_username(pid)
+            pname = _read_proc_cmdline(pid)
+            plist.append((pid, user, pname))
+        plist.sort(key=lambda item: item[0], reverse=True)
         return plist
 
     def select_process(self, pid, process_name):
@@ -1210,11 +1239,7 @@ if __name__ == '__main__':
 
     # Attach to given pid (if any)
     if (args.pid is not None) :
-        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
-        if process_name == '':
-            exelink = os.path.join("/proc", str(args.pid), "exe")
-            if os.path.exists(exelink):
-                process_name = os.path.realpath(exelink)
+        process_name = _read_proc_cmdline(args.pid)
         gc_instance.select_process(args.pid, process_name)
 
     # Prefill the search box (if asked)

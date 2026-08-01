@@ -701,6 +701,9 @@ bool sm_setaddr(pid_t target, void *addr, const value_t *to)
 
     unsigned int val_length = flags_to_memlength(ANYNUMBER, to->flags);
     if (val_length > 0) {
+        if (val_length > sizeof(memarray))
+            val_length = sizeof(memarray);
+
         /* Basically, overwrite as much of the data as makes sense, and no more. */
         memcpy(memarray, to->bytes, val_length);
     }

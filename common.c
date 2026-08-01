@@ -51,8 +51,9 @@ static enum pstate check_process(pid_t pid)
     int pr_len, path_len = sizeof("/proc/") - 1;
 
     /* append $pid/status and check if file exists */
-    pr_len = sprintf((path_str + path_len), "%d/status", pid);
-    if (pr_len <= 0)
+    pr_len = snprintf(path_str + path_len, sizeof(path_str) - path_len,
+                      "%d/status", pid);
+    if (pr_len <= 0 || (size_t)path_len + (size_t)pr_len >= sizeof(path_str))
         goto err;
     path_len += pr_len;
 

@@ -46,6 +46,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <ctype.h>
+#include <sys/wait.h>
 
 #include "common.h"
 #include "commands.h"
@@ -87,6 +88,26 @@
 #else
 #define POINTER_FMT "%12lx"
 #endif
+
+static bool append_suffix(char **buf, size_t *buf_len, const char *suffix)
+{
+    size_t used = strlen(*buf);
+    size_t suffix_len = strlen(suffix);
+    size_t need = used + suffix_len + 1;
+
+    if (need > *buf_len) {
+        char *grown = realloc(*buf, need);
+
+        if (grown == NULL)
+            return false;
+
+        *buf = grown;
+        *buf_len = need;
+    }
+
+    memcpy((*buf) + used, suffix, suffix_len + 1);
+    return true;
+}
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
@@ -394,8 +415,11 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                     goto fail;
                 }
                 data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags);
-                assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
-                strcat(v, bytearray_suffix);
+                if (!append_suffix(&v, &buf_len, bytearray_suffix))
+                {
+                    show_error("memory allocation failed.\n");
+                    goto fail;
+                }
                 break;
             case STRING:
                 buf_len = flags + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
@@ -406,8 +430,11 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                     goto fail;
                 }
                 data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags);
-                assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
-                strcat(v, string_suffix);
+                if (!append_suffix(&v, &buf_len, string_suffix))
+                {
+                    show_error("memory allocation failed.\n");
+                    goto fail;
+                }
                 break;
             default: /* numbers */
                 ; /* cheat gcc */
@@ -844,7 +871,8 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
         show_error("memory allocation for string failed.\n");
         return false;
     }
-    strcpy(string_value, vars->current_cmdline+2);
+    memcpy(string_value, vars->current_cmdline + 2, string_length);
+    string_value[string_length] = '\0';
 
     uservalue_t val;
     val.string_value = string_value;
@@ -1118,9 +1146,8 @@ bool handler__eof(globals_t * vars, char **argv, unsigned argc)
 /* XXX: handle !ls style escapes */
 bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 {
-    size_t len = argc;
-    unsigned i;
-    char *command;
+    pid_t child;
+    int status;
 
     USEPARAMS();
 
@@ -1129,29 +1156,25 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    /* convert arg vector into single string, first calculate length */
-    for (i = 1; i < argc; i++)
-        len += strlen(argv[i]);
-
-    /* allocate space */
-    command = calloca(len, 1);
-
-    /* concatenate strings */
-    for (i = 1; i < argc; i++) {
-        strcat(command, argv[i]);
-        strcat(command, " ");
-    }
-
-    /* finally execute command */
-    if (system(command) == -1) {
-// command is allocated with alloca, do not free it
-//        free(command);
-        show_error("system() failed, command was not executed.\n");
+    child = fork();
+    if (child == -1) {
+        show_error("fork() failed, command was not executed.\n");
         return false;
     }
 
-// command is allocated with alloca, do not free it
-//    free(command);
+    if (child == 0) {
+        execvp(argv[1], argv + 1);
+        _exit(127);
+    }
+
+    if (waitpid(child, &status, 0) == -1) {
+        show_error("waitpid() failed after shell command.\n");
+        return false;
+    }
+
+    if (!WIFEXITED(status) || WEXITSTATUS(status) != 0)
+        return false;
+
     return true;
 }
 
@@ -1224,8 +1247,12 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         /* check if the new value is different */
         match_flags tmpflags = flags_empty;
         if ((*valuecmp_routine)(memory_ptr, memlength, &val, NULL, &tmpflags)) {
+            size_t copy_len = memlength;
 
-            memcpy(val.bytes, memory_ptr, memlength);
+            if (copy_len > sizeof(val.bytes))
+                copy_len = sizeof(val.bytes);
+
+            memcpy(val.bytes, memory_ptr, copy_len);
 
             valtostr(&val, buf, sizeof(buf));
 
@@ -1613,7 +1640,8 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         free_uservalue(&val_buf);
         break;
     case 2: //string
-        strncpy(buf, string_parameter, data_width);
+        memcpy(buf, string_parameter, data_width);
+        buf[data_width] = '\0';
         break;
     default:
         assert(false);
