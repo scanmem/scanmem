@@ -1114,23 +1114,18 @@ class GameConqueror():
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
-            if misc.PY3K:
-                addr = GObject.Value(GObject.TYPE_UINT64)
-                off = GObject.Value(GObject.TYPE_UINT64)
+            addr = GObject.Value(GObject.TYPE_UINT64)
+            off = GObject.Value(GObject.TYPE_UINT64)
             for (mid_str, addr_str, off_str, rt, val, t) in matches:
                 if t == 'unknown':
                     continue
                 mid = int(mid_str)
                 # `insert_with_valuesv` has the same function of `append`, but it's 7x faster
-                # PY3 has problems with int's, so we need a forced guint64 conversion
+                # python3 has problems with int's, so we need a forced guint64 conversion
                 # See: https://bugzilla.gnome.org/show_bug.cgi?id=769532
                 # Still 5x faster even with the extra baggage
-                if misc.PY3K:
-                    addr.set_uint64(int(addr_str, 16))
-                    off.set_uint64(int(off_str, 16))
-                else:
-                    addr = long(addr_str, 16)
-                    off = long(off_str, 16)
+                addr.set_uint64(int(addr_str, 16))
+                off.set_uint64(int(off_str, 16))
                 self.scanresult_liststore.insert_with_valuesv(-1, [0, 1, 2, 3, 4, 5, 6], [addr, val, t, True, off, rt, mid])
                 # self.scanresult_liststore.append([addr, val, t, True, off, rt, mid])
             self.scanresult_tv.set_model(self.scanresult_liststore)

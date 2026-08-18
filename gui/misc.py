@@ -19,13 +19,9 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-import sys
-
 import gi
 gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
-
-PY3K = sys.version_info >= (3, 0)
 
 # check command syntax, data range etc.
 # return a valid scanmem command
@@ -97,8 +93,7 @@ def check_scan_command (data_type, cmd, is_first_scan):
 def eval_operand(s):
     try:
         v = eval(s)
-        py2_long = not PY3K and isinstance(v, long)
-        if isinstance(v, int) or isinstance(v, float) or py2_long:
+        if isinstance(v, (int, float)):
             return v
     except:
         pass
@@ -109,8 +104,7 @@ def eval_operand(s):
 # raise an exception if not
 def check_int (data_type, num):
     if data_type.startswith('int'):
-        py2_long = not PY3K and isinstance(num, long)
-        if not (isinstance(num, int) or py2_long):
+        if not isinstance(num, int):
             raise ValueError(_('%s is not an integer') % (num,))
         if data_type == 'int':
             width = 64
@@ -200,24 +194,14 @@ def menu_append_item(menu, name, callback, data=None):
     menu.append(item)
     item.connect('activate', callback, data)
 
-# Interface for bytes<>string conversion for py2/3
-# Usage is the same you'd do in py3, call `decode` on external raw data
-# and `encode` to work with the memory representation
+# Call `decode` on external raw data and `encode` to work with the
+# memory representation
 def decode(raw_bytes, errors='strict'):
-    if PY3K:
-        return raw_bytes.decode(errors=errors)
-    else:
-        return str(raw_bytes)
+    return raw_bytes.decode(errors=errors)
 
 def encode(unicode_string, errors='strict'):
-    if PY3K:
-        return unicode_string.encode(errors=errors)
-    else:
-        return unicode_string
+    return unicode_string.encode(errors=errors)
 
 # Convert codepoints to integers byte by byte
 def str2bytes(string):
-    if PY3K:
-        return bytes(string)
-    else:
-        return map(ord, string)
+    return bytes(string)
