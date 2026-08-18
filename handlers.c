@@ -46,7 +46,6 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <ctype.h>
-#include <sys/wait.h>
 
 #include "common.h"
 #include "commands.h"
@@ -1156,8 +1155,9 @@ bool handler__eof(globals_t * vars, char **argv, unsigned argc)
 /* XXX: handle !ls style escapes */
 bool handler__shell(globals_t * vars, char **argv, unsigned argc)
 {
-    pid_t child;
-    int status;
+    size_t len = argc;
+    unsigned i;
+    char *command;
 
     USEPARAMS();
 
@@ -1166,33 +1166,29 @@ bool handler__shell(globals_t * vars, char **argv, unsigned argc)
         return false;
     }
 
-    child = fork();
-    if (child == -1) {
-        show_error("fork() failed, command was not executed.\n");
+    /* convert arg vector into single string, first calculate length */
+    for (i = 1; i < argc; i++)
+        len += strlen(argv[i]);
+
+    /* allocate space */
+    command = calloca(len, 1);
+
+    /* concatenate strings */
+    for (i = 1; i < argc; i++) {
+        strcat(command, argv[i]);
+        strcat(command, " ");
+    }
+
+    /* finally execute command */
+    if (system(command) == -1) {
+// command is allocated with alloca, do not free it
+//        free(command);
+        show_error("system() failed, command was not executed.\n");
         return false;
     }
 
-    if (child == 0) {
-        execvp(argv[1], argv + 1);
-        _exit(127);
-    }
-
-    if (waitpid(child, &status, 0) == -1) {
-        show_error("waitpid() failed after shell command.\n");
-        return false;
-    }
-
-    if (!WIFEXITED(status)) {
-        show_error("shell command terminated abnormally.\n");
-        return false;
-    }
-    if (WEXITSTATUS(status) == 127) {
-        show_error("execvp() failed, command was not executed.\n");
-        return false;
-    }
-    if (WEXITSTATUS(status) != 0)
-        show_warn("shell command exited with status %d.\n", WEXITSTATUS(status));
-
+// command is allocated with alloca, do not free it
+//    free(command);
     return true;
 }
 
