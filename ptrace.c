@@ -94,6 +94,30 @@ static struct {
 } peekbuf;
 
 
+/* Who is already ptracing `target`? Returns 0 if nobody, or if we cannot tell
+   (no /proc, so BSD just falls back to the plain errno message). */
+static pid_t tracer_pid_of(pid_t target)
+{
+    char path[64];
+    char line[256];
+    FILE *f;
+    pid_t tracer = 0;
+
+    snprintf(path, sizeof(path), "/proc/%d/status", target);
+    if ((f = fopen(path, "r")) == NULL)
+        return 0;
+
+    while (fgets(line, sizeof(line), f) != NULL) {
+        if (strncmp(line, "TracerPid:", 10) == 0) {
+            tracer = (pid_t)strtol(line + 10, NULL, 10);
+            break;
+        }
+    }
+
+    fclose(f);
+    return tracer;
+}
+
 bool sm_attach(pid_t target)
 {
     if (!sm_globals.options.no_ptrace)
@@ -102,7 +126,21 @@ bool sm_attach(pid_t target)
 
         /* attach to the target application, which should cause a SIGSTOP */
         if (ptrace(PTRACE_ATTACH, target, NULL, NULL) == -1L) {
-            show_error("failed to attach to %d, %s\n", target, strerror(errno));
+            int attach_errno = errno;
+            pid_t tracer = tracer_pid_of(target);
+
+            show_error("failed to attach to %d, %s\n", target,
+                       strerror(attach_errno));
+
+            /* "Operation not permitted" covers two very different problems and
+               the bare errno sends people down the wrong one, see #392, #393 */
+            if (tracer > 0) {
+                show_info("%d is already being traced by process %d, "
+                          "detach that first.\n", target, tracer);
+            } else if (attach_errno == EPERM) {
+                show_info("run scanmem as root, or check whether "
+                          "/proc/sys/kernel/yama/ptrace_scope allows it.\n");
+            }
             return false;
         }
 
