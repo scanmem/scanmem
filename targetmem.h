@@ -253,6 +253,38 @@ add_element (matches_and_old_values_array **array,
     return swath;
 }
 
+/* Fast path for the case the scan loops hit almost every time: the address is
+   the one right after the last element and the array already has room, so this
+   is just two stores. Anything else (gap to fill, new swath, realloc) goes to
+   add_element above. */
+static inline matches_and_old_values_swath *
+add_element_fast (matches_and_old_values_array **array,
+                  matches_and_old_values_swath *swath,
+                  void *remote_address,
+                  uint8_t new_byte,
+                  match_flags new_flags)
+{
+    if (swath->number_of_bytes != 0 &&
+        remote_address == (char *)remote_address_of_last_element(swath) + 1)
+    {
+        /* same target allocate_enough_to_reach() would be handed for a
+           contiguous append, checked inline so we can skip the call */
+        char *end = (char *)local_address_beyond_last_element(swath)
+                    + sizeof(old_value_and_match_info);
+
+        if ((size_t)(end - (char *)*array) <= (*array)->bytes_allocated) {
+            old_value_and_match_info *dataptr =
+                local_address_beyond_last_element(swath);
+            dataptr->old_value = new_byte;
+            dataptr->match_info = new_flags;
+            ++swath->number_of_bytes;
+            return swath;
+        }
+    }
+
+    return add_element(array, swath, remote_address, new_byte, new_flags);
+}
+
 /* only at most sizeof(int64_t) bytes will be read,
    if more bytes are needed (e.g. bytearray),
    read them separately (for performance) */

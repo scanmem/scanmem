@@ -391,6 +391,26 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
     return true;
 }
 
+/* The scan loop calls this once per byte, and once a window is filled nearly
+   every one of those is a plain cache hit. sm_peekdata() is too big for gcc to
+   inline, so the hit was costing a real call each time. Do the hit test here
+   and only call out when the window actually has to move. */
+static inline bool peekdata_cached(const void *addr, uint16_t length,
+                                   const mem64_t **result_ptr, size_t *memlength)
+{
+    const char *reqaddr = addr;
+
+    if (LIKELY(peekbuf.base != NULL && reqaddr >= peekbuf.base &&
+               (unsigned long)(reqaddr + length - peekbuf.base) <= peekbuf.size))
+    {
+        *result_ptr = (mem64_t *)&peekbuf.cache[reqaddr - peekbuf.base];
+        *memlength = peekbuf.base - reqaddr + peekbuf.size;
+        return true;
+    }
+
+    return sm_peekdata(addr, length, result_ptr, memlength);
+}
+
 static inline void print_a_dot(void)
 {
     fprintf(stderr, ".");
@@ -477,7 +497,7 @@ bool sm_checkmatches(globals_t *vars,
         void *address = reading_swath.first_byte_in_child + reading_iterator;
 
         /* read value from this address */
-        if (UNLIKELY(sm_peekdata(address, old_length, &memory_ptr, &memlength) == false))
+        if (UNLIKELY(peekdata_cached(address, old_length, &memory_ptr, &memlength) == false))
         {
             /* If we can't look at the data here, just abort the whole recording, something bad happened */
             required_extra_bytes_to_record = 0;
@@ -502,7 +522,7 @@ bool sm_checkmatches(globals_t *vars,
                - We can get away with assuming that the pointers will stay valid,
                  because as we never add more data to the array than there was before, it will not reallocate. */
 
-            writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
+            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), checkflags);
 
             ++vars->num_matches;
@@ -511,7 +531,7 @@ bool sm_checkmatches(globals_t *vars,
         }
         else if (required_extra_bytes_to_record)
         {
-            writing_swath_index = add_element(&(vars->matches), writing_swath_index, address,
+            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), flags_empty);
             --required_extra_bytes_to_record;
         }
@@ -719,7 +739,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             if (UNLIKELY(match_length > 0))
             {
                 assert(match_length <= memlength);
-                writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
+                writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, reg_pos,
                                                   get_u8b(memory_ptr), checkflags);
                 
                 ++vars->num_matches;
@@ -728,7 +748,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
             }
             else if (required_extra_bytes_to_record)
             {
-                writing_swath_index = add_element(&(vars->matches), writing_swath_index, reg_pos,
+                writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, reg_pos,
                                                   get_u8b(memory_ptr), flags_empty);
                 --required_extra_bytes_to_record;
             }
