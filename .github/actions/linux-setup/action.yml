@@ -1,21 +1,40 @@
 name: linux-setup
-description: Set up the Linux VM
+description: Install build deps and configure the tree
+
+inputs:
+  cc:
+    description: Compiler to build with
+    required: false
+    default: gcc
+  cflags:
+    description: Extra CFLAGS passed to configure
+    required: false
+    default: '-O2 -Wall'
+  ldflags:
+    description: Extra LDFLAGS passed to configure
+    required: false
+    default: ''
+  configure-args:
+    description: Extra arguments for ./configure
+    required: false
+    default: '--enable-gui'
 
 runs:
   using: 'composite'
   steps:
-    # Update packages
     - run: sudo apt --assume-yes update
       shell: bash
-    # Upgrade packages
-    - run: sudo apt --assume-yes upgrade
+    # no `apt upgrade`, it pulls in a lot and is the flakiest step in the run
+    - run: >
+        sudo apt --assume-yes install
+        make gcc clang binutils intltool libtool libtool-bin
+        autotools-dev autoconf automake libreadline-dev python3
       shell: bash
-    # Install required packages
-    - run: sudo apt --assume-yes install make gcc binutils intltool libtool autotools-dev libreadline-dev python3
-      shell: bash
-    # Run auto-generate
     - run: ./autogen.sh
       shell: bash
-    # Run the configuration
-    - run: ./configure --enable-gui
+    - run: ./configure ${{ inputs.configure-args }}
       shell: bash
+      env:
+        CC: ${{ inputs.cc }}
+        CFLAGS: ${{ inputs.cflags }}
+        LDFLAGS: ${{ inputs.ldflags }}
