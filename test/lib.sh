@@ -66,6 +66,15 @@ run_scan() {
         | sed -n 's/.*we currently have \([0-9]*\) matches.*/\1/p'
 }
 
+# run a scanmem script and echo each listed match, index stripped. Comparing
+# these catches things a match count cannot: a dropped filler byte at a chunk
+# boundary changes the recorded value while leaving the count alone.
+run_list() {
+    printf '%b\n' "$1" | $sudo_prefix ${SCAN_ENV:+env $SCAN_ENV} timeout 120 \
+        $SCANMEM -p "$mf_pid" 2>/dev/null \
+        | sed -n 's/^\[ *[0-9]*\]//p'
+}
+
 # nth line of counts (1-based)
 nth() { echo "$1" | sed -n "${2}p"; }
 

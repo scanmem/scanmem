@@ -44,6 +44,9 @@
 #include <assert.h>
 #include <errno.h>
 #include <sys/uio.h>
+#ifdef HAVE_PTHREAD
+#include <pthread.h>
+#endif
 #include <stdbool.h>
 #include <limits.h>
 #include <fcntl.h>
@@ -642,21 +645,199 @@ bool sm_checkmatches(globals_t *vars,
 }
 
 
+/* ---- parallel initial scan -------------------------------------------------
+ *
+ * Nearly all of the initial scan is the scan routine running at every byte
+ * offset, and no offset depends on another one, so it splits across threads
+ * cleanly. Emitting the records is the part that does not split: a match of
+ * length L is followed by L-1 filler entries, so a chunk boundary can land in
+ * the middle of one.
+ *
+ * A chunk works out its own carry by rescanning the L-1 bytes behind it. Only
+ * the last match before the boundary can still be carrying, since a match
+ * resets the counter rather than adding to it, so that window is enough. For
+ * number scans it is 7 bytes.
+ *
+ * Each chunk records into its own buffer and a serial pass stitches them
+ * together in address order through the same add_element path the old serial
+ * loop used, so the swath layout is unchanged. That pass is O(records), not
+ * O(bytes), so it stays out of the way on a normal scan.
+ */
+
+/* Chunk size is worked out from the target, see below. Defining
+ * SCAN_CHUNK_BYTES pins it instead, which is how the tests force a tiny chunk
+ * and hammer the boundary carry that otherwise only gets hit by luck. */
+#define SCAN_CHUNK_MIN (1<<18)
+#define SCAN_CHUNK_MAX (1<<22)
+/* aim for a few chunks each so a slow one cannot leave threads idle at the end */
+#define SCAN_CHUNKS_PER_THREAD 4
+
+/* what one recorded byte looks like on the way back to the merge. keeping
+ * these packed rather than a flag per scanned byte is what keeps the merge
+ * O(matches) instead of O(bytes), which matters because the merge is the one
+ * part that cannot be run in parallel */
+typedef struct {
+    uint32_t off;                      /* offset within the owned range */
+    uint8_t old_value;
+    match_flags match_info;
+} scan_record;
+
+typedef struct {
+    region_t *region;
+    size_t offset;                     /* owned range start, from region start */
+    size_t owned;                      /* bytes this chunk is responsible for */
+    const uservalue_t *uservalue;
+    size_t maxlen;                     /* longest match the routine can return */
+
+    scan_record *recs;                 /* what to hand to add_element, in order */
+    size_t nrecs;
+    uint8_t *buf;
+    size_t bufsize;
+    unsigned long matches;
+    bool read_failed;
+} scan_chunk;
+
+/* How long a match can be. That is both how far back a carry can reach and how
+ * far past the owned range the routine may read. For bytearray and string the
+ * length is what is kept in the flags. */
+static size_t scan_max_match_length(scan_data_type_t type, const uservalue_t *uv)
+{
+    switch (type) {
+        case BYTEARRAY:
+        case STRING:
+            return uv->flags ? (size_t)uv->flags : 1;
+        default:
+            return sizeof(uint64_t);
+    }
+}
+
+static void scan_chunk_run(scan_chunk *c)
+{
+    region_t *r = c->region;
+    size_t back = c->maxlen > 0 ? c->maxlen - 1 : 0;
+    size_t start = c->offset > back ? c->offset - back : 0;
+    size_t head = c->offset - start;
+    size_t want = head + c->owned + c->maxlen;
+    size_t nread, valid_len, required, j;
+
+    if (start + want > r->size)
+        want = r->size - start;
+    if (want > c->bufsize)
+        want = c->bufsize;
+
+    nread = readmemory(c->buf, (char *)r->start + start, want);
+    if (nread == 0) {
+        c->read_failed = true;
+        return;
+    }
+
+    /* a short read means the region really ends there */
+    valid_len = (nread < want) ? start + nread : r->size;
+
+    /* replay the bytes behind us just far enough to see what is still carrying */
+    required = 0;
+    for (j = 0; j < head; j++) {
+        size_t p = start + j;
+        match_flags f = flags_empty;
+        unsigned int ml;
+
+        if (p >= valid_len)
+            break;
+
+        ml = (*sm_scan_routine)((const mem64_t *)(c->buf + j), valid_len - p,
+                                NULL, c->uservalue, &f);
+        if (ml > 0)
+            required = (p + ml > c->offset) ? p + ml - c->offset : 0;
+    }
+
+    /* hoist the end of region check out of the loop and let `remaining` count
+     * down, the way the serial scan did. Doing it per byte costs a compare and
+     * a subtract on every offset, which is measurable over a big region */
+    {
+    size_t limit = c->owned;
+    size_t remaining;
+    const uint8_t *mp8 = c->buf + head;
+
+    if (c->offset >= valid_len)
+        limit = 0;
+    else if (valid_len - c->offset < limit)
+        limit = valid_len - c->offset;
+
+    remaining = valid_len - c->offset;
+
+    for (j = 0; j < limit; j++, remaining--, mp8++) {
+        const mem64_t *mp = (const mem64_t *)mp8;
+        match_flags f = flags_empty;
+        unsigned int ml;
+
+        ml = (*sm_scan_routine)(mp, remaining, NULL, c->uservalue, &f);
+
+        if (UNLIKELY(ml > 0)) {
+            c->recs[c->nrecs].off = (uint32_t)j;
+            c->recs[c->nrecs].old_value = get_u8b(mp);
+            c->recs[c->nrecs].match_info = f;
+            c->nrecs++;
+            c->matches++;
+            required = ml - 1;
+        }
+        else if (required) {
+            c->recs[c->nrecs].off = (uint32_t)j;
+            c->recs[c->nrecs].old_value = get_u8b(mp);
+            c->recs[c->nrecs].match_info = flags_empty;
+            c->nrecs++;
+            required--;
+        }
+    }
+    }
+}
+
+#ifdef HAVE_PTHREAD
+static void *scan_chunk_thread(void *arg)
+{
+    scan_chunk_run((scan_chunk *)arg);
+    return NULL;
+}
+#endif
+
+static unsigned scan_thread_count(const globals_t *vars)
+{
+    long n;
+
+    if (vars->options.threads > 0)
+        return vars->options.threads;
+
+#ifdef HAVE_PTHREAD
+    n = sysconf(_SC_NPROCESSORS_ONLN);
+    if (n < 1)
+        n = 1;
+    /* past this the serial stitch is the limit, not the scanning */
+    if (n > 32)
+        n = 32;
+    return (unsigned)n;
+#else
+    (void)n;
+    return 1;
+#endif
+}
+
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
 bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
-    int required_extra_bytes_to_record = 0;
     unsigned long total_size = 0;
-    unsigned long regnum = 0;
     element_t *n = vars->regions->head;
     region_t *r;
     unsigned long total_scan_bytes = 0;
-    unsigned char *data = NULL;
+    scan_chunk *chunks = NULL;
+    size_t maxlen, bufsize, chunk_bytes;
+    unsigned nthreads, t;
+    bool ok = true;
+    unsigned long done_bytes = 0;
+    unsigned samples_to_dot = SAMPLES_PER_DOT;
 
     if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false)
     {
-        show_error("unsupported scan for current data type.\n"); 
+        show_error("unsupported scan for current data type.\n");
         return false;
     }
 
@@ -666,7 +847,6 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     if (sm_attach(vars->target) == false)
         return false;
 
-   
     /* make sure we have some regions to search */
     if (vars->regions->size == 0) {
         show_warn("no regions defined, perhaps you deleted them all?\n");
@@ -675,16 +855,16 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     }
 
     INTERRUPTABLESCAN();
-    
+
     total_size = sizeof(matches_and_old_values_array);
 
     while (n) {
         total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
         n = n->next;
     }
-    
+
     total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
-    
+
     show_debug("allocate array, max size %ld\n", total_size);
 
     if (!(vars->matches = allocate_array(vars->matches, total_size)))
@@ -692,139 +872,221 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
         show_error("could not allocate match array\n");
         return false;
     }
-    
+
     writing_swath_index = vars->matches->swaths;
-    
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
-    
-    /* get total number of bytes */
-    for(n = vars->regions->head; n; n = n->next)
+
+    for (n = vars->regions->head; n; n = n->next)
         total_scan_bytes += ((region_t *)n->data)->size;
 
     vars->scan_progress = 0.0;
     vars->stop_flag = false;
-    n = vars->regions->head;
 
-    /* check every memory region */
-    while (n) {
-        size_t bytes_remaining;
-        size_t bytes_per_dot;
-        double progress_per_dot;
+    maxlen = scan_max_match_length(vars->options.scan_data_type, uservalue);
+    nthreads = scan_thread_count(vars);
 
-        /* load the next region */
-        r = n->data;
-        bytes_per_dot = r->size / NUM_DOTS;
-        bytes_remaining = bytes_per_dot * NUM_DOTS;
-        progress_per_dot = (double)bytes_per_dot / total_scan_bytes;
+#ifdef SCAN_CHUNK_BYTES
+    chunk_bytes = SCAN_CHUNK_BYTES;
+#else
+    {
+        /* Testing hook. A boundary straddling match is the one thing the
+         * chunking can get wrong, and at the normal chunk size you only hit
+         * one by luck, so the suite turns this down to force them. */
+        const char *env = getenv("SCANMEM_SCAN_CHUNK_BYTES");
 
-/* The maximum logical size is a comfortable 1MiB (increasing it does not help).
- * The actual allocation is that plus the rounded size of the maximum possible VLT.
- * This is needed because the last byte might be scanned as max size VLT,
- * thus need (2^16 - 2) extra bytes after it */
-#define MAX_BUFFER_SIZE (1<<20)
-#define MAX_ALLOC_SIZE  (MAX_BUFFER_SIZE + (1<<16))
-
-        /* allocate data array */
-        size_t alloc_size = MIN(r->size, MAX_ALLOC_SIZE);
-        if ((data = malloc(alloc_size * sizeof(char))) == NULL) {
-            show_error("sorry, there was a memory allocation error.\n");
-            return false;
+        if (env && *env) {
+            chunk_bytes = strtoul(env, NULL, 10);
+            if (chunk_bytes < 64)
+                chunk_bytes = 64;
         }
-
-        /* print a progress meter so user knows we haven't crashed */
-        show_user("%02lu/%02lu searching %#10lx - %#10lx", ++regnum,
-                vars->regions->size, (unsigned long)r->start, (unsigned long)r->start + r->size);
-        fflush(stderr);
-
-        /* For every offset, check if we have a match. */
-        size_t memlength = r->size;
-        size_t buffer_size = 0;
-        void *reg_pos = r->start;
-        const uint8_t *buf_pos = NULL;
-        for ( ; ; memlength--, buffer_size--, reg_pos++, buf_pos++) {
-
-            /* check if the buffer is finished (or we just started) */
-            if (UNLIKELY(buffer_size == 0)) {
-
-                /* print a simple progress meter */
-                for ( ; memlength < bytes_remaining; bytes_remaining -= bytes_per_dot) {
-                    /* for user, just print a dot */
-                    print_a_dot();
-                    /* for front-end, update percentage */
-                    vars->scan_progress += progress_per_dot;
-                }
-
-                /* the whole region is finished */
-                if (memlength == 0) break;
-
-                /* stop scanning if asked to */
-                if (vars->stop_flag) break;
-
-                /* load the next buffer block */
-                size_t read_size = MIN(memlength, MAX_ALLOC_SIZE);
-                size_t nread = readmemory(data, reg_pos, read_size);
-                if (nread < read_size) {
-                    /* the region ends here, update `memlength` */
-                    memlength = nread;
-                    if ((nread == 0) && (reg_pos == r->start)) {
-                        /* Failed on first read, which means region not exist. */
-                        show_warn("reading region %02u failed.\n", regnum);
-                        break;
-                    }
-                }
-                /* If less than `MAX_ALLOC_SIZE` bytes remain, we have all of them
-                 * in the buffer, so go all the way.
-                 * Otherwise we need to stop at `MAX_BUFFER_SIZE`, so that
-                 * the last byte we look at has a full VLT after it */
-                buffer_size = memlength <= MAX_ALLOC_SIZE ? memlength : MAX_BUFFER_SIZE;
-                buf_pos = data;
-            }
-
-            const mem64_t* memory_ptr = (mem64_t*)buf_pos;
-            unsigned int match_length;
-            match_flags checkflags;
-
-            /* initialize checkflags */
-            checkflags = flags_empty;
-
-            /* check if we have a match */
-            match_length = (*sm_scan_routine)(memory_ptr, memlength, NULL, uservalue, &checkflags);
-            if (UNLIKELY(match_length > 0))
-            {
-                assert(match_length <= memlength);
-                writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, reg_pos,
-                                                  get_u8b(memory_ptr), checkflags);
-                
-                ++vars->num_matches;
-                
-                required_extra_bytes_to_record = match_length - 1;
-            }
-            else if (required_extra_bytes_to_record)
-            {
-                writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, reg_pos,
-                                                  get_u8b(memory_ptr), flags_empty);
-                --required_extra_bytes_to_record;
-            }
-
+        else {
+            /* Big enough that the per chunk work disappears, small enough that
+             * a small target still has something for every thread. */
+            chunk_bytes = total_scan_bytes / (nthreads * SCAN_CHUNKS_PER_THREAD);
+            if (chunk_bytes < SCAN_CHUNK_MIN)
+                chunk_bytes = SCAN_CHUNK_MIN;
+            if (chunk_bytes > SCAN_CHUNK_MAX)
+                chunk_bytes = SCAN_CHUNK_MAX;
         }
-
-        free(data);
-
-        /* stop scanning if asked to */
-        if (vars->stop_flag) {
-            printf("\n");
-            break;
-        }
-        n = n->next;
-        show_user("ok\n");
     }
+#endif
+
+    /* One descriptor per thread, refilled as the walk goes. Building one for
+     * every slice up front would mean a serial pass and a lot of memory before
+     * any scanning starts, and a process with a big mapped address space has a
+     * very large number of slices. */
+    chunks = calloc(nthreads, sizeof(*chunks));
+    if (!chunks) {
+        show_error("sorry, there was a memory allocation error.\n");
+        return false;
+    }
+
+    bufsize = maxlen + chunk_bytes + maxlen;
+    {
+        uint8_t **bufs = calloc(nthreads, sizeof(*bufs));
+        scan_record **recs = calloc(nthreads, sizeof(*recs));
+#ifdef HAVE_PTHREAD
+        pthread_t *tids = calloc(nthreads, sizeof(*tids));
+#endif
+        size_t cur_off = 0;
+        region_t *dead_region = NULL;
+
+        if (!bufs || !recs
+#ifdef HAVE_PTHREAD
+            || !tids
+#endif
+           ) {
+            show_error("sorry, there was a memory allocation error.\n");
+            ok = false;
+        }
+
+        for (t = 0; ok && t < nthreads; t++) {
+            bufs[t] = malloc(bufsize);
+            recs[t] = malloc(chunk_bytes * sizeof(**recs));
+            if (!bufs[t] || !recs[t]) {
+                show_error("sorry, there was a memory allocation error.\n");
+                ok = false;
+            }
+        }
+
+        show_user("searching %lu regions over %u threads",
+                  vars->regions->size, nthreads);
+        print_a_dot();
+
+        n = vars->regions->head;
+
+        while (ok) {
+            size_t batch = 0;
+            size_t k;
+
+            /* hand out the next slices */
+            while (batch < nthreads && n) {
+                r = n->data;
+                if (cur_off >= r->size) {
+                    n = n->next;
+                    cur_off = 0;
+                    continue;
+                }
+                memset(&chunks[batch], 0, sizeof(chunks[batch]));
+                chunks[batch].region = r;
+                chunks[batch].offset = cur_off;
+                chunks[batch].owned = MIN(chunk_bytes, r->size - cur_off);
+                chunks[batch].uservalue = uservalue;
+                chunks[batch].maxlen = maxlen;
+                cur_off += chunks[batch].owned;
+                batch++;
+            }
+
+            if (batch == 0)
+                break;
+
+            for (k = 0; k < batch; k++) {
+                scan_chunk *c = &chunks[k];
+                c->buf = bufs[k];
+                c->bufsize = bufsize;
+                c->recs = recs[k];
+                c->nrecs = 0;
+                c->matches = 0;
+                c->read_failed = false;
+            }
+
+#ifdef HAVE_PTHREAD
+            for (k = 1; k < batch; k++) {
+                if (pthread_create(&tids[k], NULL, scan_chunk_thread, &chunks[k]) != 0) {
+                    /* out of threads, just do it here */
+                    scan_chunk_run(&chunks[k]);
+                    tids[k] = 0;
+                }
+            }
+#endif
+            /* this thread takes the first one instead of sitting idle */
+            scan_chunk_run(&chunks[0]);
+
+#ifdef HAVE_PTHREAD
+            for (k = 1; k < batch; k++) {
+                if (tids[k])
+                    pthread_join(tids[k], NULL);
+            }
+#else
+            for (k = 1; k < batch; k++)
+                scan_chunk_run(&chunks[k]);
+#endif
+
+            /* stitch this batch in address order, same call sequence the
+             * serial scan made, so the swaths come out the same */
+            for (k = 0; k < batch; k++) {
+                scan_chunk *c = &chunks[k];
+                size_t j;
+
+                /* A region that will not read at all is not going to start
+                 * working further in, so drop the rest of it. The serial scan
+                 * broke out of the region here too. Without this a big
+                 * unreadable mapping costs a failed read for every chunk in
+                 * it, and there can be an enormous number of those. */
+                if (c->read_failed) {
+                    if (dead_region != c->region) {
+                        dead_region = c->region;
+                        show_warn("reading a region failed.\n");
+                    }
+                    continue;
+                }
+                if (dead_region == c->region)
+                    continue;
+
+                for (j = 0; j < c->nrecs; j++) {
+                    writing_swath_index = add_element_fast(&(vars->matches),
+                            writing_swath_index,
+                            (char *)c->region->start + c->offset + c->recs[j].off,
+                            c->recs[j].old_value, c->recs[j].match_info);
+                }
+                vars->num_matches += c->matches;
+                done_bytes += c->owned;
+
+                vars->scan_progress = total_scan_bytes
+                        ? (double)done_bytes / total_scan_bytes : MAX_PROGRESS;
+                if (--samples_to_dot == 0) {
+                    samples_to_dot = SAMPLES_PER_DOT;
+                    print_a_dot();
+                }
+            }
+
+            /* skip whatever is left of a region that would not read */
+            if (dead_region && n && (region_t *)n->data == dead_region) {
+                n = n->next;
+                cur_off = 0;
+            }
+
+            if (vars->stop_flag) {
+                printf("\n");
+                break;
+            }
+        }
+
+        for (t = 0; t < nthreads; t++) {
+            if (bufs) free(bufs[t]);
+            if (recs) free(recs[t]);
+        }
+        free(bufs);
+        free(recs);
+#ifdef HAVE_PTHREAD
+        free(tids);
+#endif
+    }
+
+    free(chunks);
+    (void)done_bytes;
 
     ENDINTERRUPTABLE();
 
+    if (!ok)
+        return false;
+
+    show_user("ok\n");
+
     /* tell front-end we've finished */
     vars->scan_progress = MAX_PROGRESS;
-    
+
     if (!(vars->matches = null_terminate(vars->matches, writing_swath_index)))
     {
         show_error("memory allocation error while reducing matches-array size\n");
