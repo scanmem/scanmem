@@ -138,7 +138,13 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
         return array;
 
     } else {
-        matches_and_old_values_array *original_location = array;
+        /* Note where the swath sits inside the array before the realloc.
+           Doing that arithmetic against the old pointer afterwards is
+           undefined once realloc has taken it, and gcc 12+ warns on it. */
+        size_t swath_offset = 0;
+        if (swath_pointer_to_correct)
+            swath_offset = (size_t)((char *)(*swath_pointer_to_correct)
+                                    - (char *)array);
 
         /* allocate twice as much each time,
            so we don't have to do it too often */
@@ -160,13 +166,10 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
 
         array->bytes_allocated = bytes_to_allocate;
 
-        /* Put the swath pointer back where it should be, if needed.
-           We cast everything to void pointers in this line to make
-           sure the math works out. */
+        /* Put the swath pointer back where it should be, if needed. */
         if (swath_pointer_to_correct) {
             (*swath_pointer_to_correct) = (matches_and_old_values_swath *)
-                (((void *)(*swath_pointer_to_correct)) +
-                 ((void *)array - (void *)original_location));
+                ((char *)array + swath_offset);
         }
 
         return array;
