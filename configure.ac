@@ -12,6 +12,8 @@ IT_PROG_INTLTOOL
 AM_PROG_CC_C_O
 
 AC_CHECK_FUNCS(getline secure_getenv)
+# faster cross process reads than pread on /proc/pid/mem, glibc 2.15+
+AC_CHECK_FUNCS(process_vm_readv)
 
 if test "x$ac_cv_func_getline" = "xno"; then
   AC_CHECK_FUNCS(fgetln)
