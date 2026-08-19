@@ -15,6 +15,9 @@ AC_CHECK_FUNCS(getline secure_getenv)
 # faster cross process reads than pread on /proc/pid/mem, glibc 2.15+
 AC_CHECK_FUNCS(process_vm_readv)
 
+# threads for the initial scan, optional so the build still works without it
+AC_SEARCH_LIBS([pthread_create], [pthread], [AC_DEFINE([HAVE_PTHREAD], [1], [Use pthreads for the initial scan])])
+
 if test "x$ac_cv_func_getline" = "xno"; then
   AC_CHECK_FUNCS(fgetln)
   if test "x$ac_cv_func_fgetln" = "xno"; then

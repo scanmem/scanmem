@@ -332,7 +332,7 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1}"
+    "noptrace{0,1},threads"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -366,6 +366,17 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\tpossible values:\n" \
                  "\t0:\tdisabled\n" \
                  "\t1:\tenabled\n" \
+                 "\n" \
+                 "threads\t\thow many threads the first scan may use\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\n" \
+                 "\tOnly the first scan is split up, narrowing an existing\n" \
+                 "\tmatch list stays single threaded. Results do not depend\n" \
+                 "\ton this, any thread count returns the same matches.\n" \
+                 "\n" \
+                 "\tpossible values:\n" \
+                 "\t0:\tone per online CPU\n" \
+                 "\tN:\texactly N threads, 1 to scan serially\n" \
                  "\n" \
                  "endianness\tendianness of data (used by: set, write and comparisons)\n" \
                  "\t\t\tDefault:0\n" \

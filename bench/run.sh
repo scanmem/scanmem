@@ -1,10 +1,17 @@
 #!/bin/bash
 # Benchmark the two scan phases. Run from the repo root or from bench/.
 #
-# Initial scan  = sm_searchregions, walks every region once.
-# Narrowing     = sm_checkmatches, walks the existing match set. This is the
-#                 one that hurts on big match sets because every match is read
-#                 back through a small caching window.
+# Initial scan  = sm_searchregions, walks every region once, runs the scan
+#                 routine at every byte offset. Cost tracks region size.
+# Narrowing     = sm_checkmatches, walks the existing match set. Cost tracks
+#                 how many matches there are.
+#
+# Two scenarios, because they stress opposite ends:
+#   dense   every slot planted, so the match array is enormous and the
+#           narrowing scan dominates. Pathological, but it is the case that
+#           catches buffer edge bugs.
+#   sparse  a handful of planted values in the same region, which is what a
+#           real scan looks like. Here the initial scan is nearly all of it.
 #
 # Each measurement gets a freshly started target. memfake rewrites its buffer
 # when it mutates, so reusing one across runs means the second run scans for a
@@ -17,10 +24,12 @@ SCANMEM=${SCANMEM:-../scanmem}
 MEMFAKE=${MEMFAKE:-../test/memfake}
 MB=${MB:-64}
 REPS=${REPS:-3}
+THREADS=${THREADS:-}
 WIDTH=8
 V1=$((0x5EED1234DEADBEEF))
 V2=$((V1 + 1))
-SLOTS=$((MB * 1024 * 1024 / WIDTH))
+DENSE_SLOTS=$((MB * 1024 * 1024 / WIDTH))
+SPARSE_SLOTS=${SPARSE_SLOTS:-1000}
 
 SUDO=""
 [ "$(id -u)" -ne 0 ] && SUDO="sudo -n"
@@ -28,10 +37,10 @@ SUDO=""
 [ -x "$MEMFAKE" ] || { echo "build test/memfake first (make -C test memfake)"; exit 1; }
 [ -x "$SCANMEM" ] || { echo "build scanmem first"; exit 1; }
 
-pid=""; bg=""; ready=""; done_f=""
+pid=""; bg=""; ready=""; done_f=""; slots=0
 start_target() {
     ready=$(mktemp); done_f=$(mktemp); rm -f "$done_f"
-    "$MEMFAKE" --plant $V1 --count $SLOTS --width $WIDTH --mb "$MB" \
+    "$MEMFAKE" --plant $V1 --count "$slots" --width $WIDTH --mb "$MB" \
         --ready-file "$ready" --done-file "$done_f" >/dev/null 2>&1 &
     bg=$!
     for _ in $(seq 1 400); do [ -s "$ready" ] && break; sleep 0.05; done
@@ -46,11 +55,16 @@ stop_target() {
 }
 trap stop_target EXIT
 
+# `option threads N` only exists on builds that have it, so only send it when asked
+opt_threads() {
+    [ -n "$THREADS" ] && printf 'option threads %s\n' "$THREADS"
+}
+
 script_for() {
     case "$1" in
-        scan)   printf 'option scan_data_type int64\n%s\nexit\n' "$V1" ;;
-        narrow) printf 'option scan_data_type int64\n%s\nshell rm -f %s; kill -USR1 %s; while [ ! -s %s ]; do sleep 0.01; done\n%s\nexit\n' \
-                    "$V1" "$done_f" "$pid" "$done_f" "$V2" ;;
+        scan)   printf '%soption scan_data_type int64\n%s\nexit\n' "$(opt_threads)" "$V1" ;;
+        narrow) printf '%soption scan_data_type int64\n%s\nshell rm -f %s; kill -USR1 %s; while [ ! -s %s ]; do sleep 0.01; done\n%s\nexit\n' \
+                    "$(opt_threads)" "$V1" "$done_f" "$pid" "$done_f" "$V2" ;;
     esac
 }
 
@@ -68,20 +82,28 @@ timed() {
     printf '%s\n' "${times[@]}" | sort -g | awk -v n="$REPS" 'NR==int((n+1)/2)'
 }
 
-echo "target: ${MB}MB, $SLOTS planted slots (every slot), width $WIDTH, median of $REPS"
-echo
+scenario() {
+    local label=$1
+    slots=$2
+    echo "$label: ${MB}MB region, $slots planted slots, width $WIDTH, median of $REPS"
+    local t_scan t_both t_narrow
+    t_scan=$(timed scan)
+    t_both=$(timed narrow)
+    t_narrow=$(echo "$t_both - $t_scan" | bc)
+    printf '  initial scan      %8.2fs\n' "$t_scan"
+    printf '  scan + narrow     %8.2fs\n' "$t_both"
+    printf '  narrow (derived)  %8.2fs\n' "$t_narrow"
+    echo
+}
 
-t_scan=$(timed scan)
-t_both=$(timed narrow)
-t_narrow=$(echo "$t_both - $t_scan" | bc)
+[ -n "$THREADS" ] && echo "threads: $THREADS" && echo
 
-printf 'initial scan      %8.2fs\n' "$t_scan"
-printf 'scan + narrow     %8.2fs\n' "$t_both"
-printf 'narrow (derived)  %8.2fs\n' "$t_narrow"
-echo
+scenario "dense " "$DENSE_SLOTS"
+scenario "sparse" "$SPARSE_SLOTS"
 
 if command -v strace >/dev/null 2>&1; then
-    echo "syscalls, scan + narrow (fresh target):"
+    echo "syscalls, dense scan + narrow (fresh target):"
+    slots=$DENSE_SLOTS
     start_target
     script_for narrow | $SUDO strace -f -c -e trace=pread64,process_vm_readv,ptrace \
         "$SCANMEM" -p "$pid" 2>&1 >/dev/null \

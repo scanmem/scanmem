@@ -1683,6 +1683,19 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             return false;
         }
     }
+    else if (strcasecmp(argv[1], "threads") == 0)
+    {
+        char *end = NULL;
+        unsigned long v = strtoul(argv[2], &end, 10);
+
+        if (end == argv[2] || *end != '\0' || v > 1024)
+        {
+            show_error("bad value for threads, see `help option`.\n");
+            return false;
+        }
+        /* 0 means work it out from the online CPUs */
+        vars->options.threads = (unsigned short)v;
+    }
     else if (strcasecmp(argv[1], "noptrace") == 0)
     {
 #if HAVE_PROCMEM

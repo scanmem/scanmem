@@ -463,17 +463,20 @@ changes. So we run
 .B scanmem
 as root.
 
-The first scan can be very slow on large programs, this is not a problem for subsequent 
-scans as huge portions of the address space are usually eliminated. This could be improved
-in future, perhaps by assuming all integers are aligned by default. Suggestions welcome.
+The first scan has to look at every byte of every scanned region, so it is much slower
+than the scans after it, which only revisit the addresses that already matched. It is
+split across threads now, see the
+.B threads
+option, which helps in proportion to how many cores are free. Scanning still looks at
+every byte offset rather than assuming integers are aligned. Suggestions welcome.
 
 The
 .B snapshot
 command uses memory inefficiently, and should probably not be used on large programs.
 
-The option
-.B noptrace
-which uses /proc/pid/mem could be replaced by process_vm_readv/process_vm_writev system calls instead.
+Reads now go through process_vm_readv when the kernel allows it, falling back to
+/proc/pid/mem and then to ptrace. Writes still go through /proc/pid/mem, so
+process_vm_writev is still worth doing.
 .TP
 .br
 .B For more informations to this noptrace option:
