@@ -82,8 +82,13 @@
 # define PEEKDATA_CHUNK sizeof(long)
 #endif
 #define MAX_PEEKBUF_SIZE ((1<<16) + PEEKDATA_CHUNK)
+/* how far ahead we are willing to read in one go when the scan is walking
+ * forwards. grows while access stays sequential, resets on a jump, so a dense
+ * scan gets big reads and a sparse one does not pay for bytes it will not use */
+#define READAHEAD_MAX (1<<16)
 static struct {
     uint8_t cache[MAX_PEEKBUF_SIZE];  /* read from ptrace()  */
+    size_t readahead;                 /* current readahead window */
     unsigned size;              /* amount of valid memory stored (in bytes) */
     const char *base;           /* base address of cached region */
 #if HAVE_PROCMEM
@@ -272,7 +277,6 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
 extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, size_t *memlength)
 {
     const char *reqaddr = addr;
-    unsigned int i;
     unsigned int missing_bytes;
 
     assert(peekbuf.size <= MAX_PEEKBUF_SIZE);
@@ -300,8 +304,12 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
          * potentially be read and we have to fit it all */
         missing_bytes = PEEKDATA_CHUNK * (1 + (missing_bytes-1) / PEEKDATA_CHUNK);
 
-        /* head shift if necessary */
-        if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE)
+        /* Head shift if necessary. Also shift when the cache is too full to
+         * take a whole readahead window, otherwise steady state leaves only
+         * the few bytes just consumed free and every refill degenerates back
+         * to a single chunk read. */
+        if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE ||
+            peekbuf.size + peekbuf.readahead > MAX_PEEKBUF_SIZE)
         {
             unsigned int shift_size = reqaddr - peekbuf.base;
             shift_size = PEEKDATA_CHUNK * (shift_size / PEEKDATA_CHUNK);
@@ -313,33 +321,68 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
         }
     }
     else {
-        /* cache miss, invalidate the cache */
+        /* Cache miss, invalidate the cache.
+         *
+         * A forward walk lands exactly on base+size every time it runs off the
+         * end of the window, which reaches here rather than the partial hit
+         * branch above. That is still sequential access, so only treat a real
+         * jump as a reason to shrink the readahead back down. */
+        const char *cached_end = peekbuf.base ? peekbuf.base + peekbuf.size : NULL;
+        if (reqaddr != cached_end)
+            peekbuf.readahead = PEEKDATA_CHUNK;
+
         missing_bytes = length;
         peekbuf.size = 0;
         peekbuf.base = reqaddr;
     }
 
-    /* we need to retrieve memory to complete the request */
-    for (i = 0; i < missing_bytes; i += PEEKDATA_CHUNK)
+    /* we need to retrieve memory to complete the request.
+     *
+     * this used to loop issuing one PEEKDATA_CHUNK sized read at a time, which
+     * cost a syscall per 2KB no matter how much of the region we were about to
+     * walk through. ask for the readahead window in a single call instead, and
+     * let it grow while the scan keeps moving forwards. */
+    if (peekbuf.readahead < PEEKDATA_CHUNK)
+        peekbuf.readahead = PEEKDATA_CHUNK;
+
+    size_t want = missing_bytes > peekbuf.readahead ? missing_bytes : peekbuf.readahead;
+
+    /* keep it a whole number of chunks, the ptrace fallback reads in words */
+    want = PEEKDATA_CHUNK * (1 + (want - 1) / PEEKDATA_CHUNK);
+
+    if (peekbuf.size + want > MAX_PEEKBUF_SIZE)
+        want = MAX_PEEKBUF_SIZE - peekbuf.size;
+
+    /* the shift above guarantees there is room for what was actually asked for */
+    if (want < missing_bytes)
+        want = missing_bytes;
+
+    if (want > 0)
     {
         const char *target_address = peekbuf.base + peekbuf.size;
-        size_t len = readmemory(&peekbuf.cache[peekbuf.size], target_address, PEEKDATA_CHUNK);
+        size_t len = readmemory(&peekbuf.cache[peekbuf.size], target_address, want);
 
-        /* check if the read succeeded */
-        if (UNLIKELY(len < PEEKDATA_CHUNK)) {
+        if (UNLIKELY(len < missing_bytes)) {
             if (len == 0) {
                 /* hard failure to retrieve memory */
                 *result_ptr = NULL;
                 *memlength = 0;
                 return false;
             }
-            /* go ahead with the partial read and stop the gathering process */
+            /* partial read, most likely we ran into the end of the region.
+             * keep what we got and stop reaching further ahead */
             peekbuf.size += len;
-            break;
+            peekbuf.readahead = PEEKDATA_CHUNK;
+            *result_ptr = (mem64_t*)&peekbuf.cache[reqaddr - peekbuf.base];
+            *memlength = peekbuf.base - reqaddr + peekbuf.size;
+            return true;
         }
-        
-        /* otherwise, the read worked */
-        peekbuf.size += PEEKDATA_CHUNK;
+
+        peekbuf.size += len;
+
+        /* that worked, so reach a bit further next time */
+        if (peekbuf.readahead < READAHEAD_MAX)
+            peekbuf.readahead *= 2;
     }
 
     /* return result to caller */
