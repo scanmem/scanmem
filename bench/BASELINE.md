@@ -74,3 +74,24 @@ A note on measuring this: the first attempt showed threads=1 coming out 10 to
 chunking. It was two orphaned scanmem processes from earlier timed out runs
 sitting at 95% CPU. On an idle machine threads=1 is level with serial. Check
 what else is running before believing a regression this size.
+
+# Known: clang builds scan wrong
+
+Worth writing down because it cost a while to pin down. scanmem built with
+clang at -O1 or higher finds almost nothing. The scan runs, reads the right
+memory, parses the right value and picks the right routine, and still returns
+3 matches where gcc returns 102.
+
+Not introduced by any of the work above. Upstream 0375cc0 fails identically
+once you point an asserting test suite at it, which nothing did before, since
+the old suite only checked that scanmem exited zero and CI only built gcc.
+
+Ruled out so far: strict aliasing (-fno-strict-aliasing does not help),
+vectorisation, signed overflow (-fwrapv), and the extern inline definitions
+(removing them entirely does not help). -fno-inline takes it from 4/23 to
+16/23 checks passing, so inlining is exposing it rather than causing it.
+
+Reproduce:
+
+    ./configure CC=clang CFLAGS='-O2 -Wall' && make
+    sudo make check
