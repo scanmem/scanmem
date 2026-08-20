@@ -52,12 +52,22 @@ locale.setlocale(locale.LC_NUMERIC, 'C')
 locale.bindtextdomain(GETTEXT_PACKAGE, LOCALEDIR);
 gettext.install(GETTEXT_PACKAGE, LOCALEDIR, names=('_'));
 
-CLIPBOARD = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 WORK_DIR = os.path.dirname(sys.argv[0])
 PROGRESS_INTERVAL = 100 # for scan progress updates
 DATA_WORKER_INTERVAL = 500 # for read(update)/write(lock)
 HEXEDIT_SPAN = 1024 # hexview half-height
 SCAN_RESULT_LIST_LIMIT = 10000 # maximal number of entries that can be displayed
+
+def get_clipboard():
+    # grabbed on demand rather than at import. gameconqueror runs as root via
+    # pkexec and root often has no authorization for the session display, so
+    # doing this at module scope threw a gtk assertion before main() even ran
+    # (#435, #450). copy just goes quiet now instead of poisoning startup.
+    display = Gdk.Display.get_default()
+    if display is None:
+        return None
+    return Gtk.Clipboard.get_for_display(display, Gdk.SELECTION_CLIPBOARD)
+
 
 SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string']
 
@@ -685,7 +695,9 @@ class GameConqueror():
             return True
         elif data == 'copy_address':
             addr = '%x' %(addr,)
-            CLIPBOARD.set_text(addr, len(addr))
+            clipboard = get_clipboard()
+            if clipboard is not None:
+                clipboard.set_text(addr, len(addr))
             return True
         return False
 
@@ -1221,6 +1233,17 @@ if __name__ == '__main__':
     parser.add_argument('-v', '--version', action='version', version='%(prog)s ' + VERSION)
     parser.add_argument("pid", nargs='?', type=int, help=_("PID of the process"))
     args = parser.parse_args()
+
+    # pkexec does not carry x11/wayland authorization across to root, so the
+    # display can be missing here even though it works fine for your own user.
+    # say that plainly instead of letting gtk assert its way out (#427, #450).
+    if Gdk.Display.get_default() is None:
+        sys.stderr.write(_('GameConqueror cannot open a display.\n'
+                           'It runs as root through pkexec, and root may not be '
+                           'authorized to use your session display.\n'
+                           'Workaround: run "xhost +SI:localuser:root" first, '
+                           'then "xhost -SI:localuser:root" when you are done.\n'))
+        sys.exit(1)
 
     # Init application
     GObject.threads_init()
