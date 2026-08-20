@@ -713,21 +713,31 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
+    uservalue_t val2;
     scan_match_type_t m;
+    /* `^` is the only operator taking two values */
+    bool is_xor = (strcmp(argv[0], "^") == 0);
+
+    zero_uservalue(&val2);
+
+    if (argc > 3 || (argc == 3 && !is_xor))
+    {
+        show_error("too many values specified, see `help %s`", argv[0]);
+        return false;
+    }
 
     if (argc == 1)
     {
         zero_uservalue(&val);
     }
-    else if (argc > 2)
-    {
-        show_error("too many values specified, see `help %s`", argv[0]);
-        return false;
-    }
     else
     {
         if (!parse_uservalue_number(argv[1], &val)) {
             show_error("bad value specified, see `help %s`", argv[0]);
+            return false;
+        }
+        if (argc == 3 && !parse_uservalue_number(argv[2], &val2)) {
+            show_error("bad 2nd value specified, see `help %s`", argv[0]);
             return false;
         }
     }
@@ -757,6 +767,18 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
     {
         m = (argc == 1) ? MATCHDECREASED : MATCHDECREASEDBY;
     }
+    else if (is_xor)
+    {
+        if (argc == 1) {
+            show_error("`^' needs one or two values, see `help ^`.\n");
+            return false;
+        }
+        /* the scan compares against a single value, so fold the pair down to
+           the one thing it is looking for: old ^ new */
+        if (argc == 3)
+            xor_uservalue(&val, &val2);
+        m = MATCHXORBY;
+    }
     else
     {
         show_error("unrecognized operator seen at handler_operators: \"%s\".\n", argv[0]);
@@ -783,7 +805,8 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
             m == MATCHDECREASED   ||
             m == MATCHINCREASED   ||
             m == MATCHDECREASEDBY ||
-            m == MATCHINCREASEDBY )
+            m == MATCHINCREASEDBY ||
+            m == MATCHXORBY       )
         {
             show_error("cannot use that search without matches\n");
             return false;

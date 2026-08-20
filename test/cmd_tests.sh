@@ -101,6 +101,61 @@ echo "$out" | grep -q "no target set" \
     && assert_eq yes yes "read with no target explains itself" \
     || assert_eq no yes "read with no target explains itself"
 
+# ---- xor between scan rounds (#424) ----
+# earlier tests wrote over one of the planted slots, so start clean
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+
+NEXT=$((VAL + 1))
+DELTA=$((VAL ^ NEXT))
+
+# baseline: the ordinary narrow, so we know what the xor should reproduce
+out=$(run_scan "option scan_data_type int32\n$VAL\n$(mutate_cmd)\n$NEXT\nexit")
+expect=$(nth "$out" 2)
+assert_ge "$expect" "$COUNT" "control: plain narrow finds the planted values"
+
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_scan "option scan_data_type int32\n$VAL\n$(mutate_cmd)\n^ $DELTA\nexit")
+assert_eq "$(nth "$out" 2)" "$expect" "one arg xor narrows to the same set"
+
+# two arg form: the key cancels, so ^ n m must equal ^ (n^m)
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_scan "option scan_data_type int32\n$VAL\n$(mutate_cmd)\n^ $VAL $NEXT\nexit")
+assert_eq "$(nth "$out" 2)" "$expect" "two arg xor narrows to the same set"
+
+# a wrong delta must not match the planted slots
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_scan "option scan_data_type int32\n$VAL\n$(mutate_cmd)\n^ $((DELTA ^ 0xff))\nexit")
+second=$(nth "$out" 2)
+[ "${second:-0}" -lt "$expect" ] \
+    && assert_eq yes yes "a wrong xor delta does not match" \
+    || assert_eq no yes "a wrong xor delta does not match"
+
+# xor cannot be a first scan, there is no old value to compare against
+out=$(run_raw "^ 5\nexit")
+echo "$out" | grep -q "without matches" \
+    && assert_eq yes yes "xor is refused as a first scan" \
+    || assert_eq no yes "xor is refused as a first scan"
+
+out=$(run_raw "option scan_data_type int32\n$VAL\n^\nexit")
+echo "$out" | grep -q "one or two values" \
+    && assert_eq yes yes "xor with no value is refused" \
+    || assert_eq no yes "xor with no value is refused"
+
+out=$(run_raw "option scan_data_type int32\n$VAL\n^ 1 2 3\nexit")
+echo "$out" | grep -q "too many values" \
+    && assert_eq yes yes "xor with three values is refused" \
+    || assert_eq no yes "xor with three values is refused"
+
+# the other operators must still reject a second value
+out=$(run_raw "option scan_data_type int32\n$VAL\n+ 1 2\nexit")
+echo "$out" | grep -q "too many values" \
+    && assert_eq yes yes "+ still rejects two values" \
+    || assert_eq no yes "+ still rejects two values"
+
 # ---- sm_reset is a public API symbol (#312) ----
 # the whole point of the PR is that a front end can call this without going
 # through the command parser, so check it actually made it out of the .so

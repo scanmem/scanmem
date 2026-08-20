@@ -171,6 +171,7 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 #define CHANGED_SHRTDOC     "match values that have changed or different from some number"
 #define INCREASED_SHRTDOC   "match values that have increased at all or by some number"
 #define DECREASED_SHRTDOC   "match values that have decreased at all or by some number"
+#define XOR_SHRTDOC         "match values whose change equals a given xor"
 
 #define GREATERTHAN_LONGDOC "usage: > [n]\n" \
                 "If n is given, match values that are greater than n.\n" \
@@ -200,6 +201,16 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
                 "Otherwise match all values that have decreased. (same as `<`)\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
+
+#define XOR_LONGDOC "usage: ^ n [m]\n" \
+                "Match values where the old value xored with the current value equals n,\n" \
+                "or equals n^m if m is given.\n" \
+                "\n" \
+                "Use this when the target stores a value xored with a key you do not know.\n" \
+                "If the plaintext went from n to m, the stored words differ by exactly\n" \
+                "n^m whatever the key is, because the key cancels out.\n" \
+                "\n" \
+                "Integer types only. Cannot be used for the first scan.\n"
 
 bool handler__operators(globals_t *vars, char **argv, unsigned argc);
 
