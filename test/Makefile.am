@@ -4,4 +4,4 @@ check_PROGRAMS = memfake
 memfake_SOURCES = memfake.c
 memfake_CFLAGS = -std=gnu99 -Wall
 
-EXTRA_DIST = lib.sh
+EXTRA_DIST = lib.sh $(TESTS)
