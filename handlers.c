@@ -90,9 +90,13 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned block;
+    /* volatile: these are written before the setjmp below and read after it,
+       and a non volatile local has an indeterminate value once longjmp has
+       been through. gcc warns about exactly this with -Wclobbered. */
+    volatile unsigned seconds = 1;
     char *delay = NULL;
-    bool cont = false;
+    volatile bool cont = false;
     struct setting {
         char *matchids;
         char *value;

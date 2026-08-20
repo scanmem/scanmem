@@ -47,6 +47,9 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
     char name[128], *line = NULL;
     char exelink[128];
     size_t len = 0;
+    /* grown alongside `line`, see the loop below */
+    char *filename = NULL;
+    size_t filename_size = 0;
     unsigned int code_regions = 0, exe_regions = 0;
     unsigned long prev_end = 0, load_addr = 0, exe_load = 0;
     bool is_exe = false;
@@ -91,11 +94,22 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
         int offset, dev_major, dev_minor, inode;
         region_type_t type = REGION_TYPE_MISC;
 
-        /* slight overallocation */
-        char filename[len];
-
-        /* initialise to zero */
-        memset(filename, '\0', len);
+        /* Was a `char filename[len]` VLA, zeroed every line. `len` is
+           getline's buffer capacity, which grows to fit the longest path the
+           target has mapped, so the size came from another process and landed
+           on the stack. Keep one heap buffer and grow it instead. Only the
+           first byte needs clearing, sscanf terminates the string itself when
+           it matches, and this is here for when it does not. */
+        if (len > filename_size) {
+            char *grown = realloc(filename, len);
+            if (grown == NULL) {
+                show_error("failed to allocate space for a filename.\n");
+                goto error;
+            }
+            filename = grown;
+            filename_size = len;
+        }
+        filename[0] = '\0';
 
         /* parse each line */
         if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %[^\n]", &start, &end, &read,
@@ -259,12 +273,14 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
     show_info("%lu suitable regions found.\n", regions->size);
 
     /* release memory allocated */
+    free(filename);
     free(line);
     fclose(maps);
 
     return true;
 
 error:
+    free(filename);
     free(line);
     fclose(maps);
 

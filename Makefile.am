@@ -7,7 +7,7 @@ if ENABLE_GUI
 endif
 
 # '-O2 -g' are added by `configure`, unless the user overrides CFLAGS
-AM_CFLAGS = -std=gnu99 -Wall
+AM_CFLAGS = -std=gnu11 -Wall $(EXTRA_CFLAGS)
 
 # Utilities library, statically linked in sm and libsm
 noinst_LTLIBRARIES = libutil.la

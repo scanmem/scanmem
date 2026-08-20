@@ -30,6 +30,28 @@ AM_CONDITIONAL([HAVE_GETLINE], [test "x$ac_cv_func_getline" != "xno"])
 
 AC_CHECK_HEADERS(fcntl.h limits.h stddef.h sys/ioctl.h sys/time.h)
 
+# Warning and hardening flags, but only the ones this compiler actually takes,
+# so a different or older compiler still builds.
+# -Wno-unused-parameter: the scan routines are macro generated onto one shared
+# signature, so most of them genuinely do not use every argument. Roughly 130
+# warnings that all say the same thing and none of them are bugs.
+# -Wno-format-nonliteral: -Wformat=2 turns this on, and the one place it fires
+# picks its format from a fixed internal table by scan type, not from input.
+EXTRA_CFLAGS=""
+sm_saved_CFLAGS="$CFLAGS"
+for sm_flag in -Wextra -Wno-unused-parameter -fstack-protector-strong \
+               -Wformat=2 -Wno-format-nonliteral -Wvla \
+               -D_FORTIFY_SOURCE=2; do
+  CFLAGS="$sm_saved_CFLAGS -Werror $sm_flag"
+  AC_MSG_CHECKING([whether $CC accepts $sm_flag])
+  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],
+                    [AC_MSG_RESULT([yes])
+                     EXTRA_CFLAGS="$EXTRA_CFLAGS $sm_flag"],
+                    [AC_MSG_RESULT([no])])
+done
+CFLAGS="$sm_saved_CFLAGS"
+AC_SUBST(EXTRA_CFLAGS)
+
 AC_FUNC_ALLOCA
 AC_FUNC_STRTOD
 
