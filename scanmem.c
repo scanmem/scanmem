@@ -69,7 +69,8 @@ globals_t sm_globals = {
         0,                      /* reverse_endianness */
         0,                      /* no_ptrace */
         0,                      /* threads, 0 = auto */
-    }
+    },
+    false,                      /* scan_in_progress */
 };
 
 /* signal handler - use async-signal safe functions ONLY! */
@@ -247,4 +248,43 @@ double sm_get_scan_progress(void)
 void sm_set_stop_flag(bool stop_flag)
 {
     sm_globals.stop_flag = stop_flag;
+}
+
+/* Drop all matches and reread the region list. Exposed so a front end can get
+   back to a clean state without going through the command parser.
+   Refuses while a scan is running: the scan owns vars->matches, so freeing it
+   underneath is a use after free rather than just a lost result. */
+bool sm_reset(void)
+{
+    globals_t *vars = &sm_globals;
+
+    if (vars->scan_in_progress) {
+        show_error("cannot reset while a scan is in progress.\n");
+        return false;
+    }
+
+    /* reset scan progress */
+    vars->scan_progress = 0;
+
+    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+
+    /* refresh list of regions */
+    l_destroy(vars->regions);
+
+    /* create a new linked list of regions */
+    if ((vars->regions = l_init()) == NULL) {
+        show_error("sorry, there was a problem allocating memory.\n");
+        return false;
+    }
+
+    /* read in maps if a pid is known */
+    if (vars->target && sm_readmaps(vars->target, vars->regions,
+                                    vars->options.region_scan_level) != true) {
+        show_error("sorry, there was a problem getting a list of regions to search.\n");
+        show_warn("the pid may be invalid, or you don't have permission.\n");
+        vars->target = 0;
+        return false;
+    }
+
+    return true;
 }

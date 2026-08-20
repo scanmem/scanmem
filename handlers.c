@@ -537,35 +537,20 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
         keep_regions = true;
     }
 
-    /* reset scan progress */
-    vars->scan_progress = 0;
-
-    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
-
     /* regions come straight out of the maps file, so rereading them means
        parsing the whole thing again. skip that when the caller only wanted
        the matches gone and the target has not been re-executed. */
-    if (keep_regions)
+    if (keep_regions) {
+        if (vars->scan_in_progress) {
+            show_error("cannot reset while a scan is in progress.\n");
+            return false;
+        }
+        vars->scan_progress = 0;
+        if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
         return true;
-
-    /* refresh list of regions */
-    l_destroy(vars->regions);
-
-    /* create a new linked list of regions */
-    if ((vars->regions = l_init()) == NULL) {
-        show_error("sorry, there was a problem allocating memory.\n");
-        return false;
     }
 
-    /* read in maps if a pid is known */
-    if (vars->target && sm_readmaps(vars->target, vars->regions, vars->options.region_scan_level) != true) {
-        show_error("sorry, there was a problem getting a list of regions to search.\n");
-        show_warn("the pid may be invalid, or you don't have permission.\n");
-        vars->target = 0;
-        return false;
-    }
-
-    return true;
+    return sm_reset();
 }
 
 bool handler__pid(globals_t * vars, char **argv, unsigned argc)

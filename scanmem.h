@@ -63,6 +63,9 @@ typedef struct {
         unsigned short no_ptrace;
         unsigned short threads;    /* 0 means pick from online CPUs */
     } options;
+    /* set while a scan owns vars->matches. appended at the end of the struct
+       on purpose so existing member offsets do not move. */
+    volatile bool scan_in_progress;
 } globals_t;
 
 /* global settings */
@@ -77,6 +80,7 @@ unsigned long sm_get_num_matches(void);
 const char *sm_get_version(void);
 double sm_get_scan_progress(void);
 void sm_set_stop_flag(bool stop_flag);
+bool sm_reset(void);
 
 /* ptrace.c */
 bool sm_detach(pid_t target);

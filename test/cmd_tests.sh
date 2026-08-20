@@ -101,5 +101,17 @@ echo "$out" | grep -q "no target set" \
     && assert_eq yes yes "read with no target explains itself" \
     || assert_eq no yes "read with no target explains itself"
 
+# ---- sm_reset is a public API symbol (#312) ----
+# the whole point of the PR is that a front end can call this without going
+# through the command parser, so check it actually made it out of the .so
+lib=../.libs/libscanmem.so
+if [ -f "$lib" ] && command -v nm >/dev/null 2>&1; then
+    nm -D --defined-only "$lib" 2>/dev/null | grep -q " T sm_reset$" \
+        && assert_eq yes yes "sm_reset is exported from libscanmem" \
+        || assert_eq no yes "sm_reset is exported from libscanmem"
+else
+    echo "skip: no shared lib or nm, not checking sm_reset export"
+fi
+
 stop_memfake
 summary

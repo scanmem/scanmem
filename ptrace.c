@@ -494,9 +494,9 @@ static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match
 
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
  * it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true. */
-bool sm_checkmatches(globals_t *vars,
-                     scan_match_type_t match_type,
-                     const uservalue_t *uservalue)
+static bool checkmatches_impl(globals_t *vars,
+                              scan_match_type_t match_type,
+                              const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
@@ -820,8 +820,22 @@ static unsigned scan_thread_count(const globals_t *vars)
 #endif
 }
 
+/* Thin wrapper so scan_in_progress is set on every path out, including the
+   early returns. sm_reset() refuses to free the matches while it is set. */
+bool sm_checkmatches(globals_t *vars,
+                     scan_match_type_t match_type,
+                     const uservalue_t *uservalue)
+{
+    bool ret;
+
+    vars->scan_in_progress = true;
+    ret = checkmatches_impl(vars, match_type, uservalue);
+    vars->scan_in_progress = false;
+    return ret;
+}
+
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
-bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
+static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
     unsigned long total_size = 0;
@@ -1097,6 +1111,17 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
     /* okay, detach */
     return sm_detach(vars->target);
+}
+
+/* see the note on sm_checkmatches above */
+bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
+{
+    bool ret;
+
+    vars->scan_in_progress = true;
+    ret = searchregions_impl(vars, match_type, uservalue);
+    vars->scan_in_progress = false;
+    return ret;
 }
 
 /* Needs to support only ANYNUMBER types */
