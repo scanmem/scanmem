@@ -22,14 +22,22 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - run: sudo apt --assume-yes update
+    # apt-get rather than apt: apt says itself that it has no stable CLI for
+    # scripts. noninteractive and a retry count so a slow mirror cannot leave
+    # the step sitting there. There was a run on main that spent six hours in
+    # apt before it got cancelled.
+    # No `apt upgrade` either, it pulls in a lot for no benefit here.
+    - run: sudo apt-get -o Acquire::Retries=3 --assume-yes update
       shell: bash
-    # no `apt upgrade`, it pulls in a lot and is the flakiest step in the run
+      env:
+        DEBIAN_FRONTEND: noninteractive
     - run: >
-        sudo apt --assume-yes install
+        sudo apt-get -o Acquire::Retries=3 --assume-yes install
         make gcc clang binutils intltool libtool libtool-bin
         autotools-dev autoconf automake libreadline-dev python3
       shell: bash
+      env:
+        DEBIAN_FRONTEND: noninteractive
     - run: ./autogen.sh
       shell: bash
     - run: ./configure ${{ inputs.configure-args }}

@@ -7,6 +7,7 @@ jobs:
   build:
     name: ${{ matrix.cc }}
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     # clang does not fail the run yet. It builds clean but the scans come back
     # wrong at -O1 and above, and that is not new: upstream 0375cc0 fails the
     # same way, gcc is fine at every level, and clang -O0 is fine. It went
@@ -38,6 +39,7 @@ jobs:
   sanitizers:
     name: asan+ubsan
     runs-on: ubuntu-24.04
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - name: Set up
