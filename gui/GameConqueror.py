@@ -61,7 +61,10 @@ SCAN_RESULT_LIST_LIMIT = 10000 # maximal number of entries that can be displayed
 
 SCAN_VALUE_TYPES = ['int', 'int8', 'int16', 'int32', 'int64', 'float', 'float32', 'float64', 'number', 'bytearray', 'string']
 
-LOCK_FLAG_TYPES = misc.build_simple_str_liststore(['=', '+', '-'])
+# How a locked row behaves. '=' holds the value where it is, '+' lets it rise
+# but not fall, '-' lets it fall but not rise.
+LOCK_FLAGS = ['=', '+', '-']
+LOCK_FLAG_TYPES = misc.build_simple_str_liststore(LOCK_FLAGS)
 
 MEMORY_TYPES = ['int8', 'uint8',
                 'int16', 'uint16',
@@ -197,8 +200,8 @@ class GameConqueror():
 
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
-        # cheatlist contents:                    locked, description, addr,                type, value, valid
-        self.cheatlist_liststore = Gtk.ListStore(bool,   str,         GObject.TYPE_UINT64, str,  str,   bool)
+        # cheatlist contents:                    locked, description, addr,                type, value, valid, lock flag
+        self.cheatlist_liststore = Gtk.ListStore(bool,   str,         GObject.TYPE_UINT64, str,  str,   bool,  str)
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_editing = False
         # Lock
@@ -209,6 +212,18 @@ class GameConqueror():
                                                       ,('radio', False)
                                                       ,('inconsistent', False)) 
                                         ,signals = (('toggled', self.cheatlist_toggle_lock_cb),)
+                                   )
+        # Lock flag
+        misc.treeview_append_column(self.cheatlist_tv, _('Flag'), 6
+                                        ,renderer_class = Gtk.CellRendererCombo
+                                        ,attributes = (('text',6),)
+                                        ,properties = (('editable', True)
+                                                      ,('has-entry', False)
+                                                      ,('model', LOCK_FLAG_TYPES)
+                                                      ,('text-column', 0))
+                                        ,signals = (('edited', self.cheatlist_toggle_lock_flag_cb),
+                                                    ('editing-started', self.cheatlist_edit_start),
+                                                    ('editing-canceled', self.cheatlist_edit_cancel),)
                                    )
         # Description
         misc.treeview_append_column(self.cheatlist_tv, _('Description'), 1
@@ -404,7 +419,9 @@ class GameConqueror():
                 with open(dialog.get_filename(), 'r') as f:
                     obj = json.load(f)
                     for row in obj['cheat_list']:
-                        self.add_to_cheat_list(row[2],row[4],row[3],row[1],True)
+                        # files saved before lock flags existed have 6 fields
+                        lockflag = row[6] if len(row) > 6 else '='
+                        self.add_to_cheat_list(row[2],row[4],row[3],row[1],True,lockflag)
             except:
                 pass
         dialog.destroy()
@@ -708,7 +725,9 @@ class GameConqueror():
 
     def cheatlist_toggle_lock_flag_cb(self, cell, path, new_text, data=None):
         self.cheatlist_editing = False
-        # currently only one lock flag is supported
+        if new_text not in LOCK_FLAGS:
+            return True
+        self.cheatlist_liststore[int(path)][6] = new_text
         return True
 
     def cheatlist_edit_description_cb(self, cell, path, new_text, data=None):
@@ -877,7 +896,7 @@ class GameConqueror():
         Gdk.threads_leave()
         return True
 
-    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False):
+    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False, lockflag='='):
         # determine longest possible type
         types = typestr.split()
         vt = typestr
@@ -885,10 +904,12 @@ class GameConqueror():
             if t in TYPENAMES_S2G:
                 vt = TYPENAMES_S2G[t]
                 break
+        if lockflag not in LOCK_FLAGS:
+            lockflag = '='
         if at_end:
-            self.cheatlist_liststore.append([False, description, addr, vt, str(value), True])
+            self.cheatlist_liststore.append([False, description, addr, vt, str(value), True, lockflag])
         else:
-            self.cheatlist_liststore.prepend([False, description, addr, vt, str(value), True])
+            self.cheatlist_liststore.prepend([False, description, addr, vt, str(value), True, lockflag])
 
     def get_process_list(self):
         plist = []
@@ -1102,18 +1123,40 @@ class GameConqueror():
 
             # Write to memory locked values in cheat list
             for i in self.cheatlist_liststore:
-                if i[0] and i[5]: # locked and valid
-                    self.write_value(i[2], i[3], i[4]) # addr, typestr, value
+                if not (i[0] and i[5]): # locked and valid
+                    continue
+                addr, typestr, value, lockflag = i[2], i[3], i[4], i[6]
+                # '=' pins the value. bytearray/string have no ordering so
+                # they only ever get the plain lock, whatever the flag says.
+                if lockflag == '=' or typestr not in TYPESIZES:
+                    self.write_value(addr, typestr, value)
+                    continue
+                # directional lock: let the game move the value the way we
+                # allow and keep that, push back when it goes the other way
+                newvalue = self.read_value(addr, typestr, value)
+                if newvalue is None:
+                    continue
+                try:
+                    conv = float if typestr.startswith('float') else int
+                    have, got = conv(value), conv(newvalue)
+                except (TypeError, ValueError):
+                    self.write_value(addr, typestr, value)
+                    continue
+                want = max(have, got) if lockflag == '+' else min(have, got)
+                if want != got:
+                    self.write_value(addr, typestr, str(want))
+                if want != have and not self.cheatlist_editing:
+                    i[4] = str(want)
             # Update visible (and unlocked) cheat list rows
             rows = self.get_visible_rows(self.cheatlist_tv)
             for i in rows:
-                locked, desc, addr, typestr, value, valid = self.cheatlist_liststore[i]
+                locked, desc, addr, typestr, value, valid, lockflag = self.cheatlist_liststore[i]
                 if valid and not locked:
                     newvalue = self.read_value(addr, typestr, value)
                     if newvalue is None:
-                        self.cheatlist_liststore[i] = (False, desc, addr, typestr, '??', False)
+                        self.cheatlist_liststore[i] = (False, desc, addr, typestr, '??', False, lockflag)
                     elif newvalue != value and not self.cheatlist_editing:
-                        self.cheatlist_liststore[i] = (locked, desc, addr, typestr, str(newvalue), valid)
+                        self.cheatlist_liststore[i] = (locked, desc, addr, typestr, str(newvalue), valid, lockflag)
             # Update visible scanresult rows
             rows = self.get_visible_rows(self.scanresult_tv)
             for i in rows:
