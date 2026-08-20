@@ -1277,6 +1277,173 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     }
 }
 
+/* Cap so a typo like `memdiff 0 99999999999` does not try to allocate three
+   copies of it. Three buffers of this is 3MB, which is plenty to watch. */
+#define MEMDIFF_MAX_LEN (1 << 20)
+#define MEMDIFF_CHANGED "\033[0;32m"   /* moved since the previous read */
+#define MEMDIFF_MOVED   "\033[0;33m"   /* same as last read, but not the start */
+#define MEMDIFF_RESET   "\033[0m"
+
+/* memdiff <address> <length> [list]
+ * Re-read a region once a second and show what moved. */
+bool handler__memdiff(globals_t * vars, char **argv, unsigned argc)
+{
+    void *addr;
+    char *endptr;
+    unsigned char *buf = NULL, *prev = NULL, *start = NULL;
+    bool colour;
+    size_t len, i, j;
+    /* volatile: these live across the sigsetjmp below, see handler__set */
+    volatile bool list_mode = false;
+    volatile bool ret = false;
+
+    if (argc < 3 || argc > 4)
+    {
+        show_error("bad arguments, see `help memdiff`.\n");
+        return false;
+    }
+
+    if (vars->target == 0)
+    {
+        show_error("no target set, type `help pid`.\n");
+        return false;
+    }
+
+    /* check address */
+    errno = 0;
+    addr = (void *) strtoull(argv[1], &endptr, 16);
+    if ((errno != 0) || (endptr == argv[1]) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help memdiff`.\n");
+        return false;
+    }
+
+    /* check length */
+    errno = 0;
+    len = strtoul(argv[2], &endptr, 0);
+    if ((errno != 0) || (endptr == argv[2]) || (*endptr != '\0')
+        || (len == 0) || (len > MEMDIFF_MAX_LEN))
+    {
+        show_error("bad length, must be 1 to %d, see `help memdiff`.\n",
+                   MEMDIFF_MAX_LEN);
+        return false;
+    }
+
+    if (argc == 4)
+    {
+        if (strcmp(argv[3], "list") != 0)
+        {
+            show_error("bad argument `%s', see `help memdiff`.\n", argv[3]);
+            return false;
+        }
+        list_mode = true;
+    }
+
+    /* escape codes would land in the pipe as bytes, and the gui parses this
+       output, so colour only when a person is actually watching */
+    colour = isatty(STDOUT_FILENO) && (vars->options.backend == 0);
+
+    buf = malloc(len);
+    prev = malloc(len);
+    start = malloc(len);
+    if (buf == NULL || prev == NULL || start == NULL)
+    {
+        show_error("memory allocation failed.\n");
+        goto out;
+    }
+
+    /* seed both references from one read, so the first frame shows no change
+       rather than everything having "changed" from zeroed memory */
+    if (!sm_read_array(vars->target, addr, buf, len))
+    {
+        show_error("read memory failed.\n");
+        goto out;
+    }
+    memcpy(prev, buf, len);
+    memcpy(start, buf, len);
+
+    if (INTERRUPTABLE())
+    {
+        /* control returns here when interrupted */
+        sm_detach(vars->target);
+        ENDINTERRUPTABLE();
+        ret = true;
+        goto out;
+    }
+
+    while (true)
+    {
+        if (sm_process_is_dead(vars->target))
+        {
+            vars->target = 0;
+            show_info("target process died, stopping memdiff.\n");
+            break;
+        }
+
+        if (!sm_read_array(vars->target, addr, buf, len))
+        {
+            show_error("read memory failed.\n");
+            ENDINTERRUPTABLE();
+            goto out;
+        }
+
+        if (list_mode)
+        {
+            for (i = 0; i < len; ++i)
+                if (buf[i] != prev[i])
+                    printf("%p: 0x%02X => 0x%02X\n",
+                           (void *)((char *)addr + i), prev[i], buf[i]);
+        }
+        else
+        {
+            for (i = 0; i < len; i += 16)
+            {
+                size_t n = (len - i < 16) ? len - i : 16;
+
+                printf("%p: ", (void *)((char *)addr + i));
+                for (j = 0; j < 16; ++j)
+                {
+                    unsigned char c;
+
+                    if (j >= n) { printf("   "); continue; }
+
+                    c = buf[i + j];
+                    if (colour && c != prev[i + j])
+                        printf(MEMDIFF_CHANGED "%02X" MEMDIFF_RESET " ", c);
+                    else if (colour && c != start[i + j])
+                        printf(MEMDIFF_MOVED "%02X" MEMDIFF_RESET " ", c);
+                    else
+                        printf("%02X ", c);
+                }
+                if (vars->options.dump_with_ascii == 1)
+                {
+                    for (j = 0; j < n; ++j)
+                    {
+                        unsigned char c = buf[i + j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        fflush(stdout);
+        /* only now, so one frame's "changed" means changed since the frame
+           that was actually printed before it */
+        memcpy(prev, buf, len);
+        sleep(1);
+    }
+
+    ENDINTERRUPTABLE();
+    ret = true;
+out:
+    free(buf);
+    free(prev);
+    free(start);
+    return ret;
+}
+
 #include "licence.h"
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc)

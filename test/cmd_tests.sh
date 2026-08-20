@@ -216,6 +216,46 @@ for bad in -1 abc 70000 "12x"; do
         || assert_eq no yes "option undo_limit rejects $bad"
 done
 
+# ---- memdiff (#403) ----
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+
+md_addr=$(printf 'option scan_data_type int32\n%s\nlist\nexit\n' "$VAL" \
+    | $sudo_prefix timeout 120 $SCANMEM -p "$mf_pid" 2>/dev/null \
+    | sed -n 's/^\[ *[0-9]*\][ ,]*\([0-9a-f]*\),.*/\1/p' | head -1)
+assert_ge "${#md_addr}" 4 "found an address to watch"
+
+# memdiff runs until interrupted, so cap it
+md_run() { printf '%b\n' "$1" | $sudo_prefix timeout "${2:-4}" $SCANMEM -p "$mf_pid" 2>&1; }
+
+# the table must start at the requested address, not one byte in. VAL is
+# 0x12d687 so the first four bytes little endian are 87 d6 12 00.
+out=$(md_run "memdiff $md_addr 16" 3 | grep -iE "^0x$md_addr: " | head -1)
+echo "$out" | grep -qiE ": 87 d6 12 00 " \
+    && assert_eq yes yes "table starts at the first byte of the region" \
+    || assert_eq no yes "table starts at the first byte of the region"
+
+# a short trailing row must be padded so the ascii column still lines up
+out=$(md_run "memdiff $md_addr 20" 3 | grep -icE "^0x[0-9a-f]+: " || true)
+assert_ge "$out" 2 "a length that is not a multiple of 16 emits a short row"
+
+# and it must actually notice a change
+( sleep 2; kill -USR1 "$mf_pid" 2>/dev/null ) &
+out=$(md_run "memdiff $md_addr 32 list" 5 | grep -c "=>" || true)
+assert_ge "$out" 1 "list mode reports a byte that changed"
+
+# no colour when the output is not a terminal, the gui parses this
+out=$(md_run "memdiff $md_addr 16" 3 | grep -c "$(printf '\033')" || true)
+assert_eq "$out" "0" "no escape codes when stdout is not a tty"
+
+for bad in "memdiff" "memdiff $md_addr" "memdiff $md_addr 0" \
+           "memdiff $md_addr 99999999999" "memdiff $md_addr 16 bogus" "memdiff zz 16"; do
+    out=$(run_raw "$bad\nexit")
+    echo "$out" | grep -q "error:" \
+        && assert_eq yes yes "rejected: $bad" \
+        || assert_eq no yes "rejected: $bad"
+done
+
 # ---- sm_reset is a public API symbol (#312) ----
 # the whole point of the PR is that a front end can call this without going
 # through the command parser, so check it actually made it out of the .so

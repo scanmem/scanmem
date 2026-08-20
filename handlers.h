@@ -310,6 +310,25 @@ bool handler__shell(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
+#define MEMDIFF_SHRTDOC "watch a memory region and show what changes"
+#define MEMDIFF_LONGDOC "usage: memdiff <address> <length> [list]\n" \
+                "\n" \
+                "Re-read <length> bytes at <address> once a second and show what moved.\n" \
+                "Interrupt with ^C to stop.\n" \
+                "\n" \
+                "Default output is a hex table. On a terminal, green marks a byte that\n" \
+                "changed since the previous read and yellow one that is unchanged since\n" \
+                "the previous read but differs from where it started. Colour is left out\n" \
+                "when the output is not a terminal.\n" \
+                "\n" \
+                "With <list>, print only the bytes that changed, one per line.\n" \
+                "\n" \
+                "Examples:\n" \
+                "\tmemdiff 2acbbd0 16\n" \
+                "\tmemdiff 2acbbd0 128 list\n"
+
+bool handler__memdiff(globals_t *vars, char **argv, unsigned argc);
+
 /*XXX: improve this */
 #define SHOW_COMPLETE "copying,warranty,version"
 #define SHOW_SHRTDOC "display information about scanmem."
