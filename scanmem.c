@@ -136,7 +136,7 @@ bool sm_init(void)
     sm_registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
                        DELETE_LONGDOC, NULL);
     sm_registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-                       RESET_LONGDOC, NULL);
+                       RESET_LONGDOC, RESET_COMPLETE);
     sm_registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
                        PID_LONGDOC, NULL);
     sm_registercommand("snapshot", handler__snapshot, vars->commands,

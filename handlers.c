@@ -522,12 +522,31 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
-    USEPARAMS();
+    bool keep_regions = false;
+
+    if (argc > 2) {
+        show_error("bad arguments, see `help reset`.\n");
+        return false;
+    }
+
+    if (argc == 2) {
+        if (strcmp(argv[1], "keep-regions") != 0) {
+            show_error("unrecognised argument `%s', see `help reset`.\n", argv[1]);
+            return false;
+        }
+        keep_regions = true;
+    }
 
     /* reset scan progress */
     vars->scan_progress = 0;
 
     if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+
+    /* regions come straight out of the maps file, so rereading them means
+       parsing the whole thing again. skip that when the caller only wanted
+       the matches gone and the target has not been re-executed. */
+    if (keep_regions)
+        return true;
 
     /* refresh list of regions */
     l_destroy(vars->regions);

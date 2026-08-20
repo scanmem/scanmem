@@ -113,11 +113,17 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
+#define RESET_COMPLETE "keep-regions"
 #define RESET_SHRTDOC "forget all matches, and reinitialise regions"
-#define RESET_LONGDOC "usage: reset\n" \
+#define RESET_LONGDOC "usage: reset [keep-regions]\n" \
                 "Forget all matches and regions, and reread regions from the relevant\n" \
                 "maps file. Useful if you have made an error, or want to find a new\n" \
-                "variable.\n"
+                "variable.\n" \
+                "\n" \
+                "With <keep-regions>, forget the matches but keep the region list you\n" \
+                "already have instead of rereading the maps file. Faster on a process\n" \
+                "with many mappings. Do not use it if the target may have mapped or\n" \
+                "unmapped memory since the regions were read.\n"
 
 bool handler__reset(globals_t *vars, char **argv, unsigned argc);
 
