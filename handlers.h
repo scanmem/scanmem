@@ -364,9 +364,26 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__read(globals_t *vars, char **argv, unsigned argc);
 
+#define UNDO_SHRTDOC "undo the last scan"
+#define UNDO_LONGDOC "usage: undo\n" \
+                "\n" \
+                "Put the match set back to what it was before the last scan.\n" \
+                "Off unless `option undo_limit' is set to how many scans you want to\n" \
+                "be able to step back through. Each remembered scan holds a full copy\n" \
+                "of its match set, so a large limit on an early scan costs real memory.\n"
+
+#define REDO_SHRTDOC "redo a scan undone with `undo`"
+#define REDO_LONGDOC "usage: redo\n" \
+                "\n" \
+                "Step forward again after `undo`. Running a new scan discards anything\n" \
+                "that could have been redone.\n"
+
+bool handler__undo(globals_t *vars, char **argv, unsigned argc);
+bool handler__redo(globals_t *vars, char **argv, unsigned argc);
+
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1},threads"
+    "noptrace{0,1},threads,undo_limit"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -411,6 +428,16 @@ bool handler__read(globals_t *vars, char **argv, unsigned argc);
                  "\tpossible values:\n" \
                  "\t0:\tone per online CPU\n" \
                  "\tN:\texactly N threads, 1 to scan serially\n" \
+                 "\n" \
+                 "undo_limit\thow many scans `undo' can step back through\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\n" \
+                 "\tEach remembered scan keeps a full copy of its match set, so\n" \
+                 "\tthis costs memory in proportion to how big those were.\n" \
+                 "\n" \
+                 "\tpossible values:\n" \
+                 "\t0:\tundo disabled, nothing is kept\n" \
+                 "\tN:\tremember the last N scans\n" \
                  "\n" \
                  "endianness\tendianness of data (used by: set, write and comparisons)\n" \
                  "\t\t\tDefault:0\n" \

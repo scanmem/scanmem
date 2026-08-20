@@ -828,6 +828,8 @@ bool sm_checkmatches(globals_t *vars,
 {
     bool ret;
 
+    /* snapshot before we narrow, so undo restores the pre-scan set */
+    sm_history_record();
     vars->scan_in_progress = true;
     ret = checkmatches_impl(vars, match_type, uservalue);
     vars->scan_in_progress = false;
@@ -1118,6 +1120,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 {
     bool ret;
 
+    /* snapshot before we narrow, so undo restores the pre-scan set */
+    sm_history_record();
     vars->scan_in_progress = true;
     ret = searchregions_impl(vars, match_type, uservalue);
     vars->scan_in_progress = false;

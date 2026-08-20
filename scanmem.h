@@ -37,6 +37,13 @@
 #include "targetmem.h"
 
 
+/* one saved match set, for undo/redo. matches is a single flat allocation,
+   so a memcpy of bytes_allocated is a full deep copy. */
+typedef struct {
+    matches_and_old_values_array *matches;
+    unsigned long num_matches;
+} scan_snapshot_t;
+
 /* global settings */
 typedef struct {
     unsigned exit:1;
@@ -62,10 +69,18 @@ typedef struct {
         unsigned short reverse_endianness;
         unsigned short no_ptrace;
         unsigned short threads;    /* 0 means pick from online CPUs */
+        unsigned short undo_limit; /* 0 disables scan undo entirely */
     } options;
     /* set while a scan owns vars->matches. appended at the end of the struct
        on purpose so existing member offsets do not move. */
     volatile bool scan_in_progress;
+    /* scan undo/redo. Appended so existing member offsets stay put. Each
+       entry holds a whole copy of the match set, which is why this is off
+       by default rather than sized by guesswork. */
+    scan_snapshot_t *undo_stack;
+    unsigned undo_count;
+    scan_snapshot_t *redo_stack;
+    unsigned redo_count;
 } globals_t;
 
 /* global settings */
@@ -81,6 +96,10 @@ const char *sm_get_version(void);
 double sm_get_scan_progress(void);
 void sm_set_stop_flag(bool stop_flag);
 bool sm_reset(void);
+bool sm_undo_scan(void);
+bool sm_redo_scan(void);
+void sm_history_record(void);
+void sm_history_clear(void);
 
 /* ptrace.c */
 bool sm_detach(pid_t target);

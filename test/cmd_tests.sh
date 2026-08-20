@@ -156,6 +156,66 @@ echo "$out" | grep -q "too many values" \
     && assert_eq yes yes "+ still rejects two values" \
     || assert_eq no yes "+ still rejects two values"
 
+# ---- scan undo / redo (#389) ----
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+
+# scan, narrow, then step back and forward again
+out=$(run_scan "option undo_limit 5\noption scan_data_type int32\n$VAL\n$(mutate_cmd)\n$NEXT\nundo\nredo\nexit")
+c1=$(nth "$out" 1); c2=$(nth "$out" 2)
+assert_eq "$(nth "$out" 3)" "$c1" "undo restores the pre-narrow match count"
+assert_eq "$(nth "$out" 4)" "$c2" "redo returns to the narrowed match count"
+[ "${c2:-0}" -lt "${c1:-0}" ] \
+    && assert_eq yes yes "control: the narrow actually reduced the set" \
+    || assert_eq no yes "control: the narrow actually reduced the set"
+
+# undoing past the first scan lands on an empty set, not an error
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_scan "option undo_limit 5\noption scan_data_type int32\n$VAL\nundo\nexit")
+assert_eq "$(nth "$out" 2)" "0" "undo past the first scan gives an empty set"
+
+# a fresh scan must throw away the redo chain
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_raw "option undo_limit 5\noption scan_data_type int32\n$VAL\n$(mutate_cmd)\n$NEXT\nundo\n$NEXT\nredo\nexit")
+echo "$out" | grep -q "nothing to redo" \
+    && assert_eq yes yes "a new scan discards the redo chain" \
+    || assert_eq no yes "a new scan discards the redo chain"
+
+# the limit is honoured: with 1 remembered scan only one step back works
+stop_memfake
+start_memfake --plant "$VAL" --count "$COUNT" --width 4 --mb 4
+out=$(run_raw "option undo_limit 1\noption scan_data_type int32\n$VAL\n$(mutate_cmd)\n$NEXT\nundo\nundo\nexit")
+echo "$out" | grep -q "nothing to undo" \
+    && assert_eq yes yes "undo_limit caps how far back you can go" \
+    || assert_eq no yes "undo_limit caps how far back you can go"
+
+# off by default
+out=$(run_raw "option scan_data_type int32\n$VAL\nundo\nexit")
+echo "$out" | grep -q "undo is disabled" \
+    && assert_eq yes yes "undo is off unless undo_limit is set" \
+    || assert_eq no yes "undo is off unless undo_limit is set"
+
+# reset must drop the history, the snapshots no longer mean anything
+out=$(run_raw "option undo_limit 5\noption scan_data_type int32\n$VAL\nreset\nundo\nexit")
+echo "$out" | grep -q "nothing to undo" \
+    && assert_eq yes yes "reset clears the undo history" \
+    || assert_eq no yes "reset clears the undo history"
+
+out=$(run_raw "option undo_limit 5\noption scan_data_type int32\n$VAL\nreset keep-regions\nundo\nexit")
+echo "$out" | grep -q "nothing to undo" \
+    && assert_eq yes yes "reset keep-regions clears the undo history" \
+    || assert_eq no yes "reset keep-regions clears the undo history"
+
+# a negative limit must not wrap round to 65535
+for bad in -1 abc 70000 "12x"; do
+    out=$(run_raw "option undo_limit $bad\nexit")
+    echo "$out" | grep -q "undo_limit must be between" \
+        && assert_eq yes yes "option undo_limit rejects $bad" \
+        || assert_eq no yes "option undo_limit rejects $bad"
+done
+
 # ---- sm_reset is a public API symbol (#312) ----
 # the whole point of the PR is that a front end can call this without going
 # through the command parser, so check it actually made it out of the .so

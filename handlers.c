@@ -551,6 +551,7 @@ bool handler__reset(globals_t * vars, char **argv, unsigned argc)
         }
         vars->scan_progress = 0;
         if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+        sm_history_clear();
         return true;
     }
 
@@ -1742,6 +1743,26 @@ bool handler__read(globals_t * vars, char **argv, unsigned argc)
     return true;
 }
 
+bool handler__undo(globals_t * vars, char **argv, unsigned argc)
+{
+    USEPARAMS();
+    if (argc != 1) {
+        show_error("bad arguments, see `help undo`.\n");
+        return false;
+    }
+    return sm_undo_scan();
+}
+
+bool handler__redo(globals_t * vars, char **argv, unsigned argc)
+{
+    USEPARAMS();
+    if (argc != 1) {
+        show_error("bad arguments, see `help redo`.\n");
+        return false;
+    }
+    return sm_redo_scan();
+}
+
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
     /* this might need to change */
@@ -1762,6 +1783,25 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             show_error("bad value for scan_data_type, see `help option`.\n");
             return false;
         }
+    }
+    else if (strcasecmp(argv[1], "undo_limit") == 0)
+    {
+        char *end = NULL;
+        unsigned long n;
+
+        errno = 0;
+        n = strtoul(argv[2], &end, 10);
+        /* strtoul happily wraps a leading '-', so reject the sign outright */
+        if (errno != 0 || end == argv[2] || *end != '\0'
+            || argv[2][0] == '-' || n > USHRT_MAX) {
+            show_error("undo_limit must be between 0 and %u, see `help option`.\n",
+                       (unsigned)USHRT_MAX);
+            return false;
+        }
+        vars->options.undo_limit = (unsigned short) n;
+        /* shrinking the limit must drop what no longer fits */
+        if (n == 0)
+            sm_history_clear();
     }
     else if (strcasecmp(argv[1], "region_scan_level") == 0)
     {
