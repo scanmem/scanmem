@@ -59,5 +59,47 @@ echo "$out" | grep -q "bad arguments" \
     && assert_eq yes yes "reset rejects too many arguments" \
     || assert_eq no yes "reset rejects too many arguments"
 
+# ---- read (#346) ----
+
+# grab a real address out of the match list to read from
+first_addr=$(printf 'option scan_data_type int32\n%s\nlist\nexit\n' "$VAL" \
+    | $sudo_prefix timeout 120 $SCANMEM -p "$mf_pid" 2>/dev/null \
+    | sed -n 's/^\[ *[0-9]*\][ ,]*\([0-9a-f]*\),.*/\1/p' | head -1)
+assert_ge "${#first_addr}" 4 "found an address to read from"
+
+out=$(run_raw "read int32 $first_addr\nexit" | grep -E '^-?[0-9]+$' | tail -1)
+assert_eq "$out" "$VAL" "read int32 returns the planted value"
+
+# round trip against write, which is the whole point of having both
+out=$(run_raw "write int32 $first_addr 999\nread int32 $first_addr\nexit" | grep -E '^-?[0-9]+$' | tail -1)
+assert_eq "$out" "999" "read sees what write just wrote"
+
+# a wider read at the same spot must not fault or truncate to the 32 bit value
+out=$(run_raw "read int64 $first_addr\nexit" | grep -E '^-?[0-9]+$' | tail -1)
+assert_ge "${#out}" 1 "read int64 at the same address produces a value"
+
+# error paths. the original patch returned an uninitialised bool on success,
+# so these also pin down that a bad command reports failure rather than luck.
+for bad in "read" "read int32" "read bogus 1000" "read int32 zzz" "read int32 1000 extra"; do
+    out=$(run_raw "$bad\nexit")
+    echo "$out" | grep -q "error:" \
+        && assert_eq yes yes "rejected: $bad" \
+        || assert_eq no yes "rejected: $bad"
+done
+
+# write swaps bytes when reverse endianness is on, so read has to swap back
+# or the pair stops round tripping. checks the claim in the code comment.
+for e in 0 1 2; do
+    out=$(run_raw "option endianness $e\nwrite int32 $first_addr 305419896\nread int32 $first_addr\nexit" \
+          | grep -E '^-?[0-9]+$' | tail -1)
+    assert_eq "$out" "305419896" "write then read round trips at endianness $e"
+done
+
+# reading with no process attached must say so, not just fail to read
+out=$(printf 'read int32 1000\nexit\n' | $sudo_prefix timeout 120 $SCANMEM 2>&1)
+echo "$out" | grep -q "no target set" \
+    && assert_eq yes yes "read with no target explains itself" \
+    || assert_eq no yes "read with no target explains itself"
+
 stop_memfake
 summary

@@ -1649,6 +1649,87 @@ retl:
     return ret;
 }
 
+/* read <value_type> <address>, the counterpart to write. `dump` already
+ * covers raw byte ranges, so this only does the numeric types. */
+bool handler__read(globals_t * vars, char **argv, unsigned argc)
+{
+    /* union rather than a malloc'd char buffer: gets the alignment right for
+       the 8 byte reads for free, and there is nothing to leak on error */
+    union {
+        int8_t   i8;
+        int16_t  i16;
+        int32_t  i32;
+        int64_t  i64;
+        float    f32;
+        double   f64;
+        uint8_t  bytes[8];
+    } buf;
+    int data_width;
+    void *addr;
+    char *endptr;
+    scan_data_type_t st;
+
+    if (argc != 3)
+    {
+        show_error("bad arguments, see `help read`.\n");
+        return false;
+    }
+
+    if (vars->target == 0)
+    {
+        show_error("no target set, type `help pid`.\n");
+        return false;
+    }
+
+    st = parse_scan_data_type(argv[1]);
+
+    switch (st)
+    {
+    case INTEGER8:  data_width = 1; break;
+    case INTEGER16: data_width = 2; break;
+    case INTEGER32: data_width = 4; break;
+    case INTEGER64: data_width = 8; break;
+    case FLOAT32:   data_width = 4; break;
+    case FLOAT64:   data_width = 8; break;
+    default:
+        show_error("bad data_type, see `help read`.\n");
+        return false;
+    }
+
+    errno = 0;
+    addr = (void *)strtoll(argv[2], &endptr, 16);
+    if ((errno != 0) || (endptr == argv[2]) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help read`.\n");
+        return false;
+    }
+
+    if (!sm_read_array(vars->target, addr, buf.bytes, data_width))
+    {
+        show_error("read memory failed.\n");
+        return false;
+    }
+
+    /* write swaps on the way in when this option is set, so undo it here or
+       read would not round trip what write just put there */
+    if (1 < data_width && vars->options.reverse_endianness)
+        swap_bytes_var(buf.bytes, data_width);
+
+    switch (st)
+    {
+    case INTEGER8:  printf("%"PRId8"\n",  buf.i8);  break;
+    case INTEGER16: printf("%"PRId16"\n", buf.i16); break;
+    case INTEGER32: printf("%"PRId32"\n", buf.i32); break;
+    case INTEGER64: printf("%"PRId64"\n", buf.i64); break;
+    case FLOAT32:   printf("%f\n",        buf.f32); break;
+    case FLOAT64:   printf("%lf\n",       buf.f64); break;
+    default:
+        assert(false);
+    }
+
+    return true;
+}
+
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
     /* this might need to change */
