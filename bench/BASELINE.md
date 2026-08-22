@@ -75,23 +75,37 @@ chunking. It was two orphaned scanmem processes from earlier timed out runs
 sitting at 95% CPU. On an idle machine threads=1 is level with serial. Check
 what else is running before believing a regression this size.
 
-# Known: clang builds scan wrong
+# The clang "miscompile" that was not one
 
-Worth writing down because it cost a while to pin down. scanmem built with
-clang at -O1 or higher finds almost nothing. The scan runs, reads the right
-memory, parses the right value and picks the right routine, and still returns
-3 matches where gcc returns 102.
+Worth keeping because I got this wrong for a while and the wrong version is
+more believable than the right one.
 
-Not introduced by any of the work above. Upstream 0375cc0 fails identically
-once you point an asserting test suite at it, which nothing did before, since
-the old suite only checked that scanmem exited zero and CI only built gcc.
+scanmem built with clang at -O1 or higher used to find almost nothing, 4 of 23
+checks against 23 of 23 at -O0. gcc was fine at every level. It reproduced on
+upstream 0375cc0 too, so it clearly predated any of the work here. Everything
+pointed at a real miscompile in the scan path.
 
-Ruled out so far: strict aliasing (-fno-strict-aliasing does not help),
-vectorisation, signed overflow (-fwrapv), and the extern inline definitions
-(removing them entirely does not help). -fno-inline takes it from 4/23 to
-16/23 checks passing, so inlining is exposing it rather than causing it.
+It was the test fixture. test/memfake allocates a buffer, plants values in it
+and then sits in pause(). Nothing in that process ever reads the buffer back,
+because the whole point is that the scanner reads it over ptrace. clang at -O1
+works that out, decides the stores are dead and removes them. The target
+simply never held the values, so of course the scan found nothing. scanmem
+itself was correct the whole time.
 
-Reproduce:
+What made it look like a compiler bug in scanmem: the build flags from
+configure reach both scanmem and memfake, so "build with clang -O2" changed
+the target as well as the scanner, and every symptom tracked the optimisation
+level. The tell that should have been followed sooner is that no single
+translation unit at -O0 fixed it and no single one at -O2 broke it, which is
+not how a miscompile in one function behaves.
 
-    ./configure CC=clang CFLAGS='-O2 -Wall' && make
-    sudo make check
+Fixed by forcing the writes to stay observable in memfake:
+
+    static void keep(void *p) { __asm__ __volatile__("" :: "r"(p) : "memory"); }
+
+called after the initial plant and after each mutation. clang is a blocking
+CI job again.
+
+The general version: a test fixture built with the same optimiser as the code
+under test can be optimised out from under the test. Same class of thing as
+building memfake unsanitized for the ASan job.

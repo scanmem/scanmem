@@ -9,7 +9,7 @@ dist_gameconqueror_DATA = GameConqueror.ui GameConqueror_128x128.png \
 dist_desktop_in_files = org.scanmem.gameconqueror.desktop.in
 dist_desktop_DATA = $(dist_desktop_in_files:.desktop.in=.desktop)
 @INTLTOOL_DESKTOP_RULE@
-dist_polkit_in_files = org.freedesktop.gameconqueror.policy.in
+dist_polkit_in_files = org.scanmem.gameconqueror.policy.in
 dist_polkit_DATA = $(dist_polkit_in_files:.policy.in=.policy)
 @INTLTOOL_POLICY_RULE@
 dist_appdata_in_files = org.scanmem.gameconqueror.metainfo.xml.in

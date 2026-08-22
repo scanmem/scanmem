@@ -4,7 +4,7 @@
     Copyright (C) 2006,2007,2009 Tavis Ormandy <taviso@sdf.lonestar.org>
     Copyright (C) 2009           Eli Dupree <elidupree@charter.net>
     Copyright (C) 2009,2010      WANG Lu <coolwanglu@gmail.com>
-    Copyright (C) 2014-2016      Sebastian Parschauer <s.parschauer@gmx.de>
+    Copyright (C) 2014-2019      Sebastian Parschauer <s.parschauer@gmx.de>
 
     This file is part of libscanmem.
 
@@ -433,7 +433,11 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
                 if (address_ul < region_start + region->size &&
                   address_ul >= region_start) {
                     region_id = region->id;
-                    match_off = address_ul - region->load_addr;
+                    if (region->type == REGION_TYPE_STACK &&
+                      region->load_addr > region_start)
+                        match_off = region->load_addr - address_ul;
+                    else
+                        match_off = address_ul - region->load_addr;
                     region_type = region_type_names[region->type];
                     break;
                 }
@@ -522,31 +526,36 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
-    USEPARAMS();
+    bool keep_regions = false;
 
-    /* reset scan progress */
-    vars->scan_progress = 0;
-
-    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
-
-    /* refresh list of regions */
-    l_destroy(vars->regions);
-
-    /* create a new linked list of regions */
-    if ((vars->regions = l_init()) == NULL) {
-        show_error("sorry, there was a problem allocating memory.\n");
+    if (argc > 2) {
+        show_error("bad arguments, see `help reset`.\n");
         return false;
     }
 
-    /* read in maps if a pid is known */
-    if (vars->target && sm_readmaps(vars->target, vars->regions, vars->options.region_scan_level) != true) {
-        show_error("sorry, there was a problem getting a list of regions to search.\n");
-        show_warn("the pid may be invalid, or you don't have permission.\n");
-        vars->target = 0;
-        return false;
+    if (argc == 2) {
+        if (strcmp(argv[1], "keep-regions") != 0) {
+            show_error("unrecognised argument `%s', see `help reset`.\n", argv[1]);
+            return false;
+        }
+        keep_regions = true;
     }
 
-    return true;
+    /* regions come straight out of the maps file, so rereading them means
+       parsing the whole thing again. skip that when the caller only wanted
+       the matches gone and the target has not been re-executed. */
+    if (keep_regions) {
+        if (vars->scan_in_progress) {
+            show_error("cannot reset while a scan is in progress.\n");
+            return false;
+        }
+        vars->scan_progress = 0;
+        if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+        sm_history_clear();
+        return true;
+    }
+
+    return sm_reset();
 }
 
 bool handler__pid(globals_t * vars, char **argv, unsigned argc)
@@ -709,21 +718,31 @@ bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 bool handler__operators(globals_t * vars, char **argv, unsigned argc)
 {
     uservalue_t val;
+    uservalue_t val2;
     scan_match_type_t m;
+    /* `^` is the only operator taking two values */
+    bool is_xor = (strcmp(argv[0], "^") == 0);
+
+    zero_uservalue(&val2);
+
+    if (argc > 3 || (argc == 3 && !is_xor))
+    {
+        show_error("too many values specified, see `help %s`", argv[0]);
+        return false;
+    }
 
     if (argc == 1)
     {
         zero_uservalue(&val);
     }
-    else if (argc > 2)
-    {
-        show_error("too many values specified, see `help %s`", argv[0]);
-        return false;
-    }
     else
     {
         if (!parse_uservalue_number(argv[1], &val)) {
             show_error("bad value specified, see `help %s`", argv[0]);
+            return false;
+        }
+        if (argc == 3 && !parse_uservalue_number(argv[2], &val2)) {
+            show_error("bad 2nd value specified, see `help %s`", argv[0]);
             return false;
         }
     }
@@ -753,6 +772,18 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
     {
         m = (argc == 1) ? MATCHDECREASED : MATCHDECREASEDBY;
     }
+    else if (is_xor)
+    {
+        if (argc == 1) {
+            show_error("`^' needs one or two values, see `help ^`.\n");
+            return false;
+        }
+        /* the scan compares against a single value, so fold the pair down to
+           the one thing it is looking for: old ^ new */
+        if (argc == 3)
+            xor_uservalue(&val, &val2);
+        m = MATCHXORBY;
+    }
     else
     {
         show_error("unrecognized operator seen at handler_operators: \"%s\".\n", argv[0]);
@@ -779,7 +810,8 @@ bool handler__operators(globals_t * vars, char **argv, unsigned argc)
             m == MATCHDECREASED   ||
             m == MATCHINCREASED   ||
             m == MATCHDECREASEDBY ||
-            m == MATCHINCREASEDBY )
+            m == MATCHINCREASEDBY ||
+            m == MATCHXORBY       )
         {
             show_error("cannot use that search without matches\n");
             return false;
@@ -1245,6 +1277,173 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
     }
 }
 
+/* Cap so a typo like `memdiff 0 99999999999` does not try to allocate three
+   copies of it. Three buffers of this is 3MB, which is plenty to watch. */
+#define MEMDIFF_MAX_LEN (1 << 20)
+#define MEMDIFF_CHANGED "\033[0;32m"   /* moved since the previous read */
+#define MEMDIFF_MOVED   "\033[0;33m"   /* same as last read, but not the start */
+#define MEMDIFF_RESET   "\033[0m"
+
+/* memdiff <address> <length> [list]
+ * Re-read a region once a second and show what moved. */
+bool handler__memdiff(globals_t * vars, char **argv, unsigned argc)
+{
+    void *addr;
+    char *endptr;
+    unsigned char *buf = NULL, *prev = NULL, *start = NULL;
+    bool colour;
+    size_t len, i, j;
+    /* volatile: these live across the sigsetjmp below, see handler__set */
+    volatile bool list_mode = false;
+    volatile bool ret = false;
+
+    if (argc < 3 || argc > 4)
+    {
+        show_error("bad arguments, see `help memdiff`.\n");
+        return false;
+    }
+
+    if (vars->target == 0)
+    {
+        show_error("no target set, type `help pid`.\n");
+        return false;
+    }
+
+    /* check address */
+    errno = 0;
+    addr = (void *) strtoull(argv[1], &endptr, 16);
+    if ((errno != 0) || (endptr == argv[1]) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help memdiff`.\n");
+        return false;
+    }
+
+    /* check length */
+    errno = 0;
+    len = strtoul(argv[2], &endptr, 0);
+    if ((errno != 0) || (endptr == argv[2]) || (*endptr != '\0')
+        || (len == 0) || (len > MEMDIFF_MAX_LEN))
+    {
+        show_error("bad length, must be 1 to %d, see `help memdiff`.\n",
+                   MEMDIFF_MAX_LEN);
+        return false;
+    }
+
+    if (argc == 4)
+    {
+        if (strcmp(argv[3], "list") != 0)
+        {
+            show_error("bad argument `%s', see `help memdiff`.\n", argv[3]);
+            return false;
+        }
+        list_mode = true;
+    }
+
+    /* escape codes would land in the pipe as bytes, and the gui parses this
+       output, so colour only when a person is actually watching */
+    colour = isatty(STDOUT_FILENO) && (vars->options.backend == 0);
+
+    buf = malloc(len);
+    prev = malloc(len);
+    start = malloc(len);
+    if (buf == NULL || prev == NULL || start == NULL)
+    {
+        show_error("memory allocation failed.\n");
+        goto out;
+    }
+
+    /* seed both references from one read, so the first frame shows no change
+       rather than everything having "changed" from zeroed memory */
+    if (!sm_read_array(vars->target, addr, buf, len))
+    {
+        show_error("read memory failed.\n");
+        goto out;
+    }
+    memcpy(prev, buf, len);
+    memcpy(start, buf, len);
+
+    if (INTERRUPTABLE())
+    {
+        /* control returns here when interrupted */
+        sm_detach(vars->target);
+        ENDINTERRUPTABLE();
+        ret = true;
+        goto out;
+    }
+
+    while (true)
+    {
+        if (sm_process_is_dead(vars->target))
+        {
+            vars->target = 0;
+            show_info("target process died, stopping memdiff.\n");
+            break;
+        }
+
+        if (!sm_read_array(vars->target, addr, buf, len))
+        {
+            show_error("read memory failed.\n");
+            ENDINTERRUPTABLE();
+            goto out;
+        }
+
+        if (list_mode)
+        {
+            for (i = 0; i < len; ++i)
+                if (buf[i] != prev[i])
+                    printf("%p: 0x%02X => 0x%02X\n",
+                           (void *)((char *)addr + i), prev[i], buf[i]);
+        }
+        else
+        {
+            for (i = 0; i < len; i += 16)
+            {
+                size_t n = (len - i < 16) ? len - i : 16;
+
+                printf("%p: ", (void *)((char *)addr + i));
+                for (j = 0; j < 16; ++j)
+                {
+                    unsigned char c;
+
+                    if (j >= n) { printf("   "); continue; }
+
+                    c = buf[i + j];
+                    if (colour && c != prev[i + j])
+                        printf(MEMDIFF_CHANGED "%02X" MEMDIFF_RESET " ", c);
+                    else if (colour && c != start[i + j])
+                        printf(MEMDIFF_MOVED "%02X" MEMDIFF_RESET " ", c);
+                    else
+                        printf("%02X ", c);
+                }
+                if (vars->options.dump_with_ascii == 1)
+                {
+                    for (j = 0; j < n; ++j)
+                    {
+                        unsigned char c = buf[i + j];
+                        printf("%c", isprint(c) ? c : '.');
+                    }
+                }
+                printf("\n");
+            }
+            printf("\n");
+        }
+
+        fflush(stdout);
+        /* only now, so one frame's "changed" means changed since the frame
+           that was actually printed before it */
+        memcpy(prev, buf, len);
+        sleep(1);
+    }
+
+    ENDINTERRUPTABLE();
+    ret = true;
+out:
+    free(buf);
+    free(prev);
+    free(start);
+    return ret;
+}
+
 #include "licence.h"
 
 bool handler__show(globals_t * vars, char **argv, unsigned argc)
@@ -1427,6 +1626,19 @@ static inline scan_data_type_t parse_scan_data_type(const char *str)
         (strcasecmp(str, "integer64") == 0))
         return INTEGER64;
 
+    /* Unsigned ints. Same width, and the scan itself is sign agnostic (the
+       match flags carry both), but GameConqueror offers these names in its
+       type dropdown and the parser did not know them, so `write uint8 ...`
+       was rejected and the value silently never reached the target (#359). */
+    if ((strcasecmp(str, "u8") == 0)  || (strcasecmp(str, "uint8") == 0))
+        return INTEGER8;
+    if ((strcasecmp(str, "u16") == 0) || (strcasecmp(str, "uint16") == 0))
+        return INTEGER16;
+    if ((strcasecmp(str, "u32") == 0) || (strcasecmp(str, "uint32") == 0))
+        return INTEGER32;
+    if ((strcasecmp(str, "u64") == 0) || (strcasecmp(str, "uint64") == 0))
+        return INTEGER64;
+
     /* Floats */
     if ((strcasecmp(str, "f32") == 0) || (strcasecmp(str, "float32") == 0))
         return FLOAT32;
@@ -1440,6 +1652,16 @@ static inline scan_data_type_t parse_scan_data_type(const char *str)
 
     /* Not a valid type */
     return (scan_data_type_t)(-1);
+}
+
+/* Width comes from parse_scan_data_type, but write and read still have to
+   know whether the user meant it signed, since that picks the conversion. */
+static inline bool is_unsigned_type_name(const char *str)
+{
+    return (strcasecmp(str, "u8")  == 0) || (strcasecmp(str, "uint8")  == 0)
+        || (strcasecmp(str, "u16") == 0) || (strcasecmp(str, "uint16") == 0)
+        || (strcasecmp(str, "u32") == 0) || (strcasecmp(str, "uint32") == 0)
+        || (strcasecmp(str, "u64") == 0) || (strcasecmp(str, "uint64") == 0);
 }
 
 /* write value_type address value */
@@ -1462,31 +1684,32 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     scan_data_type_t st = parse_scan_data_type(argv[1]);
+    bool is_unsigned = is_unsigned_type_name(argv[1]);
 
     /* try int first */
     if (st == INTEGER8)
     {
         data_width = 1;
         datatype = 0;
-        fmt = "%"PRId8;
+        fmt = is_unsigned ? "%"PRIu8 : "%"PRId8;
     }
     else if (st == INTEGER16)
     {
         data_width = 2;
         datatype = 0;
-        fmt = "%"PRId16;
+        fmt = is_unsigned ? "%"PRIu16 : "%"PRId16;
     }
     else if (st == INTEGER32)
     {
         data_width = 4;
         datatype = 0;
-        fmt = "%"PRId32;
+        fmt = is_unsigned ? "%"PRIu32 : "%"PRId32;
     }
     else if (st == INTEGER64)
     {
         data_width = 8;
         datatype = 0;
-        fmt = "%"PRId64;
+        fmt = is_unsigned ? "%"PRIu64 : "%"PRId64;
     }
     else if (st == FLOAT32)
     {
@@ -1630,6 +1853,121 @@ retl:
     return ret;
 }
 
+/* read <value_type> <address>, the counterpart to write. `dump` already
+ * covers raw byte ranges, so this only does the numeric types. */
+bool handler__read(globals_t * vars, char **argv, unsigned argc)
+{
+    /* union rather than a malloc'd char buffer: gets the alignment right for
+       the 8 byte reads for free, and there is nothing to leak on error */
+    union {
+        int8_t   i8;
+        int16_t  i16;
+        int32_t  i32;
+        int64_t  i64;
+        float    f32;
+        double   f64;
+        uint8_t  bytes[8];
+    } buf;
+    int data_width;
+    void *addr;
+    char *endptr;
+    scan_data_type_t st;
+    bool is_unsigned;
+
+    if (argc != 3)
+    {
+        show_error("bad arguments, see `help read`.\n");
+        return false;
+    }
+
+    if (vars->target == 0)
+    {
+        show_error("no target set, type `help pid`.\n");
+        return false;
+    }
+
+    st = parse_scan_data_type(argv[1]);
+    is_unsigned = is_unsigned_type_name(argv[1]);
+
+    switch (st)
+    {
+    case INTEGER8:  data_width = 1; break;
+    case INTEGER16: data_width = 2; break;
+    case INTEGER32: data_width = 4; break;
+    case INTEGER64: data_width = 8; break;
+    case FLOAT32:   data_width = 4; break;
+    case FLOAT64:   data_width = 8; break;
+    default:
+        show_error("bad data_type, see `help read`.\n");
+        return false;
+    }
+
+    errno = 0;
+    addr = (void *)strtoll(argv[2], &endptr, 16);
+    if ((errno != 0) || (endptr == argv[2]) || (*endptr != '\0'))
+    {
+        show_error("bad address, see `help read`.\n");
+        return false;
+    }
+
+    if (!sm_read_array(vars->target, addr, buf.bytes, data_width))
+    {
+        show_error("read memory failed.\n");
+        return false;
+    }
+
+    /* write swaps on the way in when this option is set, so undo it here or
+       read would not round trip what write just put there */
+    if (1 < data_width && vars->options.reverse_endianness)
+        swap_bytes_var(buf.bytes, data_width);
+
+    switch (st)
+    {
+    case INTEGER8:
+        if (is_unsigned) printf("%"PRIu8"\n",  (uint8_t) buf.i8);
+        else             printf("%"PRId8"\n",  buf.i8);
+        break;
+    case INTEGER16:
+        if (is_unsigned) printf("%"PRIu16"\n", (uint16_t)buf.i16);
+        else             printf("%"PRId16"\n", buf.i16);
+        break;
+    case INTEGER32:
+        if (is_unsigned) printf("%"PRIu32"\n", (uint32_t)buf.i32);
+        else             printf("%"PRId32"\n", buf.i32);
+        break;
+    case INTEGER64:
+        if (is_unsigned) printf("%"PRIu64"\n", (uint64_t)buf.i64);
+        else             printf("%"PRId64"\n", buf.i64);
+        break;
+    case FLOAT32:   printf("%f\n",        buf.f32); break;
+    case FLOAT64:   printf("%lf\n",       buf.f64); break;
+    default:
+        assert(false);
+    }
+
+    return true;
+}
+
+bool handler__undo(globals_t * vars, char **argv, unsigned argc)
+{
+    USEPARAMS();
+    if (argc != 1) {
+        show_error("bad arguments, see `help undo`.\n");
+        return false;
+    }
+    return sm_undo_scan();
+}
+
+bool handler__redo(globals_t * vars, char **argv, unsigned argc)
+{
+    USEPARAMS();
+    if (argc != 1) {
+        show_error("bad arguments, see `help redo`.\n");
+        return false;
+    }
+    return sm_redo_scan();
+}
+
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
     /* this might need to change */
@@ -1650,6 +1988,40 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             show_error("bad value for scan_data_type, see `help option`.\n");
             return false;
         }
+    }
+    else if (strcasecmp(argv[1], "undo_limit") == 0)
+    {
+        char *end = NULL;
+        unsigned long n;
+
+        errno = 0;
+        n = strtoul(argv[2], &end, 10);
+        /* strtoul happily wraps a leading '-', so reject the sign outright */
+        if (errno != 0 || end == argv[2] || *end != '\0'
+            || argv[2][0] == '-' || n > USHRT_MAX) {
+            show_error("undo_limit must be between 0 and %u, see `help option`.\n",
+                       (unsigned)USHRT_MAX);
+            return false;
+        }
+        vars->options.undo_limit = (unsigned short) n;
+        /* shrinking the limit must drop what no longer fits */
+        if (n == 0)
+            sm_history_clear();
+    }
+    else if (strcasecmp(argv[1], "alignment") == 0)
+    {
+        char *end = NULL;
+        unsigned long n;
+
+        errno = 0;
+        n = strtoul(argv[2], &end, 10);
+        /* powers of two only, anything else is not an alignment */
+        if (errno != 0 || end == argv[2] || *end != '\0' || argv[2][0] == '-'
+            || n == 0 || n > 8 || (n & (n - 1)) != 0) {
+            show_error("alignment must be 1, 2, 4 or 8, see `help option`.\n");
+            return false;
+        }
+        vars->options.alignment = (unsigned short) n;
     }
     else if (strcasecmp(argv[1], "region_scan_level") == 0)
     {

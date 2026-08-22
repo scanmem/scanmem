@@ -113,11 +113,17 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__delete(globals_t *vars, char **argv, unsigned argc);
 
+#define RESET_COMPLETE "keep-regions"
 #define RESET_SHRTDOC "forget all matches, and reinitialise regions"
-#define RESET_LONGDOC "usage: reset\n" \
+#define RESET_LONGDOC "usage: reset [keep-regions]\n" \
                 "Forget all matches and regions, and reread regions from the relevant\n" \
                 "maps file. Useful if you have made an error, or want to find a new\n" \
-                "variable.\n"
+                "variable.\n" \
+                "\n" \
+                "With <keep-regions>, forget the matches but keep the region list you\n" \
+                "already have instead of rereading the maps file. Faster on a process\n" \
+                "with many mappings. Do not use it if the target may have mapped or\n" \
+                "unmapped memory since the regions were read.\n"
 
 bool handler__reset(globals_t *vars, char **argv, unsigned argc);
 
@@ -165,6 +171,7 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 #define CHANGED_SHRTDOC     "match values that have changed or different from some number"
 #define INCREASED_SHRTDOC   "match values that have increased at all or by some number"
 #define DECREASED_SHRTDOC   "match values that have decreased at all or by some number"
+#define XOR_SHRTDOC         "match values whose change equals a given xor"
 
 #define GREATERTHAN_LONGDOC "usage: > [n]\n" \
                 "If n is given, match values that are greater than n.\n" \
@@ -194,6 +201,16 @@ bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
                 "Otherwise match all values that have decreased. (same as `<`)\n" \
                 "You can use this in conjunction with `snapshot` if you never know its value."
 
+
+#define XOR_LONGDOC "usage: ^ n [m]\n" \
+                "Match values where the old value xored with the current value equals n,\n" \
+                "or equals n^m if m is given.\n" \
+                "\n" \
+                "Use this when the target stores a value xored with a key you do not know.\n" \
+                "If the plaintext went from n to m, the stored words differ by exactly\n" \
+                "n^m whatever the key is, because the key cancels out.\n" \
+                "\n" \
+                "Integer types only. Cannot be used for the first scan.\n"
 
 bool handler__operators(globals_t *vars, char **argv, unsigned argc);
 
@@ -293,6 +310,25 @@ bool handler__shell(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
+#define MEMDIFF_SHRTDOC "watch a memory region and show what changes"
+#define MEMDIFF_LONGDOC "usage: memdiff <address> <length> [list]\n" \
+                "\n" \
+                "Re-read <length> bytes at <address> once a second and show what moved.\n" \
+                "Interrupt with ^C to stop.\n" \
+                "\n" \
+                "Default output is a hex table. On a terminal, green marks a byte that\n" \
+                "changed since the previous read and yellow one that is unchanged since\n" \
+                "the previous read but differs from where it started. Colour is left out\n" \
+                "when the output is not a terminal.\n" \
+                "\n" \
+                "With <list>, print only the bytes that changed, one per line.\n" \
+                "\n" \
+                "Examples:\n" \
+                "\tmemdiff 2acbbd0 16\n" \
+                "\tmemdiff 2acbbd0 128 list\n"
+
+bool handler__memdiff(globals_t *vars, char **argv, unsigned argc);
+
 /*XXX: improve this */
 #define SHOW_COMPLETE "copying,warranty,version"
 #define SHOW_SHRTDOC "display information about scanmem."
@@ -310,7 +346,8 @@ bool handler__show(globals_t *vars, char **argv, unsigned argc);
     
 bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
-#define VALUE_TYPES "int8,int16,int32,int64,float32,float64,bytearray,string"
+#define VALUE_TYPES "int8,uint8,int16,uint16,int32,uint32,int64,uint64," \
+    "float32,float64,bytearray,string"
 #define WRITE_COMPLETE VALUE_TYPES
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
@@ -318,6 +355,7 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
                 "Write <value> into <address>\n" \
                 "<value_type> should be one of:\n" \
                 "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tuint{8|16|32|64} (or u{8|16|32|64} for short)\n" \
                 "\tfloat{32|64} (or f{32|64} for short)\n" \
                 "\tbytearray\n" \
                 "\tstring\n" \
@@ -330,9 +368,44 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
+#define READ_COMPLETE VALUE_TYPES
+#define READ_SHRTDOC "read the value at a specific memory location"
+#define READ_LONGDOC "usage: read <value_type> <address>\n" \
+                "\n" \
+                "Read a <value_type> from <address> and print it.\n" \
+                "<value_type> should be one of:\n" \
+                "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tuint{8|16|32|64} (or u{8|16|32|64} for short)\n" \
+                "\tfloat{32|64} (or f{32|64} for short)\n" \
+                "\n" \
+                "Use `dump` for raw byte ranges and strings.\n" \
+                "\n" \
+                "Example:\n" \
+                "\tread i16 60103e\n" \
+                "\tread float32 60103e\n"
+
+bool handler__read(globals_t *vars, char **argv, unsigned argc);
+
+#define UNDO_SHRTDOC "undo the last scan"
+#define UNDO_LONGDOC "usage: undo\n" \
+                "\n" \
+                "Put the match set back to what it was before the last scan.\n" \
+                "Off unless `option undo_limit' is set to how many scans you want to\n" \
+                "be able to step back through. Each remembered scan holds a full copy\n" \
+                "of its match set, so a large limit on an early scan costs real memory.\n"
+
+#define REDO_SHRTDOC "redo a scan undone with `undo`"
+#define REDO_LONGDOC "usage: redo\n" \
+                "\n" \
+                "Step forward again after `undo`. Running a new scan discards anything\n" \
+                "that could have been redone.\n"
+
+bool handler__undo(globals_t *vars, char **argv, unsigned argc);
+bool handler__redo(globals_t *vars, char **argv, unsigned argc);
+
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1},threads"
+    "noptrace{0,1},threads,undo_limit,alignment{1,2,4,8}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -350,6 +423,16 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\tfloat{32|64}:\t\tfloat of given width\n" \
                  "\tbytearray:\t\tan array of bytes\n" \
                  "\tstring:\t\t\tstring\n" \
+                 "\n" \
+                 "alignment\t\tonly look at addresses that are a multiple of\n" \
+                 "\t\t\tthis, which is how a compiler lays variables out\n" \
+                 "\t\t\tanyway. 4 for a 32 bit value cuts the work to a\n" \
+                 "\t\t\tquarter. A value the compiler did not align that\n" \
+                 "\t\t\tway is missed, so drop back to 1 if a search that\n" \
+                 "\t\t\tshould have found something comes back empty.\n" \
+                 "\t\t\tDefault:1\n" \
+                 "\n" \
+                 "\tPossible Values: 1, 2, 4, 8\n" \
                  "\n" \
                  "region_scan_level\tspecify which regions should be scanned\n" \
                  "\t\t\tDefault:2\n" \
@@ -377,6 +460,16 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\tpossible values:\n" \
                  "\t0:\tone per online CPU\n" \
                  "\tN:\texactly N threads, 1 to scan serially\n" \
+                 "\n" \
+                 "undo_limit\thow many scans `undo' can step back through\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\n" \
+                 "\tEach remembered scan keeps a full copy of its match set, so\n" \
+                 "\tthis costs memory in proportion to how big those were.\n" \
+                 "\n" \
+                 "\tpossible values:\n" \
+                 "\t0:\tundo disabled, nothing is kept\n" \
+                 "\tN:\tremember the last N scans\n" \
                  "\n" \
                  "endianness\tendianness of data (used by: set, write and comparisons)\n" \
                  "\t\t\tDefault:0\n" \

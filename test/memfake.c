@@ -41,7 +41,7 @@ static void usage(const char *argv0)
 {
     fprintf(stderr,
         "usage: %s [MB] [randomness]\n"
-        "       %s --plant VALUE --count N [--width 1|2|4|8] [--mb N]\n"
+        "       %s --plant VALUE --count N [--width 1|2|4|8] [--mb N] [--skew N]\n"
         "       %s --plant-float VALUE --count N [--width 4|8] [--mb N]\n"
         "       %s --plant-bytes HEXSTRING --count N [--mb N]\n"
         "\n"
@@ -61,6 +61,15 @@ static uint64_t pick_filler(uint64_t planted, unsigned width)
         f += 0x0101010101010101ULL;
 
     return f;
+}
+
+/* Nothing in this process ever reads the planted buffer back, it exists to be
+   read over ptrace by the scanner. clang at -O2 works that out and drops the
+   stores, and the whole suite then fails on a target that never held the
+   values. Force the writes to stay. */
+static void keep(void *p)
+{
+    __asm__ __volatile__("" :: "r"(p) : "memory");
 }
 
 static void fill(void *base, size_t bytes, uint64_t pattern, unsigned width)
@@ -89,6 +98,7 @@ int main(int argc, char **argv)
     size_t plant_bytes_len = 0;
     size_t plant_count = 0;
     unsigned width = 4;
+    size_t skew = 0;                /* shift every plant off its natural boundary */
     enum { MODE_LEGACY, MODE_INT, MODE_FLOAT, MODE_BYTES } mode = MODE_LEGACY;
     const char *ready_path = NULL;
     const char *done_path = NULL;
@@ -114,6 +124,7 @@ int main(int argc, char **argv)
             else if (!strcmp(a, "--count") && next) { plant_count = strtoul(next, NULL, 10); i++; }
             else if (!strcmp(a, "--width") && next) { width = strtoul(next, NULL, 10); i++; }
             else if (!strcmp(a, "--mb") && next) { MB_to_allocate = strtoul(next, NULL, 10); i++; }
+            else if (!strcmp(a, "--skew") && next) { skew = strtoul(next, NULL, 10); i++; }
             else if (!strcmp(a, "--ready-file") && next) { ready_path = next; i++; }
             else if (!strcmp(a, "--done-file") && next) { done_path = next; i++; }
             else { usage(argv[0]); return 1; }
@@ -123,6 +134,7 @@ int main(int argc, char **argv)
             if (mode == MODE_FLOAT && width != 4 && width != 8) { usage(argv[0]); return 1; }
         }
         if (!plant_count) { usage(argv[0]); return 1; }
+        if (skew >= 8) { fprintf(stderr, "memfake: --skew must be under 8\n"); return 1; }
     } else {
         if (argc >= 2) MB_to_allocate = strtoul(argv[1], NULL, 10);
         if (argc >= 3) add_randomness = strtoul(argv[2], NULL, 10);
@@ -144,6 +156,7 @@ int main(int argc, char **argv)
             }
         }
 
+        keep(array);
         printf("%d\n", (int)getpid());
         fflush(stdout);
         signal_ready(ready_path);
@@ -162,9 +175,9 @@ int main(int argc, char **argv)
         if (plant_bytes_len && plant_bytes[0] == 0x5a) memset(buf, 0x17, total_bytes);
 
         size_t stride = total_bytes / (plant_count ? plant_count : 1);
-        if (stride < plant_bytes_len) { fprintf(stderr, "memfake: buffer too small for that count\n"); return 1; }
+        if (stride < plant_bytes_len + skew) { fprintf(stderr, "memfake: buffer too small for that count\n"); return 1; }
         for (size_t i = 0; i < plant_count; i++)
-            memcpy(buf + i * stride, plant_bytes, plant_bytes_len);
+            memcpy(buf + i * stride + skew, plant_bytes, plant_bytes_len);
     } else {
         uint64_t pattern;
         if (mode == MODE_FLOAT) {
@@ -179,12 +192,14 @@ int main(int argc, char **argv)
 
         /* space the planted values out so they land in different pages, that
            way a batched read has to actually gather from several places */
-        size_t slots = total_bytes / width;
+        size_t slots = (total_bytes - skew) / width;
         size_t stride = slots / (plant_count ? plant_count : 1);
         if (!stride) { fprintf(stderr, "memfake: buffer too small for that count\n"); return 1; }
         for (size_t i = 0; i < plant_count; i++)
-            memcpy(buf + (i * stride) * width, &pattern, width);
+            memcpy(buf + (i * stride) * width + skew, &pattern, width);
     }
+
+    keep(buf);
 
     signal(SIGUSR1, on_mutate);
 
@@ -196,10 +211,13 @@ int main(int argc, char **argv)
        the signal should come back with exactly plant_count. the process's own
        copies of the value (locals, spilled registers) keep the old value and
        drop out of the match set, which is what makes the count exact. */
+    unsigned mutate_n = 0;
     for (;;) {
         pause();
         if (!got_mutate) continue;
         got_mutate = 0;
+        mutate_n++; /* each signal advances the value: plant+1, plant+2, ... so
+                       a test can narrow twice and shake off a 1-byte phantom */
 
         if (mode == MODE_BYTES) {
             size_t stride = total_bytes / (plant_count ? plant_count : 1);
@@ -207,20 +225,22 @@ int main(int argc, char **argv)
             memcpy(flipped, plant_bytes, plant_bytes_len);
             flipped[0] = (unsigned char)(flipped[0] ^ 0xff);
             for (size_t i = 0; i < plant_count; i++)
-                memcpy(buf + i * stride, flipped, plant_bytes_len);
+                memcpy(buf + i * stride + skew, flipped, plant_bytes_len);
         } else {
             uint64_t pattern2;
             if (mode == MODE_FLOAT) {
-                if (width == 4) { float f = (float)plant_f + 1.0f; pattern2 = 0; memcpy(&pattern2, &f, 4); }
-                else { double d = plant_f + 1.0; memcpy(&pattern2, &d, 8); }
+                if (width == 4) { float f = (float)plant_f + (float)mutate_n; pattern2 = 0; memcpy(&pattern2, &f, 4); }
+                else { double d = plant_f + (double)mutate_n; memcpy(&pattern2, &d, 8); }
             } else {
-                pattern2 = plant + 1;
+                pattern2 = plant + mutate_n;
             }
             size_t slots = total_bytes / width;
             size_t stride = slots / (plant_count ? plant_count : 1);
             for (size_t i = 0; i < plant_count; i++)
-                memcpy(buf + (i * stride) * width, &pattern2, width);
+                memcpy(buf + (i * stride) * width + skew, &pattern2, width);
         }
+
+        keep(buf);
 
         /* tell the harness the rewrite finished. without this the next scan
            can attach (which SIGSTOPs us) while we are still partway through,

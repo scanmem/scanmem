@@ -205,14 +205,16 @@ AS_IF([test "x$enable_gui" = "xyes"], [
   AS_AC_EXPAND(LOCALEDIR, $localedir)
   AS_AC_EXPAND(LIBDIR, $libdir)
 
-  AM_PATH_PYTHON([2.7])
+  AM_PATH_PYTHON([3])
   AC_CONFIG_FILES([
     gui/Makefile
     gui/icons/Makefile
     gui/consts.py
-    gui/gameconqueror
-    gui/org.freedesktop.gameconqueror.policy.in
+    gui/org.scanmem.gameconqueror.policy.in
   ])
+  dnl config.status writes this without the executable bit, so running it
+  dnl straight out of the build tree gives you "Permission denied"
+  AC_CONFIG_FILES([gui/gameconqueror], [chmod +x gui/gameconqueror])
 ])
 
 AC_OUTPUT

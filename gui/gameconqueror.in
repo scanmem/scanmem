@@ -2,9 +2,29 @@
 
 DATADIR=@PKGDATADIR@
 
-PKEXEC=$(command -v "pkexec")
-if [ -n "$PKEXEC" ]; then
-    $PKEXEC $DATADIR/GameConqueror.py "$@"
-else
-    echo "install policykit!"
+# pkexec only carries DISPLAY and XAUTHORITY across, and only because the
+# policy sets allow_gui. XAUTHORITY is often not set at all, in which case
+# X clients fall back to $HOME/.Xauthority, and root's HOME is not yours,
+# so the cookie is not found and the display cannot be opened. Point at it
+# while we still know where home is.
+if [ -z "$XAUTHORITY" ] && [ -f "$HOME/.Xauthority" ]; then
+    export XAUTHORITY="$HOME/.Xauthority"
 fi
+
+PKEXEC=$(command -v "pkexec")
+if [ -z "$PKEXEC" ]; then
+    echo "install policykit!"
+    exit 1
+fi
+
+$PKEXEC "$DATADIR/GameConqueror.py" "$@"
+status=$?
+
+# 126 and 127 are pkexec's own, the authorisation was refused or it could
+# not run the program at all. Anything else came from GameConqueror.
+if [ $status = 126 ] || [ $status = 127 ]; then
+    echo "gameconqueror: pkexec would not run $DATADIR/GameConqueror.py" >&2
+    echo "check that the polkit policy is installed and that the file is executable" >&2
+fi
+
+exit $status

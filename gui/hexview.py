@@ -25,6 +25,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository import GObject
@@ -109,7 +111,7 @@ class AsciiText(BaseText):
     __gtype_name__ = 'AsciiText'
     _printable = \
         "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ!\"#$%" \
-        "&'()*+,-./:;<=>?@[\]^_`{|}~ "
+        r"&'()*+,-./:;<=>?@[\]^_`{|}~ "
 
     def __init__(self, parent):
         super(AsciiText, self).__init__(parent)

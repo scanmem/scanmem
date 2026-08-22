@@ -198,16 +198,18 @@ DEFINE_FLOAT_ROUTINE_FOR_ALL_FLOAT_TYPES(DECREASED, <, old_value, 0, )
 /*---------------------------------*/
 /* for INCREASEDBY and DECREASEDBY */
 /*---------------------------------*/
+/* NOTE: the OP expression is parenthesised. == binds tighter than ^, so
+   without it the XOR routine below would compare (mem == old) ^ user. */
 #define DEFINE_INTEGER_OPERATIONBY_ROUTINE(DATAWIDTH, NAME, OP) \
     extern inline unsigned int scan_routine_INTEGER##DATAWIDTH##_##NAME SCAN_ROUTINE_ARGUMENTS \
     { \
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
         if ((GET_FLAG(old_value, s##DATAWIDTH##b)) && (GET_FLAG(user_value, s##DATAWIDTH##b)) && \
-            (get_s##DATAWIDTH##b(memory_ptr) == get_s##DATAWIDTH##b(old_value) OP get_s##DATAWIDTH##b(user_value))) \
+            (get_s##DATAWIDTH##b(memory_ptr) == (get_s##DATAWIDTH##b(old_value) OP get_s##DATAWIDTH##b(user_value)))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
         if ((GET_FLAG(old_value, u##DATAWIDTH##b)) && (GET_FLAG(user_value, u##DATAWIDTH##b)) && \
-            (get_u##DATAWIDTH##b(memory_ptr) == get_u##DATAWIDTH##b(old_value) OP get_u##DATAWIDTH##b(user_value))) \
+            (get_u##DATAWIDTH##b(memory_ptr) == (get_u##DATAWIDTH##b(old_value) OP get_u##DATAWIDTH##b(user_value)))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
         return ret; \
     }
@@ -227,7 +229,7 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(64)
         if (memlength < (DATAWIDTH)/8) return 0; \
         int ret = 0; \
         if ((GET_FLAG(old_value, f##DATAWIDTH##b)) && (GET_FLAG(user_value, f##DATAWIDTH##b)) && \
-            (get_f##DATAWIDTH##b(memory_ptr) == get_f##DATAWIDTH##b(old_value) OP get_f##DATAWIDTH##b(user_value))) \
+            (get_f##DATAWIDTH##b(memory_ptr) == (get_f##DATAWIDTH##b(old_value) OP get_f##DATAWIDTH##b(user_value)))) \
             { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); } \
         return ret; \
     }
@@ -238,6 +240,35 @@ DEFINE_INTEGER_INCREASEDBY_DECREASEDBY_ROUTINE(64)
 
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(32)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(64)
+
+/*---------*/
+/* for XOR */
+/*---------*/
+
+/* XOR is its own inverse, so "the user's value equals mem ^ old" is the same
+   test as "mem equals old ^ user", which is the exact shape the OPERATIONBY
+   macro above already generates. Nothing new to write.
+
+   Integers only, on purpose. The original patch also did floats by casting
+   both sides to an integer first, which throws the fraction away and is
+   undefined as soon as the value does not fit the integer type, so it matched
+   on nonsense. XORing the bit pattern instead would be well defined but a
+   XORed float is almost never a valid float anyway. */
+DEFINE_INTEGER_OPERATIONBY_ROUTINE( 8, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE(16, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE(32, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE(64, XORBY, ^)
+
+/* just the integer half of DEFINE_ANYTYPE_ROUTINE, there is no float one */
+extern inline unsigned int scan_routine_ANYINTEGER_XORBY SCAN_ROUTINE_ARGUMENTS
+{
+    int ret = scan_routine_INTEGER8_XORBY(memory_ptr, memlength, old_value, user_value, saveflags);
+    int tmp_ret;
+    if ((tmp_ret = scan_routine_INTEGER16_XORBY(memory_ptr, memlength, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; }
+    if ((tmp_ret = scan_routine_INTEGER32_XORBY(memory_ptr, memlength, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; }
+    if ((tmp_ret = scan_routine_INTEGER64_XORBY(memory_ptr, memlength, old_value, user_value, saveflags)) > ret) { ret = tmp_ret; }
+    return ret;
+}
 
 /*-----------*/
 /* for RANGE */
@@ -646,6 +677,14 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, mat
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASEDBY, INCREASEDBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASEDBY, DECREASEDBY)
+
+    /* integer types only, see the XOR note above */
+    CHOOSE_ROUTINE(INTEGER8,   INTEGER8,   MATCHXORBY, XORBY)
+    CHOOSE_ROUTINE(INTEGER16,  INTEGER16,  MATCHXORBY, XORBY)
+    CHOOSE_ROUTINE(INTEGER32,  INTEGER32,  MATCHXORBY, XORBY)
+    CHOOSE_ROUTINE(INTEGER64,  INTEGER64,  MATCHXORBY, XORBY)
+    CHOOSE_ROUTINE(ANYINTEGER, ANYINTEGER, MATCHXORBY, XORBY)
+
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHRANGE, RANGE)
 
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHANY, ANY)
@@ -687,7 +726,8 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
         mt == MATCHLESSTHAN    ||
         mt == MATCHRANGE       ||
         mt == MATCHINCREASEDBY ||
-        mt == MATCHDECREASEDBY)
+        mt == MATCHDECREASEDBY ||
+        mt == MATCHXORBY)
     {
         match_flags possible_flags = possible_flags_for_scan_data_type[dt];
         if ((possible_flags & uflags) == flags_empty) {

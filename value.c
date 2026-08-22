@@ -112,6 +112,28 @@ void uservalue2value(value_t *dst, const uservalue_t *src)
     else assert(false);
 }
 
+/* Folds src into dst, per type, so a two operand XOR search can be handed to
+   the scan as a single value. dst->flags picks which types take part. */
+void xor_uservalue(uservalue_t *dst, const uservalue_t *src)
+{
+    /* Only types both operands can actually represent survive. `^ 5 300`
+       has no meaningful 8 bit answer because 300 never parsed as one. */
+    dst->flags &= src->flags;
+
+    /* uservalue_t is a struct with one field per type, not a union, so every
+       width is folded on its own. The original patch zeroed uint64_value up
+       front and then read it straight back, so the u64 result came out as
+       plain src instead of dst ^ src. */
+    if (dst->flags & flag_u64b) set_u64b(dst, get_u64b(dst) ^ get_u64b(src));
+    if (dst->flags & flag_s64b) set_s64b(dst, get_s64b(dst) ^ get_s64b(src));
+    if (dst->flags & flag_u32b) set_u32b(dst, get_u32b(dst) ^ get_u32b(src));
+    if (dst->flags & flag_s32b) set_s32b(dst, get_s32b(dst) ^ get_s32b(src));
+    if (dst->flags & flag_u16b) set_u16b(dst, get_u16b(dst) ^ get_u16b(src));
+    if (dst->flags & flag_s16b) set_s16b(dst, get_s16b(dst) ^ get_s16b(src));
+    if (dst->flags & flag_u8b)  set_u8b (dst, get_u8b(dst)  ^ get_u8b(src));
+    if (dst->flags & flag_s8b)  set_s8b (dst, get_s8b(dst)  ^ get_s8b(src));
+}
+
 /* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
 bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *val)
 {

@@ -494,9 +494,9 @@ static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match
 
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
  * it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true. */
-bool sm_checkmatches(globals_t *vars,
-                     scan_match_type_t match_type,
-                     const uservalue_t *uservalue)
+static bool checkmatches_impl(globals_t *vars,
+                              scan_match_type_t match_type,
+                              const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *reading_swath_index = vars->matches->swaths;
     matches_and_old_values_swath reading_swath = *reading_swath_index;
@@ -529,6 +529,7 @@ bool sm_checkmatches(globals_t *vars,
 
     size_t reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
+    matches_and_old_values_swath *new_swath;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
 
@@ -579,8 +580,11 @@ bool sm_checkmatches(globals_t *vars,
                - We can get away with assuming that the pointers will stay valid,
                  because as we never add more data to the array than there was before, it will not reallocate. */
 
-            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
+            new_swath = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), checkflags);
+            if (UNLIKELY(new_swath == NULL))
+                goto oom;
+            writing_swath_index = new_swath;
 
             ++vars->num_matches;
 
@@ -588,8 +592,11 @@ bool sm_checkmatches(globals_t *vars,
         }
         else if (required_extra_bytes_to_record)
         {
-            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
+            new_swath = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), flags_empty);
+            if (UNLIKELY(new_swath == NULL))
+                goto oom;
+            writing_swath_index = new_swath;
             --required_extra_bytes_to_record;
         }
 
@@ -633,6 +640,7 @@ bool sm_checkmatches(globals_t *vars,
         return false;
     }
 
+
     show_user("ok\n");
 
     /* tell front-end we've done */
@@ -642,6 +650,15 @@ bool sm_checkmatches(globals_t *vars,
 
     /* okay, detach */
     return sm_detach(vars->target);
+
+oom:
+    /* the array is untouched and still ours, we just cannot record any more
+       into it. bail rather than write through the NULL, which is what used to
+       segfault on the next element (#307). */
+    ENDINTERRUPTABLE();
+    show_error("out of memory recording matches, the match list is unchanged.\n");
+    sm_detach(vars->target);
+    return false;
 }
 
 
@@ -688,6 +705,7 @@ typedef struct {
     size_t owned;                      /* bytes this chunk is responsible for */
     const uservalue_t *uservalue;
     size_t maxlen;                     /* longest match the routine can return */
+    size_t align;                      /* only test addresses that are a multiple of this */
 
     scan_record *recs;                 /* what to hand to add_element, in order */
     size_t nrecs;
@@ -757,6 +775,10 @@ static void scan_chunk_run(scan_chunk *c)
     size_t limit = c->owned;
     size_t remaining;
     const uint8_t *mp8 = c->buf + head;
+    /* alignment is about where the variable sits in the target, so it has to
+     * be measured on the target address, not on our offset into the buffer */
+    uintptr_t addr = (uintptr_t)r->start + c->offset;
+    uintptr_t alignmask = c->align > 1 ? (uintptr_t)c->align - 1 : 0;
 
     if (c->offset >= valid_len)
         limit = 0;
@@ -765,12 +787,18 @@ static void scan_chunk_run(scan_chunk *c)
 
     remaining = valid_len - c->offset;
 
-    for (j = 0; j < limit; j++, remaining--, mp8++) {
+    for (j = 0; j < limit; j++, remaining--, mp8++, addr++) {
         const mem64_t *mp = (const mem64_t *)mp8;
         match_flags f = flags_empty;
         unsigned int ml;
 
-        ml = (*sm_scan_routine)(mp, remaining, NULL, c->uservalue, &f);
+        /* skipping the routine is the whole point of the option, but the
+         * bytes a match owns still have to be recorded below, old values are
+         * kept per byte and a wide match needs all of its own */
+        if (alignmask && (addr & alignmask))
+            ml = 0;
+        else
+            ml = (*sm_scan_routine)(mp, remaining, NULL, c->uservalue, &f);
 
         if (UNLIKELY(ml > 0)) {
             c->recs[c->nrecs].off = (uint32_t)j;
@@ -820,8 +848,24 @@ static unsigned scan_thread_count(const globals_t *vars)
 #endif
 }
 
+/* Thin wrapper so scan_in_progress is set on every path out, including the
+   early returns. sm_reset() refuses to free the matches while it is set. */
+bool sm_checkmatches(globals_t *vars,
+                     scan_match_type_t match_type,
+                     const uservalue_t *uservalue)
+{
+    bool ret;
+
+    /* snapshot before we narrow, so undo restores the pre-scan set */
+    sm_history_record();
+    vars->scan_in_progress = true;
+    ret = checkmatches_impl(vars, match_type, uservalue);
+    vars->scan_in_progress = false;
+    return ret;
+}
+
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
-bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
+static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
 {
     matches_and_old_values_swath *writing_swath_index;
     unsigned long total_size = 0;
@@ -829,7 +873,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     region_t *r;
     unsigned long total_scan_bytes = 0;
     scan_chunk *chunks = NULL;
-    size_t maxlen, bufsize, chunk_bytes;
+    size_t maxlen, bufsize, chunk_bytes, align;
     unsigned nthreads, t;
     bool ok = true;
     unsigned long done_bytes = 0;
@@ -884,6 +928,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     vars->stop_flag = false;
 
     maxlen = scan_max_match_length(vars->options.scan_data_type, uservalue);
+    /* 0 would be a broken option value, treat anything odd as every byte */
+    align = vars->options.alignment > 1 ? vars->options.alignment : 1;
     nthreads = scan_thread_count(vars);
 
 #ifdef SCAN_CHUNK_BYTES
@@ -974,6 +1020,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 chunks[batch].owned = MIN(chunk_bytes, r->size - cur_off);
                 chunks[batch].uservalue = uservalue;
                 chunks[batch].maxlen = maxlen;
+                chunks[batch].align = align;
                 cur_off += chunks[batch].owned;
                 batch++;
             }
@@ -1035,11 +1082,25 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                     continue;
 
                 for (j = 0; j < c->nrecs; j++) {
-                    writing_swath_index = add_element_fast(&(vars->matches),
+                    matches_and_old_values_swath *new_swath;
+
+                    new_swath = add_element_fast(&(vars->matches),
                             writing_swath_index,
                             (char *)c->region->start + c->offset + c->recs[j].off,
                             c->recs[j].old_value, c->recs[j].match_info);
+                    /* this is where #307 crashed: the array stops growing,
+                       add_element handed back NULL, and the next element
+                       dereferenced it. stop instead. */
+                    if (UNLIKELY(new_swath == NULL)) {
+                        show_error("out of memory recording matches, giving up "
+                                   "on this scan.\n");
+                        ok = false;
+                        break;
+                    }
+                    writing_swath_index = new_swath;
                 }
+                if (!ok)
+                    break;
                 vars->num_matches += c->matches;
                 done_bytes += c->owned;
 
@@ -1050,6 +1111,9 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                     print_a_dot();
                 }
             }
+
+            if (!ok)
+                break;
 
             /* skip whatever is left of a region that would not read */
             if (dead_region && n && (region_t *)n->data == dead_region) {
@@ -1097,6 +1161,19 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 
     /* okay, detach */
     return sm_detach(vars->target);
+}
+
+/* see the note on sm_checkmatches above */
+bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
+{
+    bool ret;
+
+    /* snapshot before we narrow, so undo restores the pre-scan set */
+    sm_history_record();
+    vars->scan_in_progress = true;
+    ret = searchregions_impl(vars, match_type, uservalue);
+    vars->scan_in_progress = false;
+    return ret;
 }
 
 /* Needs to support only ANYNUMBER types */

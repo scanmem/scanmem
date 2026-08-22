@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
@@ -211,7 +211,9 @@ class GameConqueror():
         # init CheatList TreeView
         self.cheatlist_tv = self.builder.get_object('CheatList_TreeView')
         # cheatlist contents:                    locked, description, addr,                type, value, valid, lock flag
-        self.cheatlist_liststore = Gtk.ListStore(bool,   str,         GObject.TYPE_UINT64, str,  str,   bool,  str)
+        # last column is the field length in bytes, only meaningful for
+        # string and bytearray. 0 means work it out from the value.
+        self.cheatlist_liststore = Gtk.ListStore(bool,   str,         GObject.TYPE_UINT64, str,  str,   bool,  str, int)
         self.cheatlist_tv.set_model(self.cheatlist_liststore)
         self.cheatlist_editing = False
         # Lock
@@ -431,7 +433,9 @@ class GameConqueror():
                     for row in obj['cheat_list']:
                         # files saved before lock flags existed have 6 fields
                         lockflag = row[6] if len(row) > 6 else '='
-                        self.add_to_cheat_list(row[2],row[4],row[3],row[1],True,lockflag)
+                        # older files have no length, fall back to the value
+                        length = row[7] if len(row) > 7 else 0
+                        self.add_to_cheat_list(row[2],row[4],row[3],row[1],True,lockflag,length)
             except:
                 pass
         dialog.destroy()
@@ -778,7 +782,11 @@ class GameConqueror():
             if new_text == typestr:
                 continue
             if new_text in {'bytearray', 'string'}:
-                self.cheatlist_liststore[row][4] = self.bytes2value(new_text, self.read_memory(addr, self.get_type_size(typestr, value)))
+                length = self.cheatlist_liststore[row][7] or self.get_type_size(typestr, value)
+                self.cheatlist_liststore[row][4] = self.bytes2value(new_text, self.read_memory(addr, length))
+            else:
+                length = self.get_type_size(new_text, value)
+            self.cheatlist_liststore[row][7] = int(length or 0)
             self.cheatlist_liststore[row][3] = new_text
             self.cheatlist_liststore[row][0] = False # unlock
         return True
@@ -908,7 +916,7 @@ class GameConqueror():
         Gdk.threads_leave()
         return True
 
-    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False, lockflag='='):
+    def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False, lockflag='=', length=0):
         # determine longest possible type
         types = typestr.split()
         vt = typestr
@@ -918,25 +926,38 @@ class GameConqueror():
                 break
         if lockflag not in LOCK_FLAGS:
             lockflag = '='
+        if not length:
+            length = int(self.get_type_size(vt, str(value)) or 0)
+        row = [False, description, addr, vt, str(value), True, lockflag, length]
         if at_end:
-            self.cheatlist_liststore.append([False, description, addr, vt, str(value), True, lockflag])
+            self.cheatlist_liststore.append(row)
         else:
-            self.cheatlist_liststore.prepend([False, description, addr, vt, str(value), True, lockflag])
+            self.cheatlist_liststore.prepend(row)
 
     def get_process_list(self):
         plist = []
         for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
-            try:
-                (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
-            # process name may be empty, but not the name of the executable
-            except (ValueError):
-                (pid, user) = [tok.strip() for tok in proc.split(None, 1)]
+            parts = proc.split(None, 2)
+            # ps hands back a blank line on some systems. the old code caught
+            # the ValueError from the 3 way split and then split the same
+            # empty string again, raising the identical error out of its own
+            # except clause and taking the process list with it (#434)
+            if len(parts) < 2:
+                continue
+            pid, user = parts[0].strip(), parts[1].strip()
+            if len(parts) > 2:
+                pname = parts[2].strip()
+            else:
+                # process name may be empty, but not the name of the executable
                 exelink = os.path.join("/proc", pid, "exe")
                 if os.path.exists(exelink):
                     pname = os.path.realpath(exelink)
                 else:
                     pname = ''
-            plist.append((int(pid), user, pname))
+            try:
+                plist.append((int(pid), user, pname))
+            except ValueError:
+                continue  # not a pid, so not a row we can use
         return plist
 
     def select_process(self, pid, process_name):
@@ -1137,7 +1158,7 @@ class GameConqueror():
             for i in self.cheatlist_liststore:
                 if not (i[0] and i[5]): # locked and valid
                     continue
-                addr, typestr, value, lockflag = i[2], i[3], i[4], i[6]
+                addr, typestr, value, lockflag, length = i[2], i[3], i[4], i[6], i[7]
                 # '=' pins the value. bytearray/string have no ordering so
                 # they only ever get the plain lock, whatever the flag says.
                 if lockflag == '=' or typestr not in TYPESIZES:
@@ -1145,7 +1166,7 @@ class GameConqueror():
                     continue
                 # directional lock: let the game move the value the way we
                 # allow and keep that, push back when it goes the other way
-                newvalue = self.read_value(addr, typestr, value)
+                newvalue = self.read_value(addr, typestr, value, length)
                 if newvalue is None:
                     continue
                 try:
@@ -1162,13 +1183,13 @@ class GameConqueror():
             # Update visible (and unlocked) cheat list rows
             rows = self.get_visible_rows(self.cheatlist_tv)
             for i in rows:
-                locked, desc, addr, typestr, value, valid, lockflag = self.cheatlist_liststore[i]
+                locked, desc, addr, typestr, value, valid, lockflag, length = self.cheatlist_liststore[i]
                 if valid and not locked:
-                    newvalue = self.read_value(addr, typestr, value)
+                    newvalue = self.read_value(addr, typestr, value, length)
                     if newvalue is None:
-                        self.cheatlist_liststore[i] = (False, desc, addr, typestr, '??', False, lockflag)
+                        self.cheatlist_liststore[i] = (False, desc, addr, typestr, '??', False, lockflag, length)
                     elif newvalue != value and not self.cheatlist_editing:
-                        self.cheatlist_liststore[i] = (locked, desc, addr, typestr, str(newvalue), valid, lockflag)
+                        self.cheatlist_liststore[i] = (locked, desc, addr, typestr, str(newvalue), valid, lockflag, length)
             # Update visible scanresult rows
             rows = self.get_visible_rows(self.scanresult_tv)
             for i in rows:
@@ -1186,8 +1207,13 @@ class GameConqueror():
             self.command_lock.release()
         return not self.exit_flag
 
-    def read_value(self, addr, typestr, prev_value):
-        return self.bytes2value(typestr, self.read_memory(addr, self.get_type_size(typestr, prev_value)))
+    def read_value(self, addr, typestr, prev_value, length=0):
+        # a string or bytearray field is as long as it was when it was added.
+        # working it back out of the last value shrinks the field as soon as
+        # something shorter gets typed into it, and that is permanent.
+        if not length:
+            length = self.get_type_size(typestr, prev_value)
+        return self.bytes2value(typestr, self.read_memory(addr, length))
     
     # addr could be int or str
     def read_memory(self, addr, length):
@@ -1246,8 +1272,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Init application
-    GObject.threads_init()
-    Gdk.threads_init()
+    # GObject.threads_init and Gdk.threads_init used to live here. Both have
+    # been no-ops since PyGObject 3.11 and both emit a deprecation warning on
+    # every launch (#434). The threads_enter/leave pairs around the worker are
+    # a separate question and are left alone.
     gc_instance = GameConqueror()
 
     # Attach to given pid (if any)

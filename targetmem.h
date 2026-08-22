@@ -161,8 +161,14 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
             bytes_to_allocate = array->max_needed_bytes;
         }
 
-        if (!(array = realloc(array, bytes_to_allocate)))
+        /* into a temp: assigning realloc's result straight onto `array` loses
+           the only pointer to the existing allocation when it returns NULL,
+           so a failure here used to leak the whole match set as well as
+           handing the caller a NULL it did not check (#307). */
+        matches_and_old_values_array *grown = realloc(array, bytes_to_allocate);
+        if (grown == NULL)
             return NULL;
+        array = grown;
 
         array->bytes_allocated = bytes_to_allocate;
 
@@ -177,7 +183,10 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
 }
 
 /* returns a pointer to the swath to which the element was added -
-   i.e. the last swath in the array after the operation */
+   i.e. the last swath in the array after the operation.
+   Returns NULL if the array could not be grown. The caller must stop: on
+   failure *array is left untouched and still valid, so it can be freed
+   normally, but nothing was recorded. */
 static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
              matches_and_old_values_swath *swath,
@@ -185,13 +194,18 @@ add_element (matches_and_old_values_array **array,
              uint8_t new_byte,
              match_flags new_flags)
 {
+    matches_and_old_values_array *grown;
+
     if (swath->number_of_bytes == 0) {
         assert(swath->first_byte_in_child == NULL);
 
         /* we have to overwrite this as a new swath */
-        *array = allocate_enough_to_reach(*array, (void *)swath +
+        grown = allocate_enough_to_reach(*array, (void *)swath +
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info), &swath);
+        if (grown == NULL)
+            return NULL;
+        *array = grown;
 
         swath->first_byte_in_child = remote_address;
 
@@ -211,9 +225,12 @@ add_element (matches_and_old_values_array **array,
              * The equal case is decided for a new swath, so that
              * later we don't needlessly iterate through a bunch
              * of empty values */
-            *array = allocate_enough_to_reach(*array,
+            grown = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 needed_size_for_a_new_swath, &swath);
+            if (grown == NULL)
+                return NULL;
+            *array = grown;
 
             swath = local_address_beyond_last_element(swath);
             swath->first_byte_in_child = remote_address;
@@ -222,9 +239,12 @@ add_element (matches_and_old_values_array **array,
         } else {
             /* It is more memory-efficient to write over the intervening
                space with null values */
-            *array = allocate_enough_to_reach(*array,
+            grown = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 local_address_excess, &swath);
+            if (grown == NULL)
+                return NULL;
+            *array = grown;
 
             switch (local_index_excess) {
             case 1:

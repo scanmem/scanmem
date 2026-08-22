@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <signal.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "scanmem.h"
 #include "commands.h"
@@ -69,7 +70,11 @@ globals_t sm_globals = {
         0,                      /* reverse_endianness */
         0,                      /* no_ptrace */
         0,                      /* threads, 0 = auto */
-    }
+        0,                      /* undo_limit, 0 = undo disabled */
+    },
+    false,                      /* scan_in_progress */
+    NULL, 0,                    /* undo stack */
+    NULL, 0,                    /* redo stack */
 };
 
 /* signal handler - use async-signal safe functions ONLY! */
@@ -111,11 +116,15 @@ bool sm_init(void)
     globals_t *vars = &sm_globals;
 
     /* before attaching to target, install signal handler to detach on error */
+    /* SIGSEGV is deliberately not caught. Trapping it and calling _exit()
+       swallowed the kernel's message and stopped a core dump being written,
+       which is exactly what you need when scanmem is the thing that crashed
+       (#307). The tracee is released when the tracer dies anyway, so there
+       was nothing to clean up that the kernel does not already do. */
     if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
     {
         (void) signal(SIGHUP, sighandler);
         (void) signal(SIGINT, sighandler);
-        (void) signal(SIGSEGV, sighandler);
         (void) signal(SIGABRT, sighandler);
         (void) signal(SIGILL, sighandler);
         (void) signal(SIGFPE, sighandler);
@@ -136,7 +145,7 @@ bool sm_init(void)
     sm_registercommand("delete", handler__delete, vars->commands, DELETE_SHRTDOC,
                        DELETE_LONGDOC, NULL);
     sm_registercommand("reset", handler__reset, vars->commands, RESET_SHRTDOC,
-                       RESET_LONGDOC, NULL);
+                       RESET_LONGDOC, RESET_COMPLETE);
     sm_registercommand("pid", handler__pid, vars->commands, PID_SHRTDOC,
                        PID_LONGDOC, NULL);
     sm_registercommand("snapshot", handler__snapshot, vars->commands,
@@ -149,6 +158,8 @@ bool sm_init(void)
                        LREGIONS_SHRTDOC, LREGIONS_LONGDOC, NULL);
     sm_registercommand("version", handler__version, vars->commands,
                        VERSION_SHRTDOC, VERSION_LONGDOC, NULL);
+    sm_registercommand("^", handler__operators, vars->commands, XOR_SHRTDOC,
+                       XOR_LONGDOC, NULL);
     sm_registercommand("=", handler__operators, vars->commands, NOTCHANGED_SHRTDOC,
                        NOTCHANGED_LONGDOC, NULL);
     sm_registercommand("!=", handler__operators, vars->commands, CHANGED_SHRTDOC,
@@ -179,12 +190,20 @@ bool sm_init(void)
                        NULL);
     sm_registercommand("watch", handler__watch, vars->commands, WATCH_SHRTDOC,
                        WATCH_LONGDOC, NULL);
+    sm_registercommand("memdiff", handler__memdiff, vars->commands,
+                       MEMDIFF_SHRTDOC, MEMDIFF_LONGDOC, NULL);
     sm_registercommand("show", handler__show, vars->commands, SHOW_SHRTDOC,
                        SHOW_LONGDOC, SHOW_COMPLETE);
     sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC,
                        DUMP_LONGDOC, NULL);
+    sm_registercommand("read", handler__read, vars->commands, READ_SHRTDOC,
+                       READ_LONGDOC, READ_COMPLETE);
     sm_registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC,
                        WRITE_LONGDOC, WRITE_COMPLETE);
+    sm_registercommand("undo", handler__undo, vars->commands, UNDO_SHRTDOC,
+                       UNDO_LONGDOC, NULL);
+    sm_registercommand("redo", handler__redo, vars->commands, REDO_SHRTDOC,
+                       REDO_LONGDOC, NULL);
     sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC,
                        OPTION_LONGDOC, OPTION_COMPLETE);
 
@@ -209,6 +228,8 @@ void sm_cleanup(void)
     /* free matches array */
     if (sm_globals.matches)
         free(sm_globals.matches);
+
+    sm_history_clear();
 
     /* attempt to detach just in case */
     sm_detach(sm_globals.target);
@@ -245,4 +266,182 @@ double sm_get_scan_progress(void)
 void sm_set_stop_flag(bool stop_flag)
 {
     sm_globals.stop_flag = stop_flag;
+}
+
+/* ---- scan undo/redo ---------------------------------------------------- */
+
+static void snapshot_free(scan_snapshot_t *s)
+{
+    free(s->matches);
+    s->matches = NULL;
+    s->num_matches = 0;
+}
+
+static bool snapshot_take(globals_t *vars, scan_snapshot_t *out)
+{
+    out->matches = NULL;
+    out->num_matches = vars->num_matches;
+
+    if (vars->matches == NULL)
+        return true;    /* nothing matched yet, an empty snapshot is valid */
+
+    out->matches = malloc(vars->matches->bytes_allocated);
+    if (out->matches == NULL)
+        return false;
+    memcpy(out->matches, vars->matches, vars->matches->bytes_allocated);
+    return true;
+}
+
+/* takes ownership of s->matches */
+static void snapshot_restore(globals_t *vars, scan_snapshot_t *s)
+{
+    free(vars->matches);
+    vars->matches = s->matches;
+    vars->num_matches = s->num_matches;
+    s->matches = NULL;
+}
+
+static void stack_clear(scan_snapshot_t **stack, unsigned *count)
+{
+    while (*count > 0)
+        snapshot_free(&(*stack)[--(*count)]);
+    free(*stack);
+    *stack = NULL;
+}
+
+static bool stack_push(scan_snapshot_t **stack, unsigned *count,
+                       const scan_snapshot_t *s)
+{
+    scan_snapshot_t *tmp = realloc(*stack, (*count + 1) * sizeof(**stack));
+
+    if (tmp == NULL)
+        return false;
+    *stack = tmp;
+    (*stack)[(*count)++] = *s;
+    return true;
+}
+
+/* Called just before a scan narrows the match set, so undo restores what was
+   there before it ran. Snapshotting beforehand rather than after is what
+   makes the very first scan undoable, back to no matches. */
+void sm_history_record(void)
+{
+    globals_t *vars = &sm_globals;
+    unsigned limit = vars->options.undo_limit;
+    scan_snapshot_t snap;
+
+    if (limit == 0)
+        return;
+
+    if (!snapshot_take(vars, &snap) ||
+        !stack_push(&vars->undo_stack, &vars->undo_count, &snap))
+    {
+        snapshot_free(&snap);
+        show_warn("not enough memory to save an undo state, undo will not "
+                  "reach past this scan.\n");
+        return;
+    }
+
+    /* drop the oldest once we are over the limit */
+    while (vars->undo_count > limit) {
+        snapshot_free(&vars->undo_stack[0]);
+        memmove(&vars->undo_stack[0], &vars->undo_stack[1],
+                (vars->undo_count - 1) * sizeof(*vars->undo_stack));
+        vars->undo_count--;
+    }
+
+    /* scanning forward throws away anything that was undone */
+    stack_clear(&vars->redo_stack, &vars->redo_count);
+}
+
+void sm_history_clear(void)
+{
+    stack_clear(&sm_globals.undo_stack, &sm_globals.undo_count);
+    stack_clear(&sm_globals.redo_stack, &sm_globals.redo_count);
+}
+
+/* shared by undo and redo, they differ only in which way the state moves */
+static bool history_step(scan_snapshot_t **from, unsigned *from_count,
+                         scan_snapshot_t **to, unsigned *to_count,
+                         const char *what)
+{
+    globals_t *vars = &sm_globals;
+    scan_snapshot_t cur;
+
+    if (vars->options.undo_limit == 0) {
+        show_error("undo is disabled, set `option undo_limit' first.\n");
+        return false;
+    }
+    if (vars->scan_in_progress) {
+        show_error("cannot %s while a scan is in progress.\n", what);
+        return false;
+    }
+    if (*from_count == 0) {
+        show_error("nothing to %s.\n", what);
+        return false;
+    }
+
+    /* stash where we are now so the opposite direction can get back */
+    if (!snapshot_take(vars, &cur) || !stack_push(to, to_count, &cur)) {
+        snapshot_free(&cur);
+        show_error("sorry, there was a problem allocating memory.\n");
+        return false;
+    }
+
+    snapshot_restore(vars, &(*from)[--(*from_count)]);
+    show_info("we currently have %ld matches.\n", vars->num_matches);
+    return true;
+}
+
+bool sm_undo_scan(void)
+{
+    return history_step(&sm_globals.undo_stack, &sm_globals.undo_count,
+                        &sm_globals.redo_stack, &sm_globals.redo_count, "undo");
+}
+
+bool sm_redo_scan(void)
+{
+    return history_step(&sm_globals.redo_stack, &sm_globals.redo_count,
+                        &sm_globals.undo_stack, &sm_globals.undo_count, "redo");
+}
+
+/* Drop all matches and reread the region list. Exposed so a front end can get
+   back to a clean state without going through the command parser.
+   Refuses while a scan is running: the scan owns vars->matches, so freeing it
+   underneath is a use after free rather than just a lost result. */
+bool sm_reset(void)
+{
+    globals_t *vars = &sm_globals;
+
+    if (vars->scan_in_progress) {
+        show_error("cannot reset while a scan is in progress.\n");
+        return false;
+    }
+
+    /* reset scan progress */
+    vars->scan_progress = 0;
+
+    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
+
+    sm_history_clear();
+
+    /* refresh list of regions */
+    l_destroy(vars->regions);
+
+    /* create a new linked list of regions */
+    if ((vars->regions = l_init()) == NULL) {
+        show_error("sorry, there was a problem allocating memory.\n");
+        return false;
+    }
+
+    /* read in maps if a pid is known */
+    if (vars->target && sm_readmaps(vars->target, vars->regions,
+                                    vars->options.region_scan_level) != true) {
+        show_error("sorry, there was a problem getting a list of regions to search.\n");
+        show_warn("the pid may be invalid, or you don't have permission.\n");
+        vars->target = 0;
+        return false;
+    }
+
+    return true;
 }

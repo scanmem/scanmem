@@ -187,9 +187,20 @@ delete_in_address_range (matches_and_old_values_array *array,
                 (We can get away with assuming that the pointers will stay
                  valid, because as we never add more data to the array than
                  there was before, it will not reallocate.) */
-            writing_swath_index = add_element(&array,
-                                      writing_swath_index, address,
-                                      old_byte.old_value, old_byte.match_info);
+            {
+                matches_and_old_values_swath *new_swath;
+
+                new_swath = add_element(&array, writing_swath_index, address,
+                                        old_byte.old_value, old_byte.match_info);
+                /* cannot grow here in practice, this path only ever rewrites
+                   over what was already there, but do not write through NULL
+                   if that ever stops being true */
+                if (new_swath == NULL) {
+                    show_error("out of memory compacting the match list.\n");
+                    return NULL;
+                }
+                writing_swath_index = new_swath;
+            }
 
             /* actual matches are recorded */
             if (old_byte.match_info != flags_empty)

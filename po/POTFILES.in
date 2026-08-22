@@ -2,5 +2,5 @@
 gui/GameConqueror.py
 gui/misc.py
 gui/org.scanmem.gameconqueror.desktop.in
-gui/org.freedesktop.gameconqueror.policy.in.in
+gui/org.scanmem.gameconqueror.policy.in.in
 gui/org.scanmem.gameconqueror.metainfo.xml.in

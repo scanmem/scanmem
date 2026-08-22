@@ -40,11 +40,12 @@ gui/*.pyc
 gui/*.pyo
 gui/__pycache__
 gui/gameconqueror
-gui/org.freedesktop.gameconqueror.policy
-gui/org.freedesktop.gameconqueror.policy.in
+gui/org.scanmem.gameconqueror.policy
+gui/org.scanmem.gameconqueror.policy.in
 
 # Translations
 po/.intltool-merge-cache
+po/.intltool-merge-cache.lock
 po/GameConqueror.pot
 po/Makefile.in.in
 po/POTFILES
