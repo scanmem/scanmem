@@ -870,11 +870,11 @@ class GameConqueror():
         self.memoryeditor_hexview.show_addr(addr)
         self.memoryeditor_window.show()
 
-    # this callback will be called from other thread
+    # runs on the main loop via GLib.timeout_add. get_scan_progress reads the
+    # progress value straight over ctypes, not the command pipe, so it is safe
+    # to call while a scan runs on the worker thread.
     def progress_watcher(self):
-        Gdk.threads_enter()
         self.scanprogress_progressbar.set_fraction(self.backend.get_scan_progress())
-        Gdk.threads_leave()
         return True
 
     def add_to_cheat_list(self, addr, value, typestr, description=_('No Description'), at_end=False):
@@ -1023,12 +1023,18 @@ class GameConqueror():
             self.progress_watcher, priority=GLib.PRIORITY_DEFAULT_IDLE)
         threading.Thread(target=self.scan_thread_func, args=(cmd,)).start()
 
+    # the worker thread only does the blocking backend call. touching any GTK
+    # widget from here is what the old Gdk.threads_enter/leave was pretending to
+    # make safe, and it is why a scan segfaults on modern GTK. the widget work
+    # is handed back to the main loop with idle_add instead.
     def scan_thread_func(self, cmd):
-        self.command_lock.acquire()
-        self.backend.send_command(cmd)
+        with self.command_lock:
+            self.backend.send_command(cmd)
+        GLib.idle_add(self._on_scan_finished)
 
+    # runs on the main loop
+    def _on_scan_finished(self):
         GLib.source_remove(self.progress_watcher_id)
-        Gdk.threads_enter()
 
         self.scanprogress_progressbar.set_fraction(1.0)
 
@@ -1045,8 +1051,7 @@ class GameConqueror():
         self.is_scanning = False
         self.update_scan_result()
 
-        Gdk.threads_leave()
-        self.command_lock.release()
+        return False  # one-shot
 
     def update_scan_result(self):
         match_count = self.backend.get_match_count()
@@ -1098,8 +1103,6 @@ class GameConqueror():
         if (self.is_scanning) or (self.pid == 0) or (self.backend.process_is_dead(self.pid)):
             return not self.exit_flag
         if self.command_lock.acquire(0): # non-blocking
-            Gdk.threads_enter()
-
             # Write to memory locked values in cheat list
             for i in self.cheatlist_liststore:
                 if i[0] and i[5]: # locked and valid
@@ -1127,7 +1130,6 @@ class GameConqueror():
                         row[1] = '??'
                         row[3] = False
 
-            Gdk.threads_leave()
             self.command_lock.release()
         return not self.exit_flag
 
@@ -1179,9 +1181,9 @@ if __name__ == '__main__':
     parser.add_argument("pid", nargs='?', type=int, help=_("PID of the process"))
     args = parser.parse_args()
 
-    # Init application
-    GObject.threads_init()
-    Gdk.threads_init()
+    # Init application. GObject.threads_init / Gdk.threads_init used to sit here.
+    # Both have been no-ops since PyGObject 3.11 and warn on every launch (#434),
+    # and with the worker no longer touching GTK off-thread they are not needed.
     gc_instance = GameConqueror()
 
     # Attach to given pid (if any)
