@@ -191,8 +191,13 @@ bool parse_uservalue_number(const char *nptr, uservalue_t * val)
         if (num >= INT16_MIN && num <=  INT16_MAX) { val->flags |= flag_s16b; set_s16b(val,  (int16_t)num); }
         if (num >=         0 && num <= UINT32_MAX) { val->flags |= flag_u32b; set_u32b(val, (uint32_t)num); }
         if (num >= INT32_MIN && num <=  INT32_MAX) { val->flags |= flag_s32b; set_s32b(val,  (int32_t)num); }
-        if (num >=         0 && num <= UINT64_MAX) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
-        if (num >= INT64_MIN && num <=  INT64_MAX) { val->flags |= flag_s64b; set_s64b(val,  (int64_t)num); }
+        /* UINT64_MAX and INT64_MAX have no exact double, they round up to
+           2^64 and 2^63. Comparing against them lets the boundary itself
+           through and the cast is then undefined, so bound by the power of
+           two and keep it strict. The smaller types are all under 2^53 and
+           convert exactly, they are fine as they are. */
+        if (num >=       0 && num < 0x1p64) { val->flags |= flag_u64b; set_u64b(val, (uint64_t)num); }
+        if (num >= -0x1p63 && num < 0x1p63) { val->flags |= flag_s64b; set_s64b(val,  (int64_t)num); }
         return true;
     }
 

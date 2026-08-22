@@ -68,6 +68,7 @@ globals_t sm_globals = {
         1,                      /* dump_with_ascii */
         0,                      /* reverse_endianness */
         0,                      /* no_ptrace */
+        0,                      /* threads, 0 = auto */
     }
 };
 

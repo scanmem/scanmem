@@ -1,18 +1,68 @@
-name: build-gui
-run-name: Build GUI by ${{ github.actor }}
+name: build
+run-name: Build by ${{ github.actor }}
 
-on: [push,pull_request,workflow_dispatch]
+on: [push, pull_request, workflow_dispatch]
 
 jobs:
-  build-gui:
-    runs-on: ubuntu-22.04
+  build:
+    name: ${{ matrix.cc }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # clang does not fail the run yet. It builds clean but the scans come back
+    # wrong at -O1 and above, and that is not new: upstream 0375cc0 fails the
+    # same way, gcc is fine at every level, and clang -O0 is fine. It went
+    # unnoticed because the old suite asserted nothing about results and CI
+    # only ever built with gcc. Kept in the matrix so the failure stays
+    # visible instead of being dropped.
+    continue-on-error: ${{ matrix.cc == 'clang' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [gcc, clang]
     steps:
-      - uses: actions/checkout@v3
-      - name: Linux set up
+      - uses: actions/checkout@v4
+      - name: Set up
         uses: ./.github/actions/linux-setup
-      - name: Make the binary
-        run: make CFLAGS='-O2 -fsanitize=address,undefined'
-      - name: Testing - requires `sudo` for `ptrace()`
+        with:
+          cc: ${{ matrix.cc }}
+          cflags: '-O2 -Wall'
+      - name: Build
+        run: make
+      - name: Test (needs sudo for ptrace)
         run: sudo make check VERBOSE=1
-      - name: Install Scanmem
+      - name: Show test log on failure
+        if: failure()
+        run: cat test/*.log || true
+      - name: Install
         run: sudo make install
+
+  sanitizers:
+    name: asan+ubsan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up
+        uses: ./.github/actions/linux-setup
+        with:
+          cc: gcc
+          # float-cast-overflow is not in gcc's default -fsanitize=undefined
+          # set, and it is the one that caught the 64 bit parse bound bug
+          cflags: '-O1 -g -fno-omit-frame-pointer -fsanitize=address,undefined,float-cast-overflow'
+          ldflags: '-fsanitize=address,undefined,float-cast-overflow'
+          configure-args: '--enable-gui'
+      - name: Build
+        run: make
+      # memfake is the process being scanned, not code under test. Linked
+      # against asan it maps a huge shadow address space, which scanmem then
+      # scans, and the run never finishes. Build it clean first so `make check`
+      # finds it up to date and leaves it alone.
+      - name: Build the test target without sanitizers
+        run: make -C test memfake CFLAGS='-std=gnu99 -Wall -O2' LDFLAGS=''
+      - name: Test (needs sudo for ptrace)
+        run: sudo make check VERBOSE=1
+        env:
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+      - name: Show test log on failure
+        if: failure()
+        run: cat test/*.log || true

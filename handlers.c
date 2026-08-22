@@ -90,9 +90,13 @@
 
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned block;
+    /* volatile: these are written before the setjmp below and read after it,
+       and a non volatile local has an indeterminate value once longjmp has
+       been through. gcc warns about exactly this with -Wclobbered. */
+    volatile unsigned seconds = 1;
     char *delay = NULL;
-    bool cont = false;
+    volatile bool cont = false;
     struct setting {
         char *matchids;
         char *value;
@@ -1682,6 +1686,19 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
             show_error("bad value for endianness, see `help option`.\n");
             return false;
         }
+    }
+    else if (strcasecmp(argv[1], "threads") == 0)
+    {
+        char *end = NULL;
+        unsigned long v = strtoul(argv[2], &end, 10);
+
+        if (end == argv[2] || *end != '\0' || v > 1024)
+        {
+            show_error("bad value for threads, see `help option`.\n");
+            return false;
+        }
+        /* 0 means work it out from the online CPUs */
+        vars->options.threads = (unsigned short)v;
     }
     else if (strcasecmp(argv[1], "noptrace") == 0)
     {
