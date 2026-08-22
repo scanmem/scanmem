@@ -926,17 +926,27 @@ class GameConqueror():
     def get_process_list(self):
         plist = []
         for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
-            try:
-                (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
-            # process name may be empty, but not the name of the executable
-            except (ValueError):
-                (pid, user) = [tok.strip() for tok in proc.split(None, 1)]
+            parts = proc.split(None, 2)
+            # ps hands back a blank line on some systems. the old code caught
+            # the ValueError from the 3 way split and then split the same
+            # empty string again, raising the identical error out of its own
+            # except clause and taking the process list with it (#434)
+            if len(parts) < 2:
+                continue
+            pid, user = parts[0].strip(), parts[1].strip()
+            if len(parts) > 2:
+                pname = parts[2].strip()
+            else:
+                # process name may be empty, but not the name of the executable
                 exelink = os.path.join("/proc", pid, "exe")
                 if os.path.exists(exelink):
                     pname = os.path.realpath(exelink)
                 else:
                     pname = ''
-            plist.append((int(pid), user, pname))
+            try:
+                plist.append((int(pid), user, pname))
+            except ValueError:
+                continue  # not a pid, so not a row we can use
         return plist
 
     def select_process(self, pid, process_name):
@@ -1246,8 +1256,10 @@ if __name__ == '__main__':
         sys.exit(1)
 
     # Init application
-    GObject.threads_init()
-    Gdk.threads_init()
+    # GObject.threads_init and Gdk.threads_init used to live here. Both have
+    # been no-ops since PyGObject 3.11 and both emit a deprecation warning on
+    # every launch (#434). The threads_enter/leave pairs around the worker are
+    # a separate question and are left alone.
     gc_instance = GameConqueror()
 
     # Attach to given pid (if any)
