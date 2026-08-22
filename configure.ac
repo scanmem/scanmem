@@ -211,7 +211,7 @@ AS_IF([test "x$enable_gui" = "xyes"], [
     gui/icons/Makefile
     gui/consts.py
     gui/gameconqueror
-    gui/org.freedesktop.gameconqueror.policy.in
+    gui/org.scanmem.gameconqueror.policy.in
   ])
 ])
 
