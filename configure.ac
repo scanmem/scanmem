@@ -205,7 +205,7 @@ AS_IF([test "x$enable_gui" = "xyes"], [
   AS_AC_EXPAND(LOCALEDIR, $localedir)
   AS_AC_EXPAND(LIBDIR, $libdir)
 
-  AM_PATH_PYTHON([2.7])
+  AM_PATH_PYTHON([3])
   AC_CONFIG_FILES([
     gui/Makefile
     gui/icons/Makefile
