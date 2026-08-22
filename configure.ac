@@ -210,9 +210,11 @@ AS_IF([test "x$enable_gui" = "xyes"], [
     gui/Makefile
     gui/icons/Makefile
     gui/consts.py
-    gui/gameconqueror
     gui/org.scanmem.gameconqueror.policy.in
   ])
+  dnl config.status writes this without the executable bit, so running it
+  dnl straight out of the build tree gives you "Permission denied"
+  AC_CONFIG_FILES([gui/gameconqueror], [chmod +x gui/gameconqueror])
 ])
 
 AC_OUTPUT
