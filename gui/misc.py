@@ -19,8 +19,12 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import ast
+import operator
 import sys
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 
 PY3K = sys.version_info >= (3, 0)
@@ -91,10 +95,47 @@ def check_scan_command (data_type, cmd, is_first_scan):
         # finally
         return cmd
 
+# The search box takes arithmetic, so "1024*1024" works as a value. That used
+# to go through eval(), which runs anything at all, in a process that started
+# itself under pkexec. Nobody but the person typing feeds this, so it was not
+# a way in, it was just a large amount of language reachable from a text box
+# that wants a number. Walk the expression instead and allow only arithmetic.
+_BINOPS = {
+    ast.Add: operator.add,       ast.Sub: operator.sub,
+    ast.Mult: operator.mul,      ast.Div: operator.truediv,
+    ast.FloorDiv: operator.floordiv, ast.Mod: operator.mod,
+    ast.Pow: operator.pow,
+    ast.LShift: operator.lshift, ast.RShift: operator.rshift,
+    ast.BitAnd: operator.and_,   ast.BitOr: operator.or_,
+    ast.BitXor: operator.xor,
+}
+_UNARYOPS = {ast.UAdd: operator.pos, ast.USub: operator.neg,
+             ast.Invert: operator.invert}
+
+def _eval_node(node):
+    # ast.Num is what python 2 and older 3 produce, Constant is 3.8+
+    if isinstance(node, ast.Constant):
+        if isinstance(node.value, bool) or not isinstance(node.value, (int, float)):
+            raise ValueError('not a number')
+        return node.value
+    if hasattr(ast, 'Num') and isinstance(node, ast.Num):
+        return node.n
+    if isinstance(node, ast.UnaryOp) and type(node.op) in _UNARYOPS:
+        return _UNARYOPS[type(node.op)](_eval_node(node.operand))
+    if isinstance(node, ast.BinOp) and type(node.op) in _BINOPS:
+        left = _eval_node(node.left)
+        right = _eval_node(node.right)
+        # 2**999999999 would sit there chewing memory, and nothing anyone
+        # searches for needs an exponent that big
+        if isinstance(node.op, ast.Pow) and abs(right) > 64:
+            raise ValueError('exponent too large')
+        return _BINOPS[type(node.op)](left, right)
+    raise ValueError('unsupported expression')
+
 # evaluate the expression
 def eval_operand(s):
     try:
-        v = eval(s)
+        v = _eval_node(ast.parse(s.strip(), mode='eval').body)
         py2_long = not PY3K and isinstance(v, long)
         if isinstance(v, int) or isinstance(v, float) or py2_long:
             return v
