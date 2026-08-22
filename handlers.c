@@ -668,6 +668,101 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc)
     return true;
 }
 
+/* drop matches that fall in [from, to), if there are any to drop */
+static void forget_matches(globals_t *vars, unsigned long from, unsigned long to)
+{
+    if (vars->num_matches == 0 || from >= to)
+        return;
+
+    vars->matches = delete_in_address_range(vars->matches, &vars->num_matches,
+                                            (void *)from, (void *)to);
+    if (vars->matches == NULL)
+        show_error("memory allocation error while deleting matches\n");
+}
+
+bool handler__range(globals_t * vars, char **argv, unsigned argc)
+{
+    unsigned long lo, hi;
+    char *endptr;
+    element_t *np, *pp = NULL;
+    size_t kept = 0, cropped = 0, dropped = 0;
+
+    if (argc != 3) {
+        show_error("expected two addresses, see `help range`.\n");
+        return false;
+    }
+
+    if (vars->target == 0) {
+        show_error("no target specified, see `help pid`\n");
+        return false;
+    }
+
+    if (vars->regions->size == 0) {
+        show_error("no regions are known.\n");
+        return false;
+    }
+
+    errno = 0;
+    lo = strtoul(argv[1], &endptr, 16);
+    if (errno != 0 || *endptr != '\0') {
+        show_error("bad start address, see `help range`.\n");
+        return false;
+    }
+
+    errno = 0;
+    hi = strtoul(argv[2], &endptr, 16);
+    if (errno != 0 || *endptr != '\0') {
+        show_error("bad end address, see `help range`.\n");
+        return false;
+    }
+
+    if (lo >= hi) {
+        show_error("the end address has to be above the start one.\n");
+        return false;
+    }
+
+    np = vars->regions->head;
+    while (np) {
+        region_t *r = np->data;
+        unsigned long rstart = (unsigned long)r->start;
+        unsigned long rend = rstart + r->size;
+        unsigned long start = rstart > lo ? rstart : lo;
+        unsigned long end = rend < hi ? rend : hi;
+        element_t *next = np->next;
+
+        if (start >= end) {
+            /* none of this one is in range */
+            forget_matches(vars, rstart, rend);
+            l_remove(vars->regions, pp, NULL);
+            dropped++;
+            np = next;
+            continue;
+        }
+
+        if (start != rstart || end != rend) {
+            forget_matches(vars, rstart, start);
+            forget_matches(vars, end, rend);
+            r->start = (void *)start;
+            r->size = end - start;
+            cropped++;
+        }
+        else {
+            kept++;
+        }
+
+        pp = np;
+        np = next;
+    }
+
+    if (vars->regions->size == 0)
+        show_warn("nothing is mapped in that range.\n");
+    else
+        show_info("%zu regions left, %zu of them cut down, %zu dropped.\n",
+                  kept + cropped, cropped, dropped);
+
+    return true;
+}
+
 bool handler__lregions(globals_t * vars, char **argv, unsigned argc)
 {
     element_t *np = vars->regions->head;

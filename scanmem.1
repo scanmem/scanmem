@@ -272,6 +272,15 @@ the start address.
 .BR lregions " command.
 
 .TP
+.BI range " start end
+.RI "Crop the regions list to the addresses from " start " up to but not including " end ,
+both hexadecimal. Regions outside are dropped, regions crossing an edge are cut down to the
+part inside, and matches outside go with them. Handy when the value is known to live in a
+particular part of the address space, since the scan then only reads that much memory.
+.br
+.BR reset " puts the full regions list back.
+
+.TP
 .BI option " name value
 Change options at runtime. E.g. the scan data type can be changed.
 See `help option` for all possible names/values.
