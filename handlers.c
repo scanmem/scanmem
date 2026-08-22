@@ -1626,6 +1626,19 @@ static inline scan_data_type_t parse_scan_data_type(const char *str)
         (strcasecmp(str, "integer64") == 0))
         return INTEGER64;
 
+    /* Unsigned ints. Same width, and the scan itself is sign agnostic (the
+       match flags carry both), but GameConqueror offers these names in its
+       type dropdown and the parser did not know them, so `write uint8 ...`
+       was rejected and the value silently never reached the target (#359). */
+    if ((strcasecmp(str, "u8") == 0)  || (strcasecmp(str, "uint8") == 0))
+        return INTEGER8;
+    if ((strcasecmp(str, "u16") == 0) || (strcasecmp(str, "uint16") == 0))
+        return INTEGER16;
+    if ((strcasecmp(str, "u32") == 0) || (strcasecmp(str, "uint32") == 0))
+        return INTEGER32;
+    if ((strcasecmp(str, "u64") == 0) || (strcasecmp(str, "uint64") == 0))
+        return INTEGER64;
+
     /* Floats */
     if ((strcasecmp(str, "f32") == 0) || (strcasecmp(str, "float32") == 0))
         return FLOAT32;
@@ -1639,6 +1652,16 @@ static inline scan_data_type_t parse_scan_data_type(const char *str)
 
     /* Not a valid type */
     return (scan_data_type_t)(-1);
+}
+
+/* Width comes from parse_scan_data_type, but write and read still have to
+   know whether the user meant it signed, since that picks the conversion. */
+static inline bool is_unsigned_type_name(const char *str)
+{
+    return (strcasecmp(str, "u8")  == 0) || (strcasecmp(str, "uint8")  == 0)
+        || (strcasecmp(str, "u16") == 0) || (strcasecmp(str, "uint16") == 0)
+        || (strcasecmp(str, "u32") == 0) || (strcasecmp(str, "uint32") == 0)
+        || (strcasecmp(str, "u64") == 0) || (strcasecmp(str, "uint64") == 0);
 }
 
 /* write value_type address value */
@@ -1661,31 +1684,32 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
     }
 
     scan_data_type_t st = parse_scan_data_type(argv[1]);
+    bool is_unsigned = is_unsigned_type_name(argv[1]);
 
     /* try int first */
     if (st == INTEGER8)
     {
         data_width = 1;
         datatype = 0;
-        fmt = "%"PRId8;
+        fmt = is_unsigned ? "%"PRIu8 : "%"PRId8;
     }
     else if (st == INTEGER16)
     {
         data_width = 2;
         datatype = 0;
-        fmt = "%"PRId16;
+        fmt = is_unsigned ? "%"PRIu16 : "%"PRId16;
     }
     else if (st == INTEGER32)
     {
         data_width = 4;
         datatype = 0;
-        fmt = "%"PRId32;
+        fmt = is_unsigned ? "%"PRIu32 : "%"PRId32;
     }
     else if (st == INTEGER64)
     {
         data_width = 8;
         datatype = 0;
-        fmt = "%"PRId64;
+        fmt = is_unsigned ? "%"PRIu64 : "%"PRId64;
     }
     else if (st == FLOAT32)
     {
@@ -1848,6 +1872,7 @@ bool handler__read(globals_t * vars, char **argv, unsigned argc)
     void *addr;
     char *endptr;
     scan_data_type_t st;
+    bool is_unsigned;
 
     if (argc != 3)
     {
@@ -1862,6 +1887,7 @@ bool handler__read(globals_t * vars, char **argv, unsigned argc)
     }
 
     st = parse_scan_data_type(argv[1]);
+    is_unsigned = is_unsigned_type_name(argv[1]);
 
     switch (st)
     {
@@ -1897,10 +1923,22 @@ bool handler__read(globals_t * vars, char **argv, unsigned argc)
 
     switch (st)
     {
-    case INTEGER8:  printf("%"PRId8"\n",  buf.i8);  break;
-    case INTEGER16: printf("%"PRId16"\n", buf.i16); break;
-    case INTEGER32: printf("%"PRId32"\n", buf.i32); break;
-    case INTEGER64: printf("%"PRId64"\n", buf.i64); break;
+    case INTEGER8:
+        if (is_unsigned) printf("%"PRIu8"\n",  (uint8_t) buf.i8);
+        else             printf("%"PRId8"\n",  buf.i8);
+        break;
+    case INTEGER16:
+        if (is_unsigned) printf("%"PRIu16"\n", (uint16_t)buf.i16);
+        else             printf("%"PRId16"\n", buf.i16);
+        break;
+    case INTEGER32:
+        if (is_unsigned) printf("%"PRIu32"\n", (uint32_t)buf.i32);
+        else             printf("%"PRId32"\n", buf.i32);
+        break;
+    case INTEGER64:
+        if (is_unsigned) printf("%"PRIu64"\n", (uint64_t)buf.i64);
+        else             printf("%"PRId64"\n", buf.i64);
+        break;
     case FLOAT32:   printf("%f\n",        buf.f32); break;
     case FLOAT64:   printf("%lf\n",       buf.f64); break;
     default:

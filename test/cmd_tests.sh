@@ -101,6 +101,30 @@ echo "$out" | grep -q "no target set" \
     && assert_eq yes yes "read with no target explains itself" \
     || assert_eq no yes "read with no target explains itself"
 
+# ---- unsigned type names (#359) ----
+# GameConqueror's type dropdown offers uint8..uint64. the parser only knew the
+# signed names, so `write uint8 ...` was refused and the GUI's write silently
+# did nothing, which is what #359 reports as "stops accepting new values".
+for t in uint8 uint16 uint32 uint64 u8 u16 u32 u64; do
+    out=$(run_raw "write $t $first_addr 1\nexit")
+    echo "$out" | grep -q "bad data_type" \
+        && assert_eq no yes "write accepts $t" \
+        || assert_eq yes yes "write accepts $t"
+done
+
+# values that only fit unsigned must survive a round trip
+out=$(run_raw "write uint8 $first_addr 200\nread uint8 $first_addr\nexit" | grep -E '^[0-9]+$' | tail -1)
+assert_eq "$out" "200" "uint8 200 round trips"
+# same byte read signed is the negative counterpart, so only the format changed
+out=$(run_raw "read int8 $first_addr\nexit" | grep -E '^-?[0-9]+$' | tail -1)
+assert_eq "$out" "-56" "the same byte read as int8 is -56"
+
+out=$(run_raw "write uint32 $first_addr 4000000000\nread uint32 $first_addr\nexit" | grep -E '^[0-9]+$' | tail -1)
+assert_eq "$out" "4000000000" "uint32 above INT32_MAX round trips"
+
+out=$(run_raw "write uint64 $first_addr 18446744073709551615\nread uint64 $first_addr\nexit" | grep -E '^[0-9]+$' | tail -1)
+assert_eq "$out" "18446744073709551615" "uint64 max round trips"
+
 # ---- xor between scan rounds (#424) ----
 # earlier tests wrote over one of the planted slots, so start clean
 stop_memfake

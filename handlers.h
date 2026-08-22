@@ -346,7 +346,8 @@ bool handler__show(globals_t *vars, char **argv, unsigned argc);
     
 bool handler__dump(globals_t *vars, char **argv, unsigned argc);
 
-#define VALUE_TYPES "int8,int16,int32,int64,float32,float64,bytearray,string"
+#define VALUE_TYPES "int8,uint8,int16,uint16,int32,uint32,int64,uint64," \
+    "float32,float64,bytearray,string"
 #define WRITE_COMPLETE VALUE_TYPES
 #define WRITE_SHRTDOC "change the value of a specific memory location"
 #define WRITE_LONGDOC "usage: write <value_type> <address> <value>\n" \
@@ -354,6 +355,7 @@ bool handler__dump(globals_t *vars, char **argv, unsigned argc);
                 "Write <value> into <address>\n" \
                 "<value_type> should be one of:\n" \
                 "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tuint{8|16|32|64} (or u{8|16|32|64} for short)\n" \
                 "\tfloat{32|64} (or f{32|64} for short)\n" \
                 "\tbytearray\n" \
                 "\tstring\n" \
@@ -373,6 +375,7 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                 "Read a <value_type> from <address> and print it.\n" \
                 "<value_type> should be one of:\n" \
                 "\tint{8|16|32|64} (or i{8|16|32|64} for short)\n" \
+                "\tuint{8|16|32|64} (or u{8|16|32|64} for short)\n" \
                 "\tfloat{32|64} (or f{32|64} for short)\n" \
                 "\n" \
                 "Use `dump` for raw byte ranges and strings.\n" \
