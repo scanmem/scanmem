@@ -7,7 +7,6 @@ scanmem \- locate and modify variables in an executing process.
 .RB [options]
 .IR [target-program-pid]
 
-
 .SH DESCRIPTION
 .B scanmem
 is an interactive debugging utility that can be used to isolate the address of a variable
@@ -328,7 +327,6 @@ I enter how much gold I currently have (58 pieces) and let
 .B scanmem
 find the potential candidates.
 
-
 .nf
 > 58
 01/09 searching   0x79f000 -   0x7b0000..........ok
@@ -470,18 +468,6 @@ split across threads now, see the
 option, which helps in proportion to how many cores are free. Scanning still looks at
 every byte offset rather than assuming integers are aligned. Suggestions welcome.
 
-Building with clang at
-.B -O1
-or higher produces a working binary that scans incorrectly. It finds a
-handful of matches where gcc finds all of them. gcc is fine at every
-optimisation level and so is clang at
-.BR -O0 ,
-so build with gcc until this is tracked down. This is not new, it reproduces
-on releases well before the threaded scan, and it went unnoticed because the
-test suite used to assert nothing about scan results and CI only built with
-gcc. It is not strict aliasing, vectorisation, signed overflow, or the
-extern inline definitions; -fno-inline recovers part of it, so it looks like
-undefined behaviour somewhere that inlining exposes.
 
 The
 .B snapshot

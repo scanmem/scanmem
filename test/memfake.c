@@ -63,6 +63,15 @@ static uint64_t pick_filler(uint64_t planted, unsigned width)
     return f;
 }
 
+/* Nothing in this process ever reads the planted buffer back, it exists to be
+   read over ptrace by the scanner. clang at -O2 works that out and drops the
+   stores, and the whole suite then fails on a target that never held the
+   values. Force the writes to stay. */
+static void keep(void *p)
+{
+    __asm__ __volatile__("" :: "r"(p) : "memory");
+}
+
 static void fill(void *base, size_t bytes, uint64_t pattern, unsigned width)
 {
     unsigned char *p = base;
@@ -144,6 +153,7 @@ int main(int argc, char **argv)
             }
         }
 
+        keep(array);
         printf("%d\n", (int)getpid());
         fflush(stdout);
         signal_ready(ready_path);
@@ -186,6 +196,8 @@ int main(int argc, char **argv)
             memcpy(buf + (i * stride) * width, &pattern, width);
     }
 
+    keep(buf);
+
     signal(SIGUSR1, on_mutate);
 
     printf("%d\n", (int)getpid());
@@ -224,6 +236,8 @@ int main(int argc, char **argv)
             for (size_t i = 0; i < plant_count; i++)
                 memcpy(buf + (i * stride) * width, &pattern2, width);
         }
+
+        keep(buf);
 
         /* tell the harness the rewrite finished. without this the next scan
            can attach (which SIGSTOPs us) while we are still partway through,
