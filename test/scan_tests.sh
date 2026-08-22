@@ -19,14 +19,25 @@ preflight
 run_int_case() {
     local type=$1 width=$2 val=$3 count=$4
     start_memfake --plant "$val" --count "$count" --width "$width" --mb 4
-    local next=$((val + 1))
-    local out
-    out=$(run_scan "option scan_data_type $type\n$val\n$(mutate_cmd)\n$next\nexit")
-    local first last
-    first=$(nth "$out" 1)
-    last=$(nth "$out" 2)
-    assert_ge "$first" "$count" "$type: initial scan finds at least the $count planted"
-    assert_eq "$last" "$count" "$type: narrow after mutation is exactly $count"
+    local n1=$((val + 1)) n2=$((val + 2))
+    local out first
+    if [ "$width" -eq 1 ]; then
+        # a 1-byte value collides with incidental bytes all over the process. an
+        # incidental that happens to drift val -> val+1 between the two scans
+        # survives a single narrow as a phantom (this is a rare CI flake). narrow
+        # twice: the same address would also have to drift val+1 -> val+2 in the
+        # next window, which does not happen, so the second narrow lands on
+        # exactly the planted set.
+        out=$(run_scan "option scan_data_type $type\n$val\n$(mutate_cmd)\n$n1\n$(mutate_cmd)\n$n2\nexit")
+        first=$(nth "$out" 1)
+        assert_ge "$first" "$count" "$type: initial scan finds at least the $count planted"
+        assert_eq "$(nth "$out" 3)" "$count" "$type: narrow after mutation is exactly $count"
+    else
+        out=$(run_scan "option scan_data_type $type\n$val\n$(mutate_cmd)\n$n1\nexit")
+        first=$(nth "$out" 1)
+        assert_ge "$first" "$count" "$type: initial scan finds at least the $count planted"
+        assert_eq "$(nth "$out" 2)" "$count" "$type: narrow after mutation is exactly $count"
+    fi
     stop_memfake
 }
 

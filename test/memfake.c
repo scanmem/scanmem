@@ -196,10 +196,13 @@ int main(int argc, char **argv)
        the signal should come back with exactly plant_count. the process's own
        copies of the value (locals, spilled registers) keep the old value and
        drop out of the match set, which is what makes the count exact. */
+    unsigned mutate_n = 0;
     for (;;) {
         pause();
         if (!got_mutate) continue;
         got_mutate = 0;
+        mutate_n++; /* each signal advances the value: plant+1, plant+2, ... so
+                       a test can narrow twice and shake off a 1-byte phantom */
 
         if (mode == MODE_BYTES) {
             size_t stride = total_bytes / (plant_count ? plant_count : 1);
@@ -211,10 +214,10 @@ int main(int argc, char **argv)
         } else {
             uint64_t pattern2;
             if (mode == MODE_FLOAT) {
-                if (width == 4) { float f = (float)plant_f + 1.0f; pattern2 = 0; memcpy(&pattern2, &f, 4); }
-                else { double d = plant_f + 1.0; memcpy(&pattern2, &d, 8); }
+                if (width == 4) { float f = (float)plant_f + (float)mutate_n; pattern2 = 0; memcpy(&pattern2, &f, 4); }
+                else { double d = plant_f + (double)mutate_n; memcpy(&pattern2, &d, 8); }
             } else {
-                pattern2 = plant + 1;
+                pattern2 = plant + mutate_n;
             }
             size_t slots = total_bytes / width;
             size_t stride = slots / (plant_count ? plant_count : 1);
