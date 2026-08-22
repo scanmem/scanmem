@@ -1,4 +1,4 @@
-TESTS = sm_test.sh scan_tests.sh cmd_tests.sh
+TESTS = sm_test.sh scan_tests.sh cmd_tests.sh align_tests.sh
 check_PROGRAMS = memfake
 
 memfake_SOURCES = memfake.c

@@ -2008,6 +2008,21 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         if (n == 0)
             sm_history_clear();
     }
+    else if (strcasecmp(argv[1], "alignment") == 0)
+    {
+        char *end = NULL;
+        unsigned long n;
+
+        errno = 0;
+        n = strtoul(argv[2], &end, 10);
+        /* powers of two only, anything else is not an alignment */
+        if (errno != 0 || end == argv[2] || *end != '\0' || argv[2][0] == '-'
+            || n == 0 || n > 8 || (n & (n - 1)) != 0) {
+            show_error("alignment must be 1, 2, 4 or 8, see `help option`.\n");
+            return false;
+        }
+        vars->options.alignment = (unsigned short) n;
+    }
     else if (strcasecmp(argv[1], "region_scan_level") == 0)
     {
         if (strcmp(argv[2], "1") == 0) {vars->options.region_scan_level = REGION_HEAP_STACK_EXECUTABLE; }

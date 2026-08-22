@@ -405,7 +405,7 @@ bool handler__redo(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1},threads,undo_limit"
+    "noptrace{0,1},threads,undo_limit,alignment{1,2,4,8}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -423,6 +423,16 @@ bool handler__redo(globals_t *vars, char **argv, unsigned argc);
                  "\tfloat{32|64}:\t\tfloat of given width\n" \
                  "\tbytearray:\t\tan array of bytes\n" \
                  "\tstring:\t\t\tstring\n" \
+                 "\n" \
+                 "alignment\t\tonly look at addresses that are a multiple of\n" \
+                 "\t\t\tthis, which is how a compiler lays variables out\n" \
+                 "\t\t\tanyway. 4 for a 32 bit value cuts the work to a\n" \
+                 "\t\t\tquarter. A value the compiler did not align that\n" \
+                 "\t\t\tway is missed, so drop back to 1 if a search that\n" \
+                 "\t\t\tshould have found something comes back empty.\n" \
+                 "\t\t\tDefault:1\n" \
+                 "\n" \
+                 "\tPossible Values: 1, 2, 4, 8\n" \
                  "\n" \
                  "region_scan_level\tspecify which regions should be scanned\n" \
                  "\t\t\tDefault:2\n" \

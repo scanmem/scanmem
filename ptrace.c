@@ -705,6 +705,7 @@ typedef struct {
     size_t owned;                      /* bytes this chunk is responsible for */
     const uservalue_t *uservalue;
     size_t maxlen;                     /* longest match the routine can return */
+    size_t align;                      /* only test addresses that are a multiple of this */
 
     scan_record *recs;                 /* what to hand to add_element, in order */
     size_t nrecs;
@@ -774,6 +775,10 @@ static void scan_chunk_run(scan_chunk *c)
     size_t limit = c->owned;
     size_t remaining;
     const uint8_t *mp8 = c->buf + head;
+    /* alignment is about where the variable sits in the target, so it has to
+     * be measured on the target address, not on our offset into the buffer */
+    uintptr_t addr = (uintptr_t)r->start + c->offset;
+    uintptr_t alignmask = c->align > 1 ? (uintptr_t)c->align - 1 : 0;
 
     if (c->offset >= valid_len)
         limit = 0;
@@ -782,12 +787,18 @@ static void scan_chunk_run(scan_chunk *c)
 
     remaining = valid_len - c->offset;
 
-    for (j = 0; j < limit; j++, remaining--, mp8++) {
+    for (j = 0; j < limit; j++, remaining--, mp8++, addr++) {
         const mem64_t *mp = (const mem64_t *)mp8;
         match_flags f = flags_empty;
         unsigned int ml;
 
-        ml = (*sm_scan_routine)(mp, remaining, NULL, c->uservalue, &f);
+        /* skipping the routine is the whole point of the option, but the
+         * bytes a match owns still have to be recorded below, old values are
+         * kept per byte and a wide match needs all of its own */
+        if (alignmask && (addr & alignmask))
+            ml = 0;
+        else
+            ml = (*sm_scan_routine)(mp, remaining, NULL, c->uservalue, &f);
 
         if (UNLIKELY(ml > 0)) {
             c->recs[c->nrecs].off = (uint32_t)j;
@@ -862,7 +873,7 @@ static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, co
     region_t *r;
     unsigned long total_scan_bytes = 0;
     scan_chunk *chunks = NULL;
-    size_t maxlen, bufsize, chunk_bytes;
+    size_t maxlen, bufsize, chunk_bytes, align;
     unsigned nthreads, t;
     bool ok = true;
     unsigned long done_bytes = 0;
@@ -917,6 +928,8 @@ static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, co
     vars->stop_flag = false;
 
     maxlen = scan_max_match_length(vars->options.scan_data_type, uservalue);
+    /* 0 would be a broken option value, treat anything odd as every byte */
+    align = vars->options.alignment > 1 ? vars->options.alignment : 1;
     nthreads = scan_thread_count(vars);
 
 #ifdef SCAN_CHUNK_BYTES
@@ -1007,6 +1020,7 @@ static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, co
                 chunks[batch].owned = MIN(chunk_bytes, r->size - cur_off);
                 chunks[batch].uservalue = uservalue;
                 chunks[batch].maxlen = maxlen;
+                chunks[batch].align = align;
                 cur_off += chunks[batch].owned;
                 batch++;
             }
