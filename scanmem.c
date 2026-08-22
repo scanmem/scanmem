@@ -116,11 +116,15 @@ bool sm_init(void)
     globals_t *vars = &sm_globals;
 
     /* before attaching to target, install signal handler to detach on error */
+    /* SIGSEGV is deliberately not caught. Trapping it and calling _exit()
+       swallowed the kernel's message and stopped a core dump being written,
+       which is exactly what you need when scanmem is the thing that crashed
+       (#307). The tracee is released when the tracer dies anyway, so there
+       was nothing to clean up that the kernel does not already do. */
     if (vars->options.debug == 0) /* in debug mode, let it crash and see the core dump */
     {
         (void) signal(SIGHUP, sighandler);
         (void) signal(SIGINT, sighandler);
-        (void) signal(SIGSEGV, sighandler);
         (void) signal(SIGABRT, sighandler);
         (void) signal(SIGILL, sighandler);
         (void) signal(SIGFPE, sighandler);

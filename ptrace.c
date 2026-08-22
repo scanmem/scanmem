@@ -529,6 +529,7 @@ static bool checkmatches_impl(globals_t *vars,
 
     size_t reading_iterator = 0;
     matches_and_old_values_swath *writing_swath_index = vars->matches->swaths;
+    matches_and_old_values_swath *new_swath;
     writing_swath_index->first_byte_in_child = NULL;
     writing_swath_index->number_of_bytes = 0;
 
@@ -579,8 +580,11 @@ static bool checkmatches_impl(globals_t *vars,
                - We can get away with assuming that the pointers will stay valid,
                  because as we never add more data to the array than there was before, it will not reallocate. */
 
-            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
+            new_swath = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), checkflags);
+            if (UNLIKELY(new_swath == NULL))
+                goto oom;
+            writing_swath_index = new_swath;
 
             ++vars->num_matches;
 
@@ -588,8 +592,11 @@ static bool checkmatches_impl(globals_t *vars,
         }
         else if (required_extra_bytes_to_record)
         {
-            writing_swath_index = add_element_fast(&(vars->matches), writing_swath_index, address,
+            new_swath = add_element_fast(&(vars->matches), writing_swath_index, address,
                                               get_u8b(memory_ptr), flags_empty);
+            if (UNLIKELY(new_swath == NULL))
+                goto oom;
+            writing_swath_index = new_swath;
             --required_extra_bytes_to_record;
         }
 
@@ -633,6 +640,7 @@ static bool checkmatches_impl(globals_t *vars,
         return false;
     }
 
+
     show_user("ok\n");
 
     /* tell front-end we've done */
@@ -642,6 +650,15 @@ static bool checkmatches_impl(globals_t *vars,
 
     /* okay, detach */
     return sm_detach(vars->target);
+
+oom:
+    /* the array is untouched and still ours, we just cannot record any more
+       into it. bail rather than write through the NULL, which is what used to
+       segfault on the next element (#307). */
+    ENDINTERRUPTABLE();
+    show_error("out of memory recording matches, the match list is unchanged.\n");
+    sm_detach(vars->target);
+    return false;
 }
 
 
@@ -1051,11 +1068,25 @@ static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, co
                     continue;
 
                 for (j = 0; j < c->nrecs; j++) {
-                    writing_swath_index = add_element_fast(&(vars->matches),
+                    matches_and_old_values_swath *new_swath;
+
+                    new_swath = add_element_fast(&(vars->matches),
                             writing_swath_index,
                             (char *)c->region->start + c->offset + c->recs[j].off,
                             c->recs[j].old_value, c->recs[j].match_info);
+                    /* this is where #307 crashed: the array stops growing,
+                       add_element handed back NULL, and the next element
+                       dereferenced it. stop instead. */
+                    if (UNLIKELY(new_swath == NULL)) {
+                        show_error("out of memory recording matches, giving up "
+                                   "on this scan.\n");
+                        ok = false;
+                        break;
+                    }
+                    writing_swath_index = new_swath;
                 }
+                if (!ok)
+                    break;
                 vars->num_matches += c->matches;
                 done_bytes += c->owned;
 
@@ -1066,6 +1097,9 @@ static bool searchregions_impl(globals_t *vars, scan_match_type_t match_type, co
                     print_a_dot();
                 }
             }
+
+            if (!ok)
+                break;
 
             /* skip whatever is left of a region that would not read */
             if (dead_region && n && (region_t *)n->data == dead_region) {
