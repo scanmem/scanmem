@@ -293,6 +293,22 @@ bool handler__shell(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__watch(globals_t *vars, char **argv, unsigned argc);
 
+#define MEMDIFF_SHRTDOC "real time monitoring for a given memory region"
+#define MEMDIFF_LONGDOC "usage: memdiff [start] [len] [list]\n" \
+                "Monitors the region started from `start` and `len` sized, showing changed values.\n" \
+                "By default shows table with green values changed last read, and yellow changed\n"\
+                "since monitoring was started. If last argument is `list`, then only list of changed\n" \
+                "values from given region is shown. Interrupt with ^C to stop monitoring.\n" \
+                "Examples:\n" \
+                " memdiff 0x2acbbd0 16 - monitor 16 bytes length region for changes in table\n" \
+                "  mode(default)\n" \
+                " memdiff 0x2acbbd0 128 list - monitor 128 bytes length region for changes in list\n" \
+                "  mode\n"
+
+
+bool handler__memdiff(globals_t *vars, char **argv, unsigned argc);
+
+
 /*XXX: improve this */
 #define SHOW_COMPLETE "copying,warranty,version"
 #define SHOW_SHRTDOC "display information about scanmem."
