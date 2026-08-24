@@ -1,0 +1,14 @@
+# scanmem house style. LLVM base with the project's long-standing deviations.
+# Note: the tree predates any formatter and hand-aligns trailing comments, so
+# running clang-format across all existing files produces a large diff. This
+# config is for formatting new and changed code to match, not a mass reformat.
+BasedOnStyle: LLVM
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 0
+BreakBeforeBraces: Linux
+PointerAlignment: Right
+SortIncludes: false
+SpaceAfterCStyleCast: true
+IndentPPDirectives: AfterHash
