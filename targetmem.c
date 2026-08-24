@@ -85,15 +85,20 @@ void data_to_printable_string (char *buf, int buf_length,
                                size_t index, int string_length)
 {
     long swath_length = swath->number_of_bytes - index;
-    /* TODO: what if length is too large ? */
     long max_length = (swath_length >= string_length) ? string_length : swath_length;
     int i;
+
+    if (buf_length <= 0)
+        return;
+
+    if (max_length > buf_length - 1)
+        max_length = buf_length - 1;
 
     for (i = 0; i < max_length; ++i) {
         uint8_t byte = swath->data[index+i].old_value;
         buf[i] = isprint(byte) ? byte : '.';
     }
-    buf[i] = 0; /* null-terminate */
+    buf[i] = 0;
 }
 
 void data_to_bytearray_text (char *buf, int buf_length,
@@ -104,18 +109,31 @@ void data_to_bytearray_text (char *buf, int buf_length,
     int bytes_used = 0;
     long swath_length = swath->number_of_bytes - index;
 
-    /* TODO: what if length is too large ? */
+    if (buf_length <= 0)
+        return;
+
     long max_length = (swath_length >= bytearray_length) ?
                        bytearray_length : swath_length;
 
     for (i = 0; i < max_length; ++i) {
         uint8_t byte = swath->data[index+i].old_value;
+        int room = buf_length - bytes_used;
 
-        /* TODO: check error here */
-        snprintf(buf+bytes_used, buf_length-bytes_used,
-                 (i<max_length-1) ? "%02x " : "%02x", byte);
-        bytes_used += 3;
+        if (room <= 0)
+            break;
+
+        int wrote = snprintf(buf + bytes_used, room,
+                             (i < max_length - 1) ? "%02x " : "%02x", byte);
+        if (wrote < 0)
+            break;
+        if (wrote >= room) {
+            bytes_used = buf_length - 1;
+            break;
+        }
+        bytes_used += wrote;
     }
+
+    buf[bytes_used] = 0;
 }
 
 match_location

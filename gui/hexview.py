@@ -25,6 +25,8 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
+import gi
+gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gi.repository import Pango
 from gi.repository import GObject
@@ -422,16 +424,40 @@ class HexText(BaseText):
 
         output = []
         convert = lambda x: '%02X'%(x,)
+        # hex view 
+
+        invert_hex = lambda d : ''.join([d[i:i+2] for i in range(0, len(d), 2)][::-1]) # convert "0xabcdefgh" to "0xghefcdab" 
+
+        # using python built-in library library "struct" to convert a hex to floats
+        convert_float32 = lambda a: str(__import__("struct").unpack('>f', int(a,16).to_bytes(4, 'big'))[0])[:11].rjust(11)
+        convert_float64 = lambda a: str(__import__("struct").unpack('>d', int(a,16).to_bytes(8, 'big'))[0])[:23].rjust(23)
+        convert_int32 = lambda a: str(int(a,16))[:11].rjust(11) 
+        convert_int64 = lambda a: str(int(a,16))[:23].rjust(23) 
 
         for i in range(tot_lines):
+            d1 = "".join(map(convert, txt[i * bpl:]))
+            d2 = "".join(map(convert, txt[i * bpl:(i * bpl) + bpl]))
+            if self._parent.display_type == "byte": 
+                # we split by space because the convert lambda will return byte array and we can just display it without modifications 
+                d1 = " ".join(map(convert, txt[i * bpl:])) 
+                d2 = " ".join(map(convert, txt[i * bpl:(i * bpl) + bpl]))
+            if self._parent.display_type== "float32": # convert byte to f32
+                d1 = " ".join([convert_float32(invert_hex(d1[i:i+8])) for i in range(0, len(d1), 8)])
+                d2 = " ".join([convert_float32(invert_hex(d2[i:i+8])) for i in range(0, len(d2), 8)])
+            if self._parent.display_type == "float64": # convert byte to f64
+                d1 = " ".join([convert_float64(invert_hex(d1[i:i+16])) for i in range(0, len(d1), 16)])
+                d2 = " ".join([convert_float64(invert_hex(d2[i:i+16])) for i in range(0, len(d2), 16)])
+            if self._parent.display_type == "int32":
+                d1 = ' '.join([convert_int32(invert_hex(d1[i:i+8])) for i in range(0, len(d1), 8)])
+                d2 = ' '.join([convert_int32(invert_hex(d2[i:i+8])) for i in range(0, len(d2), 8)])
+            if self._parent.display_type == "int64":
+                d1 = ' '.join([convert_int64(invert_hex(d1[i:i+16])) for i in range(0, len(d1), 16)])
+                d2 = ' '.join([convert_int64(invert_hex(d2[i:i+16])) for i in range(0, len(d2), 16)])
+
             if i * bpl + bpl > len(txt):
-                output.append(
-                    " ".join(map(convert, txt[i * bpl:]))
-                )
+                output.append(d1)
             else:
-                output.append(
-                    " ".join(map(convert, txt[i * bpl:(i * bpl) + bpl]))
-                )
+                output.append(d2)                  
 
         if output:
             self.buffer.insert_with_tags(
@@ -512,6 +538,8 @@ class HexView(Gtk.Box):
         self._payload = ""
         self._base_addr = 0;
         self.editable = False
+
+        self.display_type = "byte" 
 
         self.vadj = Gtk.Adjustment()
         self.vscroll = Gtk.Scrollbar.new(Gtk.Orientation.VERTICAL, self.vadj)

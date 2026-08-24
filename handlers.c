@@ -88,11 +88,31 @@
 #define POINTER_FMT "%12lx"
 #endif
 
+static bool append_suffix(char **buf, size_t *buf_len, const char *suffix)
+{
+    size_t used = strlen(*buf);
+    size_t suffix_len = strlen(suffix);
+    size_t need = used + suffix_len + 1;
+
+    if (need > *buf_len) {
+        char *grown = realloc(*buf, need);
+
+        if (grown == NULL)
+            return false;
+
+        *buf = grown;
+        *buf_len = need;
+    }
+
+    memcpy((*buf) + used, suffix, suffix_len + 1);
+    return true;
+}
+
 bool handler__set(globals_t * vars, char **argv, unsigned argc)
 {
-    unsigned block, seconds = 1;
+    unsigned block, seconds;
     char *delay = NULL;
-    bool cont = false;
+    bool cont;
     struct setting {
         char *matchids;
         char *value;
@@ -128,6 +148,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
     settings = calloca(argc - 1, sizeof(struct setting));
 
     /* parse every block into a settings struct */
+    cont = false;
     for (block = 0; block < argc - 1; block++) {
 
         /* first separate the block into matches and value, which are separated by '=' */
@@ -194,6 +215,7 @@ bool handler__set(globals_t * vars, char **argv, unsigned argc)
 
     /* --- execute the parsed setting structs --- */
 
+    seconds = 1;
     while (true) {
         uservalue_t userval;
 
@@ -383,29 +405,45 @@ bool handler__list(globals_t *vars, char **argv, unsigned argc)
             switch(vars->options.scan_data_type)
             {
             case BYTEARRAY:
-                buf_len = flags * 3 + 32;
-                v = realloc(v, buf_len); /* for each byte and the suffix, this should be enough */
-
-                if (v == NULL)
                 {
-                    show_error("memory allocation failed.\n");
-                    goto fail;
+                    char *grown;
+
+                    buf_len = flags * 3 + 32;
+                    grown = realloc(v, buf_len);
+
+                    if (grown == NULL)
+                    {
+                        show_error("memory allocation failed.\n");
+                        goto fail;
+                    }
+                    v = grown;
                 }
                 data_to_bytearray_text(v, buf_len, reading_swath_index, reading_iterator, flags);
-                assert(strlen(v) + strlen(bytearray_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
-                strcat(v, bytearray_suffix);
-                break;
-            case STRING:
-                buf_len = flags + strlen(string_suffix) + 32; /* for the string and suffix, this should be enough */
-                v = realloc(v, buf_len);
-                if (v == NULL)
+                if (!append_suffix(&v, &buf_len, bytearray_suffix))
                 {
                     show_error("memory allocation failed.\n");
                     goto fail;
                 }
+                break;
+            case STRING:
+                {
+                    char *grown;
+
+                    buf_len = flags + strlen(string_suffix) + 32;
+                    grown = realloc(v, buf_len);
+                    if (grown == NULL)
+                    {
+                        show_error("memory allocation failed.\n");
+                        goto fail;
+                    }
+                    v = grown;
+                }
                 data_to_printable_string(v, buf_len, reading_swath_index, reading_iterator, flags);
-                assert(strlen(v) + strlen(string_suffix) + 1 <= buf_len); /* or maybe realloc is better? */
-                strcat(v, string_suffix);
+                if (!append_suffix(&v, &buf_len, string_suffix))
+                {
+                    show_error("memory allocation failed.\n");
+                    goto fail;
+                }
                 break;
             default: /* numbers */
                 ; /* cheat gcc */
@@ -842,7 +880,8 @@ bool handler__string(globals_t * vars, char **argv, unsigned argc)
         show_error("memory allocation for string failed.\n");
         return false;
     }
-    strcpy(string_value, vars->current_cmdline+2);
+    memcpy(string_value, vars->current_cmdline + 2, string_length);
+    string_value[string_length] = '\0';
 
     uservalue_t val;
     val.string_value = string_value;
@@ -1222,8 +1261,12 @@ bool handler__watch(globals_t * vars, char **argv, unsigned argc)
         /* check if the new value is different */
         match_flags tmpflags = flags_empty;
         if ((*valuecmp_routine)(memory_ptr, memlength, &val, NULL, &tmpflags)) {
+            size_t copy_len = memlength;
 
-            memcpy(val.bytes, memory_ptr, memlength);
+            if (copy_len > sizeof(val.bytes))
+                copy_len = sizeof(val.bytes);
+
+            memcpy(val.bytes, memory_ptr, copy_len);
 
             valtostr(&val, buf, sizeof(buf));
 
@@ -1611,7 +1654,8 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
         free_uservalue(&val_buf);
         break;
     case 2: //string
-        strncpy(buf, string_parameter, data_width);
+        memcpy(buf, string_parameter, data_width);
+        buf[data_width] = '\0';
         break;
     default:
         assert(false);

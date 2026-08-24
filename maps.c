@@ -39,6 +39,9 @@
 #include "getline.h"
 #include "show_message.h"
 
+/* /proc maps pathnames are usually short; cap to avoid huge stack VLAs */
+#define MAPS_PATH_MAX 4096
+
 const char *region_type_names[] = REGION_TYPE_NAMES;
 
 bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_level)
@@ -88,17 +91,17 @@ bool sm_readmaps(pid_t target, list_t *regions, region_scan_level_t region_scan_
         unsigned long start, end;
         region_t *map = NULL;
         char read, write, exec, cow;
-        int offset, dev_major, dev_minor, inode;
+        unsigned long offset, inode;
+        unsigned int dev_major, dev_minor;
         region_type_t type = REGION_TYPE_MISC;
 
-        /* slight overallocation */
-        char filename[len];
+        char filename[MAPS_PATH_MAX];
 
         /* initialise to zero */
-        memset(filename, '\0', len);
+        memset(filename, '\0', sizeof(filename));
 
         /* parse each line */
-        if (sscanf(line, "%lx-%lx %c%c%c%c %x %x:%x %u %[^\n]", &start, &end, &read,
+        if (sscanf(line, "%lx-%lx %c%c%c%c %lx %x:%x %lu %4095[^\n]", &start, &end, &read,
                 &write, &exec, &cow, &offset, &dev_major, &dev_minor, &inode, filename) >= 6) {
             /*
              * get the load address for regions of the same ELF file

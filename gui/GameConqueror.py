@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
     Game Conqueror: a graphical game cheating tool, using scanmem as its backend
     
@@ -46,6 +46,7 @@ import misc
 
 import locale
 import gettext
+import pwd
 
 # In some locale, ',' is used in float numbers
 locale.setlocale(locale.LC_NUMERIC, 'C')
@@ -117,6 +118,38 @@ TYPESIZES = {'int8':1
             ,'float64':8
             }
 
+def _read_proc_cmdline(pid):
+    cmdline_path = os.path.join('/proc', str(pid), 'cmdline')
+    try:
+        with open(cmdline_path, 'rb') as fh:
+            raw = fh.read(4096)
+    except OSError:
+        raw = b''
+    if raw:
+        return raw.replace(b'\0', b' ').decode('utf-8', 'replace').strip()
+    exelink = os.path.join('/proc', str(pid), 'exe')
+    if os.path.exists(exelink):
+        return os.path.realpath(exelink)
+    return ''
+
+
+def _read_proc_username(pid):
+    status_path = os.path.join('/proc', str(pid), 'status')
+    try:
+        with open(status_path, 'r', encoding='utf-8', errors='replace') as fh:
+            for line in fh:
+                if line.startswith('Uid:'):
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        try:
+                            return pwd.getpwuid(int(parts[1])).pw_name
+                        except (KeyError, ValueError):
+                            return parts[1]
+    except OSError:
+        pass
+    return ''
+
+
 class GameConqueror():
     def __init__(self):
         ##################################
@@ -141,6 +174,8 @@ class GameConqueror():
         self.memoryeditor_hexview.show_all()
         self.memoryeditor_address_entry = self.builder.get_object('MemoryEditor_Address_Entry')
         self.memoryeditor_hexview.connect('char-changed', self.memoryeditor_hexview_char_changed_cb)
+        self.editmemory_dialog = self.builder.get_object('EditMemoryDialog')
+        self.memoryeditor_value_type  = self.builder.get_object('DisplayType_ComboBoxText')
 
         self.found_count_label = self.builder.get_object('FoundCount_Label')
         self.process_label = self.builder.get_object('Process_Label')
@@ -333,6 +368,28 @@ class GameConqueror():
 
     # Memory editor
 
+    def MemoryEditor_EditView_cb(self, widget, data=None):
+        self.editmemory_dialog.show()
+
+    def CloseMemoryDialog_cb(self,widget,data=None):
+        self.editmemory_dialog.hide()
+
+    def SaveMemoryDialog_cb(self,widget,data=None):
+        txt = self.memoryeditor_value_type.get_active_text().strip()
+        self.memoryeditor_hexview.display_type = txt;
+        self.editmemory_dialog.hide()
+
+        dlength = len(self.memoryeditor_hexview.payload)
+        data = self.read_memory(self.memoryeditor_hexview.base_addr, dlength)
+        if data is None:
+            self.memoryeditor_window.hide()
+            self.show_error(_('Cannot read memory'))
+            return
+        old_addr = self.memoryeditor_hexview.get_current_addr()
+        self.memoryeditor_hexview.payload = misc.str2bytes(data)
+        self.memoryeditor_hexview.show_addr(old_addr)
+
+        
     def MemoryEditor_Button_clicked_cb(self, button, data=None):
         if self.pid == 0:
             self.show_error(_('Please select a process'))
@@ -570,7 +627,7 @@ class GameConqueror():
         self.memoryeditor_hexview.payload = misc.str2bytes(data)
         self.memoryeditor_hexview.show_addr(old_addr)
 
-
+    
     # Manually add cheat
 
     def focus_on_next_widget_cb(self, widget, data=None):
@@ -892,18 +949,14 @@ class GameConqueror():
 
     def get_process_list(self):
         plist = []
-        for proc in os.popen('ps -wweo pid=,user:16=,command= --sort=-pid').readlines():
-            try:
-                (pid, user, pname) = [tok.strip() for tok in proc.split(None, 2)]
-            # process name may be empty, but not the name of the executable
-            except (ValueError):
-                (pid, user) = [tok.strip() for tok in proc.split(None, 1)]
-                exelink = os.path.join("/proc", pid, "exe")
-                if os.path.exists(exelink):
-                    pname = os.path.realpath(exelink)
-                else:
-                    pname = ''
-            plist.append((int(pid), user, pname))
+        for entry in os.listdir('/proc'):
+            if not entry.isdigit():
+                continue
+            pid = int(entry)
+            user = _read_proc_username(pid)
+            pname = _read_proc_cmdline(pid)
+            plist.append((pid, user, pname))
+        plist.sort(key=lambda item: item[0], reverse=True)
         return plist
 
     def select_process(self, pid, process_name):
@@ -1061,23 +1114,18 @@ class GameConqueror():
             self.scanresult_tv.set_model(None)
             # temporarily disable model for scanresult_liststore for the sake of performance
             self.scanresult_liststore.clear()
-            if misc.PY3K:
-                addr = GObject.Value(GObject.TYPE_UINT64)
-                off = GObject.Value(GObject.TYPE_UINT64)
+            addr = GObject.Value(GObject.TYPE_UINT64)
+            off = GObject.Value(GObject.TYPE_UINT64)
             for (mid_str, addr_str, off_str, rt, val, t) in matches:
                 if t == 'unknown':
                     continue
                 mid = int(mid_str)
                 # `insert_with_valuesv` has the same function of `append`, but it's 7x faster
-                # PY3 has problems with int's, so we need a forced guint64 conversion
+                # python3 has problems with int's, so we need a forced guint64 conversion
                 # See: https://bugzilla.gnome.org/show_bug.cgi?id=769532
                 # Still 5x faster even with the extra baggage
-                if misc.PY3K:
-                    addr.set_uint64(int(addr_str, 16))
-                    off.set_uint64(int(off_str, 16))
-                else:
-                    addr = long(addr_str, 16)
-                    off = long(off_str, 16)
+                addr.set_uint64(int(addr_str, 16))
+                off.set_uint64(int(off_str, 16))
                 self.scanresult_liststore.insert_with_valuesv(-1, [0, 1, 2, 3, 4, 5, 6], [addr, val, t, True, off, rt, mid])
                 # self.scanresult_liststore.append([addr, val, t, True, off, rt, mid])
             self.scanresult_tv.set_model(self.scanresult_liststore)
@@ -1186,11 +1234,7 @@ if __name__ == '__main__':
 
     # Attach to given pid (if any)
     if (args.pid is not None) :
-        process_name = os.popen('ps -p ' + str(args.pid) + ' -o command=').read().strip()
-        if process_name == '':
-            exelink = os.path.join("/proc", str(args.pid), "exe")
-            if os.path.exists(exelink):
-                process_name = os.path.realpath(exelink)
+        process_name = _read_proc_cmdline(args.pid)
         gc_instance.select_process(args.pid, process_name)
 
     # Prefill the search box (if asked)

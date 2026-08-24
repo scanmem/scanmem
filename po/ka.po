@@ -1,0 +1,541 @@
+# Georgian translation for scanmem.
+# Copyright (C) 2023, scanmem's authors
+# This file is distributed under the same license as the scanmem package.
+# Temuri Doghonadze <temuri.doghonadze@gmail.com>, 2023.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-02-17 15:26+0100\n"
+"PO-Revision-Date: 2023-02-18 10:52+0100\n"
+"Last-Translator: Temuri Doghonadze <temuri.doghonadze@gmail.com>\n"
+"Language-Team: \n"
+"Language: ka\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Poedit 3.2.2\n"
+
+#: ../gui/GameConqueror.ui.h:1
+msgid "GameConqueror - Memory Editor"
+msgstr "GameConqueror - მეხსიერების რედაქტორი"
+
+#: ../gui/GameConqueror.ui.h:2
+msgid "_Address:"
+msgstr "მის_ამართი:"
+
+#: ../gui/GameConqueror.ui.h:3
+msgid "Target address here (CTRL+L)"
+msgstr "სამიზნე მისამართი აქ (CTRL+L)"
+
+#: ../gui/GameConqueror.ui.h:4
+msgid "Enter address to view"
+msgstr "შეიყვანეთ მისამართი სანახავად"
+
+#: ../gui/GameConqueror.ui.h:5
+msgid "Jump to address (CTRL+ENTER)"
+msgstr "გადასვლა მისამართზე (CTRL+ ENTER)"
+
+#: ../gui/GameConqueror.ui.h:6
+msgid "_Refresh (CTRL+R)"
+msgstr "_განახლება (CTRL+R)"
+
+#: ../gui/GameConqueror.ui.h:7
+msgid "GameConqueror"
+msgstr "GameConqueror"
+
+#: ../gui/GameConqueror.ui.h:8
+msgid "Found: 0"
+msgstr "მოიძებნა: 0"
+
+#: ../gui/GameConqueror.ui.h:9
+msgid ""
+"Syntax:\n"
+"\n"
+" For numeric types:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         Exactly this number\n"
+" <b>N..M</b>      Range between two numbers\n"
+" <b>?</b>         Unknown initial value\n"
+" <b>&gt; or +</b>    Increased values\n"
+" <b>&lt; or -</b>    Decreased values\n"
+" <b>=</b>         Unchanged values\n"
+" <b>!=</b>        Changed values\n"
+" <b>&gt; N</b>       Greater than N\n"
+" <b>&lt; N</b>       Less than N\n"
+" <b>+ N</b>       Increased by N\n"
+" <b>- N</b>       Decreased by N\n"
+" <b>!= N</b>      Other than N\n"
+"</span>\n"
+" where N could be a number of a simple math expression embraced by (), e."
+"g.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+" For bytearray: use 2-char hexadecimal notation for each byte, separated by "
+"spaces\n"
+" e.g. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> can be used as a wildcard value\n"
+"\n"
+" For string: enter the string directly"
+msgstr ""
+"სინტაქსი:\n"
+"\n"
+"რიცხვითი ტიპებისთვის:\n"
+"<span font_family=\"monospace\">\n"
+" <b>N</b>         ზუსტად ეს რიცხვი\n"
+" <b>ნ.. M</b>      დიაპაზონი ორ რიცხვს შორის\n"
+" <b>?</b>         უცნობი საწყისი ღირებულება\n"
+" <b>&gt; ან +</b>    გაზრდილი ღირებულებები\n"
+" <b>&lt; ან -</b>    შემცირებული ღირებულებები\n"
+" <b>=</b>         უცვლელი ღირებულებები\n"
+" <b>!=</b>        შეცვლილი ღირებულებები\n"
+" <b>&gt; N</b>       უფრო დიდი ვიდრე N\n"
+" <b>&lt; N</b>       N-ზე ნაკლები\n"
+" <b>+ N</b>       გაიზარდა N- ით\n"
+" <b>- N</b>       N-ით შემცირდა\n"
+" <b>!= N</b>      N-ის გარდა\n"
+"</span>\n"
+" სადაც N შეიძლება იყოს მრავალი მარტივი მათემატიკის გამოხატულება, რომელიც "
+"მიღებულია (), მაგალითად.\n"
+"<span font_family=\"monospace\"> 12\n"
+" 0x34\n"
+" 5.67\n"
+" (- 8 * 9)</span>\n"
+"\n"
+"bytearray: გამოიყენეთ 2-char hexadecimal ნოტაცია თითოეული byte, გამოყოფილი "
+"სივრცეები\n"
+" მაგ. <span font_family=\"monospace\">FE DC BA 98 76 54 32 10</span>\n"
+" <span font_family=\"monospace\">??</span> \n"
+"\n"
+"სტრიქონისთვის: პირდაპირ შეიყვანეთ სტრიქონი"
+
+#: ../gui/GameConqueror.ui.h:37
+msgid "_Value: <span color=\"blue\"><u>?</u></span>"
+msgstr "_მნიშვნელობა: <span color=\"blue\"><u>?</u></span>"
+
+#: ../gui/GameConqueror.ui.h:38
+msgid "Enter search value here (CTRL+K/L)"
+msgstr "შეიყვანეთ საძებნი მნიშვნელობა აქ (CTRL + K/ L)"
+
+#: ../gui/GameConqueror.ui.h:39
+msgid "Insert value to search for (CTRL+K/L)"
+msgstr "მნიშვნელობა მოსაძებნად (CTRL + K/L)"
+
+#: ../gui/GameConqueror.ui.h:40
+msgid "Scan (CTRL+ENTER)"
+msgstr "სკანირება (CTRL+ ENTER)"
+
+#: ../gui/GameConqueror.ui.h:41
+msgid "Reset (CTRL+R)"
+msgstr "გადატვირთვა (CTRL+R)"
+
+#: ../gui/GameConqueror.ui.h:42
+msgid "Stop scan"
+msgstr "ძებნის შეჩერება"
+
+#: ../gui/GameConqueror.ui.h:43
+msgid "About"
+msgstr "პროგრამის შესახებ"
+
+#: ../gui/GameConqueror.ui.h:44
+msgid "Select a process (CTRL+F)"
+msgstr "აირჩიეთ პროცესი (CTRL+F)"
+
+#: ../gui/GameConqueror.ui.h:45 ../gui/GameConqueror.py:920
+msgid "Select a process"
+msgstr "აირჩიეთ პროცესი"
+
+#: ../gui/GameConqueror.ui.h:46 ../gui/GameConqueror.py:919
+msgid "No process selected"
+msgstr "პროცესი არჩეული არაა"
+
+#: ../gui/GameConqueror.ui.h:47
+msgid "Specify type of target data"
+msgstr "მიუთითეთ სამიზნე მონაცემების ტიპი"
+
+#: ../gui/GameConqueror.ui.h:48
+msgid "Data _Type:"
+msgstr "მონაცემების _ტიპი:"
+
+#: ../gui/GameConqueror.ui.h:49
+msgid ""
+"<b>Basic:</b>      Fastest but may miss some values\n"
+"<b>Normal:</b>  Works for most cases\n"
+"<b>Full:</b>         Never miss values but slowest"
+msgstr ""
+"<b>ძირითადი:</b>      ყველაზე სწრაფი, მაგრამ შეიძლება გამოტოვოს რამდენიმე "
+"მნიშვნელობა\n"
+"<b>ნორმალური:</b>  მუშაობს უმეტეს შემთხვევაში\n"
+"<b>სრული:</b>         არასოდეს გამოტოვებს მნიშვნელობებს, მაგრამ ნელია"
+
+#: ../gui/GameConqueror.ui.h:52
+msgid "_Search Scope:"
+msgstr "_ძებნის დიაპაზონი:"
+
+#: ../gui/GameConqueror.ui.h:53
+msgid "Memory Editor (CTRL+SHIFT+M)"
+msgstr "მეხსიერების რედაქტორი (CTRL+SHIFT+M)"
+
+#: ../gui/GameConqueror.ui.h:54
+msgid "Save address list to file (CTRL+S)"
+msgstr "მისამართების სიის ფაილში შენახვა (CTRL+ S)"
+
+#: ../gui/GameConqueror.ui.h:55
+msgid "Load address list from file (CTRL+O)"
+msgstr "ჩატვირთეთ მისამართების სია ფაილიდან (CTRL+O)"
+
+#: ../gui/GameConqueror.ui.h:56
+msgid "Remove all entries (CTRL+D)"
+msgstr "ყველა ჩანაწერის წაშლა (CTRL+D)"
+
+#: ../gui/GameConqueror.ui.h:57
+msgid "Manually add an entry (CTRL+M)"
+msgstr "ჩანაწერის ხელით დამატება (CTRL+M)"
+
+#: ../gui/GameConqueror.ui.h:58
+msgid ""
+"Copyright (C) 2009-2014 WANG Lu  <coolwanglu@gmail.com>\n"
+"Copyright (C) 2010 Bryan Cain\n"
+"Copyright (C) 2015-2016 Sebastian Parschauer  <s.parschauer@gmx.de>\n"
+"Copyright (C) 2016 Andrea Stacchiotti <andreastacchiotti(a)gmail.com>\n"
+"\n"
+"Special thanks: Igor Gnatenko, Mattias Muenster, Zhang Zhe"
+msgstr ""
+"საავტორო უფლებები (C) 2009-2014 WANG Lu <coolwanglu@gmail.com>\n"
+"საავტორო უფლებები (C) 2010 ბრიან კაენი\n"
+"საავტორო უფლებები (C) 2015-2016 სებასტიან პარშაუერი <s.parschauer@gmx.de>\n"
+"საავტორო უფლებები (C) 2016 ანდრეა სტაჩიოტი <andreastacchiotti (a)gmail."
+"com>\n"
+"\n"
+"განსაკუთრებული მადლობა: იგორ გნატენკო, მატიას მუენსტერი, ჟანგ ჟე"
+
+#: ../gui/GameConqueror.ui.h:64
+msgid "A graphical frontend of scanmem"
+msgstr "გრაფიკული წინაბოლო scanmem-სთვის"
+
+#: ../gui/GameConqueror.ui.h:65
+msgid "Homepage"
+msgstr "Homepage"
+
+#: ../gui/GameConqueror.ui.h:66
+msgid "Manually add an entry"
+msgstr "ჩანაწერის ხელით დამატება"
+
+#: ../gui/GameConqueror.ui.h:67
+msgid "_Add"
+msgstr "_დამატება"
+
+#: ../gui/GameConqueror.ui.h:68
+msgid "_Close"
+msgstr "დახურვა"
+
+#: ../gui/GameConqueror.ui.h:69
+msgid "Memory address of the value"
+msgstr "მნიშვნელობის მეხსიერების მისამართი"
+
+#: ../gui/GameConqueror.ui.h:70
+msgid "Addres_s:"
+msgstr "_მისამართი:"
+
+#: ../gui/GameConqueror.ui.h:71
+msgid "Give a brief description of the value"
+msgstr "მნიშვნელობის მოკლე აღწერა"
+
+#: ../gui/GameConqueror.ui.h:72
+msgid "_Description:"
+msgstr "_აღწერა:"
+
+#: ../gui/GameConqueror.ui.h:73
+msgid "_Type:"
+msgstr "ტიპი:"
+
+#: ../gui/GameConqueror.ui.h:74
+msgid "Specify data length (string/bytearray only)"
+msgstr ""
+"მიუთითეთ მონაცემების სიგრძე (მხოლოდ სტრიქონისთვის/ბაიტების მასივისთვის)"
+
+#: ../gui/GameConqueror.ui.h:75
+msgid "_Length:"
+msgstr "სიგრძე:"
+
+#: ../gui/GameConqueror.ui.h:76
+msgid "Type to search for a process"
+msgstr "პროცესის მოსაძებნად აკრიფეთ"
+
+#: ../gui/GameConqueror.ui.h:77
+msgid "_OK"
+msgstr "კარგი"
+
+#: ../gui/GameConqueror.ui.h:78
+msgid "_Cancel"
+msgstr "&გაუქმება"
+
+#: ../gui/GameConqueror.ui.h:79
+msgid "_User:"
+msgstr "_მომხმარებელი:"
+
+#: ../gui/GameConqueror.ui.h:80
+msgid "_Process:"
+msgstr "_პროცესი:"
+
+#: ../gui/GameConqueror.ui.h:81
+msgid "Filter"
+msgstr "ფილტრი"
+
+#: ../gui/GameConqueror.py:73
+msgid "Basic"
+msgstr "ძირითადი"
+
+#: ../gui/GameConqueror.py:73
+msgid "Normal"
+msgstr "ნორმალური"
+
+#: ../gui/GameConqueror.py:73
+msgid "ReadOnly"
+msgstr "მხოლოდწასაკითხად"
+
+#: ../gui/GameConqueror.py:73
+msgid "Full"
+msgstr "მთლიანი"
+
+#. init columns
+#. Address
+#: ../gui/GameConqueror.py:181 ../gui/GameConqueror.py:222
+msgid "Address"
+msgstr "მისამართი"
+
+#. Value
+#: ../gui/GameConqueror.py:185 ../gui/GameConqueror.py:239
+msgid "Value"
+msgstr "მნიშვნელობა"
+
+#: ../gui/GameConqueror.py:189
+msgid "Offset"
+msgstr "წანაცვლება"
+
+#: ../gui/GameConqueror.py:193
+msgid "Region Type"
+msgstr "რეგიონის ტიპი"
+
+#. Lock
+#: ../gui/GameConqueror.py:205
+msgid "Lock"
+msgstr "ჩაკეტვა"
+
+#. Description
+#: ../gui/GameConqueror.py:214
+msgid "Description"
+msgstr "აღწერა"
+
+#. Type
+#: ../gui/GameConqueror.py:227
+msgid "Type"
+msgstr "ტიპი"
+
+#. second col
+#: ../gui/GameConqueror.py:264
+msgid "User"
+msgstr "მომხმარებელი"
+
+#. third col
+#: ../gui/GameConqueror.py:269
+msgid "Process"
+msgstr "პროცესი"
+
+#: ../gui/GameConqueror.py:300
+msgid "Add to cheat list"
+msgstr "მოტყუების სიაში დამატება"
+
+#: ../gui/GameConqueror.py:301 ../gui/GameConqueror.py:308
+msgid "Browse this address"
+msgstr "ამ მისამართის დათვალიერება"
+
+#: ../gui/GameConqueror.py:302
+msgid "Scan for this address"
+msgstr "ამ მისამართის სკანირება"
+
+#: ../gui/GameConqueror.py:303
+msgid "Remove this match"
+msgstr "ამ დამთხვევის წაშლა"
+
+#: ../gui/GameConqueror.py:309
+msgid "Copy address"
+msgstr "მისამართის კოპირება"
+
+#: ../gui/GameConqueror.py:310
+msgid "Remove this entry"
+msgstr "ამ ჩანაწერის წაშლა"
+
+#: ../gui/GameConqueror.py:338 ../gui/GameConqueror.py:526
+#: ../gui/GameConqueror.py:993
+msgid "Please select a process"
+msgstr "გთხოვთ აირჩიოთ პროცესი"
+
+#: ../gui/GameConqueror.py:351
+msgid "Invalid address"
+msgstr "არასწორი მისამართი"
+
+#: ../gui/GameConqueror.py:361
+msgid "Please enter a valid address."
+msgstr "შეიყვანეთ სწორი მისამართი."
+
+#: ../gui/GameConqueror.py:365 ../gui/GameConqueror.py:880
+msgid "No Description"
+msgstr "აღწერის გარეშე"
+
+#: ../gui/GameConqueror.py:394
+msgid "Open.."
+msgstr "გახსნა.."
+
+#: ../gui/GameConqueror.py:414
+msgid "Save.."
+msgstr "_შენახვა..."
+
+#: ../gui/GameConqueror.py:519
+msgid "<unknown>"
+msgstr "<უცნობი>"
+
+#: ../gui/GameConqueror.py:567 ../gui/GameConqueror.py:862
+msgid "Cannot read memory"
+msgstr "მეხსიერებიდან წაკითხვის შეცდომა"
+
+#: ../gui/GameConqueror.py:818
+msgid "Unknown architecture, you may report to developers"
+msgstr "არქიტექტურა უცნობია. შეგიძლიათ, პროგრამისტებს დაუკავშირდეთ"
+
+#: ../gui/GameConqueror.py:830 ../gui/GameConqueror.py:921
+msgid ""
+"Cannot retrieve memory maps of that process, maybe it has exited (crashed), "
+"or you don't have enough privileges"
+msgstr ""
+"პროცესის მეხსიერების რუკების მიღების შეცდომა. შეიძლება, ის ან დასრულდა "
+"(ავარიულად), ან საკმარისი პრივილეგიები არ გაგაჩნიათ"
+
+#. not readable
+#: ../gui/GameConqueror.py:841
+#, python-format
+msgid "Address %x is not readable"
+msgstr "მისამართის %x ჩაწერადი არაა"
+
+#: ../gui/GameConqueror.py:844
+#, python-format
+msgid "Address %x is not valid"
+msgstr "მისამართი %x არასწორია"
+
+#: ../gui/GameConqueror.py:853
+msgid "Cannot find a readable region"
+msgstr "წაკითხვადი რეგიონის მოძებნა შეუძლებელია"
+
+#: ../gui/GameConqueror.py:1053
+#, python-format
+msgid "Found: %d"
+msgstr "მოიძებნა: %d"
+
+#: ../gui/GameConqueror.py:1168
+msgid ""
+"Version of scanmem mismatched, you may encounter problems. Please make sure "
+"you are using the same version of GameConqueror as scanmem."
+msgstr ""
+"Scanmem-ის ვერსია არ ემთხვევა. შეიძლება პრობლემები შეგექმნათ. დარწმუნდით, "
+"რომ GameConqueror-ის და scanmem-ის იგივე ვერსიებს იყენებთ."
+
+#: ../gui/GameConqueror.py:1174
+msgid "A GUI for scanmem, a game hacking tool"
+msgstr "ინტერფეისის წინაბოლო scanmem-სთვის.. ის თამაშის დასაჰაკი პროგრამაა"
+
+#: ../gui/GameConqueror.py:1175
+msgid "Report bugs to "
+msgstr "შეცდომების შესახებ მიწერეთ "
+
+#: ../gui/GameConqueror.py:1177
+msgid "prefill the search box"
+msgstr "ძებნის ზოლის წინასწარი შევსება"
+
+#: ../gui/GameConqueror.py:1179
+msgid "PID of the process"
+msgstr "პროცესის PID-ით"
+
+#: ../gui/misc.py:33
+msgid "No value provided"
+msgstr "მნიშვნელობა მითითებული არაა"
+
+#: ../gui/misc.py:51 ../gui/misc.py:57 ../gui/misc.py:104
+#, python-format
+msgid "Bad value: %s"
+msgstr "არასწორი მნიშვნელობა: %s"
+
+#: ../gui/misc.py:65
+#, python-format
+msgid "Command \"%s\" is not valid for the first scan"
+msgstr "ბრძანება \"%s\" პირველი სკანირებისას არასწორია"
+
+#: ../gui/misc.py:112
+#, python-format
+msgid "%s is not an integer"
+msgstr "%s მთელი რიცხვი არაა"
+
+#: ../gui/misc.py:118
+#, python-format
+msgid "%s is too bulky for %s"
+msgstr "%s ძალიან დიდია %s-სთვის"
+
+#: ../gui/misc.py:138
+#, python-format
+msgid "Cannot locate item: %s"
+msgstr "ელემენტის აღმოჩენა შეუძლებელია: %s"
+
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:1
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:1
+msgid "Game Conqueror"
+msgstr "Game Conqueror"
+
+#: ../gui/org.scanmem.gameconqueror.desktop.in.h:2
+msgid "A game hacking tool. A GUI front-end for scanmem."
+msgstr "თამაშის დასაჰაკი პროგრამა. ინტერფეისის წინაბოლო scanmem-სთვის."
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:1
+msgid "Run Game Conqueror"
+msgstr "Game Conqueror-ის გაშვება"
+
+#: ../gui/org.freedesktop.gameconqueror.policy.in.in.h:2
+msgid "Authentication is required to run Game Conqueror"
+msgstr "Game Conqueror-ის გასაშვებად ავთენტიკაცია გჭირდებათ"
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:2
+msgid "Game hacking tool. GUI front-end for scanmem."
+msgstr "თამაშის დასაჰაკი პროგრამა. ინტერფეისის წინაბოლო scanmem-სთვის."
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:3
+msgid ""
+"scanmem is a simple interactive debugging utility, used to locate the "
+"address of a variable in an executing process. This can be used for the "
+"analysis or modification of a hostile process on a compromised machine, "
+"reverse engineering, or as a \"pokefinder\" to cheat at video games. "
+"GameConqueror aims to provide a CheatEngine-alike interface for scanmem, "
+"it's user-friendly and easy to use."
+msgstr ""
+"scanmem-ი მარტივი, ინტერაქტიური გამართვის პროგრამაა, რომელის გაშვებულ "
+"პროცესში მნიშვნელობის მისამართის მოსაძებნად შეგიძლიათ, გამოიყენოთ. ასევე "
+"შეგიძლიათ გატეხილ მანქანაზე მტრული პროცესის ანალიზისთვის თამაშებში "
+"\"ჩიტებისთვის\" და რევერსიული ინჟინერიისთვისაც გამოიყენოთ."
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:4
+msgid "Features:"
+msgstr "თვისებები:"
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:5
+msgid "Locking on multiple variables"
+msgstr "ბევრ ცვლადის დაკვირვება"
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:6
+msgid "Memory Viewer/Editor"
+msgstr "მეხსიერების დათვალიერება/ჩასწორება"
+
+#: ../gui/org.scanmem.gameconqueror.metainfo.xml.in.h:7
+msgid "... many to be done"
+msgstr "... გასაკეთებელი კიდევ ბევრია"

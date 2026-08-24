@@ -148,6 +148,43 @@ fi
 if [ "$(uname -s)" = "Darwin" ]; then
   PATH=/usr/local/opt/gettext/bin:${PATH} # brew install gettext
 fi
+
+# NDK r19+ names the compiler with an API level baked in (e.g.
+# aarch64-linux-android21-clang) and ships no unsuffixed symlink, so configure
+# quietly falls back to the host cc and builds for the wrong arch. Pick one
+# explicitly. Set CC yourself, or API_LEVEL, to override the search.
+if [ -z "${CC}" ]; then
+  if command -v "${HOST}-clang" >/dev/null 2>&1; then
+    CC="${HOST}-clang"
+  elif [ -n "${API_LEVEL}" ] && command -v "${HOST}${API_LEVEL}-clang" >/dev/null 2>&1; then
+    CC="${HOST}${API_LEVEL}-clang"
+  else
+    # no plain name and no API_LEVEL given, take the lowest API level on PATH
+    CC=$(IFS=:
+         for dir in $PATH; do
+           for cand in "${dir}/${HOST}"[0-9]*-clang; do
+             [ -x "${cand}" ] || continue
+             base=${cand##*/}
+             api=${base#${HOST}}
+             api=${api%-clang}
+             case "${api}" in *[!0-9]*) continue ;; esac
+             printf '%s %s\n' "${api}" "${base}"
+           done
+         done 2>/dev/null | sort -n | head -n 1 | cut -d' ' -f2)
+  fi
+  if [ -z "${CC}" ] && command -v "${HOST}-gcc" >/dev/null 2>&1; then
+    CC="${HOST}-gcc"
+  fi
+  if [ -z "${CC}" ]; then
+    echo "Error: no cross compiler found for HOST=${HOST}." 1>&2
+    echo "Set CC, or API_LEVEL if your NDK uses a versioned clang name." 1>&2
+    exit 1
+  fi
+  export CC
+fi
+export AR="${AR:-${HOST}-ar}"
+export RANLIB="${RANLIB:-${HOST}-ranlib}"
+
 LIBS="-lncurses -lm" ./configure --host="${HOST}" --prefix="${SYSROOT}/usr" \
     --enable-static --disable-shared
 [ "$?" != "0" ] && exit 1
