@@ -310,6 +310,18 @@ extern inline bool sm_peekdata(const void *addr, uint16_t length, const mem64_t 
 
             peekbuf.size -= shift_size;
             peekbuf.base += shift_size;
+
+            /* the shift only frees whole chunks, so it is short by whatever
+             * partial chunk a truncated read left in `size`. rather than
+             * reason about how short, check again and drop the cache when it
+             * still does not fit. `length` is a uint16_t so a fresh read is
+             * always MAX_PEEKBUF_SIZE at worst. */
+            if (peekbuf.size + missing_bytes > MAX_PEEKBUF_SIZE)
+            {
+                peekbuf.size = 0;
+                peekbuf.base = reqaddr;
+                missing_bytes = PEEKDATA_CHUNK * (1 + (length-1) / PEEKDATA_CHUNK);
+            }
         }
     }
     else {

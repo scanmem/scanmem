@@ -146,6 +146,8 @@ bool sm_init(void)
                        NULL, DREGION_LONGDOC, NULL);
     sm_registercommand("lregions", handler__lregions, vars->commands,
                        LREGIONS_SHRTDOC, LREGIONS_LONGDOC, NULL);
+    sm_registercommand("range", handler__range, vars->commands,
+                       RANGE_SHRTDOC, RANGE_LONGDOC, NULL);
     sm_registercommand("version", handler__version, vars->commands,
                        VERSION_SHRTDOC, VERSION_LONGDOC, NULL);
     sm_registercommand("=", handler__operators, vars->commands, NOTCHANGED_SHRTDOC,

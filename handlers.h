@@ -159,6 +159,19 @@ bool handler__dregion(globals_t *vars, char **argv, unsigned argc);
 
 bool handler__lregions(globals_t *vars, char **argv, unsigned argc);
 
+#define RANGE_SHRTDOC "crop the regions list to an address range"
+#define RANGE_LONGDOC "usage: range <start> <end>\n" \
+                "Narrow the regions list down to the addresses between `start` and\n" \
+                "`end`, both hexadecimal and both inclusive of `start`, exclusive of\n" \
+                "`end`. Regions outside the range are dropped, regions crossing an\n" \
+                "edge are cut down to the part inside it, and matches that fall\n" \
+                "outside are removed along with them.\n" \
+                "Useful when you already know roughly where the value lives, since\n" \
+                "the scan then only has to read that much memory. `reset` puts the\n" \
+                "full regions list back.\n"
+
+bool handler__range(globals_t *vars, char **argv, unsigned argc);
+
 #define GREATERTHAN_SHRTDOC "match values that have increased or greater than some number"
 #define LESSTHAN_SHRTDOC    "match values that have decreased or less than some number"
 #define NOTCHANGED_SHRTDOC  "match values that have not changed or equal to some number"
