@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <sys/types.h>
+#include <sys/queue.h>
 
 #include "scanroutines.h"
 #include "list.h"
@@ -36,12 +37,23 @@
 #include "value.h"
 #include "targetmem.h"
 
+struct history_entry_t {
+    TAILQ_ENTRY(history_entry_t) list; /* there's probably a better name for this */
+    unsigned long num_matches;
+    matches_and_old_values_array *matches;
+};
+
+TAILQ_HEAD(history_list_t, history_entry_t);
 
 /* global settings */
 typedef struct {
     unsigned exit:1;
     pid_t target;
-    matches_and_old_values_array *matches;
+    matches_and_old_values_array *matches;  /* current matches */
+    /* current match, used for easy travelsal of the linked list */
+    struct history_entry_t *current;        
+    struct history_list_t match_history;    /* linked list of matches */
+    unsigned short history_length;
     unsigned long num_matches;
     double scan_progress;
     volatile bool stop_flag;
@@ -50,6 +62,7 @@ typedef struct {
     const char *current_cmdline;   /* the command being executed */
     void (*printversion)(FILE *outfd);
     struct {
+        unsigned short undo_limit;
         unsigned short alignment;
         unsigned short debug;
         unsigned short backend;    /* if 1, scanmem will work as a backend and
@@ -88,5 +101,8 @@ bool sm_peekdata(const void *addr, uint16_t length, const mem64_t **result_ptr, 
 bool sm_attach(pid_t target);
 bool sm_read_array(pid_t target, const void *addr, void *buf, size_t len);
 bool sm_write_array(pid_t target, void *addr, const void *data, size_t len);
+
+bool sm_undo_scan(void);
+bool sm_redo_scan(void);
 
 #endif /* SCANMEM_H */
