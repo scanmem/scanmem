@@ -1481,6 +1481,27 @@ static inline scan_data_type_t parse_scan_data_type(const char *str)
     return (scan_data_type_t)(-1);
 }
 
+/* recognize unsigned integer type names for `write`. returns the byte width
+ * and sets *fmt, or 0 if str is not an unsigned int type. scan types don't
+ * carry sign (it's a match flag), but a write has to parse the value with the
+ * right signedness or values above the signed max get rejected (#359). */
+static inline int parse_write_uint_type(const char *str, const char **fmt)
+{
+    if ((strcasecmp(str, "u8") == 0)  || (strcasecmp(str, "uint8") == 0)  ||
+        (strcasecmp(str, "uinteger8") == 0))
+        { *fmt = "%"PRIu8;  return 1; }
+    if ((strcasecmp(str, "u16") == 0) || (strcasecmp(str, "uint16") == 0) ||
+        (strcasecmp(str, "uinteger16") == 0))
+        { *fmt = "%"PRIu16; return 2; }
+    if ((strcasecmp(str, "u32") == 0) || (strcasecmp(str, "uint32") == 0) ||
+        (strcasecmp(str, "uinteger32") == 0))
+        { *fmt = "%"PRIu32; return 4; }
+    if ((strcasecmp(str, "u64") == 0) || (strcasecmp(str, "uint64") == 0) ||
+        (strcasecmp(str, "uinteger64") == 0))
+        { *fmt = "%"PRIu64; return 8; }
+    return 0;
+}
+
 /* write value_type address value */
 bool handler__write(globals_t * vars, char **argv, unsigned argc)
 {
@@ -1502,8 +1523,17 @@ bool handler__write(globals_t * vars, char **argv, unsigned argc)
 
     scan_data_type_t st = parse_scan_data_type(argv[1]);
 
+    /* unsigned ints come in from GC (write uint8 addr val) and the CLI. they
+     * aren't scan types, so parse the width/format here before the signed set. */
+    int uwidth = parse_write_uint_type(argv[1], &fmt);
+
     /* try int first */
-    if (st == INTEGER8)
+    if (uwidth > 0)
+    {
+        data_width = uwidth;
+        datatype = 0;
+    }
+    else if (st == INTEGER8)
     {
         data_width = 1;
         datatype = 0;
