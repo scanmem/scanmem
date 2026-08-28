@@ -32,5 +32,17 @@ done
 test_sm "option scan_data_type bytearray;${huge_bytearray};exit"
 test_sm "option scan_data_type string;\" ${huge_string};exit"
 
+# Unsigned integer writes (#359). uint8/16/32/64 used to be rejected as a bad
+# data_type, so a value shown as unsigned in GameConqueror never got written.
+# Write through the first writable anonymous mapping of the target; under -e a
+# rejected type or a failed write aborts the test.
+uaddr=$(awk '$2 ~ /rw-p/ && $6=="" {print $1; exit}' /proc/$memfake_pid/maps | cut -d- -f1)
+test -n "$uaddr"
+test_sm "write uint8 0x$uaddr 200"
+test_sm "write uint16 0x$uaddr 60000"
+test_sm "write uint32 0x$uaddr 4000000000"
+test_sm "write uint64 0x$uaddr 18000000000000000000"
+test_sm "write u8 0x$uaddr 255"
+
 # Clean up
 kill $memfake_pid
