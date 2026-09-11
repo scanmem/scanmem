@@ -108,7 +108,7 @@ static bool append_suffix(char **buf, size_t *buf_len, const char *suffix)
     return true;
 }
 
-bool handler__set(globals_t * vars, char **argv, unsigned argc)
+static inline bool handler__set_unsafe(globals_t * vars, char **argv, unsigned argc)
 {
     unsigned block, seconds;
     char *delay = NULL;
@@ -337,6 +337,14 @@ fail:
     
 }
 
+bool handler__set(globals_t * vars, char **argv, unsigned argc)
+{
+    vars->scan_in_progress = true;
+    bool retval = handler__set_unsafe(vars, argv, argc);
+    vars->scan_in_progress = false;
+    return retval;
+}
+
 /* Accepts a numerical argument to print up to N matches, defaults to 10k
  * FORMAT (don't change, front-end depends on this):
  * [#no] addr, value, [possible types (separated by space)]
@@ -557,17 +565,7 @@ bool handler__delete(globals_t * vars, char **argv, unsigned argc)
 bool handler__reset(globals_t * vars, char **argv, unsigned argc)
 {
     USEPARAMS();
-
-    /* reset scan progress */
-    vars->scan_progress = 0;
-
-    if (vars->matches) { free(vars->matches); vars->matches = NULL; vars->num_matches = 0; }
-
-    /* refresh list of regions */
-    l_destroy(vars->regions);
-
-    /* create a new linked list of regions */
-    if ((vars->regions = l_init()) == NULL) {
+    if(!sm_reset(vars)) {
         show_error("sorry, there was a problem allocating memory.\n");
         return false;
     }
