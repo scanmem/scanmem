@@ -182,6 +182,8 @@ bool sm_init(void)
                        SHOW_LONGDOC, SHOW_COMPLETE);
     sm_registercommand("dump", handler__dump, vars->commands, DUMP_SHRTDOC,
                        DUMP_LONGDOC, NULL);
+    sm_registercommand("read", handler__read, vars->commands, READ_SHRTDOC,
+                       READ_LONGDOC, READ_COMPLETE);
     sm_registercommand("write", handler__write, vars->commands, WRITE_SHRTDOC,
                        WRITE_LONGDOC, WRITE_COMPLETE);
     sm_registercommand("option", handler__option, vars->commands, OPTION_SHRTDOC,
