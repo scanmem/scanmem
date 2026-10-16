@@ -234,7 +234,8 @@ int main(int argc, char **argv)
             } else {
                 pattern2 = plant + mutate_n;
             }
-            size_t slots = total_bytes / width;
+            /* the slots the values were planted in */
+            size_t slots = (total_bytes - skew) / width;
             size_t stride = slots / (plant_count ? plant_count : 1);
             for (size_t i = 0; i < plant_count; i++)
                 memcpy(buf + (i * stride) * width + skew, &pattern2, width);
