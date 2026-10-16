@@ -12,6 +12,8 @@ Performance
 * Rescans with =, != and update compare numbers without a call per type
 * Other number comparisons (<, >, ranges, +, -, ...) run the scan routine
   inlined over blocks of positions instead of calling it per byte
+* Comparisons with a value (==, !=, <, >, ranges) use AVX2 where the CPU has
+  it, 32 positions at a time
 * Scan threads also copy the results into place, instead of the main thread
   alone
 * Matches take 3 bytes per byte of target memory instead of 4: a quarter
@@ -65,3 +67,5 @@ Tests and CI
   put thousands of chunk boundaries in a small target
 * CI on Ubuntu 24.04 with gcc and clang, and a job with ASan, UBSan and
   float-cast-overflow (from #461)
+* test/compare_test checks the vector comparisons against the scalar ones on
+  random data and every number type, comparison and byte order

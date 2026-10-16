@@ -813,6 +813,308 @@ block_routine_t get_block_routine(scan_routine_t routine)
     return NULL;
 }
 
+/*----------------*/
+/* Vector compare */
+/*----------------*/
+
+/* Each width is compared in lanes loaded at every byte offset it needs: one
+ * load for 8-bit values, 2 for 16-bit (positions 2j and 2j + 1), 4 for 32-bit
+ * and 8 for 64-bit, giving a bit mask of the 32 positions per flag, which is
+ * then spread into the flags. Unsigned values compare as signed ones with the
+ * sign bit flipped, and floats with the predicates that match C's operators:
+ * ordered for ==, <, >, <=, >= (false with NaN), unordered for != (true). */
+#if defined(__x86_64__) && (defined(__GNUC__) || defined(__clang__))
+#    define HAVE_VECTOR_COMPARE 1
+#    include <immintrin.h>
+#    include <string.h>
+
+/* bit j to bit 4j, and bit j to bit 8j */
+static uint32_t spread4[256], spread8[16];
+
+#    define VC_INLINE static inline __attribute__((always_inline, target("avx2")))
+
+#    define DEFINE_VC_CMP(BITS)                                                                    \
+        VC_INLINE __m256i vc_cmp##BITS(scan_match_type_t mt, __m256i v, __m256i lo, __m256i hi)    \
+        {                                                                                          \
+            __m256i ones = _mm256_set1_epi8(-1);                                                   \
+            switch (mt) {                                                                          \
+            case MATCHEQUALTO:                                                                     \
+                return _mm256_cmpeq_epi##BITS(v, lo);                                              \
+            case MATCHNOTEQUALTO:                                                                  \
+                return _mm256_xor_si256(_mm256_cmpeq_epi##BITS(v, lo), ones);                      \
+            case MATCHGREATERTHAN:                                                                 \
+                return _mm256_cmpgt_epi##BITS(v, lo);                                              \
+            case MATCHLESSTHAN:                                                                    \
+                return _mm256_cmpgt_epi##BITS(lo, v);                                              \
+            default: /* MATCHRANGE */                                                              \
+                return _mm256_xor_si256(                                                           \
+                    _mm256_or_si256(_mm256_cmpgt_epi##BITS(lo, v), _mm256_cmpgt_epi##BITS(v, hi)), \
+                    ones);                                                                         \
+            }                                                                                      \
+        }
+
+DEFINE_VC_CMP(8)
+DEFINE_VC_CMP(16)
+DEFINE_VC_CMP(32)
+DEFINE_VC_CMP(64)
+
+#    define DEFINE_VC_CMPF(SUFFIX, TYPE)                                              \
+        VC_INLINE TYPE vc_cmp##SUFFIX(scan_match_type_t mt, TYPE v, TYPE lo, TYPE hi) \
+        {                                                                             \
+            switch (mt) {                                                             \
+            case MATCHEQUALTO:                                                        \
+                return _mm256_cmp_##SUFFIX(v, lo, _CMP_EQ_OQ);                        \
+            case MATCHNOTEQUALTO:                                                     \
+                return _mm256_cmp_##SUFFIX(v, lo, _CMP_NEQ_UQ);                       \
+            case MATCHGREATERTHAN:                                                    \
+                return _mm256_cmp_##SUFFIX(v, lo, _CMP_GT_OQ);                        \
+            case MATCHLESSTHAN:                                                       \
+                return _mm256_cmp_##SUFFIX(v, lo, _CMP_LT_OQ);                        \
+            default: /* MATCHRANGE */                                                 \
+                return _mm256_and_##SUFFIX(_mm256_cmp_##SUFFIX(v, lo, _CMP_GE_OQ),    \
+                                           _mm256_cmp_##SUFFIX(v, hi, _CMP_LE_OQ));   \
+            }                                                                         \
+        }
+
+DEFINE_VC_CMPF(ps, __m256)
+DEFINE_VC_CMPF(pd, __m256d)
+
+/* the position mask of 16-bit compares at offsets 0 (positions 2j) and 1 */
+VC_INLINE uint32_t vc_mask16(__m256i even, __m256i odd)
+{
+    /* bytes of each 128-bit half: even lanes, then odd ones; put them in order */
+    const __m256i order = _mm256_setr_epi8(0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15,
+                                           0, 8, 1, 9, 2, 10, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15);
+    return (uint32_t) _mm256_movemask_epi8(
+        _mm256_shuffle_epi8(_mm256_packs_epi16(even, odd), order));
+}
+
+VC_INLINE size_t vc_kernel(const vector_compare_t *vc, const uint8_t *memory, size_t count,
+                           match_flags *flags, scan_match_type_t mt)
+{
+    const match_flags want = vc->flags;
+    const bool reverse = vc->reverse;
+    const __m256i bias8 = _mm256_set1_epi8((char) 0x80);
+    const __m256i bias16 = _mm256_set1_epi16((short) 0x8000);
+    const __m256i bias32 = _mm256_set1_epi32((int) 0x80000000);
+    const __m256i bias64 = _mm256_set1_epi64x((long long) 0x8000000000000000ULL);
+    const __m256i swap16 = _mm256_setr_epi8(1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14,
+                                            1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 13, 12, 15, 14);
+    const __m256i swap32 = _mm256_setr_epi8(3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12,
+                                            3, 2, 1, 0, 7, 6, 5, 4, 11, 10, 9, 8, 15, 14, 13, 12);
+    const __m256i swap64 = _mm256_setr_epi8(7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8,
+                                            7, 6, 5, 4, 3, 2, 1, 0, 15, 14, 13, 12, 11, 10, 9, 8);
+    const __m256i lane_bits = _mm256_setr_epi16(1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5,
+                                                1 << 6, 1 << 7, 1 << 8, 1 << 9, 1 << 10, 1 << 11,
+                                                1 << 12, 1 << 13, 1 << 14, (short) (1 << 15));
+    const __m256i lo8u = _mm256_set1_epi8((char) vc->lo[0]), hi8u = _mm256_set1_epi8((char) vc->hi[0]);
+    const __m256i lo8s = _mm256_set1_epi8((char) vc->lo[1]), hi8s = _mm256_set1_epi8((char) vc->hi[1]);
+    const __m256i lo16u = _mm256_set1_epi16((short) vc->lo[2]), hi16u = _mm256_set1_epi16((short) vc->hi[2]);
+    const __m256i lo16s = _mm256_set1_epi16((short) vc->lo[3]), hi16s = _mm256_set1_epi16((short) vc->hi[3]);
+    const __m256i lo32u = _mm256_set1_epi32((int) vc->lo[4]), hi32u = _mm256_set1_epi32((int) vc->hi[4]);
+    const __m256i lo32s = _mm256_set1_epi32((int) vc->lo[5]), hi32s = _mm256_set1_epi32((int) vc->hi[5]);
+    const __m256i lo64u = _mm256_set1_epi64x((long long) vc->lo[6]);
+    const __m256i hi64u = _mm256_set1_epi64x((long long) vc->hi[6]);
+    const __m256i lo64s = _mm256_set1_epi64x((long long) vc->lo[7]);
+    const __m256i hi64s = _mm256_set1_epi64x((long long) vc->hi[7]);
+    const __m256 lof = _mm256_castsi256_ps(_mm256_set1_epi32((int) vc->lo[8]));
+    const __m256 hif = _mm256_castsi256_ps(_mm256_set1_epi32((int) vc->hi[8]));
+    const __m256d lod = _mm256_castsi256_pd(_mm256_set1_epi64x((long long) vc->lo[9]));
+    const __m256d hid = _mm256_castsi256_pd(_mm256_set1_epi64x((long long) vc->hi[9]));
+    size_t found = 0;
+
+    for (size_t k = 0; k < count; k += VECTOR_POSITIONS) {
+        const uint8_t *p = memory + k;
+        uint32_t m[10] = {0};
+
+        if (want & flags_i8b) {
+            __m256i v = _mm256_loadu_si256((const __m256i *) p);
+            if (want & flag_u8b)
+                m[0] = (uint32_t) _mm256_movemask_epi8(
+                    vc_cmp8(mt, _mm256_xor_si256(v, bias8), lo8u, hi8u));
+            if (want & flag_s8b)
+                m[1] = (uint32_t) _mm256_movemask_epi8(vc_cmp8(mt, v, lo8s, hi8s));
+        }
+        if (want & flags_i16b) {
+            __m256i even = _mm256_loadu_si256((const __m256i *) p);
+            __m256i odd = _mm256_loadu_si256((const __m256i *) (p + 1));
+            if (reverse) {
+                even = _mm256_shuffle_epi8(even, swap16);
+                odd = _mm256_shuffle_epi8(odd, swap16);
+            }
+            if (want & flag_u16b)
+                m[2] = vc_mask16(vc_cmp16(mt, _mm256_xor_si256(even, bias16), lo16u, hi16u),
+                                 vc_cmp16(mt, _mm256_xor_si256(odd, bias16), lo16u, hi16u));
+            if (want & flag_s16b)
+                m[3] = vc_mask16(vc_cmp16(mt, even, lo16s, hi16s), vc_cmp16(mt, odd, lo16s, hi16s));
+        }
+        if (want & (flags_i32b | flag_f32b)) {
+            for (unsigned o = 0; o < 4; o++) {
+                __m256i v = _mm256_loadu_si256((const __m256i *) (p + o));
+                if (reverse)
+                    v = _mm256_shuffle_epi8(v, swap32);
+                if (want & flag_u32b)
+                    m[4] |= spread4[_mm256_movemask_ps(_mm256_castsi256_ps(
+                                vc_cmp32(mt, _mm256_xor_si256(v, bias32), lo32u, hi32u)))]
+                            << o;
+                if (want & flag_s32b)
+                    m[5] |= spread4[_mm256_movemask_ps(
+                                _mm256_castsi256_ps(vc_cmp32(mt, v, lo32s, hi32s)))]
+                            << o;
+                if (want & flag_f32b)
+                    m[8] |= spread4[_mm256_movemask_ps(
+                                vc_cmpps(mt, _mm256_castsi256_ps(v), lof, hif))]
+                            << o;
+            }
+        }
+        if (want & (flags_i64b | flag_f64b)) {
+            for (unsigned o = 0; o < 8; o++) {
+                __m256i v = _mm256_loadu_si256((const __m256i *) (p + o));
+                if (reverse)
+                    v = _mm256_shuffle_epi8(v, swap64);
+                if (want & flag_u64b)
+                    m[6] |= spread8[_mm256_movemask_pd(_mm256_castsi256_pd(
+                                vc_cmp64(mt, _mm256_xor_si256(v, bias64), lo64u, hi64u)))]
+                            << o;
+                if (want & flag_s64b)
+                    m[7] |= spread8[_mm256_movemask_pd(
+                                _mm256_castsi256_pd(vc_cmp64(mt, v, lo64s, hi64s)))]
+                            << o;
+                if (want & flag_f64b)
+                    m[9] |= spread8[_mm256_movemask_pd(
+                                vc_cmppd(mt, _mm256_castsi256_pd(v), lod, hid))]
+                            << o;
+            }
+        }
+
+        /* lane i of `first` is position i, of `second` position 16 + i */
+        __m256i first = _mm256_setzero_si256(), second = _mm256_setzero_si256();
+        uint32_t any = 0;
+        for (unsigned b = 0; b < 10; b++) {
+            if (!m[b])
+                continue;
+            __m256i flag = _mm256_set1_epi16((short) (1 << b));
+            __m256i bits = _mm256_set1_epi16((short) (m[b] & 0xffff));
+            first = _mm256_or_si256(first, _mm256_and_si256(_mm256_cmpeq_epi16(_mm256_and_si256(bits, lane_bits), lane_bits), flag));
+            bits = _mm256_set1_epi16((short) (m[b] >> 16));
+            second = _mm256_or_si256(second, _mm256_and_si256(_mm256_cmpeq_epi16(_mm256_and_si256(bits, lane_bits), lane_bits), flag));
+            any |= m[b];
+        }
+        _mm256_storeu_si256((__m256i *) (flags + k), first);
+        _mm256_storeu_si256((__m256i *) (flags + k + 16), second);
+        found += (size_t) __builtin_popcount(any);
+    }
+    return found;
+}
+
+#    define DEFINE_VC_FOR(MT)                                                                \
+        static size_t __attribute__((target("avx2")))                                        \
+        vector_compare_##MT(const vector_compare_t *vc, const uint8_t *memory, size_t count, \
+                            match_flags *flags)                                              \
+        {                                                                                    \
+            return vc_kernel(vc, memory, count, flags, MT);                                  \
+        }
+
+DEFINE_VC_FOR(MATCHEQUALTO)
+DEFINE_VC_FOR(MATCHNOTEQUALTO)
+DEFINE_VC_FOR(MATCHGREATERTHAN)
+DEFINE_VC_FOR(MATCHLESSTHAN)
+DEFINE_VC_FOR(MATCHRANGE)
+#else
+#    define HAVE_VECTOR_COMPARE 0
+#endif
+
+bool vector_compare_init(vector_compare_t *vc, scan_data_type_t dt, scan_match_type_t mt,
+                         const uservalue_t *uval, bool reverse_endianness)
+{
+#if HAVE_VECTOR_COMPARE
+    if (!uval || dt == BYTEARRAY || dt == STRING)
+        return false;
+    if (mt != MATCHEQUALTO && mt != MATCHNOTEQUALTO && mt != MATCHGREATERTHAN &&
+        mt != MATCHLESSTHAN && mt != MATCHRANGE)
+        return false;
+    __builtin_cpu_init();
+    if (!__builtin_cpu_supports("avx2"))
+        return false;
+
+    for (unsigned i = 0; i < 256; i++) {
+        spread4[i] = 0;
+        for (unsigned j = 0; j < 8; j++)
+            spread4[i] |= (uint32_t) ((i >> j) & 1) << (4 * j);
+    }
+    for (unsigned i = 0; i < 16; i++) {
+        spread8[i] = 0;
+        for (unsigned j = 0; j < 4; j++)
+            spread8[i] |= (uint32_t) ((i >> j) & 1) << (8 * j);
+    }
+
+    /* a range compares with both bounds, the rest with the one value, and
+     * only on the flags the first bound has (the routines check only those) */
+    const uservalue_t *lo = &uval[0], *hi = mt == MATCHRANGE ? &uval[1] : &uval[0];
+    vc->flags = possible_flags_for_scan_data_type[dt] & uval[0].flags;
+    vc->mt = mt;
+    vc->reverse = reverse_endianness;
+    vc->lo[0] = lo->uint8_value ^ 0x80u;
+    vc->hi[0] = hi->uint8_value ^ 0x80u;
+    vc->lo[1] = (uint8_t) lo->int8_value;
+    vc->hi[1] = (uint8_t) hi->int8_value;
+    vc->lo[2] = lo->uint16_value ^ 0x8000u;
+    vc->hi[2] = hi->uint16_value ^ 0x8000u;
+    vc->lo[3] = (uint16_t) lo->int16_value;
+    vc->hi[3] = (uint16_t) hi->int16_value;
+    vc->lo[4] = lo->uint32_value ^ 0x80000000u;
+    vc->hi[4] = hi->uint32_value ^ 0x80000000u;
+    vc->lo[5] = (uint32_t) lo->int32_value;
+    vc->hi[5] = (uint32_t) hi->int32_value;
+    vc->lo[6] = lo->uint64_value ^ 0x8000000000000000ULL;
+    vc->hi[6] = hi->uint64_value ^ 0x8000000000000000ULL;
+    vc->lo[7] = (uint64_t) lo->int64_value;
+    vc->hi[7] = (uint64_t) hi->int64_value;
+    uint32_t f32;
+    memcpy(&f32, &lo->float32_value, sizeof(f32));
+    vc->lo[8] = f32;
+    memcpy(&f32, &hi->float32_value, sizeof(f32));
+    vc->hi[8] = f32;
+    memcpy(&vc->lo[9], &lo->float64_value, sizeof(vc->lo[9]));
+    memcpy(&vc->hi[9], &hi->float64_value, sizeof(vc->hi[9]));
+    return true;
+#else
+    (void) vc;
+    (void) dt;
+    (void) mt;
+    (void) uval;
+    (void) reverse_endianness;
+    return false;
+#endif
+}
+
+size_t vector_compare(const vector_compare_t *vc, const uint8_t *memory, size_t count,
+                      match_flags *flags)
+{
+#if HAVE_VECTOR_COMPARE
+    switch (vc->mt) {
+    case MATCHEQUALTO:
+        return vector_compare_MATCHEQUALTO(vc, memory, count, flags);
+    case MATCHNOTEQUALTO:
+        return vector_compare_MATCHNOTEQUALTO(vc, memory, count, flags);
+    case MATCHGREATERTHAN:
+        return vector_compare_MATCHGREATERTHAN(vc, memory, count, flags);
+    case MATCHLESSTHAN:
+        return vector_compare_MATCHLESSTHAN(vc, memory, count, flags);
+    case MATCHRANGE:
+        return vector_compare_MATCHRANGE(vc, memory, count, flags);
+    default:
+        break;
+    }
+#endif
+    (void) vc;
+    (void) memory;
+    (void) count;
+    (void) flags;
+    assert(false);
+    return 0;
+}
+
 /*-----------*/
 /* Prefilter */
 /*-----------*/

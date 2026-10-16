@@ -101,6 +101,29 @@ typedef size_t (*block_routine_t)(const uint8_t *memory, size_t count,
  * routines that compare with a value or with the old value have one. */
 block_routine_t get_block_routine(scan_routine_t routine);
 
+/* The number routines that compare with a value (==, !=, >, <, range) on
+ * vectors of VECTOR_POSITIONS positions, where the CPU can (AVX2).
+ * vector_compare_init() sets `vc` up for the routine sm_choose_scanroutine()
+ * picks for `dt`, `mt` and `reverse_endianness` with `uval`, or returns false.
+ * vector_compare() then does what that routine's block form does without
+ * `old`, for `count` positions, a multiple of VECTOR_POSITIONS: the same flags
+ * for every position, and the number of positions that got any. */
+#define VECTOR_POSITIONS 32
+
+typedef struct {
+    match_flags flags; /* the flags the routine can set with this value */
+    scan_match_type_t mt;
+    bool reverse;
+    /* for flag bit b: the value (and a range's upper bound) as compared in
+     * lanes: unsigned integers with the sign bit flipped, floats as bits */
+    uint64_t lo[10], hi[10];
+} vector_compare_t;
+
+bool vector_compare_init(vector_compare_t *vc, scan_data_type_t dt, scan_match_type_t mt,
+                         const uservalue_t *uval, bool reverse_endianness);
+size_t vector_compare(const vector_compare_t *vc, const uint8_t *memory, size_t count,
+                      match_flags *flags);
+
 /* What the CHANGED, NOTCHANGED and UPDATE routines of the number types
  * compute, without a call per type and width: integers of a width are
  * unchanged exactly when their bytes are, and floats are compared as floats.

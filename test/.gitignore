@@ -1,6 +1,9 @@
 # memfake exe
 memfake
 
+# vector compare test
+compare_test
+
 # Test results
 *.log
 *.trs

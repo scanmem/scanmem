@@ -447,10 +447,11 @@ struct chunked_scan {
     unsigned long total_units;   /* for progress: bytes or matches-array elements */
     unsigned long scanned_units; /* atomic */
     scan_match_type_t match_type;
-    const prefilter_t *prefilter; /* initial search: positions worth testing */
-    block_routine_t block;        /* sm_scan_routine for runs of positions, or NULL */
-    bool no_vm_readv;             /* process_vm_readv() is not available */
-    size_t chunk_array_bytes;     /* size of every chunk's matches array */
+    const prefilter_t *prefilter;   /* initial search: positions worth testing */
+    block_routine_t block;          /* sm_scan_routine for runs of positions, or NULL */
+    const vector_compare_t *vector; /* `block` on vectors of positions, or NULL */
+    bool no_vm_readv;               /* process_vm_readv() is not available */
+    size_t chunk_array_bytes;       /* size of every chunk's matches array */
     /* chunk arrays to reuse, guarded by `lock` */
     matches_and_old_values_array *pool[3 * MAX_SCAN_THREADS + 2];
     unsigned pool_size;
@@ -494,6 +495,42 @@ static unsigned scan_threads(const globals_t *vars)
             n = 1;
     }
     return MIN(n, MAX_SCAN_THREADS);
+}
+
+/* What cs->block does for `count` positions of `memory` (see block_routine_t),
+ * with vector_compare() for the whole vectors where there is a vector form.
+ * In a rescan (`old`), that compares with a value, so the old value only
+ * matters through its flags: elements without any get none, and the others
+ * only the widths that fit the memlength sm_checkmatches() passes (the length
+ * of the widest old flag). Returns how many positions got flags. */
+static size_t compare_block(const chunked_scan_t *cs, const uint8_t *memory, size_t count,
+                            const old_value_and_match_info *old, match_flags *flags)
+{
+    size_t done = 0, found = 0;
+
+    if (cs->vector) {
+        done = count & ~(size_t) (VECTOR_POSITIONS - 1);
+        if (done)
+            found = vector_compare(cs->vector, memory, done, flags);
+        if (done && old) {
+            scan_data_type_t dt = cs->vars->options.scan_data_type;
+            found = 0;
+            for (size_t k = 0; k < done; k++) {
+                unsigned int length = flags_to_memlength(dt, old[k].match_info);
+                match_flags fits = length >= 8   ? flags_all
+                                   : length >= 4 ? flags_8b | flags_16b | flags_32b
+                                   : length >= 2 ? flags_8b | flags_16b
+                                   : length >= 1 ? flags_8b
+                                                 : flags_empty;
+                flags[k] &= fits;
+                found += flags[k] != flags_empty;
+            }
+        }
+    }
+    if (done < count)
+        found += cs->block(memory + done, count - done, old ? old + done : NULL, cs->uservalue,
+                           flags + done);
+    return found;
 }
 
 /* Testing hook: SCANMEM_SCAN_CHUNK_BYTES sets how many bytes of target memory
@@ -1254,7 +1291,7 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
                 for (size_t done = 0; done < run; done += BLOCK_POSITIONS) {
                     match_flags flags[BLOCK_POSITIONS];
                     size_t count = MIN(run - done, BLOCK_POSITIONS);
-                    size_t found = cs->block(memory + done, count, &s->data[i + done], cs->uservalue, flags);
+                    size_t found = compare_block(cs, memory + done, count, &s->data[i + done], flags);
                     /* without matches, only the elements earlier matches still need */
                     size_t end = done + (found ? count : MIN(count, (size_t) required_extra_bytes_to_record));
                     for (size_t k = done; k < end; k++) {
@@ -1456,6 +1493,10 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
     };
     bool ok = true;
     size_t i;
+    vector_compare_t vector;
+    if (cs.block && vector_compare_init(&vector, vars->options.scan_data_type, match_type,
+                                        uservalue, vars->options.reverse_endianness))
+        cs.vector = &vector;
 
     size_t chunk_elements = check_chunk_elements(total_elements, nthreads);
 
@@ -1656,7 +1697,7 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
         if (cs->block && i + 8 <= got) {
             match_flags flags[BLOCK_POSITIONS];
             size_t run = MIN(MIN(owned, got - 7) - i, BLOCK_POSITIONS);
-            size_t found = cs->block(buf + i, run, NULL, cs->uservalue, flags);
+            size_t found = compare_block(cs, buf + i, run, NULL, flags);
             /* without matches, only the bytes earlier matches still need */
             size_t end = found ? run : MIN(run, (size_t) required_extra_bytes_to_record);
             for (size_t k = 0; k < end; k++) {
@@ -1752,6 +1793,10 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
         cs.prefilter = &prefilter;
     else
         cs.block = get_block_routine(sm_scan_routine);
+    vector_compare_t vector;
+    if (cs.block && vector_compare_init(&vector, vars->options.scan_data_type, match_type,
+                                        uservalue, vars->options.reverse_endianness))
+        cs.vector = &vector;
 
     for (n = vars->regions->head; n; n = n->next) {
         region_t *r = n->data;
