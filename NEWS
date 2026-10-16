@@ -14,9 +14,13 @@ Performance
   inlined over blocks of positions instead of calling it per byte
 * Scan threads also copy the results into place, instead of the main thread
   alone
+* Matches take 3 bytes per byte of target memory instead of 4: a quarter
+  less memory, and less memory traffic for every scan
 
 libscanmem
 ----------
+* old_value_and_match_info (targetmem.h) is packed to 3 bytes, so swath
+  headers and flags in the matches array are no longer aligned
 * The options in globals_t (scanmem.h) gained a `threads` field
 
 Security and stability

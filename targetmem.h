@@ -37,8 +37,11 @@
 
 /* Public structs */
 
-/* Single match struct */
-typedef struct {
+/* Single match struct, 3 bytes: the array holds one per byte of every swath,
+   so padding would cost a quarter of its memory, and of the memory traffic of
+   a scan. Its fields, and the swath headers, are unaligned: use them only
+   through these packed structs, never through pointers to their fields. */
+typedef struct __attribute__((packed)) {
     uint8_t old_value;
     match_flags match_info;
 } old_value_and_match_info;
@@ -49,7 +52,7 @@ typedef struct {
    - the number_of_bytes refers to the number of bytes in the child
      process's memory that are covered, not the number of bytes the struct
      takes up. It's the length of data. */
-typedef struct __attribute__((packed,aligned(sizeof(old_value_and_match_info)))) {
+typedef struct __attribute__((packed)) {
     void *first_byte_in_child;
     size_t number_of_bytes;
     old_value_and_match_info data[0];
@@ -230,7 +233,11 @@ add_element (matches_and_old_values_array **array,
             /* It is more memory-efficient to start a new swath.
              * The equal case is decided for a new swath, so that
              * later we don't needlessly iterate through a bunch
-             * of empty values */
+             * of empty values.
+             * Rescans, which rewrite the array in place, rely on this:
+             * the elements a new swath leaves out take at least the room of
+             * its header, so the array never gets longer than it was up to
+             * the same point. */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 needed_size_for_a_new_swath, &swath);
