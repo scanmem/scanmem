@@ -1670,7 +1670,10 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
  * finish a match crossing its end) the same lookahead the serial loop gives
  * it. */
 #    define MIN_CHUNK_SIZE (1UL << 20)
-#    define MAX_CHUNK_SIZE (16UL << 20)
+/* A thread reads a chunk into its buffer and then scans it: small enough to be
+ * still in the cache (and its chunk array small enough not to add up over many
+ * threads), big enough that per-chunk costs do not show. */
+#    define MAX_CHUNK_SIZE (4UL << 20)
 #    define CHUNK_TAIL (2 * MAX_MATCH_LENGTH)
 
 /* Bytes of target memory per chunk of an initial search with `nthreads`.
