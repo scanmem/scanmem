@@ -710,15 +710,6 @@ match_flags scan_data_type_flags(scan_data_type_t dt)
 /* Block routines */
 /*----------------*/
 
-/* what sm_checkmatches() passes as memlength for old flags of a number */
-static inline size_t number_memlength(match_flags flags)
-{
-    return flags & flags_64b ? 8 : flags & flags_32b ? 4
-                               : flags & flags_16b   ? 2
-                               : flags & flags_8b    ? 1
-                                                     : 0;
-}
-
 /* flatten: inline the routine, and the routines it calls, into the loops.
  * The routine reads a local copy of the `USERVALUES` user values (2 for a
  * range), which the compiler can keep in registers. */
@@ -752,7 +743,7 @@ static inline size_t number_memlength(match_flags flags)
                 for (size_t b = 0; b < sizeof(old_value.bytes); b++)                        \
                     old_value.bytes[b] = old[k + b].old_value;                              \
                 scan_routine_##NAME((const mem64_t *) (memory + k),                         \
-                                    number_memlength(old_value.flags), &old_value, uv, &f); \
+                                    flags_number_width(old_value.flags), &old_value, uv, &f); \
             }                                                                               \
             flags[k] = f;                                                                   \
             found += f != flags_empty;                                                      \

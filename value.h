@@ -72,6 +72,25 @@ typedef enum __attribute__((__packed__)) {
     flags_max = 0xffffU /* ensures we're using an uint16_t */
 } match_flags;
 
+/* The width in bytes of the widest number type in `flags`, or 0 if there is
+ * none: what a scan reads for a number match with these flags. */
+static inline unsigned int flags_number_width(match_flags flags)
+{
+    return flags & flags_64b ? 8 : flags & flags_32b ? 4
+                               : flags & flags_16b   ? 2
+                               : flags & flags_8b    ? 1
+                                                     : 0;
+}
+
+/* The flags of the number types that fit in `length` bytes. */
+static inline match_flags number_flags_within(size_t length)
+{
+    return length >= 8 ? flags_all : length >= 4 ? flags_8b | flags_16b | flags_32b
+                                   : length >= 2 ? flags_8b | flags_16b
+                                   : length >= 1 ? flags_8b
+                                                 : flags_empty;
+}
+
 /* this struct describes matched values */
 typedef struct {
     union {

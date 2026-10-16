@@ -148,10 +148,7 @@ quick_old_value_routine(scan_match_type_t mt, match_flags allowed, uint64_t now,
     uint64_t differ = now ^ before;
 
     /* widths that fit */
-    keep = memlength >= 8 ? flags_all : memlength >= 4 ? flags_8b | flags_16b | flags_32b
-                                    : memlength >= 2   ? flags_8b | flags_16b
-                                    : memlength >= 1   ? flags_8b
-                                                       : flags_empty;
+    keep = number_flags_within(memlength);
     if (mt != MATCHUPDATE) {
         bool want_same = mt == MATCHNOTCHANGED;
         match_flags same = flags_empty;
@@ -182,10 +179,7 @@ quick_old_value_routine(scan_match_type_t mt, match_flags allowed, uint64_t now,
 
     flags &= keep;
     *saveflags |= flags;
-    return flags & flags_64b ? 8 : flags & flags_32b ? 4
-                               : flags & flags_16b   ? 2
-                               : flags & flags_8b    ? 1
-                                                     : 0;
+    return flags_number_width(flags);
 }
 
 /* Prefilter for equality scans: positions where the scan routine can match

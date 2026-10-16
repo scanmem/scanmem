@@ -293,6 +293,23 @@ add_element (matches_and_old_values_array **array,
 /* only at most sizeof(int64_t) bytes will be read,
    if more bytes are needed (e.g. bytearray),
    read them separately (for performance) */
+/* The flags an old value read from `max_bytes` (at most 8) bytes of a swath
+   can keep: all, except the number types too wide for them.
+   NOTE: This does the right thing for VLT because the flags are in
+   the same order as the number representation (for both endians), so
+   that the zeroing of a flag does not change useful bits of `length`. */
+static inline match_flags
+old_value_flags_within (size_t max_bytes)
+{
+    match_flags flags = flags_max;
+
+    if (max_bytes < 8) flags &= ~flags_64b;
+    if (max_bytes < 4) flags &= ~flags_32b;
+    if (max_bytes < 2) flags &= ~flags_16b;
+    if (max_bytes < 1) flags = flags_empty;
+    return flags;
+}
+
 static inline value_t
 data_to_val_aux (const matches_and_old_values_swath *swath,
                  size_t index, size_t swath_length)
@@ -301,18 +318,8 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
     volatile value_t val;
     size_t max_bytes = swath_length - index;
 
-    /* Init all possible flags in a single go.
-     * Also init length to the maximum possible value */
-    val.flags = 0xffffu;
-
-    /* NOTE: This does the right thing for VLT because the flags are in
-     * the same order as the number representation (for both endians), so
-     * that the zeroing of a flag does not change useful bits of `length`. */
     if (max_bytes > 8) max_bytes = 8;
-    if (max_bytes < 8) val.flags &= ~flags_64b;
-    if (max_bytes < 4) val.flags &= ~flags_32b;
-    if (max_bytes < 2) val.flags &= ~flags_16b;
-    if (max_bytes < 1) val.flags = flags_empty;
+    val.flags = old_value_flags_within(max_bytes);
 
     for (i = 0; i < max_bytes; ++i) {
         /* Both uint8_t, no explicit casting needed */

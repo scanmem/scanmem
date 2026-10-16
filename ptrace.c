@@ -379,13 +379,8 @@ static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match
         case STRING:
             return flags;
             break;
-        default: /* numbers */
-                 if (flags & flags_64b) return 8;
-            else if (flags & flags_32b) return 4;
-            else if (flags & flags_16b) return 2;
-            else if (flags & flags_8b ) return 1;
-            else    /* it can't be a variable of any size */ return 0;
-            break;
+        default: /* numbers; 0 if it can't be a variable of any size */
+            return flags_number_width(flags);
     }
 }
 
@@ -594,12 +589,7 @@ static size_t compare_block(const chunked_scan_t *cs, const uint8_t *memory, siz
             found = 0;
             for (size_t k = 0; k < done; k++) {
                 unsigned int length = flags_to_memlength(dt, old[k].match_info);
-                match_flags fits = length >= 8   ? flags_all
-                                   : length >= 4 ? flags_8b | flags_16b | flags_32b
-                                   : length >= 2 ? flags_8b | flags_16b
-                                   : length >= 1 ? flags_8b
-                                                 : flags_empty;
-                flags[k] &= fits;
+                flags[k] &= number_flags_within(length);
                 found += flags[k] != flags_empty;
             }
         }
@@ -1500,10 +1490,7 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
                 /* the old value, as data_to_val_aux() makes it */
                 uint8_t old_bytes[8] = {0};
                 size_t max_bytes = MIN(n - i, 8);
-                match_flags valid = max_bytes >= 8   ? flags_max
-                                    : max_bytes >= 4 ? (match_flags) ~flags_64b
-                                    : max_bytes >= 2 ? (match_flags) ~(flags_64b | flags_32b)
-                                                     : flags_8b;
+                match_flags valid = old_value_flags_within(max_bytes);
                 for (size_t k = 0; k < max_bytes; k++)
                     old_bytes[k] = s->data[i + k].old_value;
                 uint64_t now = 0, before;
