@@ -53,7 +53,10 @@ endif
 
 libscanmem_la_LIBADD = libutil.la
 
-libscanmem_la_LDFLAGS = -version-info 1:0:0 \
+# 2: the options in globals_t grew (threads, memlimit) and the matches array
+# elements are packed. The soname is libscanmem.so.<current - age>, which
+# gui/GameConqueror.py loads by name: change both together.
+libscanmem_la_LDFLAGS = -version-info 2:0:0 \
                         -export-symbols-regex '^sm_'
 
 # scanmem CLI
