@@ -29,6 +29,8 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <sys/mman.h>
 
 #include "value.h"
 #include "show_message.h"
@@ -93,6 +95,24 @@ matches_and_old_values_array *
 delete_in_address_range (matches_and_old_values_array *array,
                          unsigned long *num_matches,
                          void *start_address, void *end_address);
+
+/* Ask for transparent huge pages for a big array: touching its memory for the
+   first time then costs a page fault per 2 MiB instead of per 4 KiB. */
+static inline void
+advise_huge_pages (void *start, size_t length)
+{
+#ifdef MADV_HUGEPAGE
+    if (length >= (4UL << 20)) {
+        /* madvise() wants whole pages */
+        uintptr_t first = ((uintptr_t)start + 4095) & ~(uintptr_t)4095;
+        uintptr_t end = ((uintptr_t)start + length) & ~(uintptr_t)4095;
+        madvise((void *)first, end - first, MADV_HUGEPAGE);
+    }
+#else
+    (void)start;
+    (void)length;
+#endif
+}
 
 /* The following functions are called in the hot scanning path and were moved
    to this header from the .c file so that they could be inlined */

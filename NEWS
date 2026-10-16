@@ -7,6 +7,7 @@ Performance
   serial scans, N for N threads (up to 64), 0 (default) for one per CPU
 * Searching for a value skips memory that cannot hold it (vectorized prefilter)
 * Rescans read the target in batches with process_vm_readv()
+* Reuse scan buffers and ask for transparent huge pages for them
 
 libscanmem
 ----------

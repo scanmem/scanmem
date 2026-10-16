@@ -398,8 +398,8 @@ static inline int bytes_to_record(int required, unsigned int match_length)
  * matches arrays of their own, and the main thread merges those into
  * `vars->matches` in address order. This needs /proc/<pid>/mem: `pread()` on
  * the shared fd works from any thread, while `PTRACE_PEEKDATA` only works from
- * the thread that attached. The chunked scans also skip and read faster than
- * the serial loops; the serial loops stay as the reference that
+ * the thread that attached. The chunked scans also skip, read and allocate
+ * faster than the serial loops; the serial loops stay as the reference that
  * test/sm_test.sh compares them with.
  *
  * The merged array is exactly the one the serial loop builds. A match that
@@ -437,6 +437,10 @@ struct chunked_scan {
     unsigned long scanned_units; /* atomic */
     const prefilter_t *prefilter; /* initial search: positions worth testing */
     bool no_vm_readv;             /* process_vm_readv() is not available */
+    size_t chunk_array_bytes;     /* size of every chunk's matches array */
+    /* chunk arrays to reuse, guarded by `lock` */
+    matches_and_old_values_array *pool[3 * MAX_SCAN_THREADS + 2];
+    unsigned pool_size;
     unsigned num_threads; /* 0 if none started: the main thread scans */
     pthread_t threads[MAX_SCAN_THREADS];
     size_t next_chunk;    /* next chunk a worker should take */
@@ -528,14 +532,15 @@ static void *scan_worker(void *arg)
 /* Start up to `nthreads` workers. With none, the main thread scans. */
 static void start_scan_threads(chunked_scan_t *cs, unsigned nthreads)
 {
+    pthread_mutex_init(&cs->lock, NULL);
+    pthread_cond_init(&cs->chunk_done, NULL);
+    pthread_cond_init(&cs->window_moved, NULL);
+
     cs->num_threads = 0;
     nthreads = MIN(nthreads, cs->num_chunks);
     if (nthreads < 2)
         return;
 
-    pthread_mutex_init(&cs->lock, NULL);
-    pthread_cond_init(&cs->chunk_done, NULL);
-    pthread_cond_init(&cs->window_moved, NULL);
     /* merging chunk j can wait for chunk j + 1, so this must be at least 2 */
     cs->window = 2 * nthreads;
 
@@ -602,23 +607,71 @@ static void stop_scan_threads(chunked_scan_t *cs)
     pthread_mutex_unlock(&cs->lock);
     while (cs->num_threads > 0)
         pthread_join(cs->threads[--cs->num_threads], NULL);
+}
+
+/* A matches array a chunk scan can fill without add_element() reallocating.
+ * They are reused rather than freed: every page of fresh memory costs a page
+ * fault, and the chunk arrays of a dense scan add up to several times its
+ * result. */
+static matches_and_old_values_array *get_chunk_array(chunked_scan_t *cs)
+{
+    matches_and_old_values_array *array = NULL;
+
+    pthread_mutex_lock(&cs->lock);
+    if (cs->pool_size)
+        array = cs->pool[--cs->pool_size];
+    pthread_mutex_unlock(&cs->lock);
+
+    if (!array) {
+        if (!(array = malloc(cs->chunk_array_bytes)))
+            return NULL;
+        advise_huge_pages(array, cs->chunk_array_bytes);
+    }
+    array->bytes_allocated = cs->chunk_array_bytes;
+    array->max_needed_bytes = cs->chunk_array_bytes;
+    array->swaths[0].first_byte_in_child = NULL;
+    array->swaths[0].number_of_bytes = 0;
+    return array;
+}
+
+static void put_chunk_array(chunked_scan_t *cs, matches_and_old_values_array *array)
+{
+    pthread_mutex_lock(&cs->lock);
+    if (array && cs->pool_size < sizeof(cs->pool) / sizeof(cs->pool[0])) {
+        cs->pool[cs->pool_size++] = array;
+        array = NULL;
+    }
+    pthread_mutex_unlock(&cs->lock);
+    free(array);
+}
+
+/* Stop the workers and free what the chunked scan allocated. */
+static void end_chunked_scan(chunked_scan_t *cs)
+{
+    stop_scan_threads(cs);
+    while (cs->pool_size)
+        free(cs->pool[--cs->pool_size]);
     pthread_mutex_destroy(&cs->lock);
     pthread_cond_destroy(&cs->chunk_done);
     pthread_cond_destroy(&cs->window_moved);
+    free(cs->states);
+    free(cs->buf);
 }
 
-/* A matches array a chunk scan can fill without add_element() reallocating. */
-static matches_and_old_values_array *allocate_chunk_array(size_t max_bytes)
+/* add_element() for a chunk array, which never needs to grow, with the
+ * common case inline: the byte right after the swath's last one. */
+static inline matches_and_old_values_swath *
+append_element(matches_and_old_values_array **array, matches_and_old_values_swath *swath,
+               char *address, uint8_t byte, match_flags flags)
 {
-    matches_and_old_values_array *array = malloc(max_bytes);
-
-    if (array) {
-        array->bytes_allocated = max_bytes;
-        array->max_needed_bytes = max_bytes;
-        array->swaths[0].first_byte_in_child = NULL;
-        array->swaths[0].number_of_bytes = 0;
+    if (LIKELY(swath->number_of_bytes) &&
+        address == (char *) swath->first_byte_in_child + swath->number_of_bytes) {
+        old_value_and_match_info *element = &swath->data[swath->number_of_bytes++];
+        element->old_value = byte;
+        element->match_info = flags;
+        return swath;
     }
-    return array;
+    return add_element(array, swath, address, byte, flags);
 }
 
 static void null_terminate_chunk(matches_and_old_values_swath *swath)
@@ -921,9 +974,7 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
     /* Locals, not fields of `c`: neighbouring chunks share cache lines. */
     unsigned long num_matches = 0;
 
-    matches_and_old_values_array *matches = allocate_chunk_array(sizeof(matches_and_old_values_array) + c->input_bytes +
-                                                                 2 * sizeof(matches_and_old_values_swath) +
-                                                                 MAX_MATCH_LENGTH * sizeof(old_value_and_match_info));
+    matches_and_old_values_array *matches = get_chunk_array(cs);
     if (!(c->matches = matches))
         return CHUNK_FAILED;
     matches_and_old_values_swath *writing_swath_index = matches->swaths;
@@ -986,8 +1037,8 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
         }
 
         if (match_length > 0) {
-            writing_swath_index = add_element(&matches, writing_swath_index, address,
-                                              memory_ptr[0], checkflags);
+            writing_swath_index = append_element(&matches, writing_swath_index, address,
+                                                 memory_ptr[0], checkflags);
             if (finishing)
                 c->tail_matches++; /* the next chunk's, which counts them too */
             else
@@ -995,8 +1046,8 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             required_extra_bytes_to_record =
                 bytes_to_record(required_extra_bytes_to_record, match_length);
         } else if (required_extra_bytes_to_record) {
-            writing_swath_index = add_element(&matches, writing_swath_index, address,
-                                              memory_ptr[0], flags_empty);
+            writing_swath_index = append_element(&matches, writing_swath_index, address,
+                                                 memory_ptr[0], flags_empty);
             --required_extra_bytes_to_record;
         }
 
@@ -1096,6 +1147,15 @@ static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue
         return true;
     }
 
+    /* room for a chunk's result, which never outgrows its input, plus a match
+     * finished past its end */
+    for (i = 0; i < cs.num_chunks; i++)
+        if (chunks[i].input_bytes > cs.chunk_array_bytes)
+            cs.chunk_array_bytes = chunks[i].input_bytes;
+    cs.chunk_array_bytes += sizeof(matches_and_old_values_array) +
+                            2 * sizeof(matches_and_old_values_swath) +
+                            MAX_MATCH_LENGTH * sizeof(old_value_and_match_info);
+
     start_scan_threads(&cs, nthreads);
 
     /* The first chunk took a copy of this header. */
@@ -1131,7 +1191,7 @@ static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue
                 vars->num_matches += chunks[i].tail_matches;
             merged_elements += chunks[i].num_elements;
         }
-        free(chunks[i].matches);
+        put_chunk_array(&cs, chunks[i].matches);
         chunks[i].matches = NULL;
         if (last)
             break;
@@ -1144,10 +1204,9 @@ static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue
 
     stop_scan_threads(&cs);
     for (i = 0; i < cs.num_chunks; i++)
-        free(chunks[i].matches);
+        put_chunk_array(&cs, chunks[i].matches);
     free(chunks);
-    free(cs.states);
-    free(cs.buf);
+    end_chunked_scan(&cs);
     return ok;
 }
 
@@ -1169,6 +1228,13 @@ static size_t search_chunk_size(unsigned long total_scan_bytes, unsigned nthread
         chunk_size = MIN_CHUNK_SIZE;
     chunk_size = MIN(chunk_size, MAX_CHUNK_SIZE);
     return chunk_size_for_tests(chunk_size, 64, MAX_CHUNK_SIZE);
+}
+
+/* room for a byte per element, so that add_element() never reallocates */
+static size_t search_chunk_array_bytes(size_t chunk_size)
+{
+    return sizeof(matches_and_old_values_array) + 2 * sizeof(matches_and_old_values_swath) +
+           (chunk_size + CHUNK_TAIL) * sizeof(old_value_and_match_info);
 }
 
 typedef struct {
@@ -1201,11 +1267,7 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
     if (got < want)
         c->readable_end = c->start + got;
 
-    /* room for every byte read, so that add_element() never reallocates */
-    matches_and_old_values_array *matches =
-        allocate_chunk_array(sizeof(matches_and_old_values_array) +
-                             2 * sizeof(matches_and_old_values_swath) +
-                             got * sizeof(old_value_and_match_info));
+    matches_and_old_values_array *matches = get_chunk_array(cs);
     if (!(c->matches = matches))
         return CHUNK_FAILED;
     matches_and_old_values_swath *writing_swath_index = matches->swaths;
@@ -1228,14 +1290,13 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
         unsigned int match_length = (*sm_scan_routine)(memory_ptr, got - i, NULL,
                                                        cs->uservalue, &checkflags);
         if (UNLIKELY(match_length > 0)) {
-            writing_swath_index = add_element(&matches, writing_swath_index,
-                                              c->start + i, get_u8b(memory_ptr), checkflags);
+            writing_swath_index = append_element(&matches, writing_swath_index,
+                                                 c->start + i, get_u8b(memory_ptr), checkflags);
             ++num_matches;
-            required_extra_bytes_to_record =
-                bytes_to_record(required_extra_bytes_to_record, match_length);
+            required_extra_bytes_to_record = bytes_to_record(required_extra_bytes_to_record, match_length);
         } else if (required_extra_bytes_to_record) {
-            writing_swath_index = add_element(&matches, writing_swath_index,
-                                              c->start + i, get_u8b(memory_ptr), flags_empty);
+            writing_swath_index = append_element(&matches, writing_swath_index,
+                                                 c->start + i, get_u8b(memory_ptr), flags_empty);
             --required_extra_bytes_to_record;
         }
     }
@@ -1292,6 +1353,7 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
 
     size_t chunk_size = search_chunk_size(total_scan_bytes, nthreads);
     cs.buf_size = chunk_size + CHUNK_TAIL;
+    cs.chunk_array_bytes = search_chunk_array_bytes(chunk_size);
     if (prefilter_init(&prefilter, vars->options.scan_data_type, match_type, uservalue,
                        vars->options.reverse_endianness))
         cs.prefilter = &prefilter;
@@ -1325,6 +1387,25 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
             c->start = (char *) r->start + offset;
             c->size = MIN(chunk_size, r->size - offset);
             c->region_left = r->size - offset;
+        }
+    }
+
+    /* Reserve the most room the result can take up front: growing the array
+     * while merging moves it, and touches its memory a small page at a time.
+     * Untouched memory costs nothing, and growing still works if this fails.
+     * Not when that is more than the machine's RAM: huge sparse mappings in
+     * the target (such as ASan's shadow memory) can make it terabytes, and an
+     * ASan build of scanmem aborts on such a request instead of failing it. */
+    long phys_pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
+    if (phys_pages > 0 && page_size > 0 &&
+        vars->matches->max_needed_bytes / page_size <= (unsigned long) phys_pages) {
+        size_t writing_offset = (char *) *writing_swath_index - (char *) vars->matches;
+        matches_and_old_values_array *whole = realloc(vars->matches, vars->matches->max_needed_bytes);
+        if (whole) {
+            whole->bytes_allocated = whole->max_needed_bytes;
+            advise_huge_pages(whole, whole->bytes_allocated);
+            *writing_swath_index = (matches_and_old_values_swath *) ((char *) whole + writing_offset);
+            vars->matches = whole;
         }
     }
 
@@ -1383,17 +1464,16 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
         if (c->index_in_region + 1 == c->chunks_in_region)
             show_user("ok\n");
 
-        free(c->matches);
+        put_chunk_array(&cs, c->matches);
         c->matches = NULL;
         chunk_merged(&cs, i);
     }
 
     stop_scan_threads(&cs);
     for (i = 0; i < cs.num_chunks; i++)
-        free(chunks[i].matches);
+        put_chunk_array(&cs, chunks[i].matches);
     free(chunks);
-    free(cs.states);
-    free(cs.buf);
+    end_chunked_scan(&cs);
     return ok;
 }
 #endif /* HAVE_PROCMEM */
