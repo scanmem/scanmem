@@ -10,6 +10,8 @@ Performance
 * Reuse scan buffers and ask for transparent huge pages for them
 * Snapshots record memory without a scan routine call per byte
 * Rescans with =, != and update compare numbers without a call per type
+* Other number comparisons (<, >, ranges, +, -, ...) run the scan routine
+  inlined over blocks of positions instead of calling it per byte
 
 libscanmem
 ----------

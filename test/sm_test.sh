@@ -62,6 +62,11 @@ test_threads "option scan_data_type bytearray;?? 02 03 ?? 05"
 test_threads "option scan_data_type int;snapshot;=;1"
 test_threads "option scan_data_type int8;snapshot;!= 0;> 9"
 test_threads "option scan_data_type int;0;update;= 0"
+# comparisons that run a scan routine over blocks of positions
+test_threads "option scan_data_type int;> 1000000;< 2000000000"
+test_threads "option scan_data_type number;-1000..1000000;!= 0"
+test_threads "option endianness 2;option scan_data_type number;> 5;1..2000000000"
+test_threads "option scan_data_type int16;snapshot;< 30000;> -5;+"
 test_threads "option scan_data_type bytearray;${huge_bytearray};${huge_bytearray}"
 # split points inside a match, followed by bytes that do not match: when the
 # recorded bytes come out wrong, the second rescan drops matches

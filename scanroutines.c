@@ -706,6 +706,113 @@ match_flags scan_data_type_flags(scan_data_type_t dt)
     return possible_flags_for_scan_data_type[dt];
 }
 
+/*----------------*/
+/* Block routines */
+/*----------------*/
+
+/* what sm_checkmatches() passes as memlength for old flags of a number */
+static inline size_t number_memlength(match_flags flags)
+{
+    return flags & flags_64b ? 8 : flags & flags_32b ? 4
+                               : flags & flags_16b   ? 2
+                               : flags & flags_8b    ? 1
+                                                     : 0;
+}
+
+/* flatten: inline the routine, and the routines it calls, into the loops.
+ * The routine reads a local copy of the `USERVALUES` user values (2 for a
+ * range), which the compiler can keep in registers. */
+#define DEFINE_BLOCK_ROUTINE(NAME, USERVALUES)                                              \
+    static size_t __attribute__((flatten))                                                  \
+    block_routine_##NAME(const uint8_t *memory, size_t count,                               \
+                         const old_value_and_match_info *old,                               \
+                         const uservalue_t *user_value, match_flags *restrict flags)        \
+    {                                                                                       \
+        uservalue_t values[USERVALUES];                                                     \
+        const uservalue_t *uv = NULL;                                                       \
+        size_t k, found = 0;                                                                \
+        if (user_value) {                                                                   \
+            memcpy(values, user_value, sizeof(values));                                     \
+            uv = values;                                                                    \
+        }                                                                                   \
+        if (!old) {                                                                         \
+            for (k = 0; k < count; k++) {                                                   \
+                match_flags f = flags_empty;                                                \
+                scan_routine_##NAME((const mem64_t *) (memory + k), 8, NULL, uv, &f);       \
+                flags[k] = f;                                                               \
+                found += f != flags_empty;                                                  \
+            }                                                                               \
+            return found;                                                                   \
+        }                                                                                   \
+        for (k = 0; k < count; k++) {                                                       \
+            value_t old_value;                                                              \
+            match_flags f = flags_empty;                                                    \
+            old_value.flags = old[k].match_info;                                            \
+            if (old_value.flags != flags_empty) {                                           \
+                for (size_t b = 0; b < sizeof(old_value.bytes); b++)                        \
+                    old_value.bytes[b] = old[k + b].old_value;                              \
+                scan_routine_##NAME((const mem64_t *) (memory + k),                         \
+                                    number_memlength(old_value.flags), &old_value, uv, &f); \
+            }                                                                               \
+            flags[k] = f;                                                                   \
+            found += f != flags_empty;                                                      \
+        }                                                                                   \
+        return found;                                                                       \
+    }
+
+/* clang-format does not understand these lists */
+// clang-format off
+#define NUMBER_ROUTINES(X, MATCH, USERVALUES) \
+    X(INTEGER8_##MATCH, USERVALUES)           \
+    X(INTEGER16_##MATCH, USERVALUES)          \
+    X(INTEGER32_##MATCH, USERVALUES)          \
+    X(INTEGER64_##MATCH, USERVALUES)          \
+    X(FLOAT32_##MATCH, USERVALUES)            \
+    X(FLOAT64_##MATCH, USERVALUES)            \
+    X(ANYINTEGER_##MATCH, USERVALUES)         \
+    X(ANYFLOAT_##MATCH, USERVALUES)           \
+    X(ANYNUMBER_##MATCH, USERVALUES)
+
+#define NUMBER_ROUTINES_REVENDIAN(X, MATCH, USERVALUES) \
+    X(INTEGER16_##MATCH##_REVENDIAN, USERVALUES)        \
+    X(INTEGER32_##MATCH##_REVENDIAN, USERVALUES)        \
+    X(INTEGER64_##MATCH##_REVENDIAN, USERVALUES)        \
+    X(FLOAT32_##MATCH##_REVENDIAN, USERVALUES)          \
+    X(FLOAT64_##MATCH##_REVENDIAN, USERVALUES)          \
+    X(ANYINTEGER_##MATCH##_REVENDIAN, USERVALUES)       \
+    X(ANYFLOAT_##MATCH##_REVENDIAN, USERVALUES)         \
+    X(ANYNUMBER_##MATCH##_REVENDIAN, USERVALUES)
+
+/* every routine that has a block form */
+#define BLOCK_ROUTINES(X)                           \
+    NUMBER_ROUTINES(X, EQUALTO, 1)                  \
+    NUMBER_ROUTINES_REVENDIAN(X, EQUALTO, 1)        \
+    NUMBER_ROUTINES(X, NOTEQUALTO, 1)               \
+    NUMBER_ROUTINES_REVENDIAN(X, NOTEQUALTO, 1)     \
+    NUMBER_ROUTINES(X, GREATERTHAN, 1)              \
+    NUMBER_ROUTINES_REVENDIAN(X, GREATERTHAN, 1)    \
+    NUMBER_ROUTINES(X, LESSTHAN, 1)                 \
+    NUMBER_ROUTINES_REVENDIAN(X, LESSTHAN, 1)       \
+    NUMBER_ROUTINES(X, RANGE, 2)                    \
+    NUMBER_ROUTINES_REVENDIAN(X, RANGE, 2)          \
+    NUMBER_ROUTINES(X, INCREASED, 1)                \
+    NUMBER_ROUTINES(X, DECREASED, 1)                \
+    NUMBER_ROUTINES(X, INCREASEDBY, 1)              \
+    NUMBER_ROUTINES(X, DECREASEDBY, 1)
+// clang-format on
+
+BLOCK_ROUTINES(DEFINE_BLOCK_ROUTINE)
+
+#define CHOOSE_BLOCK_ROUTINE(NAME, USERVALUES) \
+    if (routine == &scan_routine_##NAME)       \
+        return &block_routine_##NAME;
+
+block_routine_t get_block_routine(scan_routine_t routine)
+{
+    BLOCK_ROUTINES(CHOOSE_BLOCK_ROUTINE)
+    return NULL;
+}
+
 /*-----------*/
 /* Prefilter */
 /*-----------*/

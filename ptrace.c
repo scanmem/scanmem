@@ -414,6 +414,8 @@ static inline int bytes_to_record(int required, unsigned int match_length)
 #    define MAX_MATCH_LENGTH (1UL << 16)
 /* how often a chunk reports progress and checks the stop flag */
 #    define PROGRESS_STEP (1UL << 20)
+/* positions a block routine call handles at most */
+#    define BLOCK_POSITIONS 4096
 
 typedef enum {
     CHUNK_PENDING,
@@ -437,6 +439,7 @@ struct chunked_scan {
     unsigned long scanned_units; /* atomic */
     scan_match_type_t match_type;
     const prefilter_t *prefilter; /* initial search: positions worth testing */
+    block_routine_t block;        /* sm_scan_routine for runs of positions, or NULL */
     bool no_vm_readv;             /* process_vm_readv() is not available */
     size_t chunk_array_bytes;     /* size of every chunk's matches array */
     /* chunk arrays to reuse, guarded by `lock` */
@@ -1020,11 +1023,9 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             read_batch(cs, batch);
         }
 
-#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
         /* A run of elements of this swath with all their bytes read and
-         * 8 old bytes after them: keep the old bytes in a sliding register
-         * and load the new ones 8 at a time. */
-        if (quick && !finishing && i + 8 <= n) {
+         * 8 old bytes after them: no call per element. */
+        if ((quick || cs->block) && !finishing && i + 8 <= n) {
             char *address = first + i;
             read_range_t *r = batch_range(batch, address);
             size_t offset = address - r->start;
@@ -1034,6 +1035,37 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
                 run = MIN(run, MIN(left, batch_left));
                 run = MIN(run, PROGRESS_STEP);
             }
+            if (run > 0 && cs->block) {
+                const uint8_t *memory = batch->data + r->offset + offset;
+                for (size_t done = 0; done < run; done += BLOCK_POSITIONS) {
+                    match_flags flags[BLOCK_POSITIONS];
+                    size_t count = MIN(run - done, BLOCK_POSITIONS);
+                    size_t found = cs->block(memory + done, count, &s->data[i + done], cs->uservalue, flags);
+                    /* without matches, only the elements earlier matches still need */
+                    size_t end = done + (found ? count : MIN(count, (size_t) required_extra_bytes_to_record));
+                    for (size_t k = done; k < end; k++) {
+                        match_flags checkflags = flags[k - done];
+                        if (checkflags != flags_empty) {
+                            writing_swath_index = append_element(&matches, writing_swath_index,
+                                                                 address + k, memory[k], checkflags);
+                            ++num_matches;
+                            required_extra_bytes_to_record = bytes_to_record(
+                                required_extra_bytes_to_record, flags_to_memlength(scan_data_type, checkflags));
+                        } else if (required_extra_bytes_to_record) {
+                            writing_swath_index = append_element(&matches, writing_swath_index,
+                                                                 address + k, memory[k], flags_empty);
+                            --required_extra_bytes_to_record;
+                        }
+                    }
+                }
+                i += run;
+                left -= run;
+                batch_left -= run;
+                continue;
+            }
+#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            /* keep the old bytes in a sliding register and load the new ones
+             * 8 at a time */
             if (run > 0) {
                 const uint8_t *memory = batch->data + r->offset + offset;
                 uint64_t before = 0;
@@ -1068,8 +1100,8 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
                 batch_left -= run;
                 continue;
             }
-        }
 #    endif
+        }
         --batch_left;
 
         match_flags old_flags = s->data[i].match_info;
@@ -1203,6 +1235,7 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
         .uservalue = uservalue,
         .match_type = match_type,
         .scan = check_chunk,
+        .block = get_block_routine(sm_scan_routine),
         .buf_size = sizeof(read_batch_t),
         .total_units = total_elements,
     };
@@ -1388,6 +1421,30 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             reported = i;
         }
 
+        /* positions with 8 bytes after them: a run of them in one call */
+        if (cs->block && i + 8 <= got) {
+            match_flags flags[BLOCK_POSITIONS];
+            size_t run = MIN(MIN(owned, got - 7) - i, BLOCK_POSITIONS);
+            size_t found = cs->block(buf + i, run, NULL, cs->uservalue, flags);
+            /* without matches, only the bytes earlier matches still need */
+            size_t end = found ? run : MIN(run, (size_t) required_extra_bytes_to_record);
+            for (size_t k = 0; k < end; k++) {
+                if (flags[k] != flags_empty) {
+                    writing_swath_index = append_element(&matches, writing_swath_index,
+                                                         c->start + i + k, buf[i + k], flags[k]);
+                    ++num_matches;
+                    required_extra_bytes_to_record = bytes_to_record(
+                        required_extra_bytes_to_record, flags_to_memlength(cs->vars->options.scan_data_type, flags[k]));
+                } else if (required_extra_bytes_to_record) {
+                    writing_swath_index = append_element(&matches, writing_swath_index,
+                                                         c->start + i + k, buf[i + k], flags_empty);
+                    --required_extra_bytes_to_record;
+                }
+            }
+            i += run - 1;
+            continue;
+        }
+
         const mem64_t *memory_ptr = (mem64_t *) (buf + i);
         match_flags checkflags = flags_empty;
         unsigned int match_length = (*sm_scan_routine)(memory_ptr, got - i, NULL,
@@ -1461,6 +1518,8 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
     if (prefilter_init(&prefilter, vars->options.scan_data_type, match_type, uservalue,
                        vars->options.reverse_endianness))
         cs.prefilter = &prefilter;
+    else
+        cs.block = get_block_routine(sm_scan_routine);
 
     for (n = vars->regions->head; n; n = n->next) {
         region_t *r = n->data;

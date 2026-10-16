@@ -26,6 +26,7 @@
 #include <stdbool.h>
 
 #include "value.h"
+#include "targetmem.h"
 
 typedef enum {
     ANYNUMBER,              /* ANYINTEGER or ANYFLOAT */
@@ -80,6 +81,25 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, mat
 
 /* The flags the routines for `dt` look at. */
 match_flags scan_data_type_flags(scan_data_type_t dt);
+
+/* A number scan routine run over `count` consecutive positions, inlined
+ * instead of called for each. `flags[k]` gets what the routine sets for the
+ * value at `memory + k`; the match length is the width of the widest flag.
+ * `memory` must hold count + 7 bytes.
+ * Without `old`, this is an initial search: the routine gets memlength 8, as
+ * for any position with at least 8 bytes left in its region.
+ * With `old`, the count + 7 elements of a swath starting at the address of
+ * `memory`, this is a rescan: elements with flags are compared with the old
+ * value data_to_val_aux() makes of them, with the memlength sm_checkmatches()
+ * passes (the length of the widest old flag), and the others get no flags.
+ * Returns how many positions got flags. */
+typedef size_t (*block_routine_t)(const uint8_t *memory, size_t count,
+                                  const old_value_and_match_info *old,
+                                  const uservalue_t *user_value, match_flags *flags);
+
+/* The block form of `routine`, or NULL if it has none. Only the number
+ * routines that compare with a value or with the old value have one. */
+block_routine_t get_block_routine(scan_routine_t routine);
 
 /* What the CHANGED, NOTCHANGED and UPDATE routines of the number types
  * compute, without a call per type and width: integers of a width are
