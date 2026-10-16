@@ -29,3 +29,12 @@ GUI
 ---
 * Memory viewer display type selector (#448)
 * Georgian translation (#426)
+
+Tests and CI
+------------
+* test/scan_tests.sh asserts exact match counts: memfake plants a value a
+  known number of times and rewrites only those on SIGUSR1 (from #461)
+* memfake keeps its planted values: clang dropped them as dead stores, so
+  the target never held them (from #462)
+* CI on Ubuntu 24.04 with gcc and clang, and a job with ASan, UBSan and
+  float-cast-overflow (from #461)
