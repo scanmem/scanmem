@@ -116,7 +116,12 @@ FILE *get_pager(FILE *fallback_output)
      * we write here to ensure we will always
      * have something to read() into pgcmdfail.
      */
-    write(pgpipe[1], "", 1);
+    if (write(pgpipe[1], "", 1) != 1) {
+        show_error("get_pager(): write() error `%s`. falling back to normal output\n", strerror(errno));
+        close(pgpipe[0]);
+        close(pgpipe[1]);
+        return fallback_output;
+    }
 
     /* XXX: is $PATH modified prior? */
 retry:
@@ -134,10 +139,17 @@ retry:
          * the return value of the failed execvp().
          */
         char nullbuf;
+        /* execvp only returns on failure. Keep its errno now, the pipe calls
+           below would otherwise overwrite it and the parent would be told the
+           wrong thing. */
+        int execerr = errno;
+        ssize_t n;
         /* read() to empty pipe */
-        read(pgpipe[0], &nullbuf, 1);
-        write(pgpipe[1], "1", 2);
-        exit(errno);
+        n = read(pgpipe[0], &nullbuf, 1);
+        (void)n;
+        n = write(pgpipe[1], "1", 2);
+        (void)n;
+        exit(execerr);
         /* NOTREACHED */
     default:
         if (waitpid(pgpid, &pgret, 0) == -1) {
