@@ -8,6 +8,8 @@ Performance
 * Searching for a value skips memory that cannot hold it (vectorized prefilter)
 * Rescans read the target in batches with process_vm_readv()
 * Reuse scan buffers and ask for transparent huge pages for them
+* Snapshots record memory without a scan routine call per byte
+* Rescans with =, != and update compare numbers without a call per type
 
 libscanmem
 ----------

@@ -701,6 +701,11 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
     return (sm_scan_routine != NULL);
 }
 
+match_flags scan_data_type_flags(scan_data_type_t dt)
+{
+    return possible_flags_for_scan_data_type[dt];
+}
+
 /*-----------*/
 /* Prefilter */
 /*-----------*/

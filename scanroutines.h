@@ -78,6 +78,73 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
 
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, match_flags uflags, bool reverse_endianness);
 
+/* The flags the routines for `dt` look at. */
+match_flags scan_data_type_flags(scan_data_type_t dt);
+
+/* What the CHANGED, NOTCHANGED and UPDATE routines of the number types
+ * compute, without a call per type and width: integers of a width are
+ * unchanged exactly when their bytes are, and floats are compared as floats.
+ * Takes what sm_checkmatches() passes those routines: the first 8 bytes of
+ * memory in `now`, of which `memlength` are valid, and the old value's bytes
+ * and flags (as data_to_val_aux() makes them). `allowed` is
+ * scan_data_type_flags() of the scan data type. Bytes past `memlength` or past
+ * the old value's flags do not change the result. */
+/* the first `n` bytes of a uint64_t in memory, as a mask (n < 8) */
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+#    define FIRST_BYTES_MASK(n) ((UINT64_C(1) << (8 * (n))) - 1)
+#else
+#    define FIRST_BYTES_MASK(n) (~(UINT64_MAX >> (8 * (n))))
+#endif
+
+static inline __attribute__((always_inline)) unsigned int
+quick_old_value_routine(scan_match_type_t mt, match_flags allowed, uint64_t now, uint64_t before,
+                        size_t memlength, match_flags old_flags, match_flags *saveflags)
+{
+    match_flags flags = old_flags & allowed;
+    match_flags keep;
+    uint64_t differ = now ^ before;
+
+    /* widths that fit */
+    keep = memlength >= 8 ? flags_all : memlength >= 4 ? flags_8b | flags_16b | flags_32b
+                                    : memlength >= 2   ? flags_8b | flags_16b
+                                    : memlength >= 1   ? flags_8b
+                                                       : flags_empty;
+    if (mt != MATCHUPDATE) {
+        bool want_same = mt == MATCHNOTCHANGED;
+        match_flags same = flags_empty;
+        if (((differ & FIRST_BYTES_MASK(1)) == 0) == want_same)
+            same |= flags_i8b;
+        if (((differ & FIRST_BYTES_MASK(2)) == 0) == want_same)
+            same |= flags_i16b;
+        if (((differ & FIRST_BYTES_MASK(4)) == 0) == want_same)
+            same |= flags_i32b;
+        if ((differ == 0) == want_same)
+            same |= flags_i64b;
+        if (flags & flag_f32b && memlength >= 4) {
+            float a, b;
+            memcpy(&a, &now, sizeof(a));
+            memcpy(&b, &before, sizeof(b));
+            if ((a == b) == want_same)
+                same |= flag_f32b;
+        }
+        if (flags & flag_f64b && memlength >= 8) {
+            double a, b;
+            memcpy(&a, &now, sizeof(a));
+            memcpy(&b, &before, sizeof(b));
+            if ((a == b) == want_same)
+                same |= flag_f64b;
+        }
+        keep &= same;
+    }
+
+    flags &= keep;
+    *saveflags |= flags;
+    return flags & flags_64b ? 8 : flags & flags_32b ? 4
+                               : flags & flags_16b   ? 2
+                               : flags & flags_8b    ? 1
+                                                     : 0;
+}
+
 /* Prefilter for equality scans: positions where the scan routine can match
  * hold one of a few known byte patterns, so a vectorized search for a rare one
  * or two byte window of each finds every candidate, and the routine only runs

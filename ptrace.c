@@ -435,6 +435,7 @@ struct chunked_scan {
     uint8_t *buf;                /* the main thread's scratch buffer */
     unsigned long total_units;   /* for progress: bytes or matches-array elements */
     unsigned long scanned_units; /* atomic */
+    scan_match_type_t match_type;
     const prefilter_t *prefilter; /* initial search: positions worth testing */
     bool no_vm_readv;             /* process_vm_readv() is not available */
     size_t chunk_array_bytes;     /* size of every chunk's matches array */
@@ -973,6 +974,11 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
     int pending = -1; /* once finishing: elements the matches before the end still need */
     /* Locals, not fields of `c`: neighbouring chunks share cache lines. */
     unsigned long num_matches = 0;
+    /* =, != and update on numbers need no call per type and width */
+    bool quick = scan_data_type != BYTEARRAY && scan_data_type != STRING &&
+                 (cs->match_type == MATCHNOTCHANGED || cs->match_type == MATCHCHANGED ||
+                  cs->match_type == MATCHUPDATE);
+    match_flags allowed = scan_data_type_flags(scan_data_type);
 
     matches_and_old_values_array *matches = get_chunk_array(cs);
     if (!(c->matches = matches))
@@ -1013,6 +1019,57 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             batch_left = plan_batch(batch, scan_data_type, s, first, n, i, left);
             read_batch(cs, batch);
         }
+
+#    if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        /* A run of elements of this swath with all their bytes read and
+         * 8 old bytes after them: keep the old bytes in a sliding register
+         * and load the new ones 8 at a time. */
+        if (quick && !finishing && i + 8 <= n) {
+            char *address = first + i;
+            read_range_t *r = batch_range(batch, address);
+            size_t offset = address - r->start;
+            size_t run = 0;
+            if (offset + 8 <= r->got) {
+                run = MIN(r->got - offset - 7, n - i - 7);
+                run = MIN(run, MIN(left, batch_left));
+                run = MIN(run, PROGRESS_STEP);
+            }
+            if (run > 0) {
+                const uint8_t *memory = batch->data + r->offset + offset;
+                uint64_t before = 0;
+                for (size_t k = 0; k < 8; k++)
+                    before |= (uint64_t) s->data[i + k].old_value << (8 * k);
+                for (size_t k = 0; k < run; k++) {
+                    match_flags old_flags = s->data[i + k].match_info;
+                    match_flags checkflags = flags_empty;
+                    unsigned int match_length = 0;
+                    if (old_flags != flags_empty) {
+                        uint64_t now;
+                        memcpy(&now, memory + k, sizeof(now));
+                        match_length = quick_old_value_routine(
+                            cs->match_type, allowed, now, before,
+                            flags_to_memlength(scan_data_type, old_flags), old_flags, &checkflags);
+                    }
+                    if (match_length > 0) {
+                        writing_swath_index = append_element(&matches, writing_swath_index,
+                                                             address + k, memory[k], checkflags);
+                        ++num_matches;
+                        required_extra_bytes_to_record = bytes_to_record(required_extra_bytes_to_record, match_length);
+                    } else if (required_extra_bytes_to_record) {
+                        writing_swath_index = append_element(&matches, writing_swath_index,
+                                                             address + k, memory[k], flags_empty);
+                        --required_extra_bytes_to_record;
+                    }
+                    if (k + 1 < run)
+                        before = (before >> 8) | (uint64_t) s->data[i + k + 8].old_value << 56;
+                }
+                i += run;
+                left -= run;
+                batch_left -= run;
+                continue;
+            }
+        }
+#    endif
         --batch_left;
 
         match_flags old_flags = s->data[i].match_info;
@@ -1028,6 +1085,22 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             if (memlength == 0) {
                 /* If we can't look at the data here, just abort the whole recording, something bad happened */
                 required_extra_bytes_to_record = 0;
+            } else if (old_flags != flags_empty && quick) {
+                /* the old value, as data_to_val_aux() makes it */
+                uint8_t old_bytes[8] = {0};
+                size_t max_bytes = MIN(n - i, 8);
+                match_flags valid = max_bytes >= 8   ? flags_max
+                                    : max_bytes >= 4 ? (match_flags) ~flags_64b
+                                    : max_bytes >= 2 ? (match_flags) ~(flags_64b | flags_32b)
+                                                     : flags_8b;
+                for (size_t k = 0; k < max_bytes; k++)
+                    old_bytes[k] = s->data[i + k].old_value;
+                uint64_t now = 0, before;
+                memlength = old_length < memlength ? old_length : memlength;
+                memcpy(&now, memory_ptr, MIN(memlength, 8));
+                memcpy(&before, old_bytes, sizeof(before));
+                match_length = quick_old_value_routine(cs->match_type, allowed, now, before,
+                                                       memlength, old_flags & valid, &checkflags);
             } else if (old_flags != flags_empty) {
                 value_t old_val = data_to_val_aux(s, i, n);
                 memlength = old_length < memlength ? old_length : memlength;
@@ -1119,7 +1192,8 @@ static size_t check_chunk_elements(unsigned long total_elements, unsigned nthrea
 /* The main thread's part of a rescan: merge chunks in order, overwriting the
  * matches array, and print the same progress as the serial loop. Sets
  * `started` to false if it changed nothing, so the serial loop can run. */
-static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue,
+static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type,
+                                   const uservalue_t *uservalue,
                                    unsigned long total_elements, unsigned nthreads,
                                    matches_and_old_values_swath **writing_swath_index,
                                    bool *started)
@@ -1127,6 +1201,7 @@ static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue
     chunked_scan_t cs = {
         .vars = vars,
         .uservalue = uservalue,
+        .match_type = match_type,
         .scan = check_chunk,
         .buf_size = sizeof(read_batch_t),
         .total_units = total_elements,
@@ -1272,7 +1347,35 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
         return CHUNK_FAILED;
     matches_and_old_values_swath *writing_swath_index = matches->swaths;
 
-    for (i = 0; i < owned; i++) {
+    i = 0;
+    if (cs->match_type == MATCHANY) {
+        /* A snapshot matches everywhere, the same way wherever the longest
+         * possible match fits: record those bytes without a call each. */
+        scan_data_type_t dt = cs->vars->options.scan_data_type;
+        size_t longest = dt == BYTEARRAY || dt == STRING ? MAX_MATCH_LENGTH - 1 : 8;
+        size_t end = got >= longest ? MIN(owned, got - longest + 1) : 0;
+        match_flags flags = flags_empty;
+        unsigned int match_length = end ? (*sm_scan_routine)((const mem64_t *) buf, got, NULL,
+                                                             cs->uservalue, &flags)
+                                        : 0;
+        if (match_length > 0) {
+            writing_swath_index = append_element(&matches, writing_swath_index, c->start,
+                                                 buf[0], flags);
+            old_value_and_match_info *element = &writing_swath_index->data[1];
+            for (i = 1; i < end; i++, element++) {
+                element->old_value = buf[i];
+                element->match_info = flags;
+            }
+            writing_swath_index->number_of_bytes = end;
+            num_matches = end;
+            required_extra_bytes_to_record = match_length - 1;
+            if (report_progress(cs, end))
+                return CHUNK_STOPPED;
+            reported = end;
+        }
+    }
+
+    for (; i < owned; i++) {
         /* skip what cannot match, unless recording the rest of a match */
         if (cs->prefilter && required_extra_bytes_to_record == 0) {
             i = prefilter_next(cs->prefilter, buf, i, owned, got);
@@ -1342,6 +1445,7 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
     chunked_scan_t cs = {
         .vars = vars,
         .uservalue = uservalue,
+        .match_type = match_type,
         .scan = search_chunk,
         .total_units = total_scan_bytes,
     };
@@ -1536,7 +1640,7 @@ bool sm_checkmatches(globals_t *vars,
         bool started;
         /* put back the header the chunks start from */
         *vars->matches->swaths = reading_swath;
-        ok = check_matches_parallel(vars, uservalue, total_scan_bytes, nthreads,
+        ok = check_matches_parallel(vars, match_type, uservalue, total_scan_bytes, nthreads,
                                     &writing_swath_index, &started);
         if (started) {
             reading_swath.first_byte_in_child = NULL; /* skip the serial loop */
