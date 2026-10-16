@@ -396,11 +396,12 @@ static inline int bytes_to_record(int required, unsigned int match_length)
  * sm_searchregions() and sm_checkmatches(), both scans cut their work into
  * chunks, which worker threads (or the main thread, with one CPU) scan into
  * matches arrays of their own, and the main thread merges those into
- * `vars->matches` in address order. This needs /proc/<pid>/mem: `pread()` on
- * the shared fd works from any thread, while `PTRACE_PEEKDATA` only works from
- * the thread that attached. The chunked scans also skip, read and allocate
- * faster than the serial loops; the serial loops stay as the reference that
- * test/sm_test.sh compares them with.
+ * `vars->matches` in address order: it works out where each chunk goes, and
+ * whichever thread is free copies it there (plan_merge()). This needs
+ * /proc/<pid>/mem: `pread()` on the shared fd works from any thread, while
+ * `PTRACE_PEEKDATA` only works from the thread that attached. The chunked
+ * scans also skip, read and allocate faster than the serial loops; the serial
+ * loops stay as the reference that test/sm_test.sh compares them with.
  *
  * The merged array is exactly the one the serial loop builds. A match that
  * starts near the end of a chunk continues into the next one, so the chunk
@@ -423,6 +424,14 @@ typedef enum {
     CHUNK_STOPPED, /* the stop flag was raised mid-chunk */
     CHUNK_FAILED   /* out of memory */
 } chunk_state_t;
+
+/* Copying a chunk's matches into the matches array, see plan_merge(). */
+typedef struct {
+    void *dest[2];
+    const void *src[2];
+    size_t bytes[2];
+    matches_and_old_values_array *array; /* the chunk array, to reuse after */
+} copy_task_t;
 
 typedef struct chunked_scan chunked_scan_t;
 struct chunked_scan {
@@ -451,6 +460,25 @@ struct chunked_scan {
     size_t merged_chunks; /* chunks the main thread is done with */
     size_t window;        /* how far workers may run ahead of the merge */
     bool abort;
+    /* Merging in parallel (plan_merge()): the main thread plans each chunk and
+     * queues copying it, which any thread does. Guarded by `lock`, apart from
+     * the tail and the fixups, which only the main thread uses. */
+    bool parallel_merge;
+    copy_task_t *tasks; /* per chunk */
+    bool *copied;       /* per chunk */
+    size_t *queue;      /* chunks to copy, in order */
+    size_t queued, next_copy, copies_done;
+    bool merge_done; /* nothing more will be queued */
+    /* the swath merging appends to; its length is written in finish_merge() */
+    matches_and_old_values_swath *tail;
+    char *tail_first;
+    size_t tail_bytes;
+    /* lengths of earlier tail swaths, to write once the copying is done */
+    struct {
+        matches_and_old_values_swath *swath;
+        size_t bytes;
+    } *fixups;
+    size_t num_fixups;
     pthread_mutex_t lock;
     pthread_cond_t chunk_done;   /* worker -> main thread */
     pthread_cond_t window_moved; /* main thread -> workers */
@@ -499,26 +527,67 @@ static void update_progress(chunked_scan_t *cs)
         cs->vars->scan_progress = (double) __atomic_load_n(&cs->scanned_units, __ATOMIC_RELAXED) / cs->total_units;
 }
 
+/* Copy the next queued chunk into the matches array, if there is one, and put
+ * its chunk array back. Called and returns with `lock` held. */
+static bool copy_next(chunked_scan_t *cs)
+{
+    if (cs->next_copy == cs->queued)
+        return false;
+    size_t ci = cs->queue[cs->next_copy++];
+    copy_task_t *task = &cs->tasks[ci];
+
+    pthread_mutex_unlock(&cs->lock);
+    for (int k = 0; k < 2; k++)
+        if (task->bytes[k])
+            memcpy(task->dest[k], task->src[k], task->bytes[k]);
+    pthread_mutex_lock(&cs->lock);
+
+    matches_and_old_values_array *spare = task->array;
+    if (spare && cs->pool_size < sizeof(cs->pool) / sizeof(cs->pool[0])) {
+        cs->pool[cs->pool_size++] = spare;
+        spare = NULL;
+    }
+    cs->copied[ci] = true;
+    cs->copies_done++;
+    while (cs->merged_chunks < cs->num_chunks && cs->copied[cs->merged_chunks])
+        cs->merged_chunks++;
+    pthread_cond_broadcast(&cs->window_moved);
+    pthread_cond_broadcast(&cs->chunk_done);
+
+    if (spare) {
+        pthread_mutex_unlock(&cs->lock);
+        free(spare);
+        pthread_mutex_lock(&cs->lock);
+    }
+    return true;
+}
+
 static void *scan_worker(void *arg)
 {
     chunked_scan_t *cs = arg;
     uint8_t *buf = malloc(cs->buf_size);
 
-    for (;;) {
-        pthread_mutex_lock(&cs->lock);
+    pthread_mutex_lock(&cs->lock);
+    while (!cs->abort) {
+        /* copying first: it frees chunk arrays and moves the window */
+        if (copy_next(cs))
+            continue;
+
         size_t i = cs->next_chunk;
-        if (i >= cs->num_chunks || cs->abort) {
-            pthread_mutex_unlock(&cs->lock);
-            break;
+        if (i >= cs->num_chunks) {
+            /* with merging in parallel, stay to help copy */
+            if (!cs->parallel_merge || cs->merge_done)
+                break;
+            pthread_cond_wait(&cs->window_moved, &cs->lock);
+            continue;
+        }
+        /* bound the memory held by chunks waiting to be merged */
+        if (i >= cs->merged_chunks + cs->window) {
+            pthread_cond_wait(&cs->window_moved, &cs->lock);
+            continue;
         }
         cs->next_chunk++;
-        /* bound the memory held by chunks waiting to be merged */
-        while (i >= cs->merged_chunks + cs->window && !cs->abort)
-            pthread_cond_wait(&cs->window_moved, &cs->lock);
-        bool abort = cs->abort;
         pthread_mutex_unlock(&cs->lock);
-        if (abort)
-            break;
 
         chunk_state_t state = buf ? cs->scan(cs, i, buf) : CHUNK_FAILED;
 
@@ -526,8 +595,8 @@ static void *scan_worker(void *arg)
         pthread_mutex_lock(&cs->lock);
         cs->states[i] = state;
         pthread_cond_signal(&cs->chunk_done);
-        pthread_mutex_unlock(&cs->lock);
     }
+    pthread_mutex_unlock(&cs->lock);
 
     free(buf);
     return NULL;
@@ -574,6 +643,11 @@ static chunk_state_t wait_for_chunk(chunked_scan_t *cs, size_t i)
 
     pthread_mutex_lock(&cs->lock);
     while (cs->states[i] == CHUNK_PENDING && !cs->vars->stop_flag) {
+        /* help with the copying meanwhile */
+        if (copy_next(cs)) {
+            update_progress(cs);
+            continue;
+        }
         struct timespec deadline;
         clock_gettime(CLOCK_REALTIME, &deadline);
         deadline.tv_nsec += 100 * 1000 * 1000;
@@ -660,6 +734,10 @@ static void end_chunked_scan(chunked_scan_t *cs)
     pthread_cond_destroy(&cs->window_moved);
     free(cs->states);
     free(cs->buf);
+    free(cs->tasks);
+    free(cs->copied);
+    free(cs->queue);
+    free(cs->fixups);
 }
 
 /* add_element() for a chunk array, which never needs to grow, with the
@@ -779,6 +857,140 @@ merge_chunk(matches_and_old_values_array **array,
     return writing_swath_index;
 }
 
+/* Merging in parallel: merge_chunk() in two steps. The main thread works out,
+ * chunk by chunk, where merge_chunk() would put each chunk's elements
+ * (plan_merge()), and any thread then copies them there. The matches array
+ * must not move meanwhile: it is either reserved at its largest size or
+ * overwritten in place.
+ * Only the first swath of a chunk that is not dropped as already recorded can
+ * join the swath before it. The gaps between the following swaths made the
+ * chunk scan start new swaths, so they make merge_chunk() start new swaths too,
+ * and the rest of the chunk array goes over unchanged, headers included. A
+ * swath that a later chunk joins can be one some thread is still copying, so
+ * the swath lengths are written last, in finish_merge(). */
+static bool init_merge(chunked_scan_t *cs, matches_and_old_values_swath *writing_swath_index)
+{
+    cs->tasks = calloc(cs->num_chunks, sizeof(*cs->tasks));
+    cs->copied = calloc(cs->num_chunks, sizeof(*cs->copied));
+    cs->queue = calloc(cs->num_chunks, sizeof(*cs->queue));
+    /* at most two per chunk: the swath it joins, and its own last one */
+    cs->fixups = calloc(2 * cs->num_chunks, sizeof(*cs->fixups));
+    cs->tail = writing_swath_index;
+    cs->tail_first = writing_swath_index->first_byte_in_child;
+    cs->tail_bytes = writing_swath_index->number_of_bytes;
+    return cs->tasks && cs->copied && cs->queue && cs->fixups;
+}
+
+/* The tail swath gets no more elements: write its length in finish_merge(). */
+static void tail_done(chunked_scan_t *cs)
+{
+    cs->fixups[cs->num_fixups].swath = cs->tail;
+    cs->fixups[cs->num_fixups].bytes = cs->tail_bytes;
+    cs->num_fixups++;
+}
+
+/* Plan merging `chunk`, whose last swath is `last`, into `task`, following
+ * merge_chunk() and append_elements(). Writes only what no copy covers: a new
+ * swath's address, and padding. */
+static void plan_merge(chunked_scan_t *cs, copy_task_t *task,
+                       const matches_and_old_values_array *chunk,
+                       const matches_and_old_values_swath *last)
+{
+    const matches_and_old_values_swath *s = chunk->swaths;
+
+    while (s->number_of_bytes) {
+        char *first = s->first_byte_in_child;
+        const matches_and_old_values_swath *next =
+            (const matches_and_old_values_swath *) &s->data[s->number_of_bytes];
+        size_t skip = 0;
+
+        if (cs->tail_bytes) {
+            char *tail_last = cs->tail_first + cs->tail_bytes - 1;
+            if (tail_last >= first)
+                skip = MIN(s->number_of_bytes, (size_t) (tail_last - first) + 1);
+        }
+        size_t count = s->number_of_bytes - skip;
+        if (count == 0) {
+            s = next;
+            continue;
+        }
+
+        /* join the tail swath with padding, or start a new one */
+        char *address = first + skip;
+        old_value_and_match_info *end = &cs->tail->data[cs->tail_bytes];
+        old_value_and_match_info *dest;
+        if (cs->tail_bytes == 0) {
+            cs->tail->first_byte_in_child = address;
+            cs->tail_first = address;
+            dest = cs->tail->data;
+        } else {
+            size_t excess = address - (cs->tail_first + cs->tail_bytes - 1);
+            if (excess * sizeof(old_value_and_match_info) >=
+                sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info)) {
+                tail_done(cs);
+                cs->tail = (matches_and_old_values_swath *) end;
+                cs->tail->first_byte_in_child = address;
+                cs->tail_first = address;
+                cs->tail_bytes = 0;
+                dest = cs->tail->data;
+            } else {
+                memset(end, 0, (excess - 1) * sizeof(old_value_and_match_info));
+                cs->tail_bytes += excess - 1;
+                dest = end + excess - 1;
+            }
+        }
+        cs->tail_bytes += count;
+        task->dest[0] = dest;
+        task->src[0] = &s->data[skip];
+        task->bytes[0] = count * sizeof(old_value_and_match_info);
+
+        /* the rest of the chunk array, unchanged */
+        if (next->number_of_bytes) {
+            tail_done(cs);
+            char *rest = (char *) (dest + count);
+            task->dest[1] = rest;
+            task->src[1] = next;
+            task->bytes[1] = (const char *) &last->data[last->number_of_bytes] - (const char *) next;
+            cs->tail = (matches_and_old_values_swath *) (rest + ((const char *) last - (const char *) next));
+            cs->tail_first = last->first_byte_in_child;
+            cs->tail_bytes = last->number_of_bytes;
+        }
+        break;
+    }
+}
+
+/* Queue copying chunk `ci` (a task without bytes just puts its array back).
+ * Without workers, the main thread copies it now. */
+static void queue_copy(chunked_scan_t *cs, size_t ci, const copy_task_t *task)
+{
+    pthread_mutex_lock(&cs->lock);
+    cs->tasks[ci] = *task;
+    cs->queue[cs->queued++] = ci;
+    pthread_cond_broadcast(&cs->window_moved);
+    if (cs->num_threads == 0)
+        while (copy_next(cs))
+            ;
+    pthread_mutex_unlock(&cs->lock);
+}
+
+/* Wait for (and help with) the copying, then write the swath lengths.
+ * Returns the swath to append to next. */
+static matches_and_old_values_swath *finish_merge(chunked_scan_t *cs)
+{
+    pthread_mutex_lock(&cs->lock);
+    cs->merge_done = true;
+    pthread_cond_broadcast(&cs->window_moved);
+    while (cs->copies_done < cs->queued)
+        if (!copy_next(cs))
+            pthread_cond_wait(&cs->chunk_done, &cs->lock);
+    pthread_mutex_unlock(&cs->lock);
+
+    for (size_t k = 0; k < cs->num_fixups; k++)
+        cs->fixups[k].swath->number_of_bytes = cs->fixups[k].bytes;
+    cs->tail->number_of_bytes = cs->tail_bytes;
+    return cs->tail;
+}
+
 /* Rescans, which keep the matches that still match.
  *
  * The chunks are runs of elements of the current matches array, which the
@@ -796,6 +1008,8 @@ typedef struct {
     size_t num_elements; /* elements it owns, across swaths */
     size_t input_bytes;  /* room those take in the array */
     matches_and_old_values_array *matches;
+    /* its last swath */
+    matches_and_old_values_swath *last_swath;
     unsigned long num_matches;  /* matches in the owned elements */
     unsigned long tail_matches; /* matches found while finishing past the end */
 } check_chunk_t;
@@ -1165,6 +1379,7 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 
     null_terminate_chunk(writing_swath_index);
     c->matches = matches;
+    c->last_swath = writing_swath_index;
     c->num_matches = num_matches;
     report_progress(cs, c->num_elements - reported);
     return CHUNK_DONE;
@@ -1264,12 +1479,15 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
                             2 * sizeof(matches_and_old_values_swath) +
                             MAX_MATCH_LENGTH * sizeof(old_value_and_match_info);
 
-    start_scan_threads(&cs, nthreads);
-
     /* The first chunk took a copy of this header. */
     *writing_swath_index = vars->matches->swaths;
     (*writing_swath_index)->first_byte_in_child = NULL;
     (*writing_swath_index)->number_of_bytes = 0;
+
+    /* the result overwrites the matches array in place, so it never moves */
+    cs.parallel_merge = init_merge(&cs, *writing_swath_index);
+
+    start_scan_threads(&cs, nthreads);
 
     unsigned long merged_elements = 0;
     unsigned dots = 1;
@@ -1289,27 +1507,38 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
             }
         }
 
+        copy_task_t task = {.array = chunks[i].matches};
         if (state == CHUNK_DONE) {
-            *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
-                                               chunks[i].matches, false);
-            /* cannot happen, the result never outgrows the input */
-            assert(*writing_swath_index != NULL);
+            if (cs.parallel_merge) {
+                plan_merge(&cs, &task, chunks[i].matches, chunks[i].last_swath);
+            } else {
+                *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
+                                                   chunks[i].matches, false);
+                /* cannot happen, the result never outgrows the input */
+                assert(*writing_swath_index != NULL);
+            }
             vars->num_matches += chunks[i].num_matches;
             if (last)
                 vars->num_matches += chunks[i].tail_matches;
             merged_elements += chunks[i].num_elements;
         }
-        put_chunk_array(&cs, chunks[i].matches);
+        if (cs.parallel_merge)
+            queue_copy(&cs, i, &task);
+        else
+            put_chunk_array(&cs, chunks[i].matches);
         chunks[i].matches = NULL;
         if (last)
             break;
-        chunk_merged(&cs, i);
+        if (!cs.parallel_merge)
+            chunk_merged(&cs, i);
 
         /* for user, just print a dot */
         for (; dots < 1 + (NUM_DOTS - 1) * merged_elements / total_elements; dots++)
             print_a_dot();
     }
 
+    if (cs.parallel_merge)
+        *writing_swath_index = finish_merge(&cs);
     stop_scan_threads(&cs);
     for (i = 0; i < cs.num_chunks; i++)
         put_chunk_array(&cs, chunks[i].matches);
@@ -1355,6 +1584,8 @@ typedef struct {
     size_t region_left; /* bytes from `start` to the end of the region */
     char *readable_end; /* where reading stopped short, or NULL */
     matches_and_old_values_array *matches;
+    /* its last swath */
+    matches_and_old_values_swath *last_swath;
     unsigned long num_matches;  /* matches starting in the owned bytes */
     unsigned long tail_matches; /* matches found while finishing past the end */
 } search_chunk_t;
@@ -1485,6 +1716,7 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 
     null_terminate_chunk(writing_swath_index);
     c->matches = matches;
+    c->last_swath = writing_swath_index;
     c->num_matches = num_matches;
 
     /* bytes not read still count as done */
@@ -1571,6 +1803,8 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
             vars->matches = whole;
         }
     }
+    cs.parallel_merge = vars->matches->bytes_allocated >= vars->matches->max_needed_bytes &&
+                        init_merge(&cs, *writing_swath_index);
 
     start_scan_threads(&cs, nthreads);
 
@@ -1605,18 +1839,23 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
         }
 
         /* The serial scan stops a region at the first byte it cannot read. */
+        copy_task_t task = {.array = c->matches};
         if (readable_end == NULL || c->start < readable_end) {
             if (c->readable_end && c->index_in_region == 0 && c->readable_end == c->start)
                 show_warn("reading region %02lu failed.\n", c->regnum);
             if (c->readable_end && (readable_end == NULL || c->readable_end < readable_end))
                 readable_end = c->readable_end;
 
-            *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
-                                               c->matches, true);
-            if (!*writing_swath_index) {
-                show_error("could not allocate match array\n");
-                ok = false;
-                break;
+            if (cs.parallel_merge) {
+                plan_merge(&cs, &task, c->matches, c->last_swath);
+            } else {
+                *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
+                                                   c->matches, true);
+                if (!*writing_swath_index) {
+                    show_error("could not allocate match array\n");
+                    ok = false;
+                    break;
+                }
             }
             vars->num_matches += c->num_matches;
         }
@@ -1627,11 +1866,17 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
         if (c->index_in_region + 1 == c->chunks_in_region)
             show_user("ok\n");
 
-        put_chunk_array(&cs, c->matches);
+        if (cs.parallel_merge) {
+            queue_copy(&cs, i, &task);
+        } else {
+            put_chunk_array(&cs, c->matches);
+            chunk_merged(&cs, i);
+        }
         c->matches = NULL;
-        chunk_merged(&cs, i);
     }
 
+    if (cs.parallel_merge)
+        *writing_swath_index = finish_merge(&cs);
     stop_scan_threads(&cs);
     for (i = 0; i < cs.num_chunks; i++)
         put_chunk_array(&cs, chunks[i].matches);
