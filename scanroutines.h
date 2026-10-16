@@ -78,4 +78,31 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
 
 scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, match_flags uflags, bool reverse_endianness);
 
+/* Prefilter for equality scans: positions where the scan routine can match
+ * hold one of a few known byte patterns, so a vectorized search for a rare one
+ * or two byte window of each finds every candidate, and the routine only runs
+ * on those. Positions that are not candidates never match. */
+#define PREFILTER_MAX_WINDOWS 16
+
+typedef struct {
+    unsigned num_windows;
+    struct {
+        unsigned offset; /* from the candidate position */
+        uint8_t first;
+        uint8_t second; /* at offset + 1, if `pair` */
+        bool pair;
+    } windows[PREFILTER_MAX_WINDOWS];
+} prefilter_t;
+
+/* Set up `pf` for the scan sm_choose_scanroutine() chose. Returns false when
+ * there is no useful prefilter: not an equality scan, or one whose candidates
+ * would be too common (e.g. searching for 0) to be worth filtering. */
+bool prefilter_init(prefilter_t *pf, scan_data_type_t dt, scan_match_type_t mt,
+                    const uservalue_t *uval, bool reverse_endianness);
+
+/* The first candidate position in [pos, end) of `buf`, or `end`. Bytes are
+ * only read below `avail` (avail >= end). */
+size_t prefilter_next(const prefilter_t *pf, const uint8_t *buf, size_t pos, size_t end,
+                      size_t avail);
+
 #endif /* SCANROUTINES_H */

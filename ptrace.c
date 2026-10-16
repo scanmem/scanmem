@@ -389,14 +389,17 @@ static inline int bytes_to_record(int required, unsigned int match_length)
 }
 
 #if HAVE_PROCMEM
-/* Parallel scans.
+/* Chunked scans.
  *
- * With more than one thread, both scans cut their work into chunks, which
- * worker threads scan into matches arrays of their own, and the main thread
- * merges those into `vars->matches` in address order. This needs
- * /proc/<pid>/mem: `pread()` on the shared fd works from any thread, while
- * `PTRACE_PEEKDATA` only works from the thread that attached. Otherwise the
- * serial loops in sm_searchregions() and sm_checkmatches() run.
+ * Unless `option threads 1` asks for the original serial loops in
+ * sm_searchregions() and sm_checkmatches(), both scans cut their work into
+ * chunks, which worker threads (or the main thread, with one CPU) scan into
+ * matches arrays of their own, and the main thread merges those into
+ * `vars->matches` in address order. This needs /proc/<pid>/mem: `pread()` on
+ * the shared fd works from any thread, while `PTRACE_PEEKDATA` only works from
+ * the thread that attached. The chunked scans also skip what cannot match
+ * faster than the serial loops; the serial loops stay as the reference that
+ * test/sm_test.sh compares them with.
  *
  * The merged array is exactly the one the serial loop builds. A match that
  * starts near the end of a chunk continues into the next one, so the chunk
@@ -431,7 +434,8 @@ struct chunked_scan {
     uint8_t *buf;                /* the main thread's scratch buffer */
     unsigned long total_units;   /* for progress: bytes or matches-array elements */
     unsigned long scanned_units; /* atomic */
-    unsigned num_threads;        /* 0 if none started: the main thread scans */
+    const prefilter_t *prefilter; /* initial search: positions worth testing */
+    unsigned num_threads; /* 0 if none started: the main thread scans */
     pthread_t threads[MAX_SCAN_THREADS];
     size_t next_chunk;    /* next chunk a worker should take */
     size_t merged_chunks; /* chunks the main thread is done with */
@@ -1068,6 +1072,12 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
     matches_and_old_values_swath *writing_swath_index = matches->swaths;
 
     for (i = 0; i < owned; i++) {
+        /* skip what cannot match, unless recording the rest of a match */
+        if (cs->prefilter && required_extra_bytes_to_record == 0) {
+            i = prefilter_next(cs->prefilter, buf, i, owned, got);
+            if (i == owned)
+                break;
+        }
         if (UNLIKELY(i - reported >= PROGRESS_STEP)) {
             if (report_progress(cs, i - reported))
                 return CHUNK_STOPPED;
@@ -1124,7 +1134,8 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 
 /* The main thread's part of the initial search: merge chunks in order,
  * printing the same per-region progress as the serial scan. */
-static bool search_regions_parallel(globals_t *vars, const uservalue_t *uservalue,
+static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_type,
+                                    const uservalue_t *uservalue,
                                     unsigned long total_scan_bytes, unsigned nthreads,
                                     matches_and_old_values_swath **writing_swath_index)
 {
@@ -1134,6 +1145,7 @@ static bool search_regions_parallel(globals_t *vars, const uservalue_t *uservalu
         .scan = search_chunk,
         .total_units = total_scan_bytes,
     };
+    prefilter_t prefilter;
     search_chunk_t *chunks;
     bool ok = true;
     element_t *n;
@@ -1141,6 +1153,9 @@ static bool search_regions_parallel(globals_t *vars, const uservalue_t *uservalu
 
     size_t chunk_size = search_chunk_size(total_scan_bytes, nthreads);
     cs.buf_size = chunk_size + CHUNK_TAIL;
+    if (prefilter_init(&prefilter, vars->options.scan_data_type, match_type, uservalue,
+                       vars->options.reverse_endianness))
+        cs.prefilter = &prefilter;
 
     for (n = vars->regions->head; n; n = n->next) {
         region_t *r = n->data;
@@ -1298,7 +1313,7 @@ bool sm_checkmatches(globals_t *vars,
 
 #if HAVE_PROCMEM
     unsigned nthreads = scan_threads(vars);
-    if (nthreads > 1 && total_scan_bytes > 0) {
+    if (vars->options.threads != 1 && total_scan_bytes > 0) {
         bool started;
         /* put back the header the chunks start from */
         *vars->matches->swaths = reading_swath;
@@ -1479,10 +1494,9 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     n = vars->regions->head;
 
 #if HAVE_PROCMEM
-    unsigned nthreads = scan_threads(vars);
-    if (nthreads > 1 && total_scan_bytes > 0) {
-        if (!search_regions_parallel(vars, uservalue, total_scan_bytes, nthreads,
-                                     &writing_swath_index)) {
+    if (vars->options.threads != 1) {
+        if (!search_regions_parallel(vars, match_type, uservalue, total_scan_bytes,
+                                     scan_threads(vars), &writing_swath_index)) {
             ENDINTERRUPTABLE();
             sm_detach(vars->target);
             return false;

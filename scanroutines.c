@@ -700,3 +700,182 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
     sm_scan_routine = sm_get_scanroutine(dt, mt, uflags, reverse_endianness);
     return (sm_scan_routine != NULL);
 }
+
+/*-----------*/
+/* Prefilter */
+/*-----------*/
+
+static bool is_common_byte(uint8_t b)
+{
+    return b == 0x00 || b == 0xff;
+}
+
+/* Add the window that best identifies `pattern` (where `fixed`, if given, says
+ * which bytes must match): two adjacent fixed bytes, preferring ones that are
+ * not 0x00 or 0xff, or else one fixed byte. Returns false if the window would
+ * be too common to filter anything, or there is no room. */
+static bool add_window(prefilter_t *pf, const uint8_t *pattern, const wildcard_t *fixed,
+                       unsigned length)
+{
+    int best = -1, best_score = 3;
+    bool pair = false;
+    unsigned i;
+
+    for (i = 0; i + 1 < length; i++) {
+        if (fixed && (fixed[i] != FIXED || fixed[i + 1] != FIXED))
+            continue;
+        int score = is_common_byte(pattern[i]) + is_common_byte(pattern[i + 1]);
+        if (score < best_score) {
+            best = i;
+            best_score = score;
+            pair = true;
+        }
+    }
+    if (best < 0) {
+        for (i = 0; i < length; i++) {
+            if (fixed && fixed[i] != FIXED)
+                continue;
+            int score = 2 * is_common_byte(pattern[i]);
+            if (score < best_score) {
+                best = i;
+                best_score = score;
+            }
+        }
+    }
+    /* nothing fixed, or only bytes that are everywhere in memory */
+    if (best < 0 || best_score == 2)
+        return false;
+
+    for (i = 0; i < pf->num_windows; i++) {
+        if (pf->windows[i].offset == (unsigned) best && pf->windows[i].pair == pair &&
+            pf->windows[i].first == pattern[best] &&
+            (!pair || pf->windows[i].second == pattern[best + 1]))
+            return true;
+    }
+    if (pf->num_windows == PREFILTER_MAX_WINDOWS)
+        return false;
+    pf->windows[pf->num_windows].offset = best;
+    pf->windows[pf->num_windows].first = pattern[best];
+    pf->windows[pf->num_windows].second = pair ? pattern[best + 1] : 0;
+    pf->windows[pf->num_windows].pair = pair;
+    pf->num_windows++;
+    return true;
+}
+
+/* The bytes a number routine compares memory with: the routines swap the
+ * memory bytes before comparing when reverse_endianness is set. */
+static bool add_number_window(prefilter_t *pf, const void *value, unsigned width,
+                              bool reverse_endianness)
+{
+    uint8_t pattern[8];
+    unsigned i;
+
+    for (i = 0; i < width; i++)
+        pattern[i] = ((const uint8_t *) value)[reverse_endianness ? width - 1 - i : i];
+    return add_window(pf, pattern, NULL, width);
+}
+
+bool prefilter_init(prefilter_t *pf, scan_data_type_t dt, scan_match_type_t mt,
+                    const uservalue_t *uval, bool reverse_endianness)
+{
+    pf->num_windows = 0;
+    if (mt != MATCHEQUALTO || uval == NULL)
+        return false;
+
+    if (dt == BYTEARRAY)
+        return add_window(pf, uval->bytearray_value, uval->wildcard_value, uval->flags);
+    if (dt == STRING)
+        return add_window(pf, (const uint8_t *) uval->string_value, NULL, uval->flags);
+
+    /* the flags the routine for `dt` looks at */
+    match_flags flags = uval->flags & possible_flags_for_scan_data_type[dt];
+    bool ok = true;
+
+    if (flags & flag_u8b)
+        ok = ok && add_number_window(pf, &uval->uint8_value, 1, false);
+    if (flags & flag_s8b)
+        ok = ok && add_number_window(pf, &uval->int8_value, 1, false);
+    if (flags & flag_u16b)
+        ok = ok && add_number_window(pf, &uval->uint16_value, 2, reverse_endianness);
+    if (flags & flag_s16b)
+        ok = ok && add_number_window(pf, &uval->int16_value, 2, reverse_endianness);
+    if (flags & flag_u32b)
+        ok = ok && add_number_window(pf, &uval->uint32_value, 4, reverse_endianness);
+    if (flags & flag_s32b)
+        ok = ok && add_number_window(pf, &uval->int32_value, 4, reverse_endianness);
+    if (flags & flag_u64b)
+        ok = ok && add_number_window(pf, &uval->uint64_value, 8, reverse_endianness);
+    if (flags & flag_s64b)
+        ok = ok && add_number_window(pf, &uval->int64_value, 8, reverse_endianness);
+    /* float == float compares equal exactly when the bits do, except that
+     * +0.0 == -0.0 and NaN never compares equal */
+    if (flags & flag_f32b && uval->float32_value == uval->float32_value) {
+        if (uval->float32_value == 0)
+            ok = false; /* zero bytes are everywhere */
+        else
+            ok = ok && add_number_window(pf, &uval->float32_value, 4, reverse_endianness);
+    }
+    if (flags & flag_f64b && uval->float64_value == uval->float64_value) {
+        if (uval->float64_value == 0)
+            ok = false;
+        else
+            ok = ok && add_number_window(pf, &uval->float64_value, 8, reverse_endianness);
+    }
+    return ok && pf->num_windows > 0;
+}
+
+static inline bool is_candidate(const prefilter_t *pf, const uint8_t *buf, size_t pos, size_t avail)
+{
+    for (unsigned j = 0; j < pf->num_windows; j++) {
+        size_t at = pos + pf->windows[j].offset;
+        if (at + pf->windows[j].pair < avail && buf[at] == pf->windows[j].first &&
+            (!pf->windows[j].pair || buf[at + 1] == pf->windows[j].second))
+            return true;
+    }
+    return false;
+}
+
+/* 16 bytes at a time with GCC vector extensions: SSE2 on x86-64, NEON on ARM */
+typedef uint8_t prefilter_vec_t __attribute__((vector_size(16)));
+typedef uint64_t prefilter_vec64_t __attribute__((vector_size(16)));
+
+static inline prefilter_vec_t load_vec(const uint8_t *p)
+{
+    prefilter_vec_t v;
+    memcpy(&v, p, sizeof(v));
+    return v;
+}
+
+size_t prefilter_next(const prefilter_t *pf, const uint8_t *buf, size_t pos, size_t end,
+                      size_t avail)
+{
+    /* the furthest a block of 16 positions reads */
+    size_t reach = 16;
+    for (unsigned j = 0; j < pf->num_windows; j++)
+        if (pf->windows[j].offset + pf->windows[j].pair + 16 > reach)
+            reach = pf->windows[j].offset + pf->windows[j].pair + 16;
+
+    for (; pos < end && pos + reach <= avail; pos += 16) {
+        prefilter_vec_t any = {0};
+        for (unsigned j = 0; j < pf->num_windows; j++) {
+            const uint8_t *p = buf + pos + pf->windows[j].offset;
+            prefilter_vec_t first = (prefilter_vec_t){0} + pf->windows[j].first;
+            prefilter_vec_t hit = (prefilter_vec_t) (load_vec(p) == first);
+            if (pf->windows[j].pair) {
+                prefilter_vec_t second = (prefilter_vec_t){0} + pf->windows[j].second;
+                hit &= (prefilter_vec_t) (load_vec(p + 1) == second);
+            }
+            any |= hit;
+        }
+        prefilter_vec64_t any64 = (prefilter_vec64_t) any;
+        if (any64[0] | any64[1]) {
+            for (size_t k = pos; k < pos + 16 && k < end; k++)
+                if (is_candidate(pf, buf, k, avail))
+                    return k;
+        }
+    }
+    for (; pos < end; pos++)
+        if (is_candidate(pf, buf, pos, avail))
+            return pos;
+    return end;
+}

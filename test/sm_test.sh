@@ -40,8 +40,9 @@ done
 test_sm "option scan_data_type bytearray;${huge_bytearray};exit"
 test_sm "option scan_data_type string;\" ${huge_string};exit"
 
-# Scans are split across threads; they must find exactly what a serial
-# scan finds, including matches that cross the split points.
+# With more than one thread, scans are split into chunks and skip what cannot
+# match; they must find exactly what the serial scans (`option threads 1`)
+# find, including matches that cross the split points.
 # The two runs must not overlap: only one of them can attach at a time.
 test_threads () {
     local serial threaded
@@ -54,6 +55,10 @@ test_threads "option scan_data_type int8;1;list"
 test_threads "option scan_data_type int;1;list"
 test_threads "option scan_data_type float;1;list"
 test_threads "option scan_data_type number;1;list"
+test_threads "option scan_data_type number;-1"
+test_threads "option scan_data_type int;0"
+test_threads "option endianness 2;option scan_data_type int32;16777216;list"
+test_threads "option scan_data_type bytearray;?? 02 03 ?? 05"
 test_threads "option scan_data_type int;snapshot;=;1"
 test_threads "option scan_data_type int8;snapshot;!= 0;> 9"
 test_threads "option scan_data_type int;0;update;= 0"

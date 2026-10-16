@@ -385,7 +385,8 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\t\t\tDefault:0\n" \
                  "\tpossibles values:\n"\
                  "\t0:\tone per CPU\n" \
-                 "\t1:\tno extra threads\n" \
+                 "\t1:\tthe original single-threaded scans, without the faster\n" \
+                 "\t\tskipping (for comparison)\n" \
                  "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"
