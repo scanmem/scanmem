@@ -2336,9 +2336,12 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 if (nread < read_size) {
                     /* the region ends here, update `memlength` */
                     memlength = nread;
-                    if ((nread == 0) && (reg_pos == r->start)) {
+                    if (nread == 0) {
                         /* Failed on first read, which means region not exist. */
-                        show_warn("reading region %02u failed.\n", regnum);
+                        if (reg_pos == r->start)
+                            show_warn("reading region %02u failed.\n", regnum);
+                        /* nothing left to scan: going on would count
+                         * `memlength` down from 0 */
                         break;
                     }
                 }
