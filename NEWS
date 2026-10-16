@@ -8,6 +8,9 @@ Security and stability
 * Clamp ptrace poke length to mapped buffer size
 * Replace shell command with execvp for the shell handler
 * Read process list from /proc instead of ps popen (#434)
+* Numbers at the 64-bit limits no longer convert out of range when parsed
+  (undefined behaviour) (from #461)
+* The pager checks its pipe write() and read() results (from #461)
 
 Compiler / portability
 ----------------------
