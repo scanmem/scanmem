@@ -6,6 +6,7 @@ Performance
 * Run scans on several threads; new `threads` option: 1 for the original
   serial scans, N for N threads (up to 64), 0 (default) for one per CPU
 * Searching for a value skips memory that cannot hold it (vectorized prefilter)
+* Rescans read the target in batches with process_vm_readv()
 
 libscanmem
 ----------

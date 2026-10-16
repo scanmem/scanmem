@@ -49,6 +49,7 @@
 #if HAVE_PROCMEM
 #    include <pthread.h>
 #    include <signal.h>
+#    include <sys/uio.h>
 #endif
 
 // dirty hack for FreeBSD
@@ -397,8 +398,8 @@ static inline int bytes_to_record(int required, unsigned int match_length)
  * matches arrays of their own, and the main thread merges those into
  * `vars->matches` in address order. This needs /proc/<pid>/mem: `pread()` on
  * the shared fd works from any thread, while `PTRACE_PEEKDATA` only works from
- * the thread that attached. The chunked scans also skip what cannot match
- * faster than the serial loops; the serial loops stay as the reference that
+ * the thread that attached. The chunked scans also skip and read faster than
+ * the serial loops; the serial loops stay as the reference that
  * test/sm_test.sh compares them with.
  *
  * The merged array is exactly the one the serial loop builds. A match that
@@ -435,6 +436,7 @@ struct chunked_scan {
     unsigned long total_units;   /* for progress: bytes or matches-array elements */
     unsigned long scanned_units; /* atomic */
     const prefilter_t *prefilter; /* initial search: positions worth testing */
+    bool no_vm_readv;             /* process_vm_readv() is not available */
     unsigned num_threads; /* 0 if none started: the main thread scans */
     pthread_t threads[MAX_SCAN_THREADS];
     size_t next_chunk;    /* next chunk a worker should take */
@@ -728,10 +730,6 @@ merge_chunk(matches_and_old_values_array **array,
  * reaches into the next chunk's input, so chunk j is merged only once chunk
  * j + 1 is done too; no later chunk reads that far back. */
 
-/* Target memory is read through a window, so that nearby matches share one
- * read. It holds at least one whole match. */
-#    define READ_WINDOW (1UL << 20)
-
 typedef struct {
     matches_and_old_values_swath *swath; /* where the chunk starts */
     /* that swath's header: an earlier merge may overwrite it */
@@ -745,30 +743,164 @@ typedef struct {
     unsigned long tail_matches; /* matches found while finishing past the end */
 } check_chunk_t;
 
-typedef struct {
-    uint8_t *buf;
-    char *start; /* NULL until the first read */
-    size_t len;  /* bytes read */
-    bool short_read;
-} read_window_t;
+/* Target memory is read in batches: the bytes of the next elements, as ranges
+ * merged across small gaps, all read with one process_vm_readv() call. After
+ * the first scans the matches are usually far apart, so reading them one by
+ * one costs a syscall each, and reading everything around them costs
+ * bandwidth. */
+#    define READ_BATCH (1UL << 20) /* bytes */
+#    define READ_BATCH_RANGES 1024 /* process_vm_readv() takes up to IOV_MAX */
+#    define READ_GAP 3072          /* read gaps up to this (measured best) */
 
-/* The bytes at `addr`, as many as are readable up to `need`. Like
- * sm_peekdata(), except that this depends only on the target, never on what
- * was read before: next to memory that cannot be read, sm_peekdata() can fail
- * where reading afresh gets part of the bytes. */
-static inline size_t read_through_window(read_window_t *w, char *addr, size_t need,
-                                         const uint8_t **mem)
+typedef struct {
+    char *start;
+    size_t len;
+    size_t got;    /* bytes read from `start` on */
+    size_t offset; /* of the bytes in `data` */
+} read_range_t;
+
+typedef struct {
+    read_range_t ranges[READ_BATCH_RANGES];
+    unsigned num_ranges;
+    unsigned current;
+    uint8_t data[READ_BATCH];
+    uint8_t single[MAX_MATCH_LENGTH]; /* an element past a failed read */
+} read_batch_t;
+
+/* Plan reading the elements from `s` index `i` on, with `left` owned ones to
+ * go and then up to a match's length more, to finish one. Returns how many
+ * elements the batch covers. */
+static size_t plan_batch(read_batch_t *b, scan_data_type_t scan_data_type,
+                         matches_and_old_values_swath *s, char *first, size_t n,
+                         size_t i, size_t left)
 {
-    if (w->start == NULL || addr < w->start ||
-        (addr + need > w->start + w->len && !(w->short_read && addr < w->start + w->len))) {
-        size_t want = need > READ_WINDOW ? need : READ_WINDOW;
-        want = (want + sizeof(long) - 1) / sizeof(long) * sizeof(long);
-        w->start = addr;
-        w->len = readmemory(w->buf, addr, want);
-        w->short_read = w->len < want;
+    bool vlt = scan_data_type == BYTEARRAY || scan_data_type == STRING;
+    size_t count = 0, used = 0, past_end = 0;
+    read_range_t *r = NULL;
+
+    b->num_ranges = 0;
+    b->current = 0;
+    for (;;) {
+        if (i == n) {
+            if (left == 0)
+                break;
+            s = (matches_and_old_values_swath *) &s->data[n];
+            first = s->first_byte_in_child;
+            n = s->number_of_bytes;
+            i = 0;
+            continue;
+        }
+        if (left == 0 && past_end == MAX_MATCH_LENGTH)
+            break;
+
+        /* Numbers need at most 8 bytes each, and the elements of a swath are
+         * consecutive: take as many as fit at once. Reading a few bytes too
+         * many is harmless, even into memory that cannot be read. */
+        size_t take = MIN(n - i, left ? left : MAX_MATCH_LENGTH - past_end);
+        size_t need = 8;
+        if (vlt) {
+            take = 1;
+            need = flags_to_memlength(scan_data_type, s->data[i].match_info);
+            if (need == 0)
+                need = 1;
+        }
+        char *address = first + i;
+
+        /* the furthest this range may reach */
+        char *limit;
+        if (r && address <= r->start + r->len + READ_GAP) {
+            limit = r->start + r->len + (READ_BATCH - used);
+        } else {
+            if (b->num_ranges == READ_BATCH_RANGES)
+                break;
+            r = NULL;
+            limit = address + (READ_BATCH - used);
+        }
+        if (address + need > limit)
+            break;
+        take = MIN(take, (size_t) (limit - need - address) + 1);
+
+        size_t end = address + take - 1 + need - (r ? r->start : address);
+        if (!r) {
+            r = &b->ranges[b->num_ranges++];
+            r->start = address;
+            r->len = 0;
+            r->offset = used;
+        }
+        if (end > r->len) {
+            used += end - r->len;
+            r->len = end;
+        }
+
+        count += take;
+        i += take;
+        if (left)
+            left -= take;
+        else
+            past_end += take;
     }
-    *mem = w->buf + (addr - w->start);
-    return addr < w->start + w->len ? MIN(need, (size_t) (w->start + w->len - addr)) : 0;
+    return count;
+}
+
+/* Read the planned ranges. process_vm_readv() stops at the first range it
+ * cannot read whole; pread() on /proc/pid/mem then reads that one as far as
+ * it can. That also reads pages the target itself cannot, like the serial
+ * loop does. */
+static void read_batch(chunked_scan_t *cs, read_batch_t *b)
+{
+    unsigned k = 0;
+
+    while (k < b->num_ranges) {
+        if (!__atomic_load_n(&cs->no_vm_readv, __ATOMIC_RELAXED)) {
+            struct iovec local[READ_BATCH_RANGES], remote[READ_BATCH_RANGES];
+            unsigned count = b->num_ranges - k;
+            for (unsigned j = 0; j < count; j++) {
+                local[j].iov_base = b->data + b->ranges[k + j].offset;
+                local[j].iov_len = b->ranges[k + j].len;
+                remote[j].iov_base = b->ranges[k + j].start;
+                remote[j].iov_len = b->ranges[k + j].len;
+            }
+            ssize_t got = process_vm_readv(cs->vars->target, local, count, remote, count, 0);
+            if (got < 0 && (errno == ENOSYS || errno == EPERM)) {
+                __atomic_store_n(&cs->no_vm_readv, true, __ATOMIC_RELAXED);
+                continue;
+            }
+            for (; got > 0 && k < b->num_ranges && (size_t) got >= b->ranges[k].len; k++) {
+                b->ranges[k].got = b->ranges[k].len;
+                got -= b->ranges[k].len;
+            }
+            if (k == b->num_ranges)
+                break;
+        }
+        read_range_t *r = &b->ranges[k++];
+        r->got = readmemory(b->data + r->offset, r->start, r->len);
+    }
+}
+
+/* The bytes of a planned element, as many as are readable up to `need`. This
+ * depends only on the target, never on what was read before: next to memory
+ * that cannot be read, sm_peekdata() can fail where reading afresh gets part
+ * of the bytes. */
+static inline read_range_t *batch_range(read_batch_t *b, char *address)
+{
+    while (address >= b->ranges[b->current].start + b->ranges[b->current].len)
+        b->current++;
+    return &b->ranges[b->current];
+}
+
+static inline size_t batch_bytes(read_batch_t *b, char *address, size_t need,
+                                 const uint8_t **mem)
+{
+    read_range_t *r = batch_range(b, address);
+    size_t offset = address - r->start;
+
+    if (offset < r->got) {
+        *mem = b->data + r->offset + offset;
+        return MIN(need, r->got - offset);
+    }
+    /* past where the range stopped being readable; this may be again */
+    *mem = b->single;
+    return readmemory(b->single, address, need);
 }
 
 /* Rescan one chunk, following the serial loop in sm_checkmatches(). */
@@ -776,7 +908,8 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 {
     check_chunk_t *c = &((check_chunk_t *) cs->chunks)[ci];
     scan_data_type_t scan_data_type = cs->vars->options.scan_data_type;
-    read_window_t window = {.buf = buf};
+    read_batch_t *batch = (read_batch_t *) buf;
+    size_t batch_left = 0; /* elements the batch covers from here on */
     matches_and_old_values_swath *s = c->swath;
     char *first = c->first_byte_in_child;
     size_t n = c->number_of_bytes;
@@ -825,6 +958,12 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
             reported = c->num_elements - left;
         }
 
+        if (batch_left == 0) {
+            batch_left = plan_batch(batch, scan_data_type, s, first, n, i, left);
+            read_batch(cs, batch);
+        }
+        --batch_left;
+
         match_flags old_flags = s->data[i].match_info;
         char *address = first + i;
         unsigned int match_length = 0;
@@ -833,8 +972,8 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 
         if (old_flags != flags_empty || required_extra_bytes_to_record) {
             unsigned int old_length = flags_to_memlength(scan_data_type, old_flags);
-            size_t memlength = read_through_window(&window, address, old_length ? old_length : 1,
-                                                   &memory_ptr);
+            size_t memlength = batch_bytes(batch, address, old_length ? old_length : 1,
+                                           &memory_ptr);
             if (memlength == 0) {
                 /* If we can't look at the data here, just abort the whole recording, something bad happened */
                 required_extra_bytes_to_record = 0;
@@ -938,7 +1077,7 @@ static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue
         .vars = vars,
         .uservalue = uservalue,
         .scan = check_chunk,
-        .buf_size = READ_WINDOW,
+        .buf_size = sizeof(read_batch_t),
         .total_units = total_elements,
     };
     bool ok = true;
