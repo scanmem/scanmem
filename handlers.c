@@ -1744,6 +1744,17 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
         return false;
 #endif
     }
+    else if (strcasecmp(argv[1], "threads") == 0)
+    {
+        char *end;
+        unsigned long threads = strtoul(argv[2], &end, 10);
+        if (*argv[2] == '\0' || *end != '\0' || threads > 64)
+        {
+            show_error("bad value for threads, see `help option`.\n");
+            return false;
+        }
+        vars->options.threads = threads;
+    }
     else
     {
         show_error("unknown option specified, see `help option`.\n");

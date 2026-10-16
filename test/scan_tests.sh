@@ -86,11 +86,13 @@ stop_memfake
 # it. 200.0 as a double is 00 00 00 00 00 00 69 40: within 100..250 the 0x69 is
 # a 1-byte match inside the double, and the 0x40 after it matches nothing.
 # When recording stopped at the shorter match, the double lost its last byte,
-# so a rescan of unchanged memory dropped it.
+# so a rescan of unchanged memory dropped it. Serial and chunked scans both.
 start_memfake --plant-float 200 --count 100 --width 8 --mb 4
-out=$(run_scan "option scan_data_type number\n100..250\n=\noption scan_data_type float64\n=\nexit")
-assert_eq "$(nth "$out" 2)" "$(nth "$out" 1)" "= on unchanged memory keeps every match"
-assert_ge "$(nth "$out" 3)" "100" "a double with a shorter match inside stays a double"
+for threads in 1 0; do
+    out=$(run_scan "option threads $threads\noption scan_data_type number\n100..250\n=\noption scan_data_type float64\n=\nexit")
+    assert_eq "$(nth "$out" 2)" "$(nth "$out" 1)" "threads $threads: = on unchanged memory keeps every match"
+    assert_ge "$(nth "$out" 3)" "100" "threads $threads: a double with a shorter match inside stays a double"
+done
 stop_memfake
 
 # Dense case: every slot in the buffer holds the value, so the last element of
@@ -102,6 +104,34 @@ start_memfake --plant $((0x5EED1234DEADBEEF)) --count "$dense_slots" --width 8 -
 out=$(run_scan "option scan_data_type int64\n$((0x5EED1234DEADBEEF))\n$(mutate_cmd)\n$((0x5EED1234DEADBEEF + 1))\nexit")
 assert_ge "$(nth "$out" 1)" "$dense_slots" "dense: initial scan finds every planted slot"
 assert_eq "$(nth "$out" 2)" "$dense_slots" "dense: narrow keeps every slot, no edges dropped"
+stop_memfake
+
+# Thread count must not change the answer. The first scan is split into chunks
+# and a match can straddle a chunk boundary, so a thread has to work out what
+# is still carrying over from the chunk before it. Compare the whole list, a
+# broken carry keeps the same number of matches but truncates the value.
+thread_case() {
+    local dtype=$1 pattern=$2 label=$3
+    local whole split
+    # One chunk big enough to swallow the region has no boundaries in it, so it
+    # is the ground truth. Comparing two thread counts would not do: both go
+    # through the same chunking, so a broken carry would corrupt both the same
+    # way and they would still agree with each other.
+    SCAN_ENV="SCANMEM_SCAN_CHUNK_BYTES=1073741824" \
+        whole=$(run_list "option threads 1\noption scan_data_type $dtype\n$pattern\nlist\nexit")
+    SCAN_ENV="SCANMEM_SCAN_CHUNK_BYTES=4096" \
+        split=$(run_list "option threads 8\noption scan_data_type $dtype\n$pattern\nlist\nexit")
+    assert_ge "$(printf '%s\n' "$whole" | grep -c .)" "1" "threads $label: unsplit run found something to compare"
+    assert_eq "$(printf '%s' "$split" | md5sum)" "$(printf '%s' "$whole" | md5sum)" \
+        "threads $label: split into 4096 byte chunks gives the same list"
+}
+
+start_memfake --plant-bytes "0011223344556677889900aa" --count 500 --mb 8
+thread_case bytearray "00 11 22 33 44 55 66 77 88 99 00 aa" "bytearray 12 byte"
+stop_memfake
+
+start_memfake --plant $((0x5EED1234DEADBEEF)) --count 500 --width 8 --mb 8
+thread_case int64 "$((0x5EED1234DEADBEEF))" "int64"
 stop_memfake
 
 summary

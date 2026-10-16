@@ -464,8 +464,11 @@ changes. So we run
 as root.
 
 The first scan can be very slow on large programs, this is not a problem for subsequent 
-scans as huge portions of the address space are usually eliminated. This could be improved
-in future, perhaps by assuming all integers are aligned by default. Suggestions welcome.
+scans as huge portions of the address space are usually eliminated. Where /proc/pid/mem is
+available, scans are spread over one thread per CPU; see the
+.B threads
+option in `help option`. This could be improved further, perhaps by assuming all integers
+are aligned by default. Suggestions welcome.
 
 The
 .B snapshot

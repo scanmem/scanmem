@@ -1,6 +1,15 @@
 scanmem 0.18.0 (unreleased)
 ===========================
 
+Performance
+-----------
+* Run scans on several threads; new `threads` option: 1 for the original
+  serial scans, N for N threads (up to 64), 0 (default) for one per CPU
+
+libscanmem
+----------
+* The options in globals_t (scanmem.h) gained a `threads` field
+
 Security and stability
 ----------------------
 * Record every byte of a match that a shorter match starts inside: later
@@ -39,5 +48,7 @@ Tests and CI
   known number of times and rewrites only those on SIGUSR1 (from #461)
 * memfake keeps its planted values: clang dropped them as dead stores, so
   the target never held them (from #462)
+* SCANMEM_SCAN_CHUNK_BYTES sets the size of scan chunks, so the tests can
+  put thousands of chunk boundaries in a small target
 * CI on Ubuntu 24.04 with gcc and clang, and a job with ASan, UBSan and
   float-cast-overflow (from #461)

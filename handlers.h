@@ -332,7 +332,7 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1}"
+    "noptrace{0,1},threads{0,1}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -380,6 +380,12 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\tpossibles values:\n"\
                  "\t0:\tuse ptrace\n" \
                  "\t1:\tno ptrace\n" \
+                 "\n" \
+                 "threads\t\tnumber of threads for scans (0-64)\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\tpossibles values:\n"\
+                 "\t0:\tone per CPU\n" \
+                 "\t1:\tno extra threads\n" \
                  "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"

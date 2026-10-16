@@ -46,6 +46,10 @@
 #include <stdbool.h>
 #include <limits.h>
 #include <fcntl.h>
+#if HAVE_PROCMEM
+#    include <pthread.h>
+#    include <signal.h>
+#endif
 
 // dirty hack for FreeBSD
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
@@ -384,6 +388,862 @@ static inline int bytes_to_record(int required, unsigned int match_length)
     return required - 1 > needed ? required - 1 : needed;
 }
 
+#if HAVE_PROCMEM
+/* Parallel scans.
+ *
+ * With more than one thread, both scans cut their work into chunks, which
+ * worker threads scan into matches arrays of their own, and the main thread
+ * merges those into `vars->matches` in address order. This needs
+ * /proc/<pid>/mem: `pread()` on the shared fd works from any thread, while
+ * `PTRACE_PEEKDATA` only works from the thread that attached. Otherwise the
+ * serial loops in sm_searchregions() and sm_checkmatches() run.
+ *
+ * The merged array is exactly the one the serial loop builds. A match that
+ * starts near the end of a chunk continues into the next one, so the chunk
+ * keeps recording the way the serial loop would, for as many bytes as the
+ * matches before its end still need: past those, the serial loop records the
+ * same as if the next chunk were where it started, so the next chunk records
+ * exactly what the serial loop does. The merge drops the overlap. */
+
+#    define MAX_SCAN_THREADS 64
+/* a match is at most UINT16_MAX bytes long */
+#    define MAX_MATCH_LENGTH (1UL << 16)
+/* how often a chunk reports progress and checks the stop flag */
+#    define PROGRESS_STEP (1UL << 20)
+
+typedef enum {
+    CHUNK_PENDING,
+    CHUNK_DONE,
+    CHUNK_STOPPED, /* the stop flag was raised mid-chunk */
+    CHUNK_FAILED   /* out of memory */
+} chunk_state_t;
+
+typedef struct chunked_scan chunked_scan_t;
+struct chunked_scan {
+    globals_t *vars;
+    const uservalue_t *uservalue;
+    void *chunks;
+    chunk_state_t *states;
+    size_t num_chunks;
+    /* scan chunk `i` using a scratch buffer of `buf_size` bytes */
+    chunk_state_t (*scan)(chunked_scan_t *cs, size_t i, uint8_t *buf);
+    size_t buf_size;
+    uint8_t *buf;                /* the main thread's scratch buffer */
+    unsigned long total_units;   /* for progress: bytes or matches-array elements */
+    unsigned long scanned_units; /* atomic */
+    unsigned num_threads;        /* 0 if none started: the main thread scans */
+    pthread_t threads[MAX_SCAN_THREADS];
+    size_t next_chunk;    /* next chunk a worker should take */
+    size_t merged_chunks; /* chunks the main thread is done with */
+    size_t window;        /* how far workers may run ahead of the merge */
+    bool abort;
+    pthread_mutex_t lock;
+    pthread_cond_t chunk_done;   /* worker -> main thread */
+    pthread_cond_t window_moved; /* main thread -> workers */
+};
+
+static unsigned scan_threads(const globals_t *vars)
+{
+    long n = vars->options.threads;
+
+    if (n == 0) {
+        n = sysconf(_SC_NPROCESSORS_ONLN);
+        if (n < 1)
+            n = 1;
+    }
+    return MIN(n, MAX_SCAN_THREADS);
+}
+
+/* Testing hook: SCANMEM_SCAN_CHUNK_BYTES sets how many bytes of target memory
+ * a chunk covers, within [min, max]. A match crossing a chunk boundary is what
+ * the chunking can get wrong, and at the normal sizes a small test target has
+ * few boundaries; test/scan_tests.sh turns this down to get thousands. */
+static size_t chunk_size_for_tests(size_t chunk_size, size_t min, size_t max)
+{
+    const char *env = util_getenv("SCANMEM_SCAN_CHUNK_BYTES");
+    if (env && *env) {
+        chunk_size = strtoul(env, NULL, 10);
+        if (chunk_size < min)
+            chunk_size = min;
+        if (chunk_size > max)
+            chunk_size = max;
+    }
+    return chunk_size;
+}
+
+/* Called by a chunk scan every PROGRESS_STEP units. Returns true to stop. */
+static inline bool report_progress(chunked_scan_t *cs, unsigned long units)
+{
+    __atomic_fetch_add(&cs->scanned_units, units, __ATOMIC_RELAXED);
+    return cs->vars->stop_flag;
+}
+
+static void update_progress(chunked_scan_t *cs)
+{
+    /* for front-end, update percentage */
+    if (cs->total_units)
+        cs->vars->scan_progress = (double) __atomic_load_n(&cs->scanned_units, __ATOMIC_RELAXED) / cs->total_units;
+}
+
+static void *scan_worker(void *arg)
+{
+    chunked_scan_t *cs = arg;
+    uint8_t *buf = malloc(cs->buf_size);
+
+    for (;;) {
+        pthread_mutex_lock(&cs->lock);
+        size_t i = cs->next_chunk;
+        if (i >= cs->num_chunks || cs->abort) {
+            pthread_mutex_unlock(&cs->lock);
+            break;
+        }
+        cs->next_chunk++;
+        /* bound the memory held by chunks waiting to be merged */
+        while (i >= cs->merged_chunks + cs->window && !cs->abort)
+            pthread_cond_wait(&cs->window_moved, &cs->lock);
+        bool abort = cs->abort;
+        pthread_mutex_unlock(&cs->lock);
+        if (abort)
+            break;
+
+        chunk_state_t state = buf ? cs->scan(cs, i, buf) : CHUNK_FAILED;
+
+        /* publishing the state under the lock also publishes the results */
+        pthread_mutex_lock(&cs->lock);
+        cs->states[i] = state;
+        pthread_cond_signal(&cs->chunk_done);
+        pthread_mutex_unlock(&cs->lock);
+    }
+
+    free(buf);
+    return NULL;
+}
+
+/* Start up to `nthreads` workers. With none, the main thread scans. */
+static void start_scan_threads(chunked_scan_t *cs, unsigned nthreads)
+{
+    cs->num_threads = 0;
+    nthreads = MIN(nthreads, cs->num_chunks);
+    if (nthreads < 2)
+        return;
+
+    pthread_mutex_init(&cs->lock, NULL);
+    pthread_cond_init(&cs->chunk_done, NULL);
+    pthread_cond_init(&cs->window_moved, NULL);
+    /* merging chunk j can wait for chunk j + 1, so this must be at least 2 */
+    cs->window = 2 * nthreads;
+
+    /* SIGINT must reach the main thread, which raises the stop flag. */
+    sigset_t all, old;
+    sigfillset(&all);
+    pthread_sigmask(SIG_BLOCK, &all, &old);
+    while (cs->num_threads < nthreads &&
+           pthread_create(&cs->threads[cs->num_threads], NULL, scan_worker, cs) == 0)
+        cs->num_threads++;
+    pthread_sigmask(SIG_SETMASK, &old, NULL);
+}
+
+/* Wait until chunk `i` is scanned, or scan it now if there are no workers.
+ * Returns CHUNK_PENDING if the scan was stopped before getting to it. */
+static chunk_state_t wait_for_chunk(chunked_scan_t *cs, size_t i)
+{
+    if (cs->num_threads == 0) {
+        if (cs->states[i] == CHUNK_PENDING && !cs->vars->stop_flag) {
+            if (!cs->buf && !(cs->buf = malloc(cs->buf_size)))
+                return CHUNK_FAILED;
+            cs->states[i] = cs->scan(cs, i, cs->buf);
+            update_progress(cs);
+        }
+        return cs->states[i];
+    }
+
+    pthread_mutex_lock(&cs->lock);
+    while (cs->states[i] == CHUNK_PENDING && !cs->vars->stop_flag) {
+        struct timespec deadline;
+        clock_gettime(CLOCK_REALTIME, &deadline);
+        deadline.tv_nsec += 100 * 1000 * 1000;
+        if (deadline.tv_nsec >= 1000 * 1000 * 1000) {
+            deadline.tv_sec++;
+            deadline.tv_nsec -= 1000 * 1000 * 1000;
+        }
+        pthread_cond_timedwait(&cs->chunk_done, &cs->lock, &deadline);
+        update_progress(cs);
+    }
+    chunk_state_t state = cs->states[i];
+    pthread_mutex_unlock(&cs->lock);
+    return state;
+}
+
+/* Let the workers move past chunk `i`. */
+static void chunk_merged(chunked_scan_t *cs, size_t i)
+{
+    if (cs->num_threads == 0)
+        return;
+    pthread_mutex_lock(&cs->lock);
+    cs->merged_chunks = i + 1;
+    pthread_cond_broadcast(&cs->window_moved);
+    pthread_mutex_unlock(&cs->lock);
+}
+
+/* Stop and join the workers. After this, the main thread owns everything. */
+static void stop_scan_threads(chunked_scan_t *cs)
+{
+    if (cs->num_threads == 0)
+        return;
+    pthread_mutex_lock(&cs->lock);
+    cs->abort = true;
+    pthread_cond_broadcast(&cs->window_moved);
+    pthread_mutex_unlock(&cs->lock);
+    while (cs->num_threads > 0)
+        pthread_join(cs->threads[--cs->num_threads], NULL);
+    pthread_mutex_destroy(&cs->lock);
+    pthread_cond_destroy(&cs->chunk_done);
+    pthread_cond_destroy(&cs->window_moved);
+}
+
+/* A matches array a chunk scan can fill without add_element() reallocating. */
+static matches_and_old_values_array *allocate_chunk_array(size_t max_bytes)
+{
+    matches_and_old_values_array *array = malloc(max_bytes);
+
+    if (array) {
+        array->bytes_allocated = max_bytes;
+        array->max_needed_bytes = max_bytes;
+        array->swaths[0].first_byte_in_child = NULL;
+        array->swaths[0].number_of_bytes = 0;
+    }
+    return array;
+}
+
+static void null_terminate_chunk(matches_and_old_values_swath *swath)
+{
+    if (swath->number_of_bytes) {
+        swath = local_address_beyond_last_element(swath);
+        swath->first_byte_in_child = NULL;
+        swath->number_of_bytes = 0;
+    }
+}
+
+/* Append `count` elements for consecutive addresses from `remote_address` to
+ * the swath `swath`, choosing between padding and a new swath exactly like
+ * add_element() does. Unless `may_grow`, the array must already be large
+ * enough. Returns the swath appended to, or NULL if out of memory. */
+static matches_and_old_values_swath *
+append_elements(matches_and_old_values_array **array,
+                matches_and_old_values_swath *swath,
+                char *remote_address,
+                const old_value_and_match_info *elements,
+                size_t count, bool may_grow)
+{
+    size_t bytes = count * sizeof(old_value_and_match_info);
+    size_t padding = 0;
+    bool new_swath = false;
+    void *end;
+
+    if (count == 0)
+        return swath;
+
+    if (swath->number_of_bytes == 0) {
+        end = (void *) swath + sizeof(matches_and_old_values_swath) + bytes;
+    } else {
+        size_t local_index_excess =
+            remote_address - (char *) remote_address_of_last_element(swath);
+        size_t local_address_excess =
+            local_index_excess * sizeof(old_value_and_match_info);
+        size_t needed_size_for_a_new_swath =
+            sizeof(matches_and_old_values_swath) +
+            sizeof(old_value_and_match_info);
+
+        new_swath = local_address_excess >= needed_size_for_a_new_swath;
+        if (new_swath)
+            end = local_address_beyond_last_element(swath) +
+                  sizeof(matches_and_old_values_swath) + bytes;
+        else {
+            padding = local_address_excess - sizeof(old_value_and_match_info);
+            end = local_address_beyond_last_element(swath) + padding + bytes;
+        }
+    }
+
+    if (!may_grow && (size_t) (end - (void *) *array) > (*array)->bytes_allocated)
+        return NULL;
+    *array = allocate_enough_to_reach(*array, end, &swath);
+    if (!*array)
+        return NULL;
+
+    if (swath->number_of_bytes == 0) {
+        swath->first_byte_in_child = remote_address;
+    } else if (new_swath) {
+        swath = local_address_beyond_last_element(swath);
+        swath->first_byte_in_child = remote_address;
+        swath->number_of_bytes = 0;
+    } else {
+        memset(local_address_beyond_last_element(swath), 0, padding);
+        swath->number_of_bytes += padding / sizeof(old_value_and_match_info);
+    }
+
+    memcpy(&swath->data[swath->number_of_bytes], elements, bytes);
+    swath->number_of_bytes += count;
+    return swath;
+}
+
+/* Append a chunk's matches, minus the addresses already recorded while the
+ * previous chunk finished a match across the boundary. */
+static matches_and_old_values_swath *
+merge_chunk(matches_and_old_values_array **array,
+            matches_and_old_values_swath *writing_swath_index,
+            const matches_and_old_values_array *chunk, bool may_grow)
+{
+    const matches_and_old_values_swath *s = chunk->swaths;
+
+    while (s->number_of_bytes) {
+        char *first = s->first_byte_in_child;
+        size_t skip = 0;
+
+        if (writing_swath_index->number_of_bytes) {
+            char *last = remote_address_of_last_element(writing_swath_index);
+            if (last >= first)
+                skip = MIN(s->number_of_bytes, (size_t) (last - first) + 1);
+        }
+
+        writing_swath_index = append_elements(array, writing_swath_index, first + skip,
+                                              &s->data[skip], s->number_of_bytes - skip,
+                                              may_grow);
+        if (!writing_swath_index)
+            return NULL;
+
+        s = (const matches_and_old_values_swath *) &s->data[s->number_of_bytes];
+    }
+    return writing_swath_index;
+}
+
+/* Rescans, which keep the matches that still match.
+ *
+ * The chunks are runs of elements of the current matches array, which the
+ * merge overwrites in place: the result never takes more room than the input
+ * up to the same point (the serial loop relies on this too). A chunk's result
+ * reaches into the next chunk's input, so chunk j is merged only once chunk
+ * j + 1 is done too; no later chunk reads that far back. */
+
+/* Target memory is read through a window, so that nearby matches share one
+ * read. It holds at least one whole match. */
+#    define READ_WINDOW (1UL << 20)
+
+typedef struct {
+    matches_and_old_values_swath *swath; /* where the chunk starts */
+    /* that swath's header: an earlier merge may overwrite it */
+    void *first_byte_in_child;
+    size_t number_of_bytes;
+    size_t index;        /* first element of `swath` the chunk owns */
+    size_t num_elements; /* elements it owns, across swaths */
+    size_t input_bytes;  /* room those take in the array */
+    matches_and_old_values_array *matches;
+    unsigned long num_matches;  /* matches in the owned elements */
+    unsigned long tail_matches; /* matches found while finishing past the end */
+} check_chunk_t;
+
+typedef struct {
+    uint8_t *buf;
+    char *start; /* NULL until the first read */
+    size_t len;  /* bytes read */
+    bool short_read;
+} read_window_t;
+
+/* The bytes at `addr`, as many as are readable up to `need`. Like
+ * sm_peekdata(), except that this depends only on the target, never on what
+ * was read before: next to memory that cannot be read, sm_peekdata() can fail
+ * where reading afresh gets part of the bytes. */
+static inline size_t read_through_window(read_window_t *w, char *addr, size_t need,
+                                         const uint8_t **mem)
+{
+    if (w->start == NULL || addr < w->start ||
+        (addr + need > w->start + w->len && !(w->short_read && addr < w->start + w->len))) {
+        size_t want = need > READ_WINDOW ? need : READ_WINDOW;
+        want = (want + sizeof(long) - 1) / sizeof(long) * sizeof(long);
+        w->start = addr;
+        w->len = readmemory(w->buf, addr, want);
+        w->short_read = w->len < want;
+    }
+    *mem = w->buf + (addr - w->start);
+    return addr < w->start + w->len ? MIN(need, (size_t) (w->start + w->len - addr)) : 0;
+}
+
+/* Rescan one chunk, following the serial loop in sm_checkmatches(). */
+static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
+{
+    check_chunk_t *c = &((check_chunk_t *) cs->chunks)[ci];
+    scan_data_type_t scan_data_type = cs->vars->options.scan_data_type;
+    read_window_t window = {.buf = buf};
+    matches_and_old_values_swath *s = c->swath;
+    char *first = c->first_byte_in_child;
+    size_t n = c->number_of_bytes;
+    size_t i = c->index;
+    size_t left = c->num_elements;
+    size_t reported = 0;
+    int required_extra_bytes_to_record = 0;
+    int pending = -1; /* once finishing: elements the matches before the end still need */
+    /* Locals, not fields of `c`: neighbouring chunks share cache lines. */
+    unsigned long num_matches = 0;
+
+    matches_and_old_values_array *matches = allocate_chunk_array(sizeof(matches_and_old_values_array) + c->input_bytes +
+                                                                 2 * sizeof(matches_and_old_values_swath) +
+                                                                 MAX_MATCH_LENGTH * sizeof(old_value_and_match_info));
+    if (!(c->matches = matches))
+        return CHUNK_FAILED;
+    matches_and_old_values_swath *writing_swath_index = matches->swaths;
+
+    for (;;) {
+        if (i == n) {
+            /* a match does not continue into the next swath */
+            if (left == 0)
+                break;
+            s = (matches_and_old_values_swath *) &s->data[n];
+            first = s->first_byte_in_child;
+            n = s->number_of_bytes;
+            i = 0;
+            required_extra_bytes_to_record = 0;
+            continue;
+        }
+
+        /* Past the owned elements, finish the matches crossing the end: record
+         * what the serial loop does, for as many elements as they still need
+         * (see search_chunk()). */
+        bool finishing = left == 0;
+        if (finishing && pending < 0)
+            pending = required_extra_bytes_to_record;
+        if (finishing && pending == 0)
+            break;
+
+        if (!finishing && UNLIKELY(c->num_elements - left - reported >= PROGRESS_STEP)) {
+            if (report_progress(cs, c->num_elements - left - reported)) {
+                c->matches = matches;
+                return CHUNK_STOPPED;
+            }
+            reported = c->num_elements - left;
+        }
+
+        match_flags old_flags = s->data[i].match_info;
+        char *address = first + i;
+        unsigned int match_length = 0;
+        match_flags checkflags = flags_empty;
+        const uint8_t *memory_ptr = NULL;
+
+        if (old_flags != flags_empty || required_extra_bytes_to_record) {
+            unsigned int old_length = flags_to_memlength(scan_data_type, old_flags);
+            size_t memlength = read_through_window(&window, address, old_length ? old_length : 1,
+                                                   &memory_ptr);
+            if (memlength == 0) {
+                /* If we can't look at the data here, just abort the whole recording, something bad happened */
+                required_extra_bytes_to_record = 0;
+            } else if (old_flags != flags_empty) {
+                value_t old_val = data_to_val_aux(s, i, n);
+                memlength = old_length < memlength ? old_length : memlength;
+                match_length = (*sm_scan_routine)((const mem64_t *) memory_ptr, memlength,
+                                                  &old_val, cs->uservalue, &checkflags);
+            }
+        }
+
+        if (match_length > 0) {
+            writing_swath_index = add_element(&matches, writing_swath_index, address,
+                                              memory_ptr[0], checkflags);
+            if (finishing)
+                c->tail_matches++; /* the next chunk's, which counts them too */
+            else
+                ++num_matches;
+            required_extra_bytes_to_record =
+                bytes_to_record(required_extra_bytes_to_record, match_length);
+        } else if (required_extra_bytes_to_record) {
+            writing_swath_index = add_element(&matches, writing_swath_index, address,
+                                              memory_ptr[0], flags_empty);
+            --required_extra_bytes_to_record;
+        }
+
+        ++i;
+        if (!finishing)
+            --left;
+        else /* stop where the serial loop stops recording, at unreadable memory */
+            pending = MIN(pending - 1, required_extra_bytes_to_record);
+    }
+
+    null_terminate_chunk(writing_swath_index);
+    c->matches = matches;
+    c->num_matches = num_matches;
+    report_progress(cs, c->num_elements - reported);
+    return CHUNK_DONE;
+}
+
+/* Cut the matches array into chunks of `chunk_elements` elements. */
+static check_chunk_t *make_check_chunks(matches_and_old_values_array *matches,
+                                        unsigned long total_elements, size_t chunk_elements,
+                                        size_t *num_chunks)
+{
+    check_chunk_t *chunks, *c = NULL;
+    matches_and_old_values_swath *s;
+
+    *num_chunks = (total_elements + chunk_elements - 1) / chunk_elements;
+    if (*num_chunks == 0 || !(chunks = calloc(*num_chunks, sizeof(check_chunk_t))))
+        return NULL;
+
+    for (s = matches->swaths; s->number_of_bytes;
+         s = (matches_and_old_values_swath *) &s->data[s->number_of_bytes]) {
+        size_t index = 0;
+        if (c)
+            c->input_bytes += sizeof(matches_and_old_values_swath);
+        while (index < s->number_of_bytes) {
+            if (!c || c->num_elements == chunk_elements) {
+                c = c ? c + 1 : chunks;
+                c->swath = s;
+                c->first_byte_in_child = s->first_byte_in_child;
+                c->number_of_bytes = s->number_of_bytes;
+                c->index = index;
+                c->input_bytes = sizeof(matches_and_old_values_swath);
+            }
+            size_t take = MIN(s->number_of_bytes - index, chunk_elements - c->num_elements);
+            c->num_elements += take;
+            c->input_bytes += take * sizeof(old_value_and_match_info);
+            index += take;
+        }
+    }
+    return chunks;
+}
+
+#    define MIN_CHECK_CHUNK (1UL << 20) /* elements, must exceed MAX_MATCH_LENGTH */
+#    define MAX_CHECK_CHUNK (4UL << 20)
+
+/* Elements per chunk of a rescan with `nthreads`. Several chunks per thread
+ * keep the threads busy to the end. */
+static size_t check_chunk_elements(unsigned long total_elements, unsigned nthreads)
+{
+    size_t chunk_elements = total_elements / (nthreads * 8);
+    if (chunk_elements < MIN_CHECK_CHUNK)
+        chunk_elements = MIN_CHECK_CHUNK;
+    chunk_elements = MIN(chunk_elements, MAX_CHECK_CHUNK);
+    /* a chunk's tail reaches up to a match length into the next chunk, and
+     * never further (see the merge below) */
+    return chunk_size_for_tests(chunk_elements, MAX_MATCH_LENGTH, MAX_CHECK_CHUNK);
+}
+
+/* The main thread's part of a rescan: merge chunks in order, overwriting the
+ * matches array, and print the same progress as the serial loop. Sets
+ * `started` to false if it changed nothing, so the serial loop can run. */
+static bool check_matches_parallel(globals_t *vars, const uservalue_t *uservalue,
+                                   unsigned long total_elements, unsigned nthreads,
+                                   matches_and_old_values_swath **writing_swath_index,
+                                   bool *started)
+{
+    chunked_scan_t cs = {
+        .vars = vars,
+        .uservalue = uservalue,
+        .scan = check_chunk,
+        .buf_size = READ_WINDOW,
+        .total_units = total_elements,
+    };
+    bool ok = true;
+    size_t i;
+
+    size_t chunk_elements = check_chunk_elements(total_elements, nthreads);
+
+    check_chunk_t *chunks = make_check_chunks(vars->matches, total_elements, chunk_elements,
+                                              &cs.num_chunks);
+    cs.chunks = chunks;
+    cs.states = calloc(cs.num_chunks, sizeof(chunk_state_t));
+    *started = chunks && cs.states;
+    if (!*started) {
+        free(chunks);
+        free(cs.states);
+        return true;
+    }
+
+    start_scan_threads(&cs, nthreads);
+
+    /* The first chunk took a copy of this header. */
+    *writing_swath_index = vars->matches->swaths;
+    (*writing_swath_index)->first_byte_in_child = NULL;
+    (*writing_swath_index)->number_of_bytes = 0;
+
+    unsigned long merged_elements = 0;
+    unsigned dots = 1;
+    for (i = 0; i < cs.num_chunks; i++) {
+        chunk_state_t state = wait_for_chunk(&cs, i);
+        chunk_state_t next = state == CHUNK_DONE && i + 1 < cs.num_chunks ? wait_for_chunk(&cs, i + 1)
+                                                                          : CHUNK_DONE;
+        bool last = state != CHUNK_DONE || next != CHUNK_DONE;
+        if (last) {
+            /* nothing reads the matches array any more */
+            stop_scan_threads(&cs);
+            if (state == CHUNK_FAILED || next == CHUNK_FAILED) {
+                show_error("sorry, there was a memory allocation error.\n");
+                ok = false;
+            } else {
+                printf("\n");
+            }
+        }
+
+        if (state == CHUNK_DONE) {
+            *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
+                                               chunks[i].matches, false);
+            /* cannot happen, the result never outgrows the input */
+            assert(*writing_swath_index != NULL);
+            vars->num_matches += chunks[i].num_matches;
+            if (last)
+                vars->num_matches += chunks[i].tail_matches;
+            merged_elements += chunks[i].num_elements;
+        }
+        free(chunks[i].matches);
+        chunks[i].matches = NULL;
+        if (last)
+            break;
+        chunk_merged(&cs, i);
+
+        /* for user, just print a dot */
+        for (; dots < 1 + (NUM_DOTS - 1) * merged_elements / total_elements; dots++)
+            print_a_dot();
+    }
+
+    stop_scan_threads(&cs);
+    for (i = 0; i < cs.num_chunks; i++)
+        free(chunks[i].matches);
+    free(chunks);
+    free(cs.states);
+    free(cs.buf);
+    return ok;
+}
+
+/* The initial search. Regions are cut into chunks of bytes; reading this far
+ * past a chunk gives every byte it tests (including the ones it tests to
+ * finish a match crossing its end) the same lookahead the serial loop gives
+ * it. */
+#    define MIN_CHUNK_SIZE (1UL << 20)
+#    define MAX_CHUNK_SIZE (16UL << 20)
+#    define CHUNK_TAIL (2 * MAX_MATCH_LENGTH)
+
+/* Bytes of target memory per chunk of an initial search with `nthreads`.
+ * Several chunks per thread keep the threads busy to the end. */
+static size_t search_chunk_size(unsigned long total_scan_bytes, unsigned nthreads)
+{
+    size_t chunk_size = total_scan_bytes / (nthreads * 8);
+    chunk_size = (chunk_size + MIN_CHUNK_SIZE - 1) & ~(MIN_CHUNK_SIZE - 1);
+    if (chunk_size < MIN_CHUNK_SIZE)
+        chunk_size = MIN_CHUNK_SIZE;
+    chunk_size = MIN(chunk_size, MAX_CHUNK_SIZE);
+    return chunk_size_for_tests(chunk_size, 64, MAX_CHUNK_SIZE);
+}
+
+typedef struct {
+    const region_t *region;
+    unsigned long regnum; /* 1-based, for messages */
+    size_t index_in_region;
+    size_t chunks_in_region;
+    char *start;        /* first byte this chunk tests */
+    size_t size;        /* number of bytes this chunk owns */
+    size_t region_left; /* bytes from `start` to the end of the region */
+    char *readable_end; /* where reading stopped short, or NULL */
+    matches_and_old_values_array *matches;
+    unsigned long num_matches;  /* matches starting in the owned bytes */
+    unsigned long tail_matches; /* matches found while finishing past the end */
+} search_chunk_t;
+
+/* Scan one chunk, following the serial loop in sm_searchregions(). */
+static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
+{
+    search_chunk_t *c = &((search_chunk_t *) cs->chunks)[ci];
+    size_t want = c->size + MIN(c->region_left - c->size, CHUNK_TAIL);
+    size_t got = readmemory(buf, c->start, want);
+    size_t owned = MIN(got, c->size);
+    size_t reported = 0;
+    size_t i;
+    int required_extra_bytes_to_record = 0;
+    /* Locals, not fields of `c`: neighbouring chunks share cache lines. */
+    unsigned long num_matches = 0;
+
+    if (got < want)
+        c->readable_end = c->start + got;
+
+    /* room for every byte read, so that add_element() never reallocates */
+    matches_and_old_values_array *matches =
+        allocate_chunk_array(sizeof(matches_and_old_values_array) +
+                             2 * sizeof(matches_and_old_values_swath) +
+                             got * sizeof(old_value_and_match_info));
+    if (!(c->matches = matches))
+        return CHUNK_FAILED;
+    matches_and_old_values_swath *writing_swath_index = matches->swaths;
+
+    for (i = 0; i < owned; i++) {
+        if (UNLIKELY(i - reported >= PROGRESS_STEP)) {
+            if (report_progress(cs, i - reported))
+                return CHUNK_STOPPED;
+            reported = i;
+        }
+
+        const mem64_t *memory_ptr = (mem64_t *) (buf + i);
+        match_flags checkflags = flags_empty;
+        unsigned int match_length = (*sm_scan_routine)(memory_ptr, got - i, NULL,
+                                                       cs->uservalue, &checkflags);
+        if (UNLIKELY(match_length > 0)) {
+            writing_swath_index = add_element(&matches, writing_swath_index,
+                                              c->start + i, get_u8b(memory_ptr), checkflags);
+            ++num_matches;
+            required_extra_bytes_to_record =
+                bytes_to_record(required_extra_bytes_to_record, match_length);
+        } else if (required_extra_bytes_to_record) {
+            writing_swath_index = add_element(&matches, writing_swath_index,
+                                              c->start + i, get_u8b(memory_ptr), flags_empty);
+            --required_extra_bytes_to_record;
+        }
+    }
+
+    /* Finish the matches crossing the end: record what the serial loop does,
+     * for as many bytes as they still need. Past those, what the serial loop
+     * records no longer depends on matches before the end, so the next chunk
+     * records the same (and the matches it finds here). */
+    for (int pending = required_extra_bytes_to_record; pending > 0 && i < got; pending--, i++) {
+        const mem64_t *memory_ptr = (mem64_t *) (buf + i);
+        match_flags checkflags = flags_empty;
+        unsigned int match_length = (*sm_scan_routine)(memory_ptr, got - i, NULL,
+                                                       cs->uservalue, &checkflags);
+        if (match_length > 0) {
+            writing_swath_index = add_element(&matches, writing_swath_index,
+                                              c->start + i, get_u8b(memory_ptr), checkflags);
+            c->tail_matches++;
+            required_extra_bytes_to_record =
+                bytes_to_record(required_extra_bytes_to_record, match_length);
+        } else {
+            writing_swath_index = add_element(&matches, writing_swath_index,
+                                              c->start + i, get_u8b(memory_ptr), flags_empty);
+            --required_extra_bytes_to_record;
+        }
+    }
+
+    null_terminate_chunk(writing_swath_index);
+    c->matches = matches;
+    c->num_matches = num_matches;
+
+    /* bytes not read still count as done */
+    report_progress(cs, c->size - reported);
+    return CHUNK_DONE;
+}
+
+/* The main thread's part of the initial search: merge chunks in order,
+ * printing the same per-region progress as the serial scan. */
+static bool search_regions_parallel(globals_t *vars, const uservalue_t *uservalue,
+                                    unsigned long total_scan_bytes, unsigned nthreads,
+                                    matches_and_old_values_swath **writing_swath_index)
+{
+    chunked_scan_t cs = {
+        .vars = vars,
+        .uservalue = uservalue,
+        .scan = search_chunk,
+        .total_units = total_scan_bytes,
+    };
+    search_chunk_t *chunks;
+    bool ok = true;
+    element_t *n;
+    size_t i;
+
+    size_t chunk_size = search_chunk_size(total_scan_bytes, nthreads);
+    cs.buf_size = chunk_size + CHUNK_TAIL;
+
+    for (n = vars->regions->head; n; n = n->next) {
+        region_t *r = n->data;
+        cs.num_chunks += (r->size + chunk_size - 1) / chunk_size;
+    }
+    cs.chunks = chunks = calloc(cs.num_chunks, sizeof(search_chunk_t));
+    cs.states = calloc(cs.num_chunks, sizeof(chunk_state_t));
+    if (!chunks || !cs.states) {
+        show_error("sorry, there was a memory allocation error.\n");
+        free(chunks);
+        free(cs.states);
+        return false;
+    }
+
+    unsigned long regnum = 0;
+    i = 0;
+    for (n = vars->regions->head; n; n = n->next) {
+        region_t *r = n->data;
+        size_t chunks_in_region = (r->size + chunk_size - 1) / chunk_size;
+        ++regnum;
+        for (size_t j = 0; j < chunks_in_region; j++, i++) {
+            size_t offset = j * chunk_size;
+            search_chunk_t *c = &chunks[i];
+            c->region = r;
+            c->regnum = regnum;
+            c->index_in_region = j;
+            c->chunks_in_region = chunks_in_region;
+            c->start = (char *) r->start + offset;
+            c->size = MIN(chunk_size, r->size - offset);
+            c->region_left = r->size - offset;
+        }
+    }
+
+    start_scan_threads(&cs, nthreads);
+
+    const region_t *region = NULL;
+    char *readable_end = NULL; /* of the current region */
+    unsigned dots = 0;
+    for (i = 0; i < cs.num_chunks; i++) {
+        search_chunk_t *c = &chunks[i];
+        chunk_state_t state = wait_for_chunk(&cs, i);
+
+        if (state == CHUNK_FAILED) {
+            show_error("sorry, there was a memory allocation error.\n");
+            ok = false;
+            break;
+        }
+        if (state != CHUNK_DONE) {
+            /* stopped: keep what was merged, like the serial scan does */
+            if (i > 0)
+                vars->num_matches += chunks[i - 1].tail_matches;
+            printf("\n");
+            break;
+        }
+
+        if (c->region != region) {
+            region = c->region;
+            readable_end = NULL;
+            dots = 0;
+            show_user("%02lu/%02lu searching %#10lx - %#10lx", c->regnum,
+                      vars->regions->size, (unsigned long) region->start,
+                      (unsigned long) region->start + region->size);
+            fflush(stderr);
+        }
+
+        /* The serial scan stops a region at the first byte it cannot read. */
+        if (readable_end == NULL || c->start < readable_end) {
+            if (c->readable_end && c->index_in_region == 0 && c->readable_end == c->start)
+                show_warn("reading region %02lu failed.\n", c->regnum);
+            if (c->readable_end && (readable_end == NULL || c->readable_end < readable_end))
+                readable_end = c->readable_end;
+
+            *writing_swath_index = merge_chunk(&vars->matches, *writing_swath_index,
+                                               c->matches, true);
+            if (!*writing_swath_index) {
+                show_error("could not allocate match array\n");
+                ok = false;
+                break;
+            }
+            vars->num_matches += c->num_matches;
+        }
+
+        /* print a simple progress meter */
+        for (; dots < (c->index_in_region + 1) * NUM_DOTS / c->chunks_in_region; dots++)
+            print_a_dot();
+        if (c->index_in_region + 1 == c->chunks_in_region)
+            show_user("ok\n");
+
+        free(c->matches);
+        c->matches = NULL;
+        chunk_merged(&cs, i);
+    }
+
+    stop_scan_threads(&cs);
+    for (i = 0; i < cs.num_chunks; i++)
+        free(chunks[i].matches);
+    free(chunks);
+    free(cs.states);
+    free(cs.buf);
+    return ok;
+}
+#endif /* HAVE_PROCMEM */
+
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
  * it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true. */
 bool sm_checkmatches(globals_t *vars,
@@ -400,6 +1260,7 @@ bool sm_checkmatches(globals_t *vars,
     unsigned int samples_to_dot = SAMPLES_PER_DOT;
     size_t bytes_at_next_sample;
     size_t bytes_per_sample;
+    bool ok = true;
 
     if (sm_choose_scanroutine(vars->options.scan_data_type, match_type, uservalue, vars->options.reverse_endianness) == false)
     {
@@ -434,6 +1295,23 @@ bool sm_checkmatches(globals_t *vars,
         return false;
 
     INTERRUPTABLESCAN();
+
+#if HAVE_PROCMEM
+    unsigned nthreads = scan_threads(vars);
+    if (nthreads > 1 && total_scan_bytes > 0) {
+        bool started;
+        /* put back the header the chunks start from */
+        *vars->matches->swaths = reading_swath;
+        ok = check_matches_parallel(vars, uservalue, total_scan_bytes, nthreads,
+                                    &writing_swath_index, &started);
+        if (started) {
+            reading_swath.first_byte_in_child = NULL; /* skip the serial loop */
+        } else {
+            writing_swath_index->first_byte_in_child = NULL;
+            writing_swath_index->number_of_bytes = 0;
+        }
+    }
+#endif
 
     while (reading_swath.first_byte_in_child) {
         unsigned int match_length = 0;
@@ -533,9 +1411,8 @@ bool sm_checkmatches(globals_t *vars,
     show_info("we currently have %ld matches.\n", vars->num_matches);
 
     /* okay, detach */
-    return sm_detach(vars->target);
+    return sm_detach(vars->target) && ok;
 }
-
 
 /* sm_searchregions() performs an initial search of the process for values matching `uservalue` */
 bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const uservalue_t *uservalue)
@@ -600,6 +1477,19 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     vars->scan_progress = 0.0;
     vars->stop_flag = false;
     n = vars->regions->head;
+
+#if HAVE_PROCMEM
+    unsigned nthreads = scan_threads(vars);
+    if (nthreads > 1 && total_scan_bytes > 0) {
+        if (!search_regions_parallel(vars, uservalue, total_scan_bytes, nthreads,
+                                     &writing_swath_index)) {
+            ENDINTERRUPTABLE();
+            sm_detach(vars->target);
+            return false;
+        }
+        n = NULL; /* skip the serial scan */
+    }
+#endif
 
     /* check every memory region */
     while (n) {

@@ -31,8 +31,11 @@ static volatile sig_atomic_t got_mutate = 0;
 
 static void on_mutate(int sig) { (void)sig; got_mutate = 1; }
 
-/* Legacy positional usage is kept as-is because the old smoke test used it:
-       memfake [MB] [randomness]
+/* Positional usage, which sm_test.sh uses:
+       memfake [MB] [randomness] [MB of pattern]
+   The pattern repeats the bytes 01 02 ... 09: as int64 that is one match
+   every 9 bytes, each followed by bytes that do not match, and chunked scans
+   split their work at powers of two, which this puts inside the matches.
    The plant modes are the useful ones for asserting on scan results, they
    put a known value in memory a known number of times so a test can say
    "this scan must return exactly N" instead of just "it didn't crash". */
@@ -40,7 +43,7 @@ static void on_mutate(int sig) { (void)sig; got_mutate = 1; }
 static void usage(const char *argv0)
 {
     fprintf(stderr,
-        "usage: %s [MB] [randomness]\n"
+        "usage: %s [MB] [randomness] [MB of pattern]\n"
         "       %s --plant VALUE --count N [--width 1|2|4|8] [--mb N] [--skew N]\n"
         "       %s --plant-float VALUE --count N [--width 4|8] [--mb N]\n"
         "       %s --plant-bytes HEXSTRING --count N [--mb N]\n"
@@ -91,6 +94,7 @@ int main(int argc, char **argv)
 {
     size_t MB_to_allocate = 1;
     bool add_randomness = false;
+    size_t MB_of_pattern = 0;
 
     uint64_t plant = 0;
     double plant_f = 0;
@@ -138,7 +142,8 @@ int main(int argc, char **argv)
     } else {
         if (argc >= 2) MB_to_allocate = strtoul(argv[1], NULL, 10);
         if (argc >= 3) add_randomness = strtoul(argv[2], NULL, 10);
-        if (argc >= 4) return 1;
+        if (argc >= 4) MB_of_pattern = strtoul(argv[3], NULL, 10);
+        if (argc >= 5) return 1;
     }
 
     size_t total_bytes = MB_to_allocate * 1024 * 1024;
@@ -156,12 +161,20 @@ int main(int argc, char **argv)
             }
         }
 
+        uint8_t *pattern = malloc(MB_of_pattern * 1024 * 1024 + 1);
+        assert(pattern != NULL);
+        for (size_t i = 0; i < MB_of_pattern * 1024 * 1024; i++) {
+            pattern[i] = i % 9 + 1;
+        }
+
         keep(array);
+        keep(pattern);
         printf("%d\n", (int)getpid());
         fflush(stdout);
         signal_ready(ready_path);
         pause();
 
+        free(pattern);
         free(array);
         return 0;
     }
