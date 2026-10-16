@@ -82,6 +82,17 @@ out=$(run_scan "option scan_data_type int64\n1234567890123456789\nexit")
 assert_eq "$(nth "$out" 1)" "0" "absent value returns no matches"
 stop_memfake
 
+# Every byte of a match is recorded, also when a shorter match starts inside
+# it. 200.0 as a double is 00 00 00 00 00 00 69 40: within 100..250 the 0x69 is
+# a 1-byte match inside the double, and the 0x40 after it matches nothing.
+# When recording stopped at the shorter match, the double lost its last byte,
+# so a rescan of unchanged memory dropped it.
+start_memfake --plant-float 200 --count 100 --width 8 --mb 4
+out=$(run_scan "option scan_data_type number\n100..250\n=\noption scan_data_type float64\n=\nexit")
+assert_eq "$(nth "$out" 2)" "$(nth "$out" 1)" "= on unchanged memory keeps every match"
+assert_ge "$(nth "$out" 3)" "100" "a double with a shorter match inside stays a double"
+stop_memfake
+
 # Dense case: every slot in the buffer holds the value, so the last element of
 # every read window is a real match. Off-by-one errors at buffer edges hide
 # completely in the sparse cases above (they were planted ~40KB apart) but show

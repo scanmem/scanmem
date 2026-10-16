@@ -372,6 +372,18 @@ static inline uint16_t flags_to_memlength(scan_data_type_t scan_data_type, match
     }
 }
 
+/* A match of `match_length` bytes starts at the byte being recorded, and
+ * `required` more bytes were still to be recorded before it: how many bytes
+ * to record after it. A later match can be shorter than an earlier one it
+ * starts inside, so the bytes the earlier one needs stay included; otherwise
+ * its old value would end early, and later scans would read padding, or drop
+ * its wider types, in place of its last bytes. */
+static inline int bytes_to_record(int required, unsigned int match_length)
+{
+    int needed = (int) match_length - 1;
+    return required - 1 > needed ? required - 1 : needed;
+}
+
 /* This is the function that handles when you enter a value (or >, <, =) for the second or later time (i.e. when there's already a list of matches);
  * it reduces the list to those that still match. It returns false on failure to attach, detach, or reallocate memory, otherwise true. */
 bool sm_checkmatches(globals_t *vars,
@@ -464,7 +476,7 @@ bool sm_checkmatches(globals_t *vars,
 
             ++vars->num_matches;
 
-            required_extra_bytes_to_record = match_length - 1;
+            required_extra_bytes_to_record = bytes_to_record(required_extra_bytes_to_record, match_length);
         }
         else if (required_extra_bytes_to_record)
         {
@@ -681,7 +693,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                 
                 ++vars->num_matches;
                 
-                required_extra_bytes_to_record = match_length - 1;
+                required_extra_bytes_to_record = bytes_to_record(required_extra_bytes_to_record, match_length);
             }
             else if (required_extra_bytes_to_record)
             {

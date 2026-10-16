@@ -3,6 +3,9 @@ scanmem 0.18.0 (unreleased)
 
 Security and stability
 ----------------------
+* Record every byte of a match that a shorter match starts inside: later
+  scans compared its missing bytes with padding (e.g. false matches for `+`
+  on 64-bit types) or dropped its wider types
 * Harden printable-string and bytearray formatting bounds (#449)
 * Cap /proc maps pathname buffer; fix sscanf field types (#452)
 * Clamp ptrace poke length to mapped buffer size
