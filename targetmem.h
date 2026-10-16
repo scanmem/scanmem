@@ -199,6 +199,23 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
     }
 }
 
+/* Whether an element `index_excess` bytes past a swath's last element starts
+   a new swath, rather than joining that one over a padded gap: when the gap
+   would take at least the room of a new swath's header. The equal case starts
+   a new swath, so that later scans don't needlessly iterate through a bunch
+   of empty values.
+   Rescans, which rewrite the array in place, rely on this: the elements a new
+   swath leaves out take at least the room of its header, so the array never
+   gets longer than it was up to the same point. Whatever adds elements to a
+   matches array (add_element(), and the merges of the chunked scans in
+   ptrace.c) must decide by this. */
+static inline bool
+gap_starts_new_swath (size_t index_excess)
+{
+    return index_excess * sizeof(old_value_and_match_info) >=
+           sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info);
+}
+
 /* returns a pointer to the swath to which the element was added -
    i.e. the last swath in the array after the operation */
 static inline matches_and_old_values_swath *
@@ -229,15 +246,8 @@ add_element (matches_and_old_values_array **array,
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info);
 
-        if (local_address_excess >= needed_size_for_a_new_swath) {
-            /* It is more memory-efficient to start a new swath.
-             * The equal case is decided for a new swath, so that
-             * later we don't needlessly iterate through a bunch
-             * of empty values.
-             * Rescans, which rewrite the array in place, rely on this:
-             * the elements a new swath leaves out take at least the room of
-             * its header, so the array never gets longer than it was up to
-             * the same point. */
+        if (gap_starts_new_swath(local_index_excess)) {
+            /* It is more memory-efficient to start a new swath. */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 needed_size_for_a_new_swath, &swath);

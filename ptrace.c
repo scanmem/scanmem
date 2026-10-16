@@ -960,11 +960,8 @@ append_elements(matches_and_old_values_array **array,
             remote_address - (char *) remote_address_of_last_element(swath);
         size_t local_address_excess =
             local_index_excess * sizeof(old_value_and_match_info);
-        size_t needed_size_for_a_new_swath =
-            sizeof(matches_and_old_values_swath) +
-            sizeof(old_value_and_match_info);
 
-        new_swath = local_address_excess >= needed_size_for_a_new_swath;
+        new_swath = gap_starts_new_swath(local_index_excess);
         if (new_swath)
             end = local_address_beyond_last_element(swath) +
                   sizeof(matches_and_old_values_swath) + bytes;
@@ -1094,8 +1091,7 @@ static void plan_merge(chunked_scan_t *cs, copy_task_t *task,
             dest = cs->tail->data;
         } else {
             size_t excess = address - (cs->tail_first + cs->tail_bytes - 1);
-            if (excess * sizeof(old_value_and_match_info) >=
-                sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info)) {
+            if (gap_starts_new_swath(excess)) {
                 tail_done(cs);
                 cs->tail = (matches_and_old_values_swath *) end;
                 cs->tail->first_byte_in_child = address;
