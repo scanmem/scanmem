@@ -32,6 +32,7 @@
 # define _XOPEN_SOURCE 500
 
 #include <time.h>
+#include <sched.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <sys/ptrace.h>
@@ -485,16 +486,73 @@ struct chunked_scan {
     pthread_cond_t window_moved; /* main thread -> workers */
 };
 
-static unsigned scan_threads(const globals_t *vars)
-{
-    long n = vars->options.threads;
+/* `option threads 0` keeps the working memory of the threads (their buffers
+ * and chunk arrays, on top of the result) under `option memlimit`, by default
+ * this share of the RAM */
+#    define THREAD_MEMORY_SHARE 8 /* an eighth */
 
-    if (n == 0) {
-        n = sysconf(_SC_NPROCESSORS_ONLN);
-        if (n < 1)
-            n = 1;
+/* The cores this process may run on. A second thread on a core (SMT) gains a
+ * scan nothing, since the scans wait on memory. */
+static unsigned usable_cores(void)
+{
+    long cpus = sysconf(_SC_NPROCESSORS_ONLN);
+    unsigned cores = 0;
+#    ifdef CPU_COUNT
+    cpu_set_t set;
+    if (sched_getaffinity(0, sizeof(set), &set) == 0) {
+        bool seen[CPU_SETSIZE] = {false};
+        cpus = CPU_COUNT(&set);
+        for (int cpu = 0; cpu < CPU_SETSIZE; cpu++) {
+            if (!CPU_ISSET(cpu, &set))
+                continue;
+            /* a core goes by the number of its first CPU */
+            char path[96];
+            int first = cpu;
+            snprintf(path, sizeof(path),
+                     "/sys/devices/system/cpu/cpu%d/topology/thread_siblings_list", cpu);
+            FILE *f = fopen(path, "r");
+            if (f) {
+                if (fscanf(f, "%d", &first) != 1)
+                    first = cpu;
+                fclose(f);
+            }
+            if (first >= 0 && first < CPU_SETSIZE && !seen[first]) {
+                seen[first] = true;
+                cores++;
+            }
+        }
     }
-    return MIN(n, MAX_SCAN_THREADS);
+#    endif
+    if (cores == 0)
+        cores = cpus > 0 ? cpus : 1;
+    return cores;
+}
+
+/* The threads for a scan, from `option threads`: N > 1 is N of them (at most
+ * MAX_SCAN_THREADS; 1 runs the serial loops instead), and 0 is one per core,
+ * or fewer if they would need more than `option memlimit`, at
+ * `thread_bytes(n, scan)` each when there are n. Down to 1, where the main
+ * thread scans the chunks itself. */
+static unsigned scan_threads(const globals_t *vars, size_t (*thread_bytes)(unsigned, const void *),
+                             const void *scan)
+{
+    unsigned n = vars->options.threads;
+    if (n != 0)
+        return MIN(n, MAX_SCAN_THREADS);
+
+    n = MIN(usable_cores(), MAX_SCAN_THREADS);
+    uint64_t limit = vars->options.memlimit;
+    if (limit == UINT64_MAX)
+        return n;
+    if (limit == 0) {
+        long pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
+        if (pages <= 0 || page_size <= 0)
+            return n;
+        limit = (uint64_t) pages / THREAD_MEMORY_SHARE * page_size;
+    }
+    while (n > 1 && (uint64_t) n * thread_bytes(n, scan) > limit)
+        n--;
+    return n;
 }
 
 /* What cs->block does for `count` positions of `memory` (see block_routine_t),
@@ -1473,6 +1531,24 @@ static size_t check_chunk_elements(unsigned long total_elements, unsigned nthrea
     return chunk_size_for_tests(chunk_elements, MAX_MATCH_LENGTH, MAX_CHECK_CHUNK);
 }
 
+typedef struct {
+    unsigned long elements; /* in the matches array */
+    size_t array_bytes;     /* its size, swath headers included */
+} check_size_t;
+
+/* What each of n rescan threads works in: its read batch, and up to three
+ * chunk arrays in flight (the one it fills, and two per thread waiting to be
+ * merged), each about a chunk's share of the matches array. */
+static size_t check_thread_bytes(unsigned n, const void *scan)
+{
+    const check_size_t *size = scan;
+    size_t chunk = check_chunk_elements(size->elements, n);
+    double per_element = size->elements ? (double) size->array_bytes / size->elements : 0;
+    size_t array = sizeof(matches_and_old_values_array) + 2 * sizeof(matches_and_old_values_swath) +
+                   (size_t) (chunk * per_element) + MAX_MATCH_LENGTH * sizeof(old_value_and_match_info);
+    return sizeof(read_batch_t) + 3 * array;
+}
+
 /* The main thread's part of a rescan: merge chunks in order, overwriting the
  * matches array, and print the same progress as the serial loop. Sets
  * `started` to false if it changed nothing, so the serial loop can run. */
@@ -1529,6 +1605,7 @@ static bool check_matches_parallel(globals_t *vars, scan_match_type_t match_type
     cs.parallel_merge = init_merge(&cs, *writing_swath_index);
 
     start_scan_threads(&cs, nthreads);
+    show_debug("%u scan threads, %zu chunks\n", cs.num_threads ? cs.num_threads : 1, cs.num_chunks);
 
     unsigned long merged_elements = 0;
     unsigned dots = 1;
@@ -1613,6 +1690,15 @@ static size_t search_chunk_array_bytes(size_t chunk_size)
 {
     return sizeof(matches_and_old_values_array) + 2 * sizeof(matches_and_old_values_swath) +
            (chunk_size + CHUNK_TAIL) * sizeof(old_value_and_match_info);
+}
+
+/* What each of n initial search threads works in: its read buffer, and up to
+ * three chunk arrays in flight (the one it fills, and two per thread waiting
+ * to be merged). */
+static size_t search_thread_bytes(unsigned n, const void *scan)
+{
+    size_t chunk_size = search_chunk_size(*(const unsigned long *) scan, n);
+    return chunk_size + CHUNK_TAIL + 3 * search_chunk_array_bytes(chunk_size);
 }
 
 typedef struct {
@@ -1852,6 +1938,7 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
                         init_merge(&cs, *writing_swath_index);
 
     start_scan_threads(&cs, nthreads);
+    show_debug("%u scan threads, %zu chunks\n", cs.num_threads ? cs.num_threads : 1, cs.num_chunks);
 
     const region_t *region = NULL;
     char *readable_end = NULL; /* of the current region */
@@ -1984,7 +2071,8 @@ bool sm_checkmatches(globals_t *vars,
     INTERRUPTABLESCAN();
 
 #if HAVE_PROCMEM
-    unsigned nthreads = scan_threads(vars);
+    check_size_t size = {total_scan_bytes, vars->matches->bytes_allocated};
+    unsigned nthreads = scan_threads(vars, check_thread_bytes, &size);
     if (vars->options.threads != 1 && total_scan_bytes > 0) {
         bool started;
         /* put back the header the chunks start from */
@@ -2168,7 +2256,8 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
 #if HAVE_PROCMEM
     if (vars->options.threads != 1) {
         if (!search_regions_parallel(vars, match_type, uservalue, total_scan_bytes,
-                                     scan_threads(vars), &writing_swath_index)) {
+                                     scan_threads(vars, search_thread_bytes, &total_scan_bytes),
+                                     &writing_swath_index)) {
             ENDINTERRUPTABLE();
             sm_detach(vars->target);
             return false;

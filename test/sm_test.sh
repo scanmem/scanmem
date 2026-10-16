@@ -73,3 +73,24 @@ test_threads "option scan_data_type bytearray;${huge_bytearray};${huge_bytearray
 test_threads "option scan_data_type int64;0x0807060504030201;=;="
 test_threads "option scan_data_type bytearray;${huge_bytearray}"
 test_threads "option scan_data_type string;\" ${huge_string}"
+
+# memlimit takes what xz takes; a bad value fails, and -e then exits with failure
+test_sm "option memlimit 50%;option memlimit 512MiB;option memlimit 2G;option memlimit 1500000;option memlimit max;option memlimit 0;exit"
+if ../scanmem -p $memfake_pid -e -c "option memlimit 5X;exit"; then
+    echo "a bad memlimit was accepted"
+    exit 1
+fi
+
+# threads 0 with a memlimit too small for two threads: the main thread scans
+# the chunks itself, and must find what the serial scans find
+test_capped () {
+    local serial capped
+    serial=$(../scanmem -p $memfake_pid -e -c "option threads 1;$1;exit" 2>&1 | grep -v "option threads")
+    capped=$(../scanmem -p $memfake_pid -e -c "option threads 0;option memlimit 1K;$1;exit" 2>&1 | grep -vE "option (threads|memlimit)")
+    diff <(echo "$serial") <(echo "$capped")
+}
+
+test_capped "option scan_data_type int;1;list"
+test_capped "option scan_data_type int;snapshot;=;1"
+test_capped "option scan_data_type number;-1000..1000000;!= 0"
+test_capped "option scan_data_type int64;0x0807060504030201;=;="

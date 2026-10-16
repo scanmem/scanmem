@@ -1670,6 +1670,63 @@ retl:
     return ret;
 }
 
+/* A memory limit as xz takes one: a number of bytes, with an optional K, M, G
+ * or T for powers of 1024 (also written Ki, KiB or KB), N% for a share of the
+ * RAM, or "max" for none. 0 is the default. */
+static bool parse_memlimit(const char *text, uint64_t *limit)
+{
+    if (strcasecmp(text, "max") == 0) {
+        *limit = UINT64_MAX;
+        return true;
+    }
+    if (!isdigit((unsigned char) *text))
+        return false;
+
+    char *end;
+    errno = 0;
+    unsigned long long n = strtoull(text, &end, 10);
+    if (errno)
+        return false;
+
+    if (strcmp(end, "%") == 0) {
+        long pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
+        if (n < 1 || n > 100 || pages <= 0 || page_size <= 0)
+            return false;
+        *limit = (uint64_t) pages * page_size / 100 * n;
+        if (*limit == 0) /* not the default */
+            *limit = 1;
+        return true;
+    }
+
+    unsigned shift = 0;
+    if (*end) {
+        switch (toupper((unsigned char) *end)) {
+        case 'K':
+            shift = 10;
+            break;
+        case 'M':
+            shift = 20;
+            break;
+        case 'G':
+            shift = 30;
+            break;
+        case 'T':
+            shift = 40;
+            break;
+        default:
+            return false;
+        }
+        end++;
+        if (*end && strcasecmp(end, "i") != 0 && strcasecmp(end, "iB") != 0 &&
+            strcasecmp(end, "B") != 0)
+            return false;
+    }
+    if (n > (UINT64_MAX >> shift))
+        return false;
+    *limit = (uint64_t) n << shift;
+    return true;
+}
+
 bool handler__option(globals_t * vars, char **argv, unsigned argc)
 {
     /* this might need to change */
@@ -1748,12 +1805,21 @@ bool handler__option(globals_t * vars, char **argv, unsigned argc)
     {
         char *end;
         unsigned long threads = strtoul(argv[2], &end, 10);
-        if (*argv[2] == '\0' || *end != '\0' || threads > 64)
+        if (*argv[2] == '\0' || *end != '\0' || *argv[2] == '-')
         {
             show_error("bad value for threads, see `help option`.\n");
             return false;
         }
-        vars->options.threads = threads;
+        /* more than the scans can use comes down to their maximum there */
+        vars->options.threads = threads > USHRT_MAX ? USHRT_MAX : threads;
+    }
+    else if (strcasecmp(argv[1], "memlimit") == 0)
+    {
+        if (!parse_memlimit(argv[2], &vars->options.memlimit))
+        {
+            show_error("bad value for memlimit, see `help option`.\n");
+            return false;
+        }
     }
     else
     {

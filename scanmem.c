@@ -69,6 +69,7 @@ globals_t sm_globals = {
         0,                      /* reverse_endianness */
         0,                      /* no_ptrace */
         0,                      /* threads */
+        0,                      /* memlimit */
     }
 };
 

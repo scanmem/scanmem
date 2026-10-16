@@ -332,7 +332,7 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
 
 #define OPTION_COMPLETE "scan_data_type{number,int,float," VALUE_TYPES \
     "},region_scan_level{1,2,3,4},dump_with_ascii{0,1},endianness{0,1,2}," \
-    "noptrace{0,1},threads{0,1}"
+    "noptrace{0,1},threads{0,1},memlimit{0,max}"
 #define OPTION_SHRTDOC "set runtime options of scanmem, see `help option`"
 #define OPTION_LONGDOC "usage: option <option_name> <option_value>\n" \
                  "\n" \
@@ -381,12 +381,25 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\t0:\tuse ptrace\n" \
                  "\t1:\tno ptrace\n" \
                  "\n" \
-                 "threads\t\tnumber of threads for scans (0-64)\n" \
+                 "threads\t\tnumber of threads for scans\n" \
                  "\t\t\tDefault:0\n" \
                  "\tpossibles values:\n"\
-                 "\t0:\tone per CPU\n" \
+                 "\t0:\tautomatic: one per CPU core, fewer if their buffers\n" \
+                 "\t\twould take more than memlimit\n" \
                  "\t1:\tthe original single-threaded scans, without the faster\n" \
                  "\t\tskipping, reading and allocating (for comparison)\n" \
+                 "\tN:\tN threads, at most 64\n" \
+                 "\n" \
+                 "memlimit\tmemory the scan threads may work in with threads 0:\n" \
+                 "\t\tfewer threads are used to stay under it. It does not\n" \
+                 "\t\tlimit the memory the matches themselves take.\n" \
+                 "\t\t\tDefault:0\n" \
+                 "\tpossibles values:\n"\
+                 "\t0:\tan eighth of the RAM\n" \
+                 "\tN:\tN bytes; with K, M, G or T (or KiB, MiB, ...) for powers\n" \
+                 "\t\tof 1024, e.g. 512M\n" \
+                 "\tN%:\tN percent of the RAM\n" \
+                 "\tmax:\tno limit\n" \
                  "\n" \
                  "Example:\n" \
                  "\toption scan_data_type int32\n"

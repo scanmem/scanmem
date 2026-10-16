@@ -465,9 +465,12 @@ as root.
 
 The first scan can be very slow on large programs, this is not a problem for subsequent 
 scans as huge portions of the address space are usually eliminated. Where /proc/pid/mem is
-available, scans are spread over one thread per CPU; see the
+available, scans are spread over one thread per CPU core, or fewer to keep their buffers
+within a memory limit; see the
 .B threads
-option in `help option`. This could be improved further, perhaps by assuming all integers
+and
+.B memlimit
+options in `help option`. This could be improved further, perhaps by assuming all integers
 are aligned by default. Suggestions welcome.
 
 The
