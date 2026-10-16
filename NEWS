@@ -72,5 +72,6 @@ Tests and CI
   put thousands of chunk boundaries in a small target
 * CI on Ubuntu 24.04 with gcc and clang, and a job with ASan, UBSan and
   float-cast-overflow (from #461)
-* test/compare_test checks the vector comparisons against the scalar ones on
-  random data and every number type, comparison and byte order
+* test/compare_test checks the vector comparisons, and the quick =, != and
+  update rescans, against the scalar ones on random data and every number
+  type, comparison and byte order

@@ -1,10 +1,16 @@
-/* Differential test of vector_compare() against the scalar block routines:
- * every number type, comparison and endianness, user values parsed the way
- * scanmem parses them, and memory full of the value, its neighbours and
- * special floats. Every position's flags must agree.
+/* Differential tests of the comparisons the chunked scans make without the
+ * scalar scan routines:
+ * - vector_compare() against the scalar block routines: every number type,
+ *   comparison and endianness, user values parsed the way scanmem parses
+ *   them, and memory full of the value, its neighbours and special floats.
+ *   Every position's flags must agree. Skipped where the CPU has no vector
+ *   compare.
+ * - quick_old_value_routine() against the CHANGED, NOTCHANGED and UPDATE
+ *   routines, on random old and new values (with special floats, and values
+ *   a byte apart), every number type, and the lengths that occur near the end
+ *   of a swath or of readable memory.
  * Built from the library sources (see Makefile.am), since the shared library
- * only exports sm_ symbols. usage: compare_test [rounds]
- * Exits 77 (skipped) where the CPU has no vector compare. */
+ * only exports sm_ symbols. usage: compare_test [rounds] */
 #include "config.h"
 #include <stdio.h>
 #include <stdlib.h>
@@ -97,9 +103,107 @@ static void fill(uint8_t *mem, size_t n, const uservalue_t *uv)
     }
 }
 
+/* 8 bytes worth comparing: random, or a special float in their first 4 or 8 */
+static void random_value(uint8_t *b)
+{
+    const float fs[] = {0.0f, -0.0f, NAN, -NAN, INFINITY, -INFINITY, 1e-45f, 1.5f};
+    const double ds[] = {0.0, -0.0, NAN, -NAN, INFINITY, -INFINITY, 5e-324, 1.5};
+    uint64_t r = next(), bytes = next();
+
+    memcpy(b, &bytes, 8);
+    if (r % 4 == 0)
+        memcpy(b, &fs[(r >> 8) % 8], 4);
+    else if (r % 4 == 1)
+        memcpy(b, &ds[(r >> 8) % 8], 8);
+}
+
+/* quick_old_value_routine() against the CHANGED, NOTCHANGED and UPDATE
+ * routines, given what sm_checkmatches() passes them: the old value
+ * data_to_val_aux() makes of the `max_bytes` elements a swath has left, and
+ * memory of which `memlength` bytes are valid (the width of the widest old
+ * flag, or less where memory ends). Returns the number of failures. */
+static long test_quick(int rounds, long *cases)
+{
+    const scan_data_type_t dts[] = {ANYNUMBER, ANYINTEGER, ANYFLOAT, INTEGER8, INTEGER16,
+                                    INTEGER32, INTEGER64, FLOAT32, FLOAT64};
+    const scan_match_type_t mts[] = {MATCHNOTCHANGED, MATCHCHANGED, MATCHUPDATE};
+    static uint8_t swath_buf[sizeof(matches_and_old_values_swath) +
+                             8 * sizeof(old_value_and_match_info)];
+    matches_and_old_values_swath *swath = (matches_and_old_values_swath *) swath_buf;
+    long failures = 0;
+
+    for (int round = 0; round < rounds; round++)
+        for (size_t d = 0; d < sizeof(dts) / sizeof(dts[0]); d++)
+            for (size_t m = 0; m < sizeof(mts) / sizeof(mts[0]); m++)
+                for (int rev = 0; rev < 2; rev++) {
+                    if (!sm_choose_scanroutine(dts[d], mts[m], NULL, rev)) {
+                        fprintf(stderr, "no routine: dt %d mt %d\n", dts[d], mts[m]);
+                        return failures + 1;
+                    }
+                    scan_routine_t routine = sm_scan_routine;
+                    match_flags allowed = scan_data_type_flags(dts[d]);
+                    for (int n = 0; n < 4096; n++) {
+                        uint8_t old[8], now_bytes[8];
+                        random_value(old);
+                        /* unchanged, a byte apart, or anything */
+                        uint64_t r = next();
+                        memcpy(now_bytes, old, 8);
+                        if (r % 3 == 1)
+                            now_bytes[(r >> 8) % 8] ^= 1 << ((r >> 16) % 8);
+                        else if (r % 3 == 2)
+                            random_value(now_bytes);
+                        match_flags old_flags = (match_flags) (next() & flags_all);
+                        if (old_flags == flags_empty)
+                            continue; /* such an element is not compared */
+                        size_t max_bytes = 1 + next() % 8, readable = 1 + next() % 8;
+
+                        for (size_t k = 0; k < 8; k++) {
+                            swath->data[k].old_value = old[k];
+                            swath->data[k].match_info = k ? flags_empty : old_flags;
+                        }
+                        swath->number_of_bytes = max_bytes;
+                        value_t old_value = data_to_val_aux(swath, 0, max_bytes);
+                        size_t memlength = MIN(flags_number_width(old_flags), readable);
+
+                        /* the scalar routine, which must not look past memlength */
+                        uint8_t memory[8];
+                        uint64_t garbage = next();
+                        memcpy(memory, &garbage, 8);
+                        memcpy(memory, now_bytes, memlength);
+                        match_flags scalar = flags_empty;
+                        unsigned int scalar_length =
+                            routine((const mem64_t *) memory, memlength, &old_value, NULL, &scalar);
+
+                        /* the quick one, with the old bytes the swath has */
+                        uint8_t old_bytes[8] = {0};
+                        memcpy(old_bytes, old, max_bytes);
+                        uint64_t now = 0, before;
+                        memcpy(&now, memory, memlength);
+                        memcpy(&before, old_bytes, 8);
+                        match_flags quick = flags_empty;
+                        unsigned int quick_length = quick_old_value_routine(
+                            mts[m], allowed, now, before, memlength, old_value.flags, &quick);
+
+                        ++*cases;
+                        if (quick != scalar || quick_length != scalar_length) {
+                            if (++failures <= 20)
+                                fprintf(stderr, "DIFF quick dt %d mt %d rev %d old flags %04x "
+                                                "max_bytes %zu memlength %zu: scalar %04x (%u) "
+                                                "quick %04x (%u)\n",
+                                        dts[d], mts[m], rev, old_flags, max_bytes, memlength,
+                                        scalar, scalar_length, quick, quick_length);
+                        }
+                    }
+                }
+    return failures;
+}
+
 int main(int argc, char **argv)
 {
     int rounds = argc > 1 ? atoi(argv[1]) : 10;
+    long quick_cases = 0;
+    long quick_failures = test_quick(rounds, &quick_cases);
+    printf("quick: %ld cases compared, %ld failures\n", quick_cases, quick_failures);
     const char *values[] = {"0", "1", "-1", "2", "100", "127", "128", "200", "255", "256",
                             "-128", "-129", "300", "32767", "32768", "65535", "65536", "-32768",
                             "-32769", "2147483647", "2147483648", "4294967295", "4294967296",
@@ -121,8 +225,8 @@ int main(int argc, char **argv)
     memset(&one, 0, sizeof(one));
     if (!parse_uservalue_number("1", &one) ||
         !vector_compare_init(&probe, ANYINTEGER, MATCHEQUALTO, &one, false)) {
-        printf("SKIP: no vector compare on this CPU\n");
-        return 77;
+        printf("no vector compare on this CPU: vector test skipped\n");
+        return quick_failures != 0;
     }
 
     for (int round = 0; round < rounds; round++) {
@@ -177,7 +281,7 @@ int main(int argc, char **argv)
                     }
         }
     }
-    printf("%ld cases, %ld positions compared, %ld skipped (no routine), %ld failures\n",
+    printf("vector: %ld cases, %ld positions compared, %ld skipped (no routine), %ld failures\n",
            cases, positions, skipped, failures);
-    return failures != 0;
+    return failures != 0 || quick_failures != 0;
 }
