@@ -491,6 +491,12 @@ struct chunked_scan {
  * this share of the RAM */
 #    define THREAD_MEMORY_SHARE 8 /* an eighth */
 
+/* `option threads 0` uses at most this many threads. The scans are limited by
+ * memory bandwidth well before they run out of cores: on a 16-core desktop,
+ * 16 threads were 10-15% faster than 8 on compare scans, for 1.5-2 times the
+ * CPU time, and snapshots gained nothing past 4. */
+#    define AUTO_MAX_THREADS 8
+
 /* The cores this process may run on. A second thread on a core (SMT) gains a
  * scan nothing, since the scans wait on memory. */
 static unsigned usable_cores(void)
@@ -530,9 +536,9 @@ static unsigned usable_cores(void)
 
 /* The threads for a scan, from `option threads`: N > 1 is N of them (at most
  * MAX_SCAN_THREADS; 1 runs the serial loops instead), and 0 is one per core,
- * or fewer if they would need more than `option memlimit`, at
- * `thread_bytes(n, scan)` each when there are n. Down to 1, where the main
- * thread scans the chunks itself. */
+ * at most AUTO_MAX_THREADS, or fewer if they would need more than
+ * `option memlimit`, at `thread_bytes(n, scan)` each when there are n. Down
+ * to 1, where the main thread scans the chunks itself. */
 static unsigned scan_threads(const globals_t *vars, size_t (*thread_bytes)(unsigned, const void *),
                              const void *scan)
 {
@@ -540,7 +546,7 @@ static unsigned scan_threads(const globals_t *vars, size_t (*thread_bytes)(unsig
     if (n != 0)
         return MIN(n, MAX_SCAN_THREADS);
 
-    n = MIN(usable_cores(), MAX_SCAN_THREADS);
+    n = MIN(usable_cores(), AUTO_MAX_THREADS);
     uint64_t limit = vars->options.memlimit;
     if (limit == UINT64_MAX)
         return n;

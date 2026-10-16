@@ -4,9 +4,10 @@ scanmem 0.18.0 (unreleased)
 Performance
 -----------
 * Run scans on several threads; new `threads` option: 1 for the original
-  serial scans, N for N threads, 0 (default) for one per CPU core, fewer to
-  keep their buffers under the new `memlimit` option (as with xz: bytes, K, M,
-  G, a percentage of the RAM, or max; default an eighth of the RAM)
+  serial scans, N for N threads, 0 (default) for one per CPU core up to 8,
+  fewer to keep their buffers under the new `memlimit` option (as with xz:
+  bytes, K, M, G, a percentage of the RAM, or max; default an eighth of the
+  RAM)
 * Searching for a value skips memory that cannot hold it (vectorized prefilter)
 * Rescans read the target in batches with process_vm_readv()
 * Reuse scan buffers and ask for transparent huge pages for them

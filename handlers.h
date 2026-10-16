@@ -384,8 +384,8 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "threads\t\tnumber of threads for scans\n" \
                  "\t\t\tDefault:0\n" \
                  "\tpossibles values:\n"\
-                 "\t0:\tautomatic: one per CPU core, fewer if their buffers\n" \
-                 "\t\twould take more than memlimit\n" \
+                 "\t0:\tautomatic: one per CPU core, at most 8, fewer if their\n" \
+                 "\t\tbuffers would take more than memlimit\n" \
                  "\t1:\tthe original single-threaded scans, without the faster\n" \
                  "\t\tskipping, reading and allocating (for comparison)\n" \
                  "\tN:\tN threads, at most 64\n" \
