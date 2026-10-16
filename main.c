@@ -272,7 +272,10 @@ int main(int argc, char **argv)
             }
 
             if (sm_execcommand(vars, line) == false) {
-                if (exit_on_error) goto end;
+                if (exit_on_error) {
+                    ret = EXIT_FAILURE;
+                    goto end;
+                }
                 show_user_quick_help(vars->target);
             }
 

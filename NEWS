@@ -18,6 +18,10 @@ Compiler / portability
 * Launch GameConqueror with python3 (#438)
 * Pick Android cross compiler from HOST (#441)
 
+Command line
+------------
+* With -e, a failing command now makes scanmem exit with a failure status, not 0
+
 GUI
 ---
 * Memory viewer display type selector (#448)
