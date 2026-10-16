@@ -42,6 +42,7 @@ Security and stability
 * Numbers at the 64-bit limits no longer convert out of range when parsed
   (undefined behaviour) (from #461)
 * The pager checks its pipe write() and read() results (from #461)
+* No longer hang, or crash, when the target exits or is killed during a scan
 
 Compiler / portability
 ----------------------

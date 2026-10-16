@@ -94,6 +94,7 @@ static struct {
     const char *base;           /* base address of cached region */
 #if HAVE_PROCMEM
     int procmem_fd;             /* file descriptor of the opened `/proc/<pid>/mem` file */
+    bool target_gone;           /* a read returned 0: the target has exited */
 #else
     pid_t pid;                  /* pid of scanned process */
 #endif
@@ -176,6 +177,7 @@ bool sm_attach(pid_t target)
             return false;
         }
         peekbuf.procmem_fd = fd;
+        peekbuf.target_gone = false;
     }
 #else
     peekbuf.pid = target;
@@ -215,11 +217,20 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
     size_t nread = 0;
 
 #if HAVE_PROCMEM
+    if (peekbuf.target_gone)
+        return 0;
     do {
         ssize_t ret = pread(peekbuf.procmem_fd, dest_buffer + nread,
                             size - nread, (unsigned long)(target_address + nread));
-        if (ret == -1) {
+        if (ret <= 0) {
             /* we can't read further, report what was read */
+            if (ret == 0) {
+                /* The target has exited: this and every later read returns
+                 * 0. Stop the scan as if interrupted, and fail the reads it
+                 * still makes without a syscall each. */
+                peekbuf.target_gone = true;
+                sm_globals.stop_flag = true;
+            }
             return nread;
         }
         else {
