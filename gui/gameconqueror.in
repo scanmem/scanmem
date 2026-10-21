@@ -10,7 +10,7 @@ fi
 
 PKEXEC=$(command -v pkexec)
 if [ -n "$PKEXEC" ]; then
-    $PKEXEC "$PYTHON3" "$DATADIR/GameConqueror.py" "$@"
+    $PKEXEC "$DATADIR/GameConqueror.py" "$@"
 else
     echo "install policykit!"
 fi
