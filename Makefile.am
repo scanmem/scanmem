@@ -1,4 +1,6 @@
 ACLOCAL_AMFLAGS = -I m4
+# test/compare_test is built here from a source in test/
+AUTOMAKE_OPTIONS = subdir-objects
 
 SUBDIRS = test
 
@@ -51,7 +53,10 @@ endif
 
 libscanmem_la_LIBADD = libutil.la
 
-libscanmem_la_LDFLAGS = -version-info 1:0:0 \
+# 2: the options in globals_t grew (threads, memlimit) and the matches array
+# elements are packed. The soname is libscanmem.so.<current - age>, which
+# gui/GameConqueror.py loads by name: change both together.
+libscanmem_la_LDFLAGS = -version-info 2:0:0 \
                         -export-symbols-regex '^sm_'
 
 # scanmem CLI
@@ -67,6 +72,15 @@ if !WITH_READLINE
 endif
 
 scanmem_LDADD = libutil.la libscanmem.la
+
+# Vector compares against the scalar routines. Built from the library
+# sources, as the library only exports sm_ symbols; its own CFLAGS give it
+# its own objects.
+check_PROGRAMS = test/compare_test
+test_compare_test_SOURCES = test/compare_test.c $(libscanmem_la_SOURCES)
+test_compare_test_CFLAGS = $(AM_CFLAGS)
+test_compare_test_LDADD = libutil.la
+TESTS = test/compare_test
 
 # Misc
 dist_man_MANS = scanmem.1
