@@ -1992,9 +1992,11 @@ static bool search_regions_parallel(globals_t *vars, scan_match_type_t match_typ
      * Untouched memory costs nothing, and growing still works if this fails.
      * Not when that is more than the machine's RAM: huge sparse mappings in
      * the target (such as ASan's shadow memory) can make it terabytes, and an
-     * ASan build of scanmem aborts on such a request instead of failing it. */
+     * ASan build of scanmem aborts on such a request instead of failing it.
+     * Nor without a limit (SIZE_MAX, see sm_searchregions()): the serial
+     * merge then grows the array instead. */
     long phys_pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
-    if (phys_pages > 0 && page_size > 0 &&
+    if (phys_pages > 0 && page_size > 0 && vars->matches->max_needed_bytes != SIZE_MAX &&
         vars->matches->max_needed_bytes / page_size <= (unsigned long) phys_pages) {
         size_t writing_offset = (char *) *writing_swath_index - (char *) vars->matches;
         matches_and_old_values_array *whole = realloc(vars->matches, vars->matches->max_needed_bytes);
@@ -2271,7 +2273,7 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     bool ok = true;
     matches_and_old_values_swath *writing_swath_index;
     int required_extra_bytes_to_record = 0;
-    unsigned long total_size = 0;
+    size_t total_size = 0;
     unsigned long regnum = 0;
     element_t *n = vars->regions->head;
     region_t *r;
@@ -2299,17 +2301,22 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
     }
 
     INTERRUPTABLESCAN();
-    
-    total_size = sizeof(matches_and_old_values_array);
 
-    while (n) {
-        total_size += ((region_t *)(n->data))->size * sizeof(old_value_and_match_info) + sizeof(matches_and_old_values_swath);
-        n = n->next;
+    /* The most room the matches can take, with a swath per region and one to
+     * null terminate. Past what a size_t holds (32-bit, about 1.3 GiB of
+     * regions), there is no limit: the array grows until it cannot. */
+    total_size = sizeof(matches_and_old_values_array) + sizeof(matches_and_old_values_swath);
+    for (; n; n = n->next) {
+        size_t bytes;
+        if (__builtin_mul_overflow(((region_t *) n->data)->size, sizeof(old_value_and_match_info), &bytes) ||
+            __builtin_add_overflow(bytes, sizeof(matches_and_old_values_swath), &bytes) ||
+            __builtin_add_overflow(total_size, bytes, &total_size)) {
+            total_size = SIZE_MAX;
+            break;
+        }
     }
-    
-    total_size += sizeof(matches_and_old_values_swath); /* for null terminate */
-    
-    show_debug("allocate array, max size %ld\n", total_size);
+
+    show_debug("allocate array, max size %zu\n", total_size);
 
     if (!(vars->matches = allocate_array(vars->matches, total_size)))
     {

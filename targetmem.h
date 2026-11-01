@@ -173,7 +173,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
            so we don't have to do it too often */
         size_t bytes_to_allocate = array->bytes_allocated;
         while (bytes_to_allocate < bytes_needed)
-            bytes_to_allocate *= 2;
+            bytes_to_allocate = bytes_to_allocate > SIZE_MAX / 2 ? SIZE_MAX : 2 * bytes_to_allocate;
 
         show_debug("to_allocate %ld, max %ld\n", bytes_to_allocate,
                    array->max_needed_bytes);
