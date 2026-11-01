@@ -97,6 +97,10 @@ AS_IF([test "x$android" = "xno"], [
 ])
 
 
+# The first scan runs on several threads (glibc >= 2.34 and bionic have
+# pthreads in libc, older glibc needs libpthread)
+AC_SEARCH_LIBS([pthread_create], [pthread])
+
 # Check for termcap and readline or bypass checking for the libraries.
 AC_ARG_WITH([readline], [AS_HELP_STRING([--without-readline],
                             [build without readline])])

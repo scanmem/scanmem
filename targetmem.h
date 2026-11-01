@@ -29,14 +29,19 @@
 #include <stdlib.h>
 #include <inttypes.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <sys/mman.h>
 
 #include "value.h"
 #include "show_message.h"
 
 /* Public structs */
 
-/* Single match struct */
-typedef struct {
+/* Single match struct, 3 bytes: the array holds one per byte of every swath,
+   so padding would cost a quarter of its memory, and of the memory traffic of
+   a scan. Its fields, and the swath headers, are unaligned: use them only
+   through these packed structs, never through pointers to their fields. */
+typedef struct __attribute__((packed)) {
     uint8_t old_value;
     match_flags match_info;
 } old_value_and_match_info;
@@ -47,7 +52,7 @@ typedef struct {
    - the number_of_bytes refers to the number of bytes in the child
      process's memory that are covered, not the number of bytes the struct
      takes up. It's the length of data. */
-typedef struct __attribute__((packed,aligned(sizeof(old_value_and_match_info)))) {
+typedef struct __attribute__((packed)) {
     void *first_byte_in_child;
     size_t number_of_bytes;
     old_value_and_match_info data[0];
@@ -93,6 +98,24 @@ matches_and_old_values_array *
 delete_in_address_range (matches_and_old_values_array *array,
                          unsigned long *num_matches,
                          void *start_address, void *end_address);
+
+/* Ask for transparent huge pages for a big array: touching its memory for the
+   first time then costs a page fault per 2 MiB instead of per 4 KiB. */
+static inline void
+advise_huge_pages (void *start, size_t length)
+{
+#ifdef MADV_HUGEPAGE
+    if (length >= (4UL << 20)) {
+        /* madvise() wants whole pages */
+        uintptr_t first = ((uintptr_t)start + 4095) & ~(uintptr_t)4095;
+        uintptr_t end = ((uintptr_t)start + length) & ~(uintptr_t)4095;
+        madvise((void *)first, end - first, MADV_HUGEPAGE);
+    }
+#else
+    (void)start;
+    (void)length;
+#endif
+}
 
 /* The following functions are called in the hot scanning path and were moved
    to this header from the .c file so that they could be inlined */
@@ -150,7 +173,7 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
            so we don't have to do it too often */
         size_t bytes_to_allocate = array->bytes_allocated;
         while (bytes_to_allocate < bytes_needed)
-            bytes_to_allocate *= 2;
+            bytes_to_allocate = bytes_to_allocate > SIZE_MAX / 2 ? SIZE_MAX : 2 * bytes_to_allocate;
 
         show_debug("to_allocate %ld, max %ld\n", bytes_to_allocate,
                    array->max_needed_bytes);
@@ -176,8 +199,26 @@ allocate_enough_to_reach (matches_and_old_values_array *array,
     }
 }
 
+/* Whether an element `index_excess` bytes past a swath's last element starts
+   a new swath, rather than joining that one over a padded gap: when the gap
+   would take at least the room of a new swath's header. The equal case starts
+   a new swath, so that later scans don't needlessly iterate through a bunch
+   of empty values.
+   Rescans, which rewrite the array in place, rely on this: the elements a new
+   swath leaves out take at least the room of its header, so the array never
+   gets longer than it was up to the same point. Whatever adds elements to a
+   matches array (add_element(), and the merges of the chunked scans in
+   ptrace.c) must decide by this. */
+static inline bool
+gap_starts_new_swath (size_t index_excess)
+{
+    return index_excess * sizeof(old_value_and_match_info) >=
+           sizeof(matches_and_old_values_swath) + sizeof(old_value_and_match_info);
+}
+
 /* returns a pointer to the swath to which the element was added -
-   i.e. the last swath in the array after the operation */
+   i.e. the last swath in the array after the operation, or NULL if growing
+   the array failed, which loses it (`*array` is then NULL) */
 static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
              matches_and_old_values_swath *swath,
@@ -192,6 +233,8 @@ add_element (matches_and_old_values_array **array,
         *array = allocate_enough_to_reach(*array, (void *)swath +
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info), &swath);
+        if (!*array)
+            return NULL;
 
         swath->first_byte_in_child = remote_address;
 
@@ -206,14 +249,13 @@ add_element (matches_and_old_values_array **array,
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info);
 
-        if (local_address_excess >= needed_size_for_a_new_swath) {
-            /* It is more memory-efficient to start a new swath.
-             * The equal case is decided for a new swath, so that
-             * later we don't needlessly iterate through a bunch
-             * of empty values */
+        if (gap_starts_new_swath(local_index_excess)) {
+            /* It is more memory-efficient to start a new swath. */
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 needed_size_for_a_new_swath, &swath);
+            if (!*array)
+                return NULL;
 
             swath = local_address_beyond_last_element(swath);
             swath->first_byte_in_child = remote_address;
@@ -225,6 +267,8 @@ add_element (matches_and_old_values_array **array,
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 local_address_excess, &swath);
+            if (!*array)
+                return NULL;
 
             switch (local_index_excess) {
             case 1:
@@ -256,6 +300,23 @@ add_element (matches_and_old_values_array **array,
 /* only at most sizeof(int64_t) bytes will be read,
    if more bytes are needed (e.g. bytearray),
    read them separately (for performance) */
+/* The flags an old value read from `max_bytes` (at most 8) bytes of a swath
+   can keep: all, except the number types too wide for them.
+   NOTE: This does the right thing for VLT because the flags are in
+   the same order as the number representation (for both endians), so
+   that the zeroing of a flag does not change useful bits of `length`. */
+static inline match_flags
+old_value_flags_within (size_t max_bytes)
+{
+    match_flags flags = flags_max;
+
+    if (max_bytes < 8) flags &= ~flags_64b;
+    if (max_bytes < 4) flags &= ~flags_32b;
+    if (max_bytes < 2) flags &= ~flags_16b;
+    if (max_bytes < 1) flags = flags_empty;
+    return flags;
+}
+
 static inline value_t
 data_to_val_aux (const matches_and_old_values_swath *swath,
                  size_t index, size_t swath_length)
@@ -264,18 +325,8 @@ data_to_val_aux (const matches_and_old_values_swath *swath,
     volatile value_t val;
     size_t max_bytes = swath_length - index;
 
-    /* Init all possible flags in a single go.
-     * Also init length to the maximum possible value */
-    val.flags = 0xffffu;
-
-    /* NOTE: This does the right thing for VLT because the flags are in
-     * the same order as the number representation (for both endians), so
-     * that the zeroing of a flag does not change useful bits of `length`. */
     if (max_bytes > 8) max_bytes = 8;
-    if (max_bytes < 8) val.flags &= ~flags_64b;
-    if (max_bytes < 4) val.flags &= ~flags_32b;
-    if (max_bytes < 2) val.flags &= ~flags_16b;
-    if (max_bytes < 1) val.flags = flags_empty;
+    val.flags = old_value_flags_within(max_bytes);
 
     for (i = 0; i < max_bytes; ++i) {
         /* Both uint8_t, no explicit casting needed */

@@ -1,8 +1,39 @@
 scanmem 0.18.0 (unreleased)
 ===========================
 
+Performance
+-----------
+* Run scans on several threads; new `threads` option: 1 for the original
+  serial scans, N for N threads, 0 (default) for one per CPU core up to 8,
+  fewer to keep their buffers under the new `memlimit` option (as with xz:
+  bytes, K, M, G, a percentage, or max; default an eighth of the RAM, or of
+  a cgroup's memory limit if that is lower)
+* Searching for a value skips memory that cannot hold it (vectorized prefilter)
+* Rescans read the target in batches with process_vm_readv()
+* Reuse scan buffers and ask for transparent huge pages for them
+* Snapshots record memory without a scan routine call per byte
+* Rescans with =, != and update compare numbers without a call per type
+* Other number comparisons (<, >, ranges, +, -, ...) run the scan routine
+  inlined over blocks of positions instead of calling it per byte
+* Comparisons with a value (==, !=, <, >, ranges) use AVX2 where the CPU has
+  it, 32 positions at a time
+* Scan threads also copy the results into place, instead of the main thread
+  alone
+* Matches take 3 bytes per byte of target memory instead of 4: a quarter
+  less memory, and less memory traffic for every scan
+
+libscanmem
+----------
+* old_value_and_match_info (targetmem.h) is packed to 3 bytes, so swath
+  headers and flags in the matches array are no longer aligned
+* The options in globals_t (scanmem.h) gained `threads` and `memlimit` fields
+* The soname is now libscanmem.so.2 (-version-info 2:0:0)
+
 Security and stability
 ----------------------
+* Record every byte of a match that a shorter match starts inside: later
+  scans compared its missing bytes with padding (e.g. false matches for `+`
+  on 64-bit types) or dropped its wider types
 * Harden printable-string and bytearray formatting bounds (#449)
 * Cap /proc maps pathname buffer; fix sscanf field types (#452)
 * Clamp ptrace poke length to mapped buffer size
@@ -11,6 +42,9 @@ Security and stability
 * Numbers at the 64-bit limits no longer convert out of range when parsed
   (undefined behaviour) (from #461)
 * The pager checks its pipe write() and read() results (from #461)
+* No longer hang, or crash, when the target exits or is killed during a scan
+* A first scan that runs out of memory for its matches stops with an error,
+  instead of crashing
 
 Compiler / portability
 ----------------------
@@ -29,3 +63,17 @@ GUI
 ---
 * Memory viewer display type selector (#448)
 * Georgian translation (#426)
+
+Tests and CI
+------------
+* test/scan_tests.sh asserts exact match counts: memfake plants a value a
+  known number of times and rewrites only those on SIGUSR1 (from #461)
+* memfake keeps its planted values: clang dropped them as dead stores, so
+  the target never held them (from #462)
+* SCANMEM_SCAN_CHUNK_BYTES sets the size of scan chunks, so the tests can
+  put thousands of chunk boundaries in a small target
+* CI on Ubuntu 24.04 with gcc and clang, and a job with ASan, UBSan and
+  float-cast-overflow (from #461)
+* test/compare_test checks the vector comparisons, and the quick =, != and
+  update rescans, against the scalar ones on random data and every number
+  type, comparison and byte order

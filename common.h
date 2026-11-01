@@ -23,6 +23,7 @@
 #define COMMON_H
 
 #include <stdbool.h>
+#include <stdint.h>
 #include <sys/types.h>
 
 #ifndef MIN
@@ -74,5 +75,10 @@
 
 /* Function declarations */
 bool sm_process_is_dead(pid_t pid);
+
+/* The memory this process may use: the RAM, or less where a cgroup limits it
+ * (a container's memory limit, or systemd's MemoryMax= and MemoryHigh=).
+ * 0 if unknown. */
+uint64_t util_usable_memory(void);
 
 #endif /* COMMON_H */
