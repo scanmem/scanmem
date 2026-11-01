@@ -29,6 +29,9 @@ stamp-h1
 tags
 test-driver
 
+# Backup files, autoconf leaves configure~ behind
+*~
+
 # GameConqueror
 gui/org.scanmem.gameconqueror.metainfo.xml
 gui/org.scanmem.gameconqueror.desktop
