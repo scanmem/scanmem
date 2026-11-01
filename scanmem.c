@@ -245,5 +245,6 @@ double sm_get_scan_progress(void)
 
 void sm_set_stop_flag(bool stop_flag)
 {
-    sm_globals.stop_flag = stop_flag;
+    /* atomic: the threads of a chunked scan read it */
+    __atomic_store_n(&sm_globals.stop_flag, stop_flag, __ATOMIC_RELAXED);
 }

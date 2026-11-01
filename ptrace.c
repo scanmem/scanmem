@@ -94,7 +94,7 @@ static struct {
     const char *base;           /* base address of cached region */
 #if HAVE_PROCMEM
     int procmem_fd;             /* file descriptor of the opened `/proc/<pid>/mem` file */
-    bool target_gone;           /* a read returned 0: the target has exited */
+    bool target_gone;           /* a read returned 0: the target has exited (atomic) */
 #else
     pid_t pid;                  /* pid of scanned process */
 #endif
@@ -217,7 +217,8 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
     size_t nread = 0;
 
 #if HAVE_PROCMEM
-    if (peekbuf.target_gone)
+    /* atomic: the chunked scans read from several threads */
+    if (__atomic_load_n(&peekbuf.target_gone, __ATOMIC_RELAXED))
         return 0;
     do {
         ssize_t ret = pread(peekbuf.procmem_fd, dest_buffer + nread,
@@ -228,8 +229,8 @@ static inline size_t readmemory(uint8_t *dest_buffer, const char *target_address
                 /* The target has exited: this and every later read returns
                  * 0. Stop the scan as if interrupted, and fail the reads it
                  * still makes without a syscall each. */
-                peekbuf.target_gone = true;
-                sm_globals.stop_flag = true;
+                __atomic_store_n(&peekbuf.target_gone, true, __ATOMIC_RELAXED);
+                __atomic_store_n(&sm_globals.stop_flag, true, __ATOMIC_RELAXED);
             }
             return nread;
         }
@@ -617,11 +618,17 @@ static size_t chunk_size_for_tests(size_t chunk_size, size_t min, size_t max)
     return chunk_size;
 }
 
+/* The stop flag, which threads scanning set when the target exits. */
+static inline bool scan_stopped(const chunked_scan_t *cs)
+{
+    return __atomic_load_n(&cs->vars->stop_flag, __ATOMIC_RELAXED);
+}
+
 /* Called by a chunk scan every PROGRESS_STEP units. Returns true to stop. */
 static inline bool report_progress(chunked_scan_t *cs, unsigned long units)
 {
     __atomic_fetch_add(&cs->scanned_units, units, __ATOMIC_RELAXED);
-    return cs->vars->stop_flag;
+    return scan_stopped(cs);
 }
 
 static void update_progress(chunked_scan_t *cs)
@@ -748,7 +755,7 @@ static void start_scan_threads(chunked_scan_t *cs, unsigned nthreads)
 static chunk_state_t wait_for_chunk(chunked_scan_t *cs, size_t i)
 {
     if (cs->num_threads == 0) {
-        if (cs->states[i] == CHUNK_PENDING && !cs->vars->stop_flag) {
+        if (cs->states[i] == CHUNK_PENDING && !scan_stopped(cs)) {
             if (!cs->buf && !(cs->buf = malloc(cs->buf_size)))
                 return CHUNK_FAILED;
             cs->states[i] = cs->scan(cs, i, cs->buf);
@@ -758,7 +765,7 @@ static chunk_state_t wait_for_chunk(chunked_scan_t *cs, size_t i)
     }
 
     pthread_mutex_lock(&cs->lock);
-    while (cs->states[i] == CHUNK_PENDING && !cs->vars->stop_flag) {
+    while (cs->states[i] == CHUNK_PENDING && !scan_stopped(cs)) {
         /* help with the copying meanwhile */
         if (copy_next(cs)) {
             update_progress(cs);
