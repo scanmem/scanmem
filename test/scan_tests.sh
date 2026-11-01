@@ -134,4 +134,44 @@ start_memfake --plant $((0x5EED1234DEADBEEF)) --count 500 --width 8 --mb 8
 thread_case int64 "$((0x5EED1234DEADBEEF))" "int64"
 stop_memfake
 
+# Memory that stops being readable after the regions or matches were listed
+# (memfake's SIGUSR2): a page turned PROT_NONE, and one unmapped. The threads
+# must find what one thread does. Some kernels (proc_mem.force_override=ptrace)
+# let only the thread that attached read the PROT_NONE page, so the workers
+# hand it to the main thread; SCANMEM_HAND_OVER_READS makes them hand over
+# what they cannot read on every kernel, which the unmapped page gives them.
+unreadable_cmd() {
+    echo "shell rm -f $done_file; kill -USR2 $mf_pid; while [ ! -s $done_file ] && kill -0 $mf_pid; do sleep 0.01; done"
+}
+
+# unreadable_list THREADS rescan|first ENV: a fresh memfake, made unreadable
+# after the first scan or before it, and the list of matches without their
+# addresses, which change from one memfake to the next (the region and the
+# offset in it do not), and without memfake's own copies on its stack
+unreadable_list() {
+    local threads=$1 kind=$2 SCAN_ENV=$3 val=$((0x5EED1234DEADBEEF)) script
+    start_memfake --plant $val --count 10000 --width 8 --mb 8
+    if [ "$kind" = rescan ]; then
+        script="$val\n$(unreadable_cmd)\n="
+    else
+        script="$(unreadable_cmd)\n$val"
+    fi
+    run_list "option threads $threads\noption scan_data_type int64\n$script\nlist\nexit" |
+        sed '/, stack, /d; s/^ *[0-9a-f]*, //'
+    stop_memfake
+}
+
+for kind in rescan first; do
+    ref=$(unreadable_list 1 $kind "")
+    n=$(printf '%s\n' "$ref" | grep -c .)
+    assert_ge "$n" "1" "unreadable, $kind: threads 1 found something to compare"
+    # the serial loop ends the region at the unmapped page
+    [ $kind = first ] && assert_ge "$((10000 - n))" "1" "unreadable, first: the unmapped page ends the region"
+    for env in "SCANMEM_SCAN_CHUNK_BYTES=4096" "SCANMEM_SCAN_CHUNK_BYTES=4096 SCANMEM_HAND_OVER_READS=1"; do
+        out=$(unreadable_list 8 $kind "$env")
+        assert_eq "$(printf '%s' "$out" | md5sum)" "$(printf '%s' "$ref" | md5sum)" \
+            "unreadable, $kind, threads 8, $env: the same list as threads 1"
+    done
+done
+
 summary

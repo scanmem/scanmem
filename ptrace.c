@@ -407,7 +407,9 @@ static inline int bytes_to_record(int required, unsigned int match_length)
  * `vars->matches` in address order: it works out where each chunk goes, and
  * whichever thread is free copies it there (plan_merge()). This needs
  * /proc/<pid>/mem: `pread()` on the shared fd works from any thread, while
- * `PTRACE_PEEKDATA` only works from the thread that attached. The chunked
+ * `PTRACE_PEEKDATA` only works from the thread that attached. Some kernels
+ * let only that thread read the pages the target itself cannot, so workers
+ * hand those reads to the main thread (read_target()). The chunked
  * scans also skip, read and allocate faster than the serial loops; the serial
  * loops stay as the reference that test/sm_test.sh compares them with.
  *
@@ -441,6 +443,16 @@ typedef struct {
     matches_and_old_values_array *array; /* the chunk array, to reuse after */
 } copy_task_t;
 
+/* A read a worker hands to the main thread, see read_target(). */
+typedef struct read_request {
+    uint8_t *dest;
+    const char *address;
+    size_t size;
+    size_t got;
+    bool done;
+    struct read_request *next;
+} read_request_t;
+
 typedef struct chunked_scan chunked_scan_t;
 struct chunked_scan {
     globals_t *vars;
@@ -471,6 +483,9 @@ struct chunked_scan {
     size_t merged_chunks; /* chunks the main thread is done with */
     size_t window;        /* how far workers may run ahead of the merge */
     bool abort;
+    pthread_t tracer;         /* the main thread, which attached to the target */
+    bool hand_over_reads;     /* workers hand short reads to it, see read_target() */
+    read_request_t *requests; /* reads for the main thread, guarded by `lock` */
     /* Merging in parallel (plan_merge()): the main thread plans each chunk and
      * queues copying it, which any thread does. Guarded by `lock`, apart from
      * the tail and the fixups, which only the main thread uses. */
@@ -493,6 +508,7 @@ struct chunked_scan {
     pthread_mutex_t lock;
     pthread_cond_t chunk_done;   /* worker -> main thread */
     pthread_cond_t window_moved; /* main thread -> workers */
+    pthread_cond_t read_done;    /* main thread -> workers */
 };
 
 /* `option threads 0` keeps the working memory of the threads (their buffers
@@ -638,6 +654,78 @@ static void update_progress(chunked_scan_t *cs)
         cs->vars->scan_progress = (double) __atomic_load_n(&cs->scanned_units, __ATOMIC_RELAXED) / cs->total_units;
 }
 
+/* Read target memory in a chunk scan. With CONFIG_PROC_MEM_FORCE_PTRACE (or
+ * proc_mem.force_override=ptrace), only the thread that attached can read the
+ * pages the target itself cannot, such as PROT_NONE ones, which the serial
+ * loops read. So on such kernels a worker hands what it could not read to the
+ * main thread, which attached, and waits while the main thread reads it
+ * (serve_reads()). Reads come up short only where the target unmapped or
+ * protected memory since it was listed, and where a rescan reads a few bytes
+ * past a match. */
+static size_t read_target(chunked_scan_t *cs, uint8_t *dest, const char *address, size_t size)
+{
+    size_t got = readmemory(dest, address, size);
+    if (got == size || !cs->hand_over_reads || pthread_equal(pthread_self(), cs->tracer) ||
+        __atomic_load_n(&peekbuf.target_gone, __ATOMIC_RELAXED))
+        return got;
+
+    read_request_t request = {.dest = dest + got, .address = address + got, .size = size - got};
+    pthread_mutex_lock(&cs->lock);
+    /* once stopping, the main thread does not read any more */
+    if (!cs->abort) {
+        request.next = cs->requests;
+        cs->requests = &request;
+        pthread_cond_signal(&cs->chunk_done);
+        while (!request.done)
+            pthread_cond_wait(&cs->read_done, &cs->lock);
+    }
+    pthread_mutex_unlock(&cs->lock);
+    return got + request.got;
+}
+
+/* Do the reads the workers handed over, see read_target(). Called and returns
+ * with `lock` held. */
+static bool serve_reads(chunked_scan_t *cs)
+{
+    read_request_t *request = cs->requests;
+    if (!request)
+        return false;
+    cs->requests = request->next;
+
+    pthread_mutex_unlock(&cs->lock);
+    size_t got = readmemory(request->dest, request->address, request->size);
+    pthread_mutex_lock(&cs->lock);
+
+    request->got = got;
+    request->done = true;
+    pthread_cond_broadcast(&cs->read_done);
+    return true;
+}
+
+/* Whether workers need to hand short reads to the main thread: whether this
+ * kernel keeps reading the pages a process cannot to the thread that attached
+ * to it. Those kernels also keep a process from reading its own such pages
+ * through /proc/self/mem, which the others allow. The testing hook
+ * SCANMEM_HAND_OVER_READS makes the workers hand them over anyway. */
+static bool need_hand_over(void)
+{
+    const char *env = util_getenv("SCANMEM_HAND_OVER_READS");
+    if (env && *env)
+        return true;
+
+    bool readable = false;
+    void *page = mmap(NULL, 1, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    int fd = open("/proc/self/mem", O_RDONLY);
+    uint8_t byte;
+    if (page != MAP_FAILED && fd >= 0)
+        readable = pread(fd, &byte, 1, (unsigned long) page) == 1;
+    if (fd >= 0)
+        close(fd);
+    if (page != MAP_FAILED)
+        munmap(page, 1);
+    return !readable;
+}
+
 /* Copy the next queued chunk into the matches array, if there is one, and put
  * its chunk array back. Called and returns with `lock` held. */
 static bool copy_next(chunked_scan_t *cs)
@@ -725,11 +813,14 @@ static void start_scan_threads(chunked_scan_t *cs, unsigned nthreads)
     pthread_mutex_init(&cs->lock, NULL);
     pthread_cond_init(&cs->chunk_done, NULL);
     pthread_cond_init(&cs->window_moved, NULL);
+    pthread_cond_init(&cs->read_done, NULL);
 
+    cs->tracer = pthread_self();
     cs->num_threads = 0;
     nthreads = scan_workers(cs, nthreads);
     if (nthreads == 0)
         return;
+    cs->hand_over_reads = need_hand_over();
 
     /* merging chunk j can wait for chunk j + 1, so this must be at least 2 */
     cs->window = 2 * nthreads;
@@ -766,8 +857,8 @@ static chunk_state_t wait_for_chunk(chunked_scan_t *cs, size_t i)
 
     pthread_mutex_lock(&cs->lock);
     while (cs->states[i] == CHUNK_PENDING && !scan_stopped(cs)) {
-        /* help with the copying meanwhile */
-        if (copy_next(cs)) {
+        /* do the reads the workers handed over, and help with the copying */
+        if (serve_reads(cs) || copy_next(cs)) {
             update_progress(cs);
             continue;
         }
@@ -805,6 +896,11 @@ static void stop_scan_threads(chunked_scan_t *cs)
     pthread_mutex_lock(&cs->lock);
     cs->abort = true;
     pthread_cond_broadcast(&cs->window_moved);
+    /* the reads still waiting fail: nothing merges what needed them */
+    for (read_request_t *request = cs->requests; request; request = request->next)
+        request->done = true;
+    cs->requests = NULL;
+    pthread_cond_broadcast(&cs->read_done);
     pthread_mutex_unlock(&cs->lock);
     while (cs->num_threads > 0)
         pthread_join(cs->threads[--cs->num_threads], NULL);
@@ -899,6 +995,7 @@ static void end_chunked_scan(chunked_scan_t *cs)
     pthread_mutex_destroy(&cs->lock);
     pthread_cond_destroy(&cs->chunk_done);
     pthread_cond_destroy(&cs->window_moved);
+    pthread_cond_destroy(&cs->read_done);
     free(cs->states);
     free(cs->tasks);
     free(cs->copied);
@@ -1278,7 +1375,7 @@ static size_t plan_batch(read_batch_t *b, scan_data_type_t scan_data_type,
 /* Read the planned ranges. process_vm_readv() stops at the first range it
  * cannot read whole; pread() on /proc/pid/mem then reads that one as far as
  * it can. That also reads pages the target itself cannot, like the serial
- * loop does. */
+ * loop does (on some kernels only from the main thread, see read_target()). */
 static void read_batch(chunked_scan_t *cs, read_batch_t *b)
 {
     unsigned k = 0;
@@ -1306,7 +1403,7 @@ static void read_batch(chunked_scan_t *cs, read_batch_t *b)
                 break;
         }
         read_range_t *r = &b->ranges[k++];
-        r->got = readmemory(b->data + r->offset, r->start, r->len);
+        r->got = read_target(cs, b->data + r->offset, r->start, r->len);
     }
 }
 
@@ -1321,7 +1418,7 @@ static inline read_range_t *batch_range(read_batch_t *b, char *address)
     return &b->ranges[b->current];
 }
 
-static inline size_t batch_bytes(read_batch_t *b, char *address, size_t need,
+static inline size_t batch_bytes(chunked_scan_t *cs, read_batch_t *b, char *address, size_t need,
                                  const uint8_t **mem)
 {
     read_range_t *r = batch_range(b, address);
@@ -1333,7 +1430,7 @@ static inline size_t batch_bytes(read_batch_t *b, char *address, size_t need,
     }
     /* past where the range stopped being readable; this may be again */
     *mem = b->single;
-    return readmemory(b->single, address, need);
+    return read_target(cs, b->single, address, need);
 }
 
 /* Rescan one chunk, following the serial loop in sm_checkmatches(). */
@@ -1488,7 +1585,7 @@ static chunk_state_t check_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 
         if (old_flags != flags_empty || required_extra_bytes_to_record) {
             unsigned int old_length = flags_to_memlength(scan_data_type, old_flags);
-            size_t memlength = batch_bytes(batch, address, old_length ? old_length : 1,
+            size_t memlength = batch_bytes(cs, batch, address, old_length ? old_length : 1,
                                            &memory_ptr);
             if (memlength == 0) {
                 /* If we can't look at the data here, just abort the whole recording, something bad happened */
@@ -1796,7 +1893,7 @@ static chunk_state_t search_chunk(chunked_scan_t *cs, size_t ci, uint8_t *buf)
 {
     search_chunk_t *c = &((search_chunk_t *) cs->chunks)[ci];
     size_t want = c->size + MIN(c->region_left - c->size, CHUNK_TAIL);
-    size_t got = readmemory(buf, c->start, want);
+    size_t got = read_target(cs, buf, c->start, want);
     size_t owned = MIN(got, c->size);
     size_t reported = 0;
     size_t i;

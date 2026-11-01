@@ -26,10 +26,13 @@
 #include <assert.h>
 #include <stdint.h>
 #include <signal.h>
+#include <sys/mman.h>
 
 static volatile sig_atomic_t got_mutate = 0;
+static volatile sig_atomic_t got_unreadable = 0;
 
 static void on_mutate(int sig) { (void)sig; got_mutate = 1; }
+static void on_unreadable(int sig) { (void)sig; got_unreadable = 1; }
 
 /* Positional usage, which sm_test.sh uses:
        memfake [MB] [randomness] [MB of pattern]
@@ -48,7 +51,10 @@ static void usage(const char *argv0)
         "       %s --plant-float VALUE --count N [--width 4|8] [--mb N]\n"
         "       %s --plant-bytes HEXSTRING --count N [--mb N]\n"
         "\n"
-        "Prints its own pid on stdout, then waits. Kill it when done.\n",
+        "Prints its own pid on stdout, then waits. Kill it when done.\n"
+        "In the plant modes, SIGUSR1 rewrites the planted values, and SIGUSR2\n"
+        "makes the page in the middle of the buffer PROT_NONE and unmaps the\n"
+        "one at three quarters (no SIGUSR1 after that).\n",
         argv0, argv0, argv0, argv0);
 }
 
@@ -214,7 +220,16 @@ int main(int argc, char **argv)
 
     keep(buf);
 
+    /* the signals stay blocked except while sigsuspend() waits for them: one
+       that came after the ready file but before pause() would run its handler
+       first, and pause() would then wait for a signal that already came */
+    sigset_t usr_signals, unblocked;
+    sigemptyset(&usr_signals);
+    sigaddset(&usr_signals, SIGUSR1);
+    sigaddset(&usr_signals, SIGUSR2);
+    sigprocmask(SIG_BLOCK, &usr_signals, &unblocked);
     signal(SIGUSR1, on_mutate);
+    signal(SIGUSR2, on_unreadable);
 
     printf("%d\n", (int)getpid());
     fflush(stdout);
@@ -226,8 +241,22 @@ int main(int argc, char **argv)
        drop out of the match set, which is what makes the count exact. */
     unsigned mutate_n = 0;
     for (;;) {
-        pause();
-        if (!got_mutate) continue;
+        while (!got_unreadable && !got_mutate)
+            sigsuspend(&unblocked);
+        if (got_unreadable) {
+            /* memory that stops being readable between two scans: going by
+               the regions or matches from before, scanmem has to skip the
+               unmapped page and still read the PROT_NONE one, which only the
+               target itself cannot (see read_target() in ptrace.c) */
+            got_unreadable = 0;
+            uintptr_t page = (uintptr_t)sysconf(_SC_PAGESIZE);
+            uintptr_t middle = ((uintptr_t)buf + total_bytes / 2) & ~(page - 1);
+            uintptr_t later = ((uintptr_t)buf + total_bytes / 4 * 3) & ~(page - 1);
+            if (mprotect((void *)middle, page, PROT_NONE) != 0 || munmap((void *)later, page) != 0)
+                return 1;
+            signal_ready(done_path);
+            continue;
+        }
         got_mutate = 0;
         mutate_n++; /* each signal advances the value: plant+1, plant+2, ... so
                        a test can narrow twice and shake off a 1-byte phantom */
