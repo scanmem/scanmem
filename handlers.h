@@ -395,10 +395,12 @@ bool handler__write(globals_t *vars, char **argv, unsigned argc);
                  "\t\tlimit the memory the matches themselves take.\n" \
                  "\t\t\tDefault:0\n" \
                  "\tpossibles values:\n"\
-                 "\t0:\tan eighth of the RAM\n" \
+                 "\t0:\tan eighth of the memory scanmem may use: the RAM,\n" \
+                 "\t\tor a cgroup's memory limit (a container's, systemd's\n" \
+                 "\t\tMemoryMax= or MemoryHigh=) if that is lower\n" \
                  "\tN:\tN bytes; with K, M, G or T (or KiB, MiB, ...) for powers\n" \
                  "\t\tof 1024, e.g. 512M\n" \
-                 "\tN%:\tN percent of the RAM\n" \
+                 "\tN%:\tN percent of that memory\n" \
                  "\tmax:\tno limit\n" \
                  "\n" \
                  "Example:\n" \

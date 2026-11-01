@@ -513,7 +513,8 @@ struct chunked_scan {
 
 /* `option threads 0` keeps the working memory of the threads (their buffers
  * and chunk arrays, on top of the result) under `option memlimit`, by default
- * this share of the RAM */
+ * this share of the memory scanmem may use (the RAM, or a cgroup's limit, see
+ * util_usable_memory()) */
 #    define THREAD_MEMORY_SHARE 8 /* an eighth */
 
 /* `option threads 0` uses at most this many threads. The scans are limited by
@@ -576,10 +577,10 @@ static unsigned scan_threads(const globals_t *vars, size_t (*thread_bytes)(unsig
     if (limit == UINT64_MAX)
         return n;
     if (limit == 0) {
-        long pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
-        if (pages <= 0 || page_size <= 0)
+        uint64_t memory = util_usable_memory();
+        if (memory == 0)
             return n;
-        limit = (uint64_t) pages / THREAD_MEMORY_SHARE * page_size;
+        limit = memory / THREAD_MEMORY_SHARE;
     }
     while (n > 1 && (uint64_t) n * thread_bytes(n, scan) > limit)
         n--;

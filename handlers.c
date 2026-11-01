@@ -1672,7 +1672,8 @@ retl:
 
 /* A memory limit as xz takes one: a number of bytes, with an optional K, M, G
  * or T for powers of 1024 (also written Ki, KiB or KB), N% for a share of the
- * RAM, or "max" for none. 0 is the default. */
+ * memory scanmem may use (util_usable_memory()), or "max" for none. 0 is the
+ * default. */
 static bool parse_memlimit(const char *text, uint64_t *limit)
 {
     if (strcasecmp(text, "max") == 0) {
@@ -1689,10 +1690,10 @@ static bool parse_memlimit(const char *text, uint64_t *limit)
         return false;
 
     if (strcmp(end, "%") == 0) {
-        long pages = sysconf(_SC_PHYS_PAGES), page_size = sysconf(_SC_PAGESIZE);
-        if (n < 1 || n > 100 || pages <= 0 || page_size <= 0)
+        uint64_t memory = util_usable_memory();
+        if (n < 1 || n > 100 || memory == 0)
             return false;
-        *limit = (uint64_t) pages * page_size / 100 * n;
+        *limit = memory / 100 * n;
         if (*limit == 0) /* not the default */
             *limit = 1;
         return true;
