@@ -217,7 +217,8 @@ gap_starts_new_swath (size_t index_excess)
 }
 
 /* returns a pointer to the swath to which the element was added -
-   i.e. the last swath in the array after the operation */
+   i.e. the last swath in the array after the operation, or NULL if growing
+   the array failed, which loses it (`*array` is then NULL) */
 static inline matches_and_old_values_swath *
 add_element (matches_and_old_values_array **array,
              matches_and_old_values_swath *swath,
@@ -232,6 +233,8 @@ add_element (matches_and_old_values_array **array,
         *array = allocate_enough_to_reach(*array, (void *)swath +
             sizeof(matches_and_old_values_swath) +
             sizeof(old_value_and_match_info), &swath);
+        if (!*array)
+            return NULL;
 
         swath->first_byte_in_child = remote_address;
 
@@ -251,6 +254,8 @@ add_element (matches_and_old_values_array **array,
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 needed_size_for_a_new_swath, &swath);
+            if (!*array)
+                return NULL;
 
             swath = local_address_beyond_last_element(swath);
             swath->first_byte_in_child = remote_address;
@@ -262,6 +267,8 @@ add_element (matches_and_old_values_array **array,
             *array = allocate_enough_to_reach(*array,
                 local_address_beyond_last_element(swath) +
                 local_address_excess, &swath);
+            if (!*array)
+                return NULL;
 
             switch (local_index_excess) {
             case 1:

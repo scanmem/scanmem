@@ -2557,10 +2557,18 @@ bool sm_searchregions(globals_t *vars, scan_match_type_t match_type, const userv
                                                   get_u8b(memory_ptr), flags_empty);
                 --required_extra_bytes_to_record;
             }
+            if (UNLIKELY(!writing_swath_index))
+                break;
 
         }
 
         free(data);
+
+        if (!writing_swath_index) {
+            show_error("could not allocate match array\n");
+            ok = false;
+            break;
+        }
 
         /* stop scanning if asked to */
         if (vars->stop_flag) {

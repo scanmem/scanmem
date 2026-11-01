@@ -174,4 +174,30 @@ for kind in rescan first; do
     done
 done
 
+# A first scan whose matches cannot all be stored, as ulimit -v keeps them out
+# of the address space: scanmem must stop with an error, not crash. A crash
+# exits with status 1 too (scanmem catches the signal), so check what it says.
+# Skipped where scanmem cannot even start under the limit (ASan reserves
+# terabytes).
+oom_limit=196608 # KiB
+oom_scan() {
+    $sudo_prefix sh -c "ulimit -v $oom_limit && exec timeout 120 $SCANMEM -p $mf_pid -e -c '$1'"
+}
+for threads in 1 0; do
+    start_memfake --plant $((0x5EED1234DEADBEEF)) --count 100 --width 8 --mb 128
+    if ! oom_scan "exit" > /dev/null 2>&1; then
+        echo "skip: scanmem cannot start under ulimit -v $oom_limit"
+        stop_memfake
+        break
+    fi
+    err=$(oom_scan "option threads $threads;snapshot;exit" 2>&1 >/dev/null)
+    rc=$?
+    stop_memfake
+    assert_eq "$rc" "1" "out of memory, threads $threads: the snapshot fails"
+    assert_eq "$(printf '%s\n' "$err" | grep -c 'Killed by signal')" "0" \
+        "out of memory, threads $threads: without crashing"
+    assert_ge "$(printf '%s\n' "$err" | grep -c 'could not allocate match array')" "1" \
+        "out of memory, threads $threads: it says it could not allocate the matches"
+done
+
 summary
