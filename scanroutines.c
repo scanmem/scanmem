@@ -240,6 +240,44 @@ DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(32)
 DEFINE_FLOAT_INCREASEDBY_DECREASEDBY_ROUTINE(64)
 
 /*-----------*/
+/* for XORBY */
+/*-----------*/
+
+#define DEFINE_INTEGER_OPERATIONBY_ROUTINE_FLIP(DATAWIDTH, NAME, OP) \
+    extern inline unsigned int scan_routine_INTEGER##DATAWIDTH##_##NAME SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (memlength < (DATAWIDTH)/8) return 0; \
+        int ret = 0; \
+        if ((GET_FLAG(old_value, s##DATAWIDTH##b)) && (GET_FLAG(user_value, s##DATAWIDTH##b)) && \
+            (get_s##DATAWIDTH##b(user_value) == (get_s##DATAWIDTH##b(memory_ptr) OP get_s##DATAWIDTH##b(old_value)))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, s##DATAWIDTH##b); } \
+        if ((GET_FLAG(old_value, u##DATAWIDTH##b)) && (GET_FLAG(user_value, u##DATAWIDTH##b)) && \
+            (get_u##DATAWIDTH##b(user_value) == (get_u##DATAWIDTH##b(memory_ptr) OP get_u##DATAWIDTH##b(old_value)))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, u##DATAWIDTH##b); } \
+        return ret; \
+    }
+
+DEFINE_INTEGER_OPERATIONBY_ROUTINE_FLIP( 8, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE_FLIP(16, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE_FLIP(32, XORBY, ^)
+DEFINE_INTEGER_OPERATIONBY_ROUTINE_FLIP(64, XORBY, ^)
+
+
+#define DEFINE_FLOAT_OPERATIONBY_ROUTINE_FLIP(DATAWIDTH, FTYPE, ITYPE, NAME, OP) \
+    extern inline unsigned int scan_routine_FLOAT##DATAWIDTH##_##NAME SCAN_ROUTINE_ARGUMENTS \
+    { \
+        if (memlength < (DATAWIDTH)/8) return 0; \
+        int ret = 0; \
+        if ((GET_FLAG(old_value, f##DATAWIDTH##b)) && (GET_FLAG(user_value, f##DATAWIDTH##b)) && \
+            (get_f##DATAWIDTH##b(user_value) == ((FTYPE)(((ITYPE)get_f##DATAWIDTH##b(memory_ptr)) OP ((ITYPE)get_f##DATAWIDTH##b(old_value)))))) \
+            { ret = (DATAWIDTH)/8; SET_FLAG(saveflags, f##DATAWIDTH##b); printf("found FLOAT xor match\n"); } \
+        return ret; \
+    }
+
+DEFINE_FLOAT_OPERATIONBY_ROUTINE_FLIP(32, float, unsigned int, XORBY, ^)
+DEFINE_FLOAT_OPERATIONBY_ROUTINE_FLIP(64, double, unsigned long, XORBY, ^)
+
+/*-----------*/
 /* for RANGE */
 /*-----------*/
 
@@ -337,6 +375,7 @@ DEFINE_ANYTYPE_ROUTINE(GREATERTHAN, )
 DEFINE_ANYTYPE_ROUTINE(LESSTHAN, )
 DEFINE_ANYTYPE_ROUTINE(INCREASEDBY, )
 DEFINE_ANYTYPE_ROUTINE(DECREASEDBY, )
+DEFINE_ANYTYPE_ROUTINE(XORBY, )
 DEFINE_ANYTYPE_ROUTINE(RANGE, )
 
 DEFINE_ANYTYPE_ROUTINE(EQUALTO, _REVENDIAN)
@@ -646,6 +685,7 @@ scan_routine_t sm_get_scanroutine(scan_data_type_t dt, scan_match_type_t mt, mat
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASED, DECREASED)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHINCREASEDBY, INCREASEDBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHDECREASEDBY, DECREASEDBY)
+    CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES(MATCHXORBY, XORBY)
     CHOOSE_ROUTINE_FOR_ALL_NUMBER_TYPES_AND_ENDIANS(MATCHRANGE, RANGE)
 
     CHOOSE_ROUTINE(BYTEARRAY, VLT, MATCHANY, ANY)
@@ -687,7 +727,8 @@ bool sm_choose_scanroutine(scan_data_type_t dt, scan_match_type_t mt, const user
         mt == MATCHLESSTHAN    ||
         mt == MATCHRANGE       ||
         mt == MATCHINCREASEDBY ||
-        mt == MATCHDECREASEDBY)
+        mt == MATCHDECREASEDBY ||
+        mt == MATCHXORBY)
     {
         match_flags possible_flags = possible_flags_for_scan_data_type[dt];
         if ((possible_flags & uflags) == flags_empty) {

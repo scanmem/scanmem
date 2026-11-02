@@ -112,6 +112,28 @@ void uservalue2value(value_t *dst, const uservalue_t *src)
     else assert(false);
 }
 
+/* Stores (src XOR dst) into dst. dst.flags must be set beforehand. */
+void xor_uservalue(uservalue_t *dst, const uservalue_t *src) {
+
+    /* Zero whole value union, in case high bytes won't be set */
+    dst->uint64_value = 0;
+
+    /* Allows XOR on doubles and floats. */
+    if (dst->flags & flag_f64b) set_f64b(dst, (double)(((unsigned long)get_f64b(dst)) ^ ((unsigned long)get_f64b(src))));
+    if (dst->flags & flag_u64b) set_u64b(dst, get_u64b(dst) ^ get_u64b(src));
+    if (dst->flags & flag_s64b) set_s64b(dst, get_s64b(dst) ^ get_s64b(src));
+
+    if (dst->flags & flag_f32b) set_f32b(dst, (float)(((unsigned int)get_f32b(dst)) ^ ((unsigned int)get_f32b(src))));
+    if (dst->flags & flag_u32b) set_u32b(dst, get_u32b(dst) ^ get_u32b(src));
+    if (dst->flags & flag_s32b) set_s32b(dst, get_s32b(dst) ^ get_s32b(src));
+
+    if (dst->flags & flag_u16b) set_u16b(dst, get_u16b(dst) ^ get_u16b(src));
+    if (dst->flags & flag_s16b) set_s16b(dst, get_s16b(dst) ^ get_s16b(src));
+
+    if (dst->flags & flag_u8b)  set_u8b (dst, get_u8b(dst)  ^ get_u8b(src));
+    if (dst->flags & flag_s8b)  set_s8b (dst, get_s8b(dst)  ^ get_s8b(src));
+}
+
 /* parse bytearray, it will allocate the arrays itself, then needs to be free'd by `free_uservalue()` */
 bool parse_uservalue_bytearray(char *const *argv, unsigned argc, uservalue_t *val)
 {

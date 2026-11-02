@@ -148,6 +148,8 @@ bool sm_init(void)
                        LREGIONS_SHRTDOC, LREGIONS_LONGDOC, NULL);
     sm_registercommand("version", handler__version, vars->commands,
                        VERSION_SHRTDOC, VERSION_LONGDOC, NULL);
+    sm_registercommand("^", handler__operators, vars->commands, XOR_SHRTDOC, 
+                       XOR_LONGDOC, NULL);
     sm_registercommand("=", handler__operators, vars->commands, NOTCHANGED_SHRTDOC,
                        NOTCHANGED_LONGDOC, NULL);
     sm_registercommand("!=", handler__operators, vars->commands, CHANGED_SHRTDOC,
